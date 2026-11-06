@@ -17,7 +17,7 @@ export function reconcile(registry,rows,config){
  const client=rows.filter(r=>r.entry_type==='dll');if(!client.length)throw new Error('No DLL entries; refusing to replace registry');
  const ids=new Set();for(const e of client){if(!Number.isSafeInteger(e.id)||ids.has(e.id)||!e.name||!Array.isArray(e.versions))throw new Error('Invalid or duplicate catalogue entry');ids.add(e.id);}
  const entries=structuredClone(registry.entries??[]);
- const folders=new Set(['scripts','tests','state','docs','.github','.work','readme.md','operations.md','license','config.json','package.json','.gitattributes','.gitignore',...entries.map(e=>e.folder.toLowerCase())]);
+ const folders=new Set(['docs','.github','.work','readme.md','operations.md','license','config.json','package.json','.gitattributes','.gitignore',...entries.map(e=>e.folder.toLowerCase())]);
  for(const e of entries){e.active=ids.has(e.id);for(const c of e.components)c.active=false;}
  for(const entry of client){
   let e=entries.find(e=>e.id===entry.id);
@@ -193,7 +193,7 @@ export async function verify(root,registry){
 
 async function main(){
  const root=process.cwd(),mode=process.argv[2];if(!['discover','update','verify'].includes(mode))throw new Error('Use discover, update or verify');
- const config=await readJson(path.join(root,'config.json'));let registry=await readJson(path.join(root,'state/registry.json'),{version:1,entries:[]});
+ const config=await readJson(path.join(root,'config.json'));let registry=await readJson(path.join(root,'.github/state/registry.json'),{version:1,entries:[]});
  if(mode==='verify'){console.log(`Verified ${await verify(root,registry)} archived files.`);return;}
  if(config.personalBackup){
   if(!/^[\w.-]+\/[\w.-]+$/.test(config.repository??''))throw new Error('Set the archive repository for the private backup guard');
@@ -202,16 +202,16 @@ async function main(){
   if(repo.private!==true)throw new Error('Personal backup import requires a PRIVATE repository');
  }
  const rows=await upstream.request(config.catalogue,{json:true,maxBytes:30*1024*1024});registry=reconcile(registry,rows,config);
- const objects=await readJson(path.join(root,'state/objects.json'),{});let failures=0;
+ const objects=await readJson(path.join(root,'.github/state/objects.json'),{});let failures=0;
  for(const e of registry.entries)for(const c of e.components){
   if(mode==='discover'&&!['new','error'].includes(c.status))continue;
   console.log(`${mode}: ${e.name}${c.folder?'/'+c.folder:''}`);
   await syncComponent(root,e,c,config,objects);
   if(c.status==='error')failures++;console.log(`  ${c.status}${c.error?': '+c.error:''}`);
   // Checkpoint successful components so an interrupted bootstrap can resume.
-  await write(path.join(root,'state/registry.json'),json(registry));await write(path.join(root,'state/objects.json'),json(objects));
+  await write(path.join(root,'.github/state/registry.json'),json(registry));await write(path.join(root,'.github/state/objects.json'),json(objects));
  }
- await render(root,registry);await write(path.join(root,'state/registry.json'),json(registry));await write(path.join(root,'state/objects.json'),json(objects));
+ await render(root,registry);await write(path.join(root,'.github/state/registry.json'),json(registry));await write(path.join(root,'.github/state/objects.json'),json(objects));
  const verified=await verify(root,registry);console.log(`Verified ${verified} files. ${failures} source errors.`);
  // Catch nonstandard oversized files before committing; ordinary release/binary extensions are already LFS tracked.
  if(process.env.ARCHIVE_TRACK_LARGE==='1'){

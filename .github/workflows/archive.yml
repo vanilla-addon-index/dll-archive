@@ -39,7 +39,7 @@ jobs:
           ARCHIVE_TRACK_LARGE: '1'
         run: |
           case "$MODE" in discover|update) ;; *) exit 1 ;; esac
-          node scripts/archive.mjs "$MODE"
+          node .github/scripts/archive.mjs "$MODE"
       - name: Verify and save successful mirrors
         if: '!cancelled() && steps.sync.outcome != ''skipped'''
         env:

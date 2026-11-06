@@ -1,7 +1,7 @@
 name: Validate archive automation
 on:
   push:
-    paths: ['scripts/**', 'tests/**', 'config.json', 'package.json', '.github/workflows/**']
+    paths: ['.github/scripts/**', '.github/tests/**', 'config.json', 'package.json', '.github/workflows/**']
   pull_request:
 permissions:
   contents: read
