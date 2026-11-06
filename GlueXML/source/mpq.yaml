@@ -1,0 +1,20 @@
+# Packs this repo into Interface\GlueXML\ inside a patch-Z.mpq.
+# Z sorts after Blizzard's stock MPQs, so its files win on conflict.
+# Built by paste/mpq-packager via .gitea/workflows/release.yml on a v* tag.
+
+name: GlueXML
+patch-letter: Z
+
+substitute:
+  enabled: true
+  extensions: [".lua", ".xml", ".toc"]
+
+contents:
+  - src: .
+    dest: Interface/GlueXML
+    ignore:
+      - ".git/**"
+      - ".gitea/**"
+      - "mpq.yaml"
+      - "*.md"
+      - "dist/**"

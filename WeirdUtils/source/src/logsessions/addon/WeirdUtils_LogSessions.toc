@@ -1,0 +1,6 @@
+## Interface: 11200
+## Title: [WeirdUtils] Log Sessions
+## Notes: Session-based combat and chat log management
+## Version: 1.0
+
+LogSessions.lua

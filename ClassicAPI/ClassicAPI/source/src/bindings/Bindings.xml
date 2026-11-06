@@ -1,0 +1,46 @@
+<!-- Spliced into the engine's Interface\FrameXML\Bindings.xml at
+     load time by src/bindings/Inject.cpp. The `header` attribute on
+     the root tag tells the splicer which engine section to extend —
+     it picks the appropriate insertion point so the bindings appear
+     at the tail of that group in the keybind UI. The engine's own
+     XML parser ignores attributes on the root tag, so this is
+     metadata for the splicer only. -->
+<Bindings header="TARGETING">
+	<Binding name="FOCUSTARGET">
+		FocusUnit("target");
+	</Binding>
+	<Binding name="TARGETFOCUS">
+		TargetUnit("focus");
+	</Binding>
+	<Binding name="INTERACTMOUSEOVER">
+		if ( not C_PlayerInteractionManager.InteractUnit("mouseover", false, false) ) then
+			C_PlayerInteractionManager.InteractUnit("anyinteract");
+		end
+	</Binding>
+	<Binding name="INTERACTTARGET">
+		C_PlayerInteractionManager.InteractUnit("anyinteract");
+	</Binding>
+	<Binding name="AOELOOT">
+		C_Loot.LootAllCorpses()
+	</Binding>
+	<!-- 4.3.4's modified-click actions and defaults (FrameXML\Bindings.xml).
+	     Read by src/bindings/ModifiedClick.cpp. -->
+	<ModifiedClick action="SELFCAST" default="ALT"/>
+	<ModifiedClick action="FOCUSCAST" default="NONE"/>
+	<ModifiedClick action="AUTOLOOTTOGGLE" default="SHIFT"/>
+	<ModifiedClick action="MAILAUTOLOOTTOGGLE" default="SHIFT"/>
+	<ModifiedClick action="STICKYCAMERA" default="CTRL"/>
+	<ModifiedClick action="CHATLINK" default="SHIFT-BUTTON1"/>
+	<ModifiedClick action="DRESSUP" default="CTRL-BUTTON1"/>
+	<ModifiedClick action="SOCKETITEM" default="SHIFT-BUTTON2"/>
+	<ModifiedClick action="SPLITSTACK" default="SHIFT"/>
+	<ModifiedClick action="PICKUPACTION" default="SHIFT"/>
+	<ModifiedClick action="PICKUPITEM" default="SHIFT"/>
+	<ModifiedClick action="COMPAREITEMS" default="SHIFT"/>
+	<ModifiedClick action="OPENALLBAGS" default="SHIFT"/>
+	<ModifiedClick action="QUESTWATCHTOGGLE" default="SHIFT"/>
+	<ModifiedClick action="TOKENWATCHTOGGLE" default="SHIFT"/>
+	<ModifiedClick action="SHOWITEMFLYOUT" default="ALT"/>
+	<ModifiedClick action="SHOWMULTICASTFLYOUT" default="ALT"/>
+	<ModifiedClick action="TRADESEARCHADD" default="SHIFT"/>
+</Bindings>

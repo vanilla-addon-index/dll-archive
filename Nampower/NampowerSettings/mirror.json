@@ -1,0 +1,122 @@
+{
+  "upstream": "https://github.com/brues-code/NampowerSettings",
+  "source": {
+    "kind": "repository",
+    "host": "github.com",
+    "owner": "brues-code",
+    "repo": "NampowerSettings",
+    "name": "NampowerSettings",
+    "url": "https://github.com/brues-code/NampowerSettings",
+    "api": "https://api.github.com/repos/brues-code/NampowerSettings"
+  },
+  "commit": "1df4ecd5a1e22aee2e82c7033a253aeca8afaa6d",
+  "sourceFiles": {
+    ".github/workflows/release.yml": {
+      "sha256": "0d784b347a50e3f88479de4e3a7000b99c25d282d54b3cc6438865c6a7d8ec43",
+      "bytes": 381
+    },
+    ".pkgmeta": {
+      "sha256": "3d23ca17fc312601c7830bc49c41e772649d30516370a83500061837733f0d86",
+      "bytes": 64
+    },
+    "helper.lua": {
+      "sha256": "ab959f0c06406c16e337ba18360ffa6c5a6abdd14a6d84f726d473657e1518f5",
+      "bytes": 33706
+    },
+    "img.png": {
+      "sha256": "291ae52aa2d9a703bf34a95085ca1377669fc2f30904c0ed2cfa8f8b79500d52",
+      "bytes": 18926
+    },
+    "libs/AceAddon-2.0/AceAddon-2.0.lua": {
+      "sha256": "6561a1a96465f5276c784989a2c989e21b1b8f666391fccf4b64ab87a0a63d54",
+      "bytes": 34783
+    },
+    "libs/AceConsole-2.0/AceConsole-2.0.lua": {
+      "sha256": "e79a393e9ec88e1f2618e4768dd61b8c81e09fb9457b97f00266cdb9d652f1b0",
+      "bytes": 67656
+    },
+    "libs/AceDB-2.0/AceDB-2.0.lua": {
+      "sha256": "a57404bbff9dab8d53ff5e1752219a8c8e7042c0ebcb2edd6b5a7eaf8b9d39c8",
+      "bytes": 45257
+    },
+    "libs/AceDebug-2.0/AceDebug-2.0.lua": {
+      "sha256": "2b2eea5d384b15264cce5883a170815f558ccadb72b0343d9dcbf0a3cbd2baac",
+      "bytes": 8049
+    },
+    "libs/AceEvent-2.0/AceEvent-2.0.lua": {
+      "sha256": "1a2c79dd8db1f2fcf290297bdb5e731b013f94eef4cbc1e7213872ea60e90b43",
+      "bytes": 28954
+    },
+    "libs/AceHook-2.1/AceHook-2.1.lua": {
+      "sha256": "1a837a24dd8af5b4ee51011fe99e8fde7e39b1af3ba908535a4cb445174eb79e",
+      "bytes": 16946
+    },
+    "libs/AceLibrary/AceLibrary.lua": {
+      "sha256": "09cfc0b69a0feb644fa1a9e5fc6715a4e76e0b2f6c7c04a3a0ea693d633770cd",
+      "bytes": 23114
+    },
+    "libs/AceLocale-2.2/AceLocale-2.2.lua": {
+      "sha256": "f751df94f961870d2e35818a6f5774f7441786958ee6fd8adf227479f896a385",
+      "bytes": 15957
+    },
+    "libs/AceModuleCore-2.0/AceModuleCore-2.0.lua": {
+      "sha256": "a3de67878b122a9f6c937462b9641f7a029b55605107f2db03953fe7a1d412ff",
+      "bytes": 13981
+    },
+    "libs/AceOO-2.0/AceOO-2.0.lua": {
+      "sha256": "0447ac520cae9b5f9544f9619c23a89c0e192bc7891763e2a0269a5d664f79df",
+      "bytes": 30469
+    },
+    "libs/Dewdrop/Dewdrop-2.0.lua": {
+      "sha256": "c51aa331b91d1bc7f8023f8c02814a0556e39a39d392f5029b06bf0aee266664",
+      "bytes": 82495
+    },
+    "libs/FuBarPlugin/FuBarPlugin-2.0.lua": {
+      "sha256": "9102d327901e72e0523f7d21c989c32cd698a7b6d66e5cb0bf5cdff3eef5f73b",
+      "bytes": 44995
+    },
+    "libs/Tablet/Tablet-2.0.lua": {
+      "sha256": "2456e593be577cdd8340cd0edc1fce94926a1f9e7dee7f26798bf8b3128dbf06",
+      "bytes": 83748
+    },
+    "Localization.lua": {
+      "sha256": "b09941a3d613871e39d074aa76c0174aa834a68c1f272259f04555aabc9fff21",
+      "bytes": 30612
+    },
+    "NampowerSettings.toc": {
+      "sha256": "09496e19aa3eed644fa3c46e5080d716e6abe5a7f4ce7d1ad843efce4b6634fd",
+      "bytes": 953
+    },
+    "README.md": {
+      "sha256": "0fe4f0926262b2daef4c6e035bdebbf58e04179a7b2a83e4f7be777d5e953d7b",
+      "bytes": 978
+    },
+    "settings.lua": {
+      "sha256": "625bad674a820070f1bc956d7bc5f031a5feecbf47c4cb67d4555f975057b758",
+      "bytes": 41282
+    }
+  },
+  "symlinks": {},
+  "releases": {
+    "347146467": {
+      "tag": "release",
+      "folder": "release--347146467",
+      "assets": {
+        "462608321": {
+          "sha256": "e25ca123a4d7e762de4b737e98b0a26d08370fdf754726ee6d3f93a032a8690d",
+          "bytes": 130444,
+          "id": "462608321",
+          "name": "NampowerSettings.zip",
+          "url": "https://github.com/brues-code/NampowerSettings/releases/download/release/NampowerSettings.zip",
+          "path": "releases/release--347146467/assets/NampowerSettings.zip"
+        }
+      },
+      "source": {
+        "sha256": "9c8276dfd0bf9487f2a3da7bbef6f0ff19ea938e3d9c60dd3b50c687c7d47ce4",
+        "bytes": 140986,
+        "path": "releases/release--347146467/upstream-source.tar.gz",
+        "url": "https://api.github.com/repos/brues-code/NampowerSettings/tarball/release"
+      }
+    }
+  }
+}

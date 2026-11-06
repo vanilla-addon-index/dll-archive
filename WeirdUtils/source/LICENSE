@@ -1,0 +1,81 @@
+This is free and unencumbered software released into the public domain.
+
+Anyone is free to copy, modify, publish, use, compile, sell, or
+distribute this software, either in source code form or as a compiled
+binary, for any purpose, commercial or non-commercial, and by any
+means.
+
+In jurisdictions that recognize copyright laws, the author or authors
+of this software dedicate any and all copyright interest in the
+software to the public domain. We make this dedication for the benefit
+of the public at large and to the detriment of our heirs and
+successors. We intend this dedication to be an overt act of
+relinquishment in perpetuity of all present and future rights to this
+software under copyright law.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+For more information, please refer to <https://unlicense.org/>
+
+---
+
+SCOPE AND THIRD-PARTY EXCEPTIONS
+
+The public-domain dedication above applies only to material for which the
+applicable WeirdUtils author or authors hold the rights necessary to make that
+dedication.
+
+It does not override or replace the copyright, license, trademark, or other
+rights applicable to third-party code, external dependencies, reference-derived
+material, fonts, artwork, game-facing resources, or other assets included in or
+referenced by this repository.
+
+Known exclusions and separate terms include, without limitation:
+
+1. src/dpslog/WeirdDPSMate/
+   This is a fork of DPSMate by Shino <Synced> and is licensed under the GNU
+   General Public License v3. See src/dpslog/WeirdDPSMate/LICENSE.
+
+2. src/dpslog/WSBT/
+   This contains historical Mik's Scrolling Battle Text / Combat Event Helper
+   material credited to Mik and Athene. No standalone license for this bundled
+   subtree was independently established during the 2026-08-31 audit. The
+   public-domain dedication above does not claim to relicense it.
+
+3. src/weirdperformance/libdeflate/
+   This contains vendored libdeflate source under the MIT License. See
+   LICENSES/libdeflate-MIT.txt.
+
+4. VanillaFixes-derived material
+   src/weirdperformance/timer_fix.zig explicitly identifies itself as ported
+   from VanillaFixes, which is MIT-licensed. See
+   LICENSES/VanillaFixes-MIT.txt.
+
+5. External zhook dependency
+   zhook is fetched at build time from its upstream Codeberg repository. It is
+   not relicensed by this file.
+
+6. UnitXP_SP3 / libSiliconPatch references
+   Source comments identify these projects as behavioral, formula, or symbol
+   references for some SSE work. This file does not make a public-domain claim
+   over material whose applicable rights are held by those projects or other
+   third parties.
+
+7. Fonts, BLP/TGA artwork, and game-facing assets
+   Bundled fonts and visual resources, including assets under minimapicons,
+   worldmarkers, and WeirdDPSMate, remain subject to their respective rights.
+   They are not placed in the public domain by this repository merely because
+   they are included in the source tree.
+
+See THIRD_PARTY_NOTICES.md, PROJECT_IDENTITY.md, Docs/, and LICENSES/ for the
+current provenance and scope record.
+
+World of Warcraft, Warcraft, Blizzard Entertainment, and associated names,
+marks, artwork, client data, and game assets remain the property of their
+respective rights holders.

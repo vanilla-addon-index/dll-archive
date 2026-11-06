@@ -1,0 +1,57 @@
+{
+  "upstream": "https://github.com/seacrabsam/LockPort",
+  "source": {
+    "kind": "repository",
+    "host": "github.com",
+    "owner": "seacrabsam",
+    "repo": "LockPort",
+    "name": "LockPort",
+    "url": "https://github.com/seacrabsam/LockPort",
+    "api": "https://api.github.com/repos/seacrabsam/LockPort"
+  },
+  "commit": "24c61e42b683d3b422d5c8744feb195e0137e04a",
+  "sourceFiles": {
+    "LockPort/fonts/Expressway.ttf": {
+      "sha256": "06a2106170c2b5b736955cc749ed755f3757d103230645158f0bd5b5b91c386b",
+      "bytes": 99820
+    },
+    "LockPort/img/close.tga": {
+      "sha256": "5131a4134e7807b0ace1aa9a329ddd6ba7192534278cf87eaf70760477731f8e",
+      "bytes": 1430
+    },
+    "LockPort/img/settings.tga": {
+      "sha256": "7e3844273f9c207bbdca50d6af9060c29bff26d4c84adfee08f8ac6e94f7a6a9",
+      "bytes": 2318
+    },
+    "LockPort/LockPort_Settings.lua": {
+      "sha256": "4fd701b267fecb04b1e93bd9e8e46af4b0968f659d860f1f36e14010997f092f",
+      "bytes": 15516
+    },
+    "LockPort/LockPort_Settings.xml": {
+      "sha256": "42690e3d46f105372a046e766479aaeeac91c643f166e13c121087c2df18462d",
+      "bytes": 9249
+    },
+    "LockPort/LockPort.lua": {
+      "sha256": "8ba53341c64aebcdd98acd62fcf54021ce3eaef8b0eda7381e4c468ab7897d84",
+      "bytes": 21910
+    },
+    "LockPort/LockPort.toc": {
+      "sha256": "c8c22ed44aea2bc02f798fa37c5f7211ec32d84a1c22ab275c4353f6cd6aa1a7",
+      "bytes": 280
+    },
+    "LockPort/LockPort.xml": {
+      "sha256": "819441fed6a486ead61b39693cc508058813cc6b9f3c038a7b8214c584821131",
+      "bytes": 10349
+    },
+    "LockPort/README.md": {
+      "sha256": "73655faf17eacf8de58abb89df987fd9662fa29f80e5ebe240fc5c91d358127f",
+      "bytes": 1218
+    },
+    "README.md": {
+      "sha256": "0df6e08117cf34931eb7fca0f9f97040f4f80c0be99a6c13fcae737f265a7176",
+      "bytes": 1240
+    }
+  },
+  "symlinks": {},
+  "releases": {}
+}

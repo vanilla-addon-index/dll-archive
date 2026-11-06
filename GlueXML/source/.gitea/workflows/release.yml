@@ -1,0 +1,63 @@
+# Build patch-Z.mpq from this repo and attach it to a Gitea release on a v* tag.
+# Packaged by paste/mpq-packager (pinned @v1).
+#
+# octowow.st is served under /git but Gitea generates URLs without it, which
+# breaks actions/checkout and `uses:` resolution; and bind mounts don't work
+# under act_runner (inner docker uses the host daemon). So we clone manually
+# and run the packager via docker build + docker cp. Simplify once the server
+# ROOT_URL is fixed.
+
+name: Release MPQ
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (manual; instance under /git)
+        run: |
+          git init -q .
+          git remote add origin "https://gitea:${{ secrets.GITHUB_TOKEN }}@octowow.st/git/${{ github.repository }}.git"
+          git fetch -q --depth 1 origin "${{ github.ref }}"
+          git checkout -q FETCH_HEAD
+
+      - name: Build packager image
+        run: |
+          git clone -q --depth 1 --branch v1 \
+            "https://gitea:${{ secrets.GITHUB_TOKEN }}@octowow.st/git/paste/mpq-packager.git" /tmp/packager
+          docker build -q -t mpq-packager /tmp/packager
+
+      - name: Build patch MPQ
+        run: |
+          set -euo pipefail
+          cid=$(docker create \
+            -e INPUT_MANIFEST=mpq.yaml \
+            -e INPUT_VERSION=${{ github.ref_name }} \
+            -e INPUT_OUT_DIR=/work/dist \
+            -e GITHUB_WORKSPACE=/work \
+            mpq-packager)
+          docker cp . "$cid:/work"
+          docker start -a "$cid"
+          docker cp "$cid:/work/dist/patch-Z.mpq" ./patch-Z.mpq
+          docker rm "$cid" >/dev/null
+          ls -l patch-Z.mpq
+
+      - name: Create release and upload asset
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          API="https://octowow.st/git/api/v1/repos/${{ github.repository }}"
+          TAG="${{ github.ref_name }}"
+          RID=$(curl -fsSL -X POST "$API/releases" \
+            -H "Authorization: token $TOKEN" -H "Content-Type: application/json" \
+            -d "{\"tag_name\":\"$TAG\",\"name\":\"$TAG\",\"draft\":false,\"prerelease\":false}" \
+            | python3 -c 'import sys,json;print(json.load(sys.stdin)["id"])')
+          curl -fsSL -X POST "$API/releases/$RID/assets?name=patch-Z.mpq" \
+            -H "Authorization: token $TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@patch-Z.mpq"
+          echo "Released $TAG with patch-Z.mpq"

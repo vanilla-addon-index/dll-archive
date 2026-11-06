@@ -1,0 +1,12 @@
+name: Update covered mirrors
+on:
+  schedule:
+    - cron: '41 2 * * 0'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  archive:
+    uses: ./.github/workflows/archive.yml
+    with:
+      mode: update

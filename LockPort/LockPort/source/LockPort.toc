@@ -1,0 +1,8 @@
+## Interface: 11200
+## Title: |cff9482c9LockPort|r
+## Notes: Warlock summon assistant - 123 in chat to get on the list, click to summon, failures are explained to the group.
+## Version: 3.9.3
+## Author: Phaestas (originally Gurky)
+## SavedVariablesPerCharacter: LockPortOptions
+LockPort.lua
+LockPort_UI.lua

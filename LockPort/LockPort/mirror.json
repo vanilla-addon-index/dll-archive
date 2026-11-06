@@ -1,0 +1,97 @@
+{
+  "upstream": "https://octowow.st/git/OEVG/LockPort",
+  "source": {
+    "kind": "repository",
+    "host": "octowow.st",
+    "owner": "OEVG",
+    "repo": "LockPort",
+    "name": "LockPort",
+    "url": "https://octowow.st/git/OEVG/LockPort",
+    "api": "https://octowow.st/git/api/v1/repos/OEVG/LockPort"
+  },
+  "commit": "7ec9747be913dc5eae69c0292bf60d4f02aa6f1a",
+  "sourceFiles": {
+    "Bindings.xml": {
+      "sha256": "f54c1cc605b94c737fffb24a685c8d46732f818fa642dd7c3e8255e211690fdd",
+      "bytes": 182
+    },
+    "CHANGELOG.md": {
+      "sha256": "e6fb45ce27f180cc88e83db48718a72fd94698b5f475a4f967f1d9c99cf8a8d9",
+      "bytes": 1807
+    },
+    "CLASSICAPI-REVIEW.md": {
+      "sha256": "d944938df30692a78b930ab59e30280efe79f48c512e2c8d5e622936879ea17f",
+      "bytes": 3386
+    },
+    "LockPort_UI.lua": {
+      "sha256": "d303c1922d64788dc31dfab21509995ca46a32bedbf3855b730e3143db195193",
+      "bytes": 34047
+    },
+    "LockPort.dll": {
+      "sha256": "96bdb518e0b58106d585b7a9c577cd3437b497f97178656b4fc7fe68acd777c8",
+      "bytes": 39936
+    },
+    "LockPort.lua": {
+      "sha256": "de0b4e6275d48f2b7626c28cd615b3fc34fa2093d4b46fdb7827df39e3badd84",
+      "bytes": 66847
+    },
+    "LockPort.toc": {
+      "sha256": "713f42d8915167ab79df989d4998ee426157a43e7db86e8e170be8b6a47ea701",
+      "bytes": 307
+    },
+    "native/build.ps1": {
+      "sha256": "958324f9375cec5b6987277b136447e0646c92ac52b259f596f686ff68db66b4",
+      "bytes": 391
+    },
+    "native/LockPort.c": {
+      "sha256": "293e7305e0f2d4c006cac6dc40b9e2aa41bbfd3d95a6ebd8858ceb625773094f",
+      "bytes": 10382
+    },
+    "native/README.md": {
+      "sha256": "8c2a3baf3b6e0660054a5f0331e35a1d572cdd062452862601b1dd06ae3ca1f4",
+      "bytes": 3223
+    },
+    "README.md": {
+      "sha256": "dd464d4af5b50972f804229897913112fbc1d61b79db8241270267a6f31d7b1d",
+      "bytes": 7124
+    },
+    "SHA256SUMS.txt": {
+      "sha256": "2596dbeafedb509af1c6c5bbfcaaed44e5de4fe4d2da7490404f6e8f792ab847",
+      "bytes": 79
+    },
+    "tests/COORDINATION-REPORT.md": {
+      "sha256": "c18cc0b8e8b945d971cfead7f88f1b2ba4f9a054b3de62e2102559a7cd6eee16",
+      "bytes": 5441
+    },
+    "tests/fixtures/LockPort-3.7.8.lua": {
+      "sha256": "57b95e04eacb591e4f12d750f3171a8119f370d0179a769f7260848d76f0d42e",
+      "bytes": 55189
+    },
+    "tests/fixtures/LockPort-original.lua": {
+      "sha256": "2fac4545e11ba676b1086dd6669d5d13cda071a2c075c30add19b310866cc46c",
+      "bytes": 45046
+    },
+    "tests/native_tests.c": {
+      "sha256": "bf49b985f047a9f7aeb090cafe5182abf4ef82758602dc820dc8440674f10943",
+      "bytes": 7565
+    },
+    "tests/test_addon-results.txt": {
+      "sha256": "4e1e4e38df7d6e00a2980ade411462088315ddb08d6b48ff22d582d31ed57677",
+      "bytes": 2306
+    },
+    "tests/test_addon.py": {
+      "sha256": "cfd2e78f1fe748ba9d53965be0bb49db4d14d1dce1624526493c96ca8147f673",
+      "bytes": 20205
+    },
+    "tests/test_coordination-results.txt": {
+      "sha256": "38e4b37fe247baad002267f1ed379abab008b2e3212a4b9f59c37cff70a6132a",
+      "bytes": 2370
+    },
+    "tests/test_coordination.py": {
+      "sha256": "2905f60f1e7729ac1c5f84887d680b17d17342d3fbea02b3cb8c949a3e64a0b2",
+      "bytes": 19438
+    }
+  },
+  "symlinks": {},
+  "releases": {}
+}

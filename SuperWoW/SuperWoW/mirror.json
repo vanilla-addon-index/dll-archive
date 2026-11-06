@@ -1,0 +1,66 @@
+{
+  "upstream": "https://github.com/balakethelock/SuperWoW",
+  "source": {
+    "kind": "repository",
+    "host": "github.com",
+    "owner": "balakethelock",
+    "repo": "SuperWoW",
+    "name": "SuperWoW",
+    "url": "https://github.com/balakethelock/SuperWoW",
+    "api": "https://api.github.com/repos/balakethelock/SuperWoW"
+  },
+  "commit": "60c05fa1bed338f50092ee73894ee4e3b81b5a65",
+  "sourceFiles": {
+    ".github/FUNDING.yml": {
+      "sha256": "5bd4cac35372369a00b5683a08d54bcf97e2c0fcf778bdb175642c10215b1a62",
+      "bytes": 897
+    },
+    ".github/ISSUE_TEMPLATE/bug_report.md": {
+      "sha256": "61263739112d64ab9e41b7a5a481e68cf8e2a30f9035d85b926e5fcad7f7c584",
+      "bytes": 531
+    },
+    ".github/ISSUE_TEMPLATE/crash-report.md": {
+      "sha256": "ec69d2bf2b23271c2074dbe56bfad63a81e4b01580e72cdb125181faca5268e5",
+      "bytes": 352
+    },
+    ".github/ISSUE_TEMPLATE/discussion.md": {
+      "sha256": "99a5e7567ac55c7cadbe190950a0dcb8d601c7b9c305c1230a0290b487c12a12",
+      "bytes": 117
+    },
+    ".github/ISSUE_TEMPLATE/feature_request.md": {
+      "sha256": "ef7126d285a348b54d9757808eaa5940ae5700af4dca1993eb40e3df3f4167ff",
+      "bytes": 608
+    },
+    "LICENSE.txt": {
+      "sha256": "b36423c75422c89d2ac2e3502bbd41c04f2e12c5ecc864891f68649613c80bf6",
+      "bytes": 665
+    },
+    "README.md": {
+      "sha256": "e9d44b43a5d0ad6b1b46b6581155cf6e8f5c0184067c028a3fffe58e28c6b732",
+      "bytes": 6085
+    }
+  },
+  "symlinks": {},
+  "releases": {
+    "197923926": {
+      "tag": "Release",
+      "folder": "Release--197923926",
+      "assets": {
+        "479239016": {
+          "sha256": "e1b37caf5496037fc369b8b68b5ef529be5fa951543869328bf38bef83dfa4a8",
+          "bytes": 697633,
+          "id": "479239016",
+          "name": "SuperWoW.release.2.2.zip",
+          "url": "https://github.com/balakethelock/SuperWoW/releases/download/Release/SuperWoW.release.2.2.zip",
+          "path": "releases/Release--197923926/assets/SuperWoW.release.2.2.zip"
+        }
+      },
+      "source": {
+        "sha256": "fcf3de336c9c5a91373b138b1fabdc8d4563982326bfc8df31b9cca739e48f30",
+        "bytes": 2977,
+        "path": "releases/Release--197923926/upstream-source.tar.gz",
+        "url": "https://api.github.com/repos/balakethelock/SuperWoW/tarball/Release"
+      }
+    }
+  }
+}

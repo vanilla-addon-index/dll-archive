@@ -1,0 +1,16 @@
+{
+  "upstream": "https://github.com/RetroCro/TurtleWoW-Mods/blob/main/Archive/DLL%20BACKUP/perf_boost.dll",
+  "source": {
+    "kind": "file",
+    "url": "https://raw.githubusercontent.com/RetroCro/TurtleWoW-Mods/main/Archive/DLL%20BACKUP/perf_boost.dll",
+    "filename": "perf_boost.dll",
+    "name": "perf_boost.dll"
+  },
+  "file": {
+    "sha256": "7019e2f31c4f56caa616f1b4b2587c56ff276f2c27c9f35535e2578eafbd4dbe",
+    "bytes": 578560,
+    "path": "releases/files/perf_boost.dll",
+    "url": "https://raw.githubusercontent.com/RetroCro/TurtleWoW-Mods/main/Archive/DLL%20BACKUP/perf_boost.dll"
+  },
+  "sourceFiles": {}
+}

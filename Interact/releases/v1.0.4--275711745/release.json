@@ -1,0 +1,9 @@
+{
+  "id": "275711745",
+  "tag": "v1.0.4",
+  "name": "Release",
+  "body": "This release includes the following changes:\r\n- Attempt to fix crash to desktop when trying to interact with de-spawned game objects (mining nodes, chests, etc.)",
+  "published": "2026-01-10T12:47:32Z",
+  "prerelease": false,
+  "url": "https://github.com/lookino/Interact/releases/tag/v1.0.4"
+}

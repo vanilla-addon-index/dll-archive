@@ -1,0 +1,119 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+	<Script file="GlueConsole.lua"/>
+	<Frame name="GlueConsoleFrame" parent="GlueParent" frameStrata="FULLSCREEN_DIALOG" toplevel="true" hidden="true" movable="true">
+		<Size>
+			<AbsDimension x="600" y="320"/>
+		</Size>
+		<Anchors>
+			<Anchor point="TOP">
+				<Offset>
+					<AbsDimension x="0" y="-20"/>
+				</Offset>
+			</Anchor>
+		</Anchors>
+		<Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+			<BackgroundInsets>
+				<AbsInset left="11" right="12" top="12" bottom="11"/>
+			</BackgroundInsets>
+			<TileSize>
+				<AbsValue val="32"/>
+			</TileSize>
+			<EdgeSize>
+				<AbsValue val="32"/>
+			</EdgeSize>
+		</Backdrop>
+		<Layers>
+			<Layer level="OVERLAY">
+				<FontString name="GlueConsoleTitle" inherits="GlueFontNormalSmall" text="Lua Console (` to close, Enter to run)">
+					<Anchors>
+						<Anchor point="TOP">
+							<Offset>
+								<AbsDimension x="0" y="-10"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Frame name="GlueConsoleOutputBg">
+				<Size>
+					<AbsDimension x="568" y="240"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="16" y="-28"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture>
+							<Color r="0" g="0" b="0" a="0.5"/>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Frames>
+					<ScrollingMessageFrame name="GlueConsoleOutput">
+						<Size>
+							<AbsDimension x="556" y="232"/>
+						</Size>
+						<Anchors>
+							<Anchor point="TOPLEFT">
+								<Offset>
+									<AbsDimension x="6" y="-4"/>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<FontString font="Fonts\FRIZQT__.TTF" justifyH="LEFT">
+							<FontHeight>
+								<AbsValue val="12"/>
+							</FontHeight>
+							<Color r="1" g="1" b="1"/>
+						</FontString>
+					</ScrollingMessageFrame>
+				</Frames>
+			</Frame>
+			<EditBox name="GlueConsoleInput" letters="2000" autoFocus="false">
+				<Size>
+					<AbsDimension x="568" y="20"/>
+				</Size>
+				<Anchors>
+					<Anchor point="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="16" y="16"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Backdrop bgFile="Interface\ChatFrame\ChatFrameBackground" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+					<BackgroundInsets>
+						<AbsInset left="4" right="4" top="4" bottom="4"/>
+					</BackgroundInsets>
+					<TileSize>
+						<AbsValue val="16"/>
+					</TileSize>
+					<EdgeSize>
+						<AbsValue val="16"/>
+					</EdgeSize>
+				</Backdrop>
+				<FontString font="Fonts\FRIZQT__.TTF">
+					<FontHeight>
+						<AbsValue val="12"/>
+					</FontHeight>
+					<Color r="1" g="1" b="1"/>
+				</FontString>
+				<Scripts>
+					<OnEnterPressed>GlueConsole_Submit();</OnEnterPressed>
+					<OnEscapePressed>GlueConsole_Toggle();</OnEscapePressed>
+				</Scripts>
+			</EditBox>
+		</Frames>
+		<Scripts>
+			<OnLoad>GlueConsole_OnLoad();</OnLoad>
+			<OnMouseDown>this:StartMoving();</OnMouseDown>
+			<OnMouseUp>this:StopMovingOrSizing();</OnMouseUp>
+		</Scripts>
+	</Frame>
+</Ui>

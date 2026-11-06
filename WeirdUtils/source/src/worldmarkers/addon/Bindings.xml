@@ -1,0 +1,20 @@
+<Bindings>
+    <Binding name="Place Blue Square" header="WORLDMARKERS">
+        WorldMarkers.UI_WorldMarker(1)
+    </Binding>
+    <Binding name="Place Green Triangle" header="WORLDMARKERS">
+        WorldMarkers.UI_WorldMarker(2)
+    </Binding>
+    <Binding name="Place Purple Diamond" header="WORLDMARKERS">
+        WorldMarkers.UI_WorldMarker(3)
+    </Binding>
+    <Binding name="Place Red Cross" header="WORLDMARKERS">
+        WorldMarkers.UI_WorldMarker(4)
+    </Binding>
+    <Binding name="Place Yellow Star" header="WORLDMARKERS">
+        WorldMarkers.UI_WorldMarker(5)
+    </Binding>
+    <Binding name="Clear All Markers" header="WORLDMARKERS">
+        WorldMarkers.UI_ClearWorldMarker()
+    </Binding>
+</Bindings>

@@ -1,0 +1,49 @@
+PASS off without native DLL
+PASS requires group
+PASS enables open announcements
+PASS auto starts without input after settling
+PASS no duplicate or immediate uncertain retry
+PASS movement pauses auto casting
+PASS live ClassicAPI casting pauses auto casting
+PASS works without ClassicAPI
+PASS not ready pauses auto casting
+PASS leaving raid disables and restores announcements
+PASS disabling auto always disables announcements
+PASS native disappearance disables
+PASS interruption with arrival
+PASS interruption with unconfirmed completion
+PASS automatic native spellbook Summon dispatch
+PASS manual Summon dispatch
+PASS syntax LockPort.lua
+PASS syntax LockPort_UI.lua
+PASS UI native-only visibility, expanded layout, raid gating, and button toggle
+PASS party enables automatic casting
+PASS raid to party conversion stays enabled
+PASS leaving party disables and restores announcements
+PASS old raid-only DLL is rejected
+PASS live idle clears stale busy flag
+PASS missing stop event releases pending summon conservatively
+PASS active channel is never cleared by recovery
+PASS unknown live state preserves tracking
+PASS brief idle gap during casting is tolerated
+PASS integrated automatic party2 cast receives start event
+PASS integrated automatic raid2 cast receives start event
+PASS off clears announcements even when already off
+PASS reload clears announcements auto
+PASS reload clears announcements manual
+PASS ClassicAPI chat payload survives overwritten globals
+PASS legacy chat fallback snapshots sender before roster scan
+PASS empty ClassicAPI chat result uses legacy fallback
+PASS ClassicAPI chat errors use legacy fallback
+PASS non-request actual payload does not use corrupted trigger globals
+PASS nested spell event does not replay outer chat
+PASS addon sync payload is not replaced by chat reader
+PASS mute blocks summon say and whisper then resumes
+PASS mute clears pending status whispers and skips new replies
+PASS mute blocks forced availability announcements
+PASS raid group selection defaults to all and supports none
+PASS group selection ignores party roster
+PASS group selection releases outstanding reservation
+PASS real raid roster subgroup parsing and subgroup changes
+PASS Summon and direct row casts respect raid group selection
+PASS saved raid group selection survives initialization

@@ -1,0 +1,35 @@
+PASS reproduced duplicate cast with two uncoordinated 3.7.8 clients
+PASS 2 warlocks split requests in raid [(103.3, 'Alpha', 'Target1'), (104.4, 'Bravo', 'Target2')]
+PASS 2 warlocks split requests in party [(103.3, 'Alpha', 'Target1'), (104.4, 'Bravo', 'Target2')]
+PASS 3 warlocks split requests in raid [(103.3, 'Alpha', 'Target1'), (104.4, 'Bravo', 'Target2'), (105.5, 'Charlie', 'Target3')]
+PASS 3 warlocks split requests in party [(103.3, 'Alpha', 'Target1'), (104.4, 'Bravo', 'Target2')]
+PASS 40 randomized delayed/reordered three-client runs, five requests each
+PASS delayed acknowledgements prevent early cast
+PASS lost acknowledgements hold casting; recovery after delivery resumes
+PASS unready warlock excluded: moving
+PASS unready warlock excluded: noHelpers
+PASS unready warlock excluded: noShards
+PASS reservation handoff after off
+PASS reservation handoff after disconnect
+PASS reservation handoff after movement
+PASS handoff after native reject
+PASS handoff after native no-start
+PASS old manual summon claim prevents new automatic duplicate
+PASS bidirectional list synchronization with 3.7.8
+KNOWN LIMIT mixed new/3.7.8 simultaneous auto can still duplicate: [(103.3, 'Alpha', 'Target1'), (103.3, 'Bravo', 'Target1')]
+KNOWN LIMIT total message loss before peer discovery can duplicate
+PASS delayed ACK cannot authorize a newer reservation
+PASS out-of-order release prevents a stale reservation from returning
+PASS acceptance hold survives owner starting another target and later expires
+PASS reload during reservation re-handshakes without duplicate cast
+PASS updated manual click respects another updated warlock reservation
+PASS malformed, non-warlock, outsider and wrong-channel messages ignored
+PASS request initially visible to one warlock is shared and cast once
+PASS 60 additional randomized three-client runs, six requests each
+PASS original repository addon: list sync both directions and manual cast claim
+PASS three warlocks queue assigned raid groups without requests and split six targets
+PASS overlapping group assignments still coordinate without duplicate casts
+PASS unassigned-group requests stay queued and are not summoned
+PASS assignment change during reservation releases and reassigns targets
+PASS group queue skips offline players, is idempotent, and handles no selection
+PASS current raid subgroup moves are honored before casting

@@ -1,0 +1,338 @@
+{
+  "upstream": "https://github.com/Tom75VN/PandaConquest",
+  "source": {
+    "kind": "repository",
+    "host": "github.com",
+    "owner": "Tom75VN",
+    "repo": "PandaConquest",
+    "name": "PandaConquest",
+    "url": "https://github.com/Tom75VN/PandaConquest",
+    "api": "https://api.github.com/repos/Tom75VN/PandaConquest"
+  },
+  "commit": "251e67be9dd813b380c193daaa9f6042764787d6",
+  "sourceFiles": {
+    ".github/logo.png": {
+      "sha256": "a5203e5c769ca2e46df204a180126a09f775d1f2964f14b7271ed9d386fc1fb4",
+      "bytes": 113146
+    },
+    "core/init.lua": {
+      "sha256": "3e6d97d2a6629ac705dfc79820bec572ac2708ea69d6e492d837987d51c84baf",
+      "bytes": 4464
+    },
+    "core/send_queue.lua": {
+      "sha256": "bece0591d4a381e455d6ab5611e5f4bd736b4fab5db02b4ad63969bdf29d5ebc",
+      "bytes": 5710
+    },
+    "core/storage.lua": {
+      "sha256": "61b74e92468fe4e76383e0c71dee148fc3bce14fed2e2e751bfbf68c0377fd07",
+      "bytes": 8889
+    },
+    "core/version.lua": {
+      "sha256": "37e6c1099b74aed2b54f7f8da328ff8b367ec99a3d902e3b969c77112b8325a0",
+      "bytes": 6767
+    },
+    "data/pois.lua": {
+      "sha256": "64c08ed194b4e48281d0bdb5381950ced0d2f3fb556fd3424ec4b2a6494a2731",
+      "bytes": 28604
+    },
+    "data/ticket_keys.lua": {
+      "sha256": "41794ad91a9babb09f9f157413b59e6e71bbb3f5c857da6e96449a055b8221d4",
+      "bytes": 521
+    },
+    "data/ui_atlas.lua": {
+      "sha256": "1f4818044abd5f256d10a3ee61595e8d5790d00f5993bfd9ba469d503200194c",
+      "bytes": 10270
+    },
+    "media/Textures/Icons/MapPOIIconAtlas.tga": {
+      "sha256": "d4c0eeb358375d9121bafe75b28905f30078cb2dde20f23dd5ffc728416397e8",
+      "bytes": 316567
+    },
+    "media/Textures/Icons/War3Units/BTNDemolisher.tga": {
+      "sha256": "89a9a2d8879be5a7ab58b900c56275c5376610bcae3238f3e865672c596e1316",
+      "bytes": 12332
+    },
+    "media/Textures/Icons/War3Units/BTNFootman.tga": {
+      "sha256": "d7c9ad42c04b439e258f80648bab78efd39f63e4cae8ac48e0352cefc9ad1cc5",
+      "bytes": 12332
+    },
+    "media/Textures/Icons/War3Units/BTNGrunt.tga": {
+      "sha256": "293cc58fbbf31a5c5919d91f01376b5f9e8db0fd0de9253d2eac499ace1bb50f",
+      "bytes": 12332
+    },
+    "media/Textures/Icons/War3Units/BTNHeadhunter.tga": {
+      "sha256": "f848af3f4bd21cda29c042cdcbf2d175cc6ac787942aa67dfa2ad613249d5e2e",
+      "bytes": 12332
+    },
+    "media/Textures/Icons/War3Units/BTNKnight.tga": {
+      "sha256": "80d14e3ea280bb614317aa50222aeee88d449ed844a52021b008e21ca00a9724",
+      "bytes": 12332
+    },
+    "media/Textures/Icons/War3Units/BTNMortarTeam.tga": {
+      "sha256": "d266e8253200ffd994e09fc8beb0a6f3402fa1db7d6be501d3f3759615955d42",
+      "bytes": 12332
+    },
+    "media/Textures/Icons/War3Units/BTNRaider.tga": {
+      "sha256": "21afdf11ff35367da1b2d3ab866f1a4180a2bde31b960cdfd4abdc4c8f9c65a4",
+      "bytes": 12332
+    },
+    "media/Textures/Icons/War3Units/BTNRifleman.tga": {
+      "sha256": "1372318c8348142ed5c4b0dcbc8ef1d026acb7e2bfcb3db516ee78d33289961b",
+      "bytes": 12332
+    },
+    "media/Textures/Map/Contours/AreaContourProfileStrong.tga": {
+      "sha256": "ce8dbe444d70555bd5c91c48fd9a6fd15d9b9d632d5c72ae7515ca18205e75ee",
+      "bytes": 191506
+    },
+    "media/Textures/UI/LoadingArrow.tga": {
+      "sha256": "a5764d9477953f271f6ae11aaaac12fae01e628fc43699bdd4ef33abc2c4c92e",
+      "bytes": 16428
+    },
+    "media/Textures/UI/MapCheckbox.tga": {
+      "sha256": "a769dac5f43a221ae40c990db99ce72e34b87710eb27f2aba5bc974879231216",
+      "bytes": 4351
+    },
+    "media/Textures/UI/PCMap1.tga": {
+      "sha256": "38aed6750e99410ff9cf14df535aac78e8cd9548797c378b04297446dac2e9b6",
+      "bytes": 228426
+    },
+    "media/Textures/UI/PCUI1.tga": {
+      "sha256": "c614393040e3168c8096f21974b9ae1dbf1bbaa814d7583d2278583efc2f5404",
+      "bytes": 551174
+    },
+    "media/Textures/UI/PCUI10.tga": {
+      "sha256": "ae6e346e2407f87d5358760d665da8efb903190d42e2d2cee8a5534d56ae98f7",
+      "bytes": 514662
+    },
+    "media/Textures/UI/PCUI11.tga": {
+      "sha256": "022dc458fc1559684fbd0e12bbf0bc566c7b7cd0830a4c20f695f59602f80589",
+      "bytes": 596834
+    },
+    "media/Textures/UI/PCUI12.tga": {
+      "sha256": "4cd25f7e1f11930d13a539898f98c00781c32382c03c9809981f4f6a7bed58eb",
+      "bytes": 516381
+    },
+    "media/Textures/UI/PCUI13.tga": {
+      "sha256": "28a600442e94a752ad40461528f49cb64bd18095678a7688e1c33cb4a4c748d5",
+      "bytes": 708236
+    },
+    "media/Textures/UI/PCUI14.tga": {
+      "sha256": "3cfd035968e2e458fe6bd6d90058dd6ea324c15e67b8b0827ccbb7e47c2a203a",
+      "bytes": 537835
+    },
+    "media/Textures/UI/PCUI2.tga": {
+      "sha256": "c28f8888c6950b6993825742a3b2a1405a2369ba5f12617e5d8d455935e6bbef",
+      "bytes": 571264
+    },
+    "media/Textures/UI/PCUI3.tga": {
+      "sha256": "e41f79ecd6ba89d2e7436ee640f7d63e9880f073b0672496687f9b212d9da723",
+      "bytes": 557752
+    },
+    "media/Textures/UI/PCUI4.tga": {
+      "sha256": "04200a15c45e38b82c1eb197947d749643597fb129ba5628fab6107f224d5d9f",
+      "bytes": 440435
+    },
+    "media/Textures/UI/PCUI5.tga": {
+      "sha256": "254d593e15563554bae70f9904db5110764156e7639a20878af69d83fd6bc0f1",
+      "bytes": 459863
+    },
+    "media/Textures/UI/PCUI6.tga": {
+      "sha256": "f748890b17c2642d8b8c733d6ae12a2fa62549d1477f8db4ec0f690530d1b11a",
+      "bytes": 521296
+    },
+    "media/Textures/UI/PCUI7.tga": {
+      "sha256": "a86e6a5e9404facdbf77a5ffd8affb7f4ce7df58b36ab5a8b26624c31812ddfa",
+      "bytes": 577195
+    },
+    "media/Textures/UI/PCUI8.tga": {
+      "sha256": "daef946c3986e42450ae0a9f67e7f1473e9a0756ab4b98e0a6af7da1f9c0c77c",
+      "bytes": 556112
+    },
+    "media/Textures/UI/PCUI9.tga": {
+      "sha256": "42c921380c6a053261133993a2b20259a7c7be59b4675234e4132c487b55481f",
+      "bytes": 340625
+    },
+    "modules/alpha_channel.lua": {
+      "sha256": "5a6e85d0a005faa6240be1a7c5ba5821fc23ee21ecad423b00750038956d69ba",
+      "bytes": 2841
+    },
+    "modules/area_contours.lua": {
+      "sha256": "db88fad38bcb4af1381f9fcf4c9736060296abcd90e06a55c2c8b043f929b259",
+      "bytes": 18777
+    },
+    "modules/army.lua": {
+      "sha256": "d58046426d2b4d2496bf73f547d57944e75c488da9c13f4b0765847185aad998",
+      "bytes": 11684
+    },
+    "modules/attack.lua": {
+      "sha256": "2d9430692dea2540c4ea78d2d46b62be0806cc64b6209c59ab0e94675748d3a7",
+      "bytes": 39830
+    },
+    "modules/capture_hud.lua": {
+      "sha256": "f54b54fc146804f6ee95957751a44b0157d4d00a42f13d94017dfdd7020374af",
+      "bytes": 34408
+    },
+    "modules/capture.lua": {
+      "sha256": "5659fcc5dc26ca045670640de994a4ad1147c0b9e6b97965fe10a3127d86db7a",
+      "bytes": 87013
+    },
+    "modules/catchup.lua": {
+      "sha256": "17ef4eef14b1ead7204df95a8535a9927b667e29b099b80380f0a62c340f6a60",
+      "bytes": 14669
+    },
+    "modules/companion.lua": {
+      "sha256": "f8a7b6f908902048afa50cb7e3388016802cfcccd8c2570eb2186e16c247a37e",
+      "bytes": 9969
+    },
+    "modules/economy.lua": {
+      "sha256": "f7616b412325b8556ebfe940f3cddccb2d60a12f2813615bc89e047a2f09fa96",
+      "bytes": 3450
+    },
+    "modules/ed25519.lua": {
+      "sha256": "f84d111175dac35789dc86088e11347b7181ab1d622b7f79c19a5319be170b9b",
+      "bytes": 23124
+    },
+    "modules/file_probe.lua": {
+      "sha256": "3393f661217275c6db58b3d67c777250262b253059f024c579cce734995a9219",
+      "bytes": 8970
+    },
+    "modules/garrison.lua": {
+      "sha256": "81a798f46b3dbd47c4a34dc3dc019a7ae2a4dc746c8e53fb84c2350da662dac1",
+      "bytes": 40606
+    },
+    "modules/hunting.lua": {
+      "sha256": "4ab737ed3f9ba2cd90c1ec72d193aba95e504925953a07681e6e725c5529ec39",
+      "bytes": 23001
+    },
+    "modules/import.lua": {
+      "sha256": "dd183d73b79b9adbb8036046e1c4406daa189ec4f74e187c315c30352f74642a",
+      "bytes": 19021
+    },
+    "modules/main_window_classic.lua": {
+      "sha256": "6a96b2faa5a43862246743b936f85d2a6da8ea1344b96ddf174a8d35d9b40996",
+      "bytes": 40040
+    },
+    "modules/main_window.lua": {
+      "sha256": "d691ac54aaeef8c08c6121921fd24cdaacc582e1be6a0803feebeaefe4dfe812",
+      "bytes": 74110
+    },
+    "modules/map.lua": {
+      "sha256": "557fd0e34a60fe48fb17bb6b457ea2bbd988490ebaa05096a13211b89b4528bd",
+      "bytes": 90513
+    },
+    "modules/minimap_areas.lua": {
+      "sha256": "5ff240532dfd4990cf70a31ed69568aebbd8c67b76b1b28714c37956972276b9",
+      "bytes": 12966
+    },
+    "modules/minimap_button.lua": {
+      "sha256": "143d74b747e89adf7580eac1c262fad32b4db00d0f0018a7215532d7639dd3bd",
+      "bytes": 6343
+    },
+    "modules/p2ptest.lua": {
+      "sha256": "2d60847e6aef2729d574ba0173a8b38c003828ca37cef53cd04e528e3871f2e2",
+      "bytes": 80325
+    },
+    "modules/presence.lua": {
+      "sha256": "c561b06a59be6287a4e02161afbedb3f9b4977a3eda508e369109d5029732c0e",
+      "bytes": 8127
+    },
+    "modules/progress.lua": {
+      "sha256": "063d6a4cd45a7fe3161d513f4435e9e2997f432a7db67264bcb465a3d28ae0a9",
+      "bytes": 5965
+    },
+    "modules/scout.lua": {
+      "sha256": "1ec35cccddc822acd53a3da746eb21c99f9f2a1b0d89a296a3aaf1cbf3bb20d1",
+      "bytes": 26801
+    },
+    "modules/stock.lua": {
+      "sha256": "709c1ca6244dc3ed6e45c3d2b78481fbaca86d1ee885922c20ed9da99065df71",
+      "bytes": 21532
+    },
+    "modules/ticket.lua": {
+      "sha256": "231936c81fe0b8a5168230e3bb1f2ea590363f96718bcccf9588b6bbb738282c",
+      "bytes": 19596
+    },
+    "modules/ui_skin.lua": {
+      "sha256": "e50fce975fe9fb648a00f3d2c878ca354d3d4ee6521fdfd5a461f93c4e54377d",
+      "bytes": 18253
+    },
+    "modules/witness.lua": {
+      "sha256": "d31cbecb611b15dd4718ffb4b8caaf3975ab78142d6cfbdec7da24ea058cfb36",
+      "bytes": 5127
+    },
+    "pandaConquest.toc": {
+      "sha256": "ce17fca4aba39332f236d654f913a115f21e0cadb493fd17136bd3aa1af24bb3",
+      "bytes": 986
+    },
+    "README.md": {
+      "sha256": "1ce9251f3d5fa7962dfacf26321f646fb5410300d1430a9ed3bca5f75660b95c",
+      "bytes": 9985
+    },
+    "screenshots/capture-hud.jpg": {
+      "sha256": "c7f3ffc9127dff2c537e709751f7e1b5cc982ab1b2165b4a6c97a40f3dc8a51c",
+      "bytes": 41340
+    },
+    "screenshots/map-barrens.jpg": {
+      "sha256": "cb7f3d9f562817303b3cac25993803a6aeb4f0f2a830769ca0657b0db2b8f5d3",
+      "bytes": 119039
+    },
+    "screenshots/map-continent.jpg": {
+      "sha256": "078e55939df143421668977ab0dc625b075739e626b11d6d957833f66b98d815",
+      "bytes": 135094
+    },
+    "screenshots/map-elwynn.jpg": {
+      "sha256": "df719894dbddd875bf102e562e31d286b48ff579debf16a47b1cd920724f247a",
+      "bytes": 385176
+    },
+    "screenshots/map-hillsbrad.jpg": {
+      "sha256": "3c622fa3c3fe158a9109c495ec5024f5e69f106b690a7b3f5f10a64f254d7894",
+      "bytes": 340822
+    },
+    "screenshots/tab-army-alliance.jpg": {
+      "sha256": "341c7b0cceba65f73daaf9ad55daefaf637e59e9b9499934a4c13f69fd49055d",
+      "bytes": 209938
+    },
+    "screenshots/tab-army-horde.jpg": {
+      "sha256": "2c4dabc55c7281b357a0c9ab60e2845536af87cb600ee81aee5334babe363392",
+      "bytes": 205059
+    },
+    "screenshots/tab-garrison.jpg": {
+      "sha256": "c0a072756a06cbc9e5563bdae565ce5154b293c6702f2159f62b0eeae5753b3d",
+      "bytes": 209605
+    },
+    "screenshots/tab-resources.jpg": {
+      "sha256": "ec609391843e1c05448f41190dd5cea6b23c38f49de2db17812e754df907a8da",
+      "bytes": 225003
+    },
+    "screenshots/tab-territory.jpg": {
+      "sha256": "7186c2692b9c2a859059768bdc726deef1a4d3be35d41967d3964362e302dfa0",
+      "bytes": 231389
+    },
+    "screenshots/tab-war.jpg": {
+      "sha256": "e3d9f38d64edb01eccb2b91afbe9762e74113761f9515287bde71533e9884ed7",
+      "bytes": 201557
+    }
+  },
+  "symlinks": {},
+  "releases": {
+    "429366061": {
+      "tag": "v0.1.0",
+      "folder": "v0.1.0--429366061",
+      "assets": {
+        "693038670": {
+          "sha256": "7968581cd521af6828ce11ba6b1716e21c97e9b8ea8d17ee3f90143852b2a9f1",
+          "bytes": 5750278,
+          "id": "693038670",
+          "name": "pandaConquest-0.1.0.zip",
+          "url": "https://github.com/Tom75VN/PandaConquest/releases/download/v0.1.0/pandaConquest-0.1.0.zip",
+          "path": "releases/v0.1.0--429366061/assets/pandaConquest-0.1.0.zip"
+        }
+      },
+      "source": {
+        "sha256": "32944ae70d5d6ab91701b6a9bb91ccc0be681d53dfb681ba679327265532f194",
+        "bytes": 7909895,
+        "path": "releases/v0.1.0--429366061/upstream-source.tar.gz",
+        "url": "https://api.github.com/repos/Tom75VN/PandaConquest/tarball/v0.1.0"
+      }
+    }
+  }
+}

@@ -1,0 +1,878 @@
+# Framecrash Research
+
+## The Crash
+
+```
+ERROR #132 (0x85100084) Fatal Exception
+Exception: 0xC0000005 (ACCESS_VIOLATION) at 0023:007A2452
+The instruction at "0x007A2452" referenced memory at "0x16C0FFE8".
+The memory could not be "read".
+```
+
+Crash log: `/media/bigfaststore/games/twmoa_1172/Errors/2026-02-25 19.38.01 Crash.txt`
+
+### Registers at Crash
+```
+EAX=321A2188  EBX=16C0FFE4  ECX=00000000  EDX=25B94A35
+ESI=03319888  EDI=303A4588  EBP=00F2FADC  ESP=00F2FACC
+```
+
+### Crash Instruction
+```
+0x007A2452: 8B 43 04    MOV EAX, [EBX+4]   ; EBX=0x16C0FFE4 → reads 0x16C0FFE8 (decommitted page)
+```
+
+---
+
+## Call Chain
+
+```
+processGraphicsFrame    (0x764330)
+  → renderAllFrameLayers  (0x765650)
+    → processFrameUpdates
+      → DispatchHeartbeatEvent (0x76b2c0)  - fires OnUpdate
+        → ExecuteLuaCallback   (0x704f10)
+          → luaD_pcall         (0x6f6960)
+            → luaCallFunction  (0x6f6050)
+              → luaGetPoint    (0x7a2340)   ← CRASH
+```
+
+An addon's **OnUpdate** handler calls `frame:GetPoint()` on a frame whose anchor
+references a **destroyed frame** via a dangling pointer.
+
+Stack string evidence: `"DBG:MinimapButtonFrame"` visible in stack dump.
+
+---
+
+## Function: `luaGetPoint` (0x007A2340)
+
+This is the Lua API `frame:GetPoint(index)`. It returns anchor point info:
+`point, relativeTo, relativePoint, xOfs, yOfs`.
+
+### Relevant Disassembly
+
+```asm
+; === Anchor iteration loop ===
+; Frame anchor array starts at frame+0x28, 9 slots (one per POINT enum)
+0x007a23f5: LEA EAX,[EDI + 0x28]     ; anchor array start
+0x007a23f8: MOV EDI,[EAX]            ; EDI = anchor_points[i]
+0x007a23fa: TEST EDI,EDI             ; skip NULL slots
+0x007a23fc: JZ 0x007a2404
+0x007a23fe: CMP ECX,[EBP-4]          ; compare current_index with requested_index
+0x007a2401: JGE 0x007a2416           ; found the requested anchor
+0x007a2403: INC ECX
+0x007a2404: INC EBX                  ; (EBX = enum counter here, NOT the crash EBX)
+0x007a2405: ADD EAX,0x4
+0x007a2408: CMP EBX,0x9              ; 9 anchor point types max
+0x007a240b: JL 0x007a23f8
+
+; === Found anchor - get relativeTo frame ===
+0x007a2416: MOV EDX,[EDI]            ; anchor vtable
+0x007a2418: MOV ECX,EDI              ; this = anchor
+0x007a241a: CALL [EDX + 0xc]         ; vtable[3]() → GetRelativeTo → returns raw ptr
+0x007a241d: TEST EAX,EAX
+0x007a241f: JZ 0x007a24d7            ; NULL → safe "no relativeTo" path
+
+; Second call to same vfunc - gets value for real this time
+0x007a2425: MOV EAX,[EDI]
+0x007a2429: CALL [EAX + 0xc]         ; vtable[3]() again
+0x007a242c: TEST EAX,EAX
+0x007a242e: JZ 0x007a2438            ; if NULL → relativeTo = NULL
+0x007a2430: ADD EAX,-0x24            ; adjust from inner offset to frame base
+0x007a2433: MOV [EBP-4],EAX          ; store relativeTo frame ptr
+
+; Push anchor point name string onto Lua stack
+0x007a243f: MOV ECX,EBX              ; EBX = enum value
+0x007a2441: CALL PositionEnumToString ; (0x006f1890)
+0x007a244a: CALL lua_pushstring       ; (0x006f3890)
+
+; === CRASH SITE ===
+0x007a244f: MOV EBX,[EBP-4]          ; EBX = relativeTo frame ptr (DANGLING!)
+0x007a2452: MOV EAX,[EBX+4]          ; ← ACCESS VIOLATION: reads lua ref from freed frame
+0x007a2455: TEST EAX,EAX
+0x007a2457: JNZ 0x007a2462           ; if lua ref exists, skip registration
+0x007a2459: PUSH 0x0
+0x007a245b: MOV ECX,EBX
+0x007a245d: CALL RegisterFrameScriptReference  ; (0x00701bd0)
+0x007a2462: MOV ECX,[EBX+8]          ; lua reference index
+...
+```
+
+### Safe "no relativeTo" path (0x007a24d7)
+When `GetRelativeTo()` returns NULL, execution jumps here and pushes just
+the point name + x/y offsets, skipping the relativeTo frame entirely.
+
+---
+
+## Anchor Object Structure (0x14 = 20 bytes)
+
+Discovered from `SetAnimationOrder` (0x00767c70) - the internal C++ `SetPoint`:
+
+```
+Offset  Size  Field
++0x00   4     vtable pointer = PTR_GetAnimationOrder_0081c44c
++0x04   4     x offset (float)
++0x08   4     y offset (float)
++0x0C   4     relativeTo frame pointer (RAW - no refcount, no validation!)
++0x10   4     relative point enum (uint)
+```
+
+**Vtable address**: `0x0081c44c` (in .rdata)
+**vtable[3]** (at vtable+0xC = `0x0081c458`): GetRelativeTo - simply returns `this+0x0C`
+
+### Anchor Creation (in SetAnimationOrder)
+```c
+// Allocate 0x14 bytes
+anchor = M2_AllocateModelBuffer(0x14, ...);
+anchor->xOfs = param_4;            // +0x04
+anchor->yOfs = param_5;            // +0x08
+anchor->relativeTo = param_2;      // +0x0C  ← RAW POINTER, no ref held
+anchor->relativePoint = param_3;   // +0x10
+anchor->vtable = &PTR_0081c44c;    // +0x00
+
+// Store in frame's anchor array
+frame_anchors[pointEnum] = anchor;  // frame + enum*4 + 0x28
+```
+
+### Anchor Destruction
+When a frame is destroyed (`DestroyFrame` 0x773240 / `DestroyFrameScriptObject` 0x4c34a0):
+- The frame's own anchors are cleaned up
+- But **no notification is sent to OTHER frames whose anchors reference this frame**
+- Result: dangling pointer at `anchor+0x0C`
+
+---
+
+## Root Cause
+
+**The anchor stores a raw pointer to the relativeTo frame with no weak reference or
+invalidation mechanism.** When the relativeTo frame is destroyed:
+
+1. Frame memory is freed (and potentially decommitted by the OS)
+2. The anchor's `relativeTo` pointer at +0x0C is NOT cleared
+3. Next time `GetPoint()` is called, `GetRelativeTo()` returns the stale pointer
+4. The code dereferences it → ACCESS_VIOLATION
+
+---
+
+## Relevant WoW Functions & Globals
+
+### Frame Validation
+| Address | Name | Purpose |
+|---------|------|---------|
+| 0x787910 | `ValidateFrameTypePointer` | Compares value against `g_ParentFrameTypeID`, `g_FrameTypeID` |
+| 0x789480 | `ValidatePointerType` | Same pattern, different type set |
+| 0x403f50 | `ValidateObjectPointer` | Calls `IsBadReadPtr` via `[0x007ff2b8]` |
+| 0x4c38a0 | `FrameScript_ValidateMemory` | Global memory validation |
+
+### Type ID Globals (runtime values, .bss - not readable from Ghidra)
+| Address | Name |
+|---------|------|
+| 0x00cf0c10 | `g_ParentFrameTypeID` |
+| 0x00cf0c3c | `g_FrameTypeID` |
+| 0x00cf4f2c | Frame type ID (specific subclass) |
+| 0x00cf4f48 | Frame type ID (specific subclass) |
+
+### Frame Lifecycle
+| Address | Name |
+|---------|------|
+| 0x773240 | `DestroyFrame` - clears fields +0/+4, unlinks |
+| 0x4c34a0 | `DestroyFrameScriptObject` - clears lua ref, unlinks from list, frees |
+| 0x4c3510 | `FrameScript_InsertIntoList` |
+| 0x4c3c10 | `FrameScript_UnlinkFromList` |
+| 0x701bd0 | `RegisterFrameScriptReference` - creates Lua table + metatable for frame |
+
+### Anchor Functions
+| Address | Name |
+|---------|------|
+| 0x767c70 | `SetAnimationOrder` - internal SetPoint (creates anchor object) |
+| 0x768010 | `IsAnimationPlaying` - recursive anchor dependency check |
+| 0x7a2340 | `luaGetPoint` - Lua API, CRASH SITE |
+| 0x7a2540 | `luaSetPoint` - Lua API |
+| 0x7a2940 | `luaClearAllPoints` - Lua API |
+
+### Windows API
+| IAT Address | API |
+|-------------|-----|
+| 0x007ff2b8 | `IsBadReadPtr` (used by `ValidateObjectPointer`) |
+
+---
+
+## Fix Strategies
+
+### Option A: Inline Hook at Crash Site (minimal, symptom fix)
+Patch 6 bytes at `0x007a244f` (MOV EBX,[EBP-4] + MOV EAX,[EBX+4]):
+```
+Original: 8B 5D FC 8B 43 04   → JMP trampoline + NOP
+```
+Trampoline:
+1. `MOV EBX,[EBP-4]` (original)
+2. `TEST EBX,EBX` / `JZ no_relative` (→ 0x007a24d7)
+3. Validate EBX via `IsBadReadPtr([0x007ff2b8])` or VirtualQuery
+4. If invalid → JMP 0x007a24d7 (safe path)
+5. If valid → `MOV EAX,[EBX+4]` + JMP 0x007a2455
+
+**Pro**: Minimal patch, only affects GetPoint
+**Con**: Only fixes this one crash site; other code using GetRelativeTo is still vulnerable
+
+### Option B: Hook Anchor vtable[3] (GetRelativeTo)
+Replace function pointer at `0x0081c458` with our own GetRelativeTo:
+1. Read `this+0x0C` (relativeTo pointer)
+2. If NULL → return NULL
+3. Call `IsBadReadPtr(ptr, 0x10)` via `[0x007ff2b8]`
+4. If bad → clear `this+0x0C` to NULL, return NULL
+5. If good → return original value
+
+**Pro**: Protects ALL callers of GetRelativeTo, self-healing (clears stale ptr)
+**Con**: Modifies vtable in .rdata (need VirtualProtect), slight overhead on every anchor access
+
+### Option C: Hook Frame Destruction (root cause fix)
+Hook `DestroyFrameScriptObject` (0x4c34a0) to scan all frames' anchors and
+clear any that reference the frame being destroyed.
+
+**Pro**: Fixes the root cause, no runtime overhead on GetPoint
+**Con**: Complex, needs to iterate all frames, frame list structure must be understood
+
+### Recommended: Option B ← IMPLEMENTED
+The vtable hook is the best balance of robustness and simplicity. It:
+- Uses WoW's own `IsBadReadPtr` import (no new API dependencies)
+- Self-heals by NULLing the stale pointer on first detection
+- Protects all code paths, not just GetPoint
+- The vtable is a single pointer write (after VirtualProtect)
+
+Implementation: `src/framecrash/framecrash.zig`
+
+---
+
+## Second Crash: `luaGetWidth` NULL Layout Pointer (0x007A2FB8)
+
+**NOT related to the anchor/GetRelativeTo fix above.** This is a separate bug.
+
+Crash log: `/media/bigfaststore/games/twmoa_1172/Errors/2026-02-27 12.37.03 Crash.txt`
+
+### Crash Details
+```
+Exception: 0xC0000005 (ACCESS_VIOLATION) at 0023:007A2FB8
+The instruction at "0x007A2FB8" referenced memory at "0x0000003C".
+The memory could not be "read".
+```
+
+### Registers
+```
+EAX=3F4F5C29  EBX=0081C3D0  ECX=00000000  EDX=0081C44C
+ESI=16D046A8  EDI=17077C2C  EBP=00F2F7EC  ESP=00F2F7D8
+```
+
+### Crash Instruction
+```
+0x007A2FB8: F6 41 3C 02    TEST byte ptr [ECX+0x3C], 0x02   ; ECX=0 → reads 0x0000003C
+```
+
+ECX is NULL - the frame/layout object pointer is missing.
+
+**Note**: EDX=0x0081C44C (the anchor vtable) is just a leftover register value,
+NOT caused by our vtable hook. EDX is not used at the crash site.
+
+### Call Chain
+```
+GetAnimationSmoothing       (0x768d20)
+  → calculate_negative...   (0x7673d0)  - pushes 0x0081C3D0, calls SetFrameHitTestMode
+    → SetFrameHitTestMode   (0x7671a0)  - iterates anchors, calls vtable[1] (+0x04)
+      → luaGetWidth          (0x7a2f90)  ← CRASH: ECX=NULL
+```
+
+This crashes during **frame layout calculation at startup** - the frame layout
+system is computing dimensions, and a frame's layout dependency (parent or
+anchor target) is NULL.
+
+### Key Disassembly (crash site in luaGetWidth)
+```asm
+; luaGetWidth prologue - sets up local vars
+0x007a2faa: MOV [EBP-8], 0x0
+0x007a2fb1: MOV [EBP-4], 0x0
+0x007a2fb8: TEST byte ptr [ECX+0x3C], 0x02    ← CRASH (ECX=NULL)
+0x007a2fbc: JZ 0x007a2fc5                      ; skip if flag not set
+0x007a2fbe: PUSH 0x0
+0x007a2fc0: CALL 0x00768060
+```
+
+### Caller (0x007673E7)
+```asm
+0x007673e7: PUSH 0x81c3d0                      ; NOT the anchor vtable (0x81c44c)
+0x007673ec: MOV ECX, ESI                        ; frame object
+0x007673ee: MOV [ESI+0x28], EAX                 ; store layout result
+0x007673f1: CALL SetFrameHitTestMode (0x7671a0)
+```
+
+### Full Disassembly (luaGetWidth entry → crash)
+```asm
+0x007a2f90: PUSH EBP
+0x007a2f91: MOV EBP, ESP
+0x007a2f93: SUB ESP, 0x10
+0x007a2f96: PUSH ESI
+0x007a2f97: MOV ESI, ECX              ; save original this (anchor) to ESI
+0x007a2f99: MOV ECX, [ESI+0xC]        ; ECX = anchor->relativeTo (NULL!)
+0x007a2f9c: MOV [EBP-0x10], 0x0
+0x007a2fa3: MOV [EBP-0xC], 0x0
+0x007a2faa: MOV [EBP-0x8], 0x0
+0x007a2fb1: MOV [EBP-0x4], 0x0
+0x007a2fb8: TEST byte ptr [ECX+0x3C], 0x02    ← CRASH (ECX=NULL from ESI+0xC)
+```
+
+### SetFrameHitTestMode Call Site
+```asm
+0x007671b4: MOV EAX, [EBX+ESI*4]       ; load index from array at 0x81c3d0
+0x007671b7: MOV ECX, [EDI+EAX*4+0x4]   ; load anchor from frame[index]
+0x007671bb: TEST ECX, ECX               ; NULL check on ANCHOR (not relativeTo)
+0x007671bd: JZ skip
+0x007671bf: MOV EAX, [EDI+0x58]        ; load frame->field_0x58
+0x007671c2: MOV EDX, [ECX]             ; EDX = anchor vtable (0x81c44c)
+0x007671c4: PUSH EAX                    ; push param
+0x007671c5: CALL [EDX+0x4]             ; call vtable[1] = luaGetWidth
+0x007671c8: FLD ST0                     ; duplicate float return
+0x007671ca: FCOMP [0x00cf550c]          ; compare with sentinel
+```
+
+### Root Cause (CONFIRMED)
+
+`SetFrameHitTestMode` checks that the anchor object is non-NULL, but
+`luaGetWidth` / `luaGetHeight` read `anchor+0x0C` (the relativeTo pointer)
+and dereference it at `+0x3C` **without** a NULL check. The anchor exists,
+but its `relativeTo` field is NULL (no target frame set).
+
+**`0x0081C3D0` is NOT a vtable** - it's a static array of 3 anchor-point indices:
+`[0, 3, 6]`, used by the width layout pass. `SetFrameHitTestMode` iterates these
+indices to look up anchors from the frame's anchor array.
+
+---
+
+## Third Crash: GetWidth/GetHeight Stack Parameter Mismatch
+
+### Problem
+
+After hooking vtable[1] (GetWidth) and vtable[2] (GetHeight), the game crashed
+with stack corruption. The hooks were defined with signature `fn(this: u32) f32`
+but the actual functions take an extra stack parameter.
+
+### Root Cause
+
+`SetFrameHitTestMode` (0x7671a0) calls `vtable[1]` with `PUSH EAX` before the
+call - passing 1 stack argument. Since GetWidth/GetHeight are `__thiscall`, the
+callee must clean up this argument (RET 4). Our hooks with no stack parameter
+used RET 0, leaving 4 bytes on the stack after every call, causing misalignment
+and eventual crash.
+
+### Fix
+
+Changed hook signatures to include the extra parameter:
+```zig
+fn getWidthHook(this: u32, param: u32) callconv(THISCALL) f32
+fn getHeightHook(this: u32, param: u32) callconv(THISCALL) f32
+```
+
+The `param` value comes from `frame+0x58` and is passed through to the original.
+
+---
+
+## Frame Name Discovery
+
+### CFrame + 0x98 = Name String Pointer
+
+Confirmed via Ghidra decompilation of three functions:
+
+**GetName virtual** at vtable[1] (0x46ff70):
+```c
+char * GetName(CFrame *this) {
+    return *(char **)(this + 0x98);  // simply returns the name pointer
+}
+```
+
+**SetFrameName** (0x76c650):
+```c
+void SetFrameName(CFrame *this, char *name) {
+    // Frees old name at +0x98 if set
+    // Allocates + copies new name to +0x98
+}
+```
+
+**CleanupRegion** (0x76c560):
+```c
+void CleanupRegion(CFrame *this) {
+    // Frees name string at +0x98
+    *(this + 0x98) = NULL;
+    // ... other cleanup
+}
+```
+
+### CLayoutFrame Offset
+
+CLayoutFrame is an inner object within CFrame, starting at CFrame + 0x24.
+So given a CLayoutFrame pointer (e.g., relativeTo from an anchor):
+- `CFrame base = CLayoutFrame_ptr - 0x24`
+- `Frame name = *(CFrame_base + 0x98)` = `*(CLayoutFrame_ptr - 0x24 + 0x98)`
+
+---
+
+## Destruction Path Analysis (Ghidra)
+
+### cleanup_linked_list_structures (0x767720) - The Bottleneck
+
+All frame destruction goes through this function. Exactly 3 direct callers:
+
+| Caller | Address | Context |
+|--------|---------|---------|
+| `destroy_object` | 0x7676f0 | Direct frame destruction |
+| `CleanupRegion` | 0x76c560 | Region cleanup (called by WorldObjectBaseDestructor) |
+| `cleanupGraphicsResources` | 0x764390 | Graphics teardown |
+
+### WorldObjectBaseDestructor (0x7693b0) - Common Base
+
+All frame-type destructors eventually call `WorldObjectBaseDestructor`, which:
+1. Calls `cleanup_linked_list_structures(param_1 + 9)` - **our hook fires here**
+2. Calls `CleanupRegion` - also calls `cleanup_linked_list_structures`
+3. Calls `FrameScript_Destructor` (base class cleanup, list unlinking)
+
+16 callers of WorldObjectBaseDestructor (all are frame-type destructors):
+`WorldObjectDestructor`, `ChatBubbleFrame_Destructor`, `cleanup_minimap_object`,
+`CleanupLineObjectManager`, `cleanup_object_manager`, `SetAnimationRotation`,
+`CleanupPlayerModel`, `DestroyButtonResources`, `DestroyEditBoxResources`,
+`statusBarCleanupResources`, `cleanupMessageFrameResources`, `cleanupScrollFrame`,
+`CleanupObjectManager`, `CleanupColorSelectFrame`, `CleanupMovieFrame`, `luaIsVisible`
+
+### DestroyFrame (0x773240) - NOT a Destruction Path
+
+Only called from `InitializeFrameProperties` (0x7731d0). This is a **re-initialization**
+path, not frame destruction. No need to hook.
+
+### DestroyFrameScriptObject (0x4c34a0) - Vtable Entry, Already Covered
+
+Referenced only as DATA at `0x806cb8` (vtable slot). `FrameScript_Destructor` (0x4c3690)
+sets the vtable to this and does list unlinking / FreeMemory. It runs **after**
+`WorldObjectBaseDestructor`, so `cleanup_linked_list_structures` has already been
+called by the time this executes. No need to hook.
+
+### Conclusion
+
+**Our single hook on `cleanup_linked_list_structures` covers all frame destruction paths.**
+The vtable hooks (GetWidth/GetHeight/GetRelativeTo) remain as defense-in-depth but
+are not expected to fire during normal operation - they would only catch bugs in
+our cleanup logic or unknown destruction paths.
+
+### Anchor Vtable (0x0081C44C) - Full Layout
+```
+[0] +0x00 = 0x00767d80 → GetAnimationOrder (destructor)
+[1] +0x04 = 0x007a2f90 → luaGetWidth       ← CRASH FUNCTION
+[2] +0x08 = 0x007a3070 → luaGetHeight      ← SAME VULNERABILITY
+[3] +0x0C = 0x00767d70 → GetRelativeTo     (already hooked)
+```
+
+### Fix Attempt: vtable[1]/[2] hook returning 0.0 - REVERTED
+
+Hooked vtable[1] (GetWidth) and vtable[2] (GetHeight) with wrappers that
+returned 0.0 when relativeTo was NULL/dangling. **This broke UI layout** because:
+1. 0.0 is not the sentinel value that `SetFrameHitTestMode` expects
+   (it compares via `FCOMP [0x00cf550c]` - a runtime .bss value)
+2. The functions have side effects (IsAnimationDone, GetAnimationTarget calls)
+   that update layout state - skipping them entirely is wrong
+
+### Relationship Between Crash 1 and Crash 2
+
+The GetRelativeTo hook (crash 1 fix) self-heals by NULLing anchor+0x0C when
+it detects a dangling pointer. But GetWidth/GetHeight read anchor+0x0C
+**directly** (not through vtable[3]), so they see the now-NULL value and crash.
+The two crashes are likely the same underlying issue - the GetRelativeTo hook
+is masking the dangling pointer but exposing it as a NULL pointer to other code.
+
+---
+
+## Root Cause Analysis: Frame Destruction Missing Anchor Cleanup
+
+### Dependency Tracking System
+
+WoW's frame system tracks anchor dependencies via `PauseAnimationGroup` /
+`ResumeAnimationGroup`:
+
+**PauseAnimationGroup(relativeTo_frame, owner_frame, bitmask)** - 0x767ee0
+- Called by `SetAnimationOrder` (SetPoint) when creating an anchor
+- Maintains a linked list on `relativeTo_frame+0x30/0x34`
+- Each node is 0x10 bytes: `[link0, next_ptr(+4), owner_frame(+8), bitmask(+C)]`
+- Bitmask = `1 << anchor_point_enum` - tracks which anchor slots reference this frame
+- If owner already in list, ORs in the new bitmask bits
+
+**ResumeAnimationGroup(relativeTo_frame, owner_frame, bitmask)** - 0x767fa0
+- Called when replacing/removing an anchor
+- Walks list at `relativeTo_frame+0x34`, finds matching owner
+- Clears bitmask bits: `node+0xC &= ~bitmask`
+- If bitmask reaches 0, unlinks and frees the node
+
+### Proper Anchor Cleanup (exists but not called on destruction)
+
+**cleanup_array_of_objects** (0x767620) - cleans up a frame's OWN anchors:
+```c
+for i in 0..9:
+    anchor = *(frame + i*4 + 4)     // anchor slot
+    if anchor != NULL:
+        relativeTo = anchor->vtable[3]()  // GetRelativeTo
+        if relativeTo != NULL:
+            ResumeAnimationGroup(relativeTo, frame, 1 << i)  // unregister dependency
+        anchor->vtable[0](1)  // destructor
+        *(frame + i*4 + 4) = 0
+```
+
+Called from: `SetAnimationOrigin` (0x768e20), `StartAnimationGroup` (0x767db0),
+`GetAnimationEndDelay` (0x768430) - **never during frame destruction**.
+
+### Frame Destruction Chain
+
+```
+destroy_object (0x7676f0) - thiscall(frame, free_flag)
+  -> cleanup_linked_list_structures (0x767720) - thiscall(frame)
+       -> sets vtable to CLayoutFrame base (0x81c400)
+       -> SetAnimationOrigin(frame) -> cleanup_array_of_objects(frame)
+            ^ cleans up THIS frame's own anchors (forward direction)
+            ^ MISSING: cleanup of OTHER frames' anchors pointing to this frame
+       -> unlinks from various lists
+  -> if (free_flag & 1): FreeMemory(frame)
+```
+
+Also called from: `CleanupRegion` (0x76c560), `cleanupGraphicsResources` (0x764390)
+
+### The Bug
+
+When frame B is destroyed:
+1. `cleanup_array_of_objects(B)` cleans up B's own anchors (calls
+   ResumeAnimationGroup on each of B's relativeTo frames) ✓
+2. **MISSING**: Nobody walks B's dependency list at B+0x30/0x34 to clean up
+   other frames' anchors that reference B ✗
+3. Frame A's anchor still has `anchor+0xC = B` (now freed/stale)
+4. Any code that reads the anchor's relativeTo → crash
+
+### Proposed Root Cause Fix
+
+Hook `cleanup_linked_list_structures` (0x767720). Before calling the original:
+1. Walk the dependency list at `dying_frame+0x34`
+2. For each entry `(owner_frame, bitmask)`:
+   - For each bit `i` in bitmask:
+     - `anchor = *(owner_frame + i*4 + 4)`
+     - If anchor != NULL and `*(anchor+0xC) == dying_frame`:
+       - Call `anchor->vtable[0](1)` to destroy the anchor
+       - `*(owner_frame + i*4 + 4) = 0` to clear the slot
+   - Free the dependency list node
+3. Clear `dying_frame+0x30/0x34`
+4. Call original `cleanup_linked_list_structures`
+
+This uses the game's own anchor destructor and cleans up the dependency list.
+The existing GetRelativeTo vtable hook can be kept as defense-in-depth.
+
+### cleanup_linked_list_structures Prologue (for detour)
+```asm
+0x767720: 53                   PUSH EBX          ; 1 byte
+0x767721: 56                   PUSH ESI          ; 1 byte
+0x767722: 8B F1                MOV ESI, ECX      ; 2 bytes
+0x767724: 57                   PUSH EDI          ; 1 byte
+0x767725: C7 06 00 C4 81 00    MOV [ESI], 0x81c400  ; 6 bytes (vtable set)
+0x76772b: E8 F0 16 00 00       CALL SetAnimationOrigin ; 5 bytes
+```
+First 5 bytes (53 56 8B F1 57) can be replaced with JMP rel32 for a detour.
+
+---
+
+## Stale UIParent Pointer - The Persistent Unknown Destruction Path
+
+### Discovery
+
+One persistent stale pointer escapes ALL hooked destruction paths. Pattern:
+- Address always ends in `X008` (e.g., `0x17f20008`, `0x17fb4008`, `0x03bc0008`)
+- CFrame base = addr - 0x24 = `XXXXffe4` - crosses page boundary
+- First page (containing CFrame base, vtable) is DECOMMITTED
+- Second page (containing CLayoutFrame inner at +0x24) survives
+- Frame name at CFrame+0x98 reads garbage (`"t%Ç"`) from residual second-page data
+- NOT in destruction history ring buffer - never went through any hooked detour
+
+### Diagnostic Hooks Added
+
+**PauseAnimationGroup (0x767ee0)** - dependency registration tracker:
+- `__thiscall(ECX=relativeTo_frame, owner_frame, bitmask)`, RET 0x8
+- Prologue: `55 8B EC 53 8B D9` (6 bytes)
+- Silently records every registration to a 2048-entry ring buffer
+- Queried by vtable hooks when stale pointer detected
+
+**SetAnimationOrder (0x767c70)** - anchor creation validator:
+- `__thiscall(ECX=frame, point_enum, relativeTo, relPoint, xOfs, yOfs, param_6)`, RET 0x18
+- Prologue: `55 8B EC 8B 45 0C` (6 bytes)
+- Validates relativeTo AND CFrame base (relativeTo - 0x24) with IsBadReadPtr
+- Catches race condition: relativeTo already dead when anchor created
+
+### Key Finding: The Stale Frame is UIParent
+
+**Confirmed by SetAnimationOrder RACE detection.** The following frames all call
+SetAnimOrder with the dead relativeTo address:
+
+| Owner Frame | Point | Context |
+|------------|-------|---------|
+| `ScriptErrors` | 4 | Blizzard UI |
+| `GroupLootDropDown` | 0 | Blizzard UI |
+| `GroupLootFrame1` | 7 | Blizzard UI |
+| `PlayerFrame` | 0 | Blizzard UI |
+| `TargetFrame` | 0 | Blizzard UI |
+| `WorldMapFrame` | 4 | Blizzard UI |
+| `GuildBankFrame` | 0 | Blizzard UI |
+| `TransmogFrame` | 0 | Addon UI |
+| `NewTransmogAlertFrame` | 0 | Addon UI |
+| `TWTMain` | 0 | Addon UI |
+| `TWTMainSettings` | 0 | Addon UI |
+| `TWTMainTankModeWindow` | 0 | Addon UI |
+| `TWTWithAddonList` | 0 | Addon UI |
+
+**Every top-level frame** anchors to this address → it's `UIParent`.
+
+### Race Condition Confirmed
+
+- `DEP REGISTERED` - PauseAnimationGroup WAS called for the address (dependency existed)
+- But name at registration time was `"t%Ç"` (garbage) - the frame was ALREADY DEAD
+  when PauseAnimationGroup ran
+- `SetAnimOrder` RACE check: `IsBadReadPtr(relativeTo - 0x24)` FAILS (first page
+  decommitted), but `IsBadReadPtr(relativeTo)` passes (second page survives)
+- The original game code doesn't validate relativeTo at all - just stores the raw pointer
+
+### Symptom: Black Screen
+
+When vtable hooks NULL all stale relativeTo pointers, every top-level frame loses its
+anchor to UIParent → nothing can lay out → full black screen. The crash is prevented
+but the UI is broken.
+
+### Theory
+
+UIParent is destroyed through an unknown path during a UI reload/transition (character
+select → world, or loading screen). The destruction does NOT go through:
+- `cleanup_linked_list_structures` (0x767720) - hooked, not triggered
+- `destroyUIElement` (0x7645a0) - hooked, not triggered
+- `ProcessUIUpdateEvent` (0x772ec0) - hooked, not triggered
+
+A new UIParent is created at a different address, but addon/Blizzard initialization
+code passes the OLD (now dead) address to SetPoint/SetAnimOrder.
+
+### Next Steps
+
+1. Find UIParent global pointer in WoW binary (Ghidra)
+2. Determine when/how UIParent is destroyed and recreated
+3. Consider: hook SetAnimOrder to substitute live UIParent address when dead one detected
+4. Alternative: find the destruction path that frees UIParent without our hooks firing
+
+---
+
+## Ghidra RE: UIParent Resolution Mechanism
+
+### UIParent String
+
+- Address: `0x00842f14` (DATA, type=string, value="UIParent")
+- **Only 1 xref**: from `InitializeGameInterface` at `0x00490065`
+
+### GetFrameFromLua (0x76c760)
+
+Resolves a named frame from the Lua global table at runtime. Called from
+`InitializeGameInterface` to populate `PTR_00b4b44c`.
+
+**Calling convention**: `__fastcall(ECX=name_string, EDX=typeID)`, returns `CFrame*`.
+Bare `RET` (no stack cleanup -- 0 stack args).
+
+**Prologue**: `53 56 57 8B DA 8B F9` (7 bytes)
+
+**Internal call chain**:
+```
+0x76c767: CALL 0x7040d0   -- lua.getContext()  -> ESI = L
+0x76c772: CALL 0x6f3890   -- lua_pushstring(L, name)
+0x76c77e: CALL 0x6f3a40   -- lua_gettable(L, LUA_GLOBALSINDEX)
+0x76c788: CALL 0x6f3400   -- lua_type(L, -1)
+          CMP EAX, ...    -- type check (userdata? table?)
+          JZ ...          -- branch on type
+0x76c794: MOV EDX, ...    -- extract frame pointer from Lua value
+```
+
+Epilogue: two RET paths at `0x76c7a3` and `0x76c7db` (both bare `RET`).
+
+**Usage in InitializeGameInterface (0x48fbf0)**:
+```c
+g_ParentFrameTypeID = g_NextTypeID + 1;  // if not already set
+PTR_00b4b44c = GetFrameFromLua("UIParent", g_ParentFrameTypeID);
+PTR_00b4b3c4 = GetFrameFromLua("GameTooltip", another_type_id);
+```
+
+**Key insight**: This function does a live Lua global lookup every time it's called.
+We can call it from our hooks to get the CURRENT UIParent, not a cached stale pointer.
+Just need `g_ParentFrameTypeID` from `0x00cf0c10` (runtime .bss value).
+
+### g_ParentFrameTypeID (0xcf0c10)
+
+Runtime type ID for the parent frame type. Set once during initialization, stable
+for the lifetime of the process. Read from `.bss` at runtime.
+
+### Other Relevant Lookup Functions (found but not yet decompiled)
+
+| Address | Name | Notes |
+|---------|------|-------|
+| 0x4b3250 | `FindUIElementByName` | Alternative name-based lookup |
+| 0x4c3c50 | `FrameScript_GetListOffset` | Frame list traversal helper |
+| 0x4c3c80 | `FrameScript_GetListNodeAt` | Frame list node access |
+
+### Lua API Functions (confirmed addresses)
+
+| Address | Function | Ghidra Name | Notes |
+|---------|----------|-------------|-------|
+| 0x6f36e0 | `lua_tolstring` | lua_tolstring | Confirmed |
+| 0x6f3740 | `lua_touserdata` | lua_objlen (WRONG) | See below |
+| 0x6f3770 | `lua_objlen` | lua_get_userdata_size | Actual objlen |
+
+### lua_touserdata (0x6f3740) -- CONFIRMED
+
+Ghidra mislabels this as `lua_objlen`. Disassembly confirms it's `lua_touserdata`:
+```asm
+0x6f374a: MOV ECX, [EAX]          ; type tag
+0x6f374c: SUB ECX, 0x2            ; LUA_TLIGHTUSERDATA = 2
+0x6f374f: JZ 0x6f3760             ; -> return value[2] directly
+0x6f3751: SUB ECX, 0x5            ; LUA_TUSERDATA = 7 (2+5)
+0x6f3754: JZ 0x6f3759             ; -> return value[2] + 0x10 (skip Udata header)
+0x6f3756: XOR EAX, EAX            ; else return NULL
+0x6f3758: RET
+0x6f3759: MOV EAX, [EAX+8]        ; full userdata data ptr
+0x6f375c: ADD EAX, 0x10           ; skip 16-byte Udata header
+0x6f375f: RET
+0x6f3760: MOV EAX, [EAX+8]        ; lightuserdata ptr
+0x6f3763: RET
+```
+
+### GetFrameFromLua Full Flow (CONFIRMED)
+
+From decompilation and byte-level verification:
+
+```c
+CFrame* __fastcall GetFrameFromLua(ECX=name, EDX=typeID) {
+    L = getContext();                        // 0x7040d0
+    lua_pushstring(L, name);                 // push "UIParent"
+    lua_gettable(L, LUA_GLOBALSINDEX);       // EDX=0xffffd8ef (-10001)
+    type = lua_type(L, -1);                  // 0x6f3400
+    if (type != 5) {                         // 5 = LUA_TTABLE
+        lua_settop(L, -2);                   // pop, not a table
+        return NULL;
+    }
+    lua_rawgeti(L, -1, 0);                   // push table[0] (CFrame* as userdata)
+    ptr = lua_touserdata(L, -1);             // extract C pointer (0x6f3740)
+    lua_settop(L, -3);                       // pop table + userdata
+    if (ptr == NULL) return NULL;
+    if (!ptr->vtable[4](typeID)) return NULL; // validate frame type
+    return ptr;                              // CFrame base pointer
+}
+```
+
+Frame Lua representation: named frame globals are Lua **tables** with the CFrame
+pointer stored as userdata at `table[0]`. `GetFrameFromLua` extracts this, validates
+the type via vtable dispatch, and returns the raw CFrame pointer.
+
+### Heal Implementation -- STATUS: CRASHES
+
+Replaced the stale C++ global approach (`0x00B4B44C`) with a live Lua lookup via
+`hook.fastcall(u32, 0x76c760, name_ptr, type_id)`. The heal log message ("HEALED")
+appears in the console, confirming `GetFrameFromLua` returns a valid pointer. But
+the game segfaults shortly after with NO WoW crash log (bypasses the exception handler).
+
+**Current code** (in framecrash.zig):
+```zig
+fn getLiveUIParent() u32 {
+    const type_id = readAligned(G_PARENT_FRAME_TYPE_ID); // 0xcf0c10
+    if (type_id == 0) return 0;
+    const cframe_base = hook.fastcall(u32, GET_FRAME_FROM_LUA,
+        @intFromPtr(@as([*:0]const u8, "UIParent")), type_id);
+    if (cframe_base == 0) return 0;
+    // validate + name check, return CLayoutFrame inner (+ 0x24)
+}
+```
+
+Called from:
+- `setAnimOrderDetour` -- substitutes dead relativeTo BEFORE anchor creation
+- `tryFixStaleRelativeTo` -- heals existing anchors in vtable hooks
+- Vtable hooks (GetWidth/GetHeight/GetRelativeTo) -- defense-in-depth
+
+**Suspected crash causes** (not yet verified):
+
+1. **`hook.fastcall` clobber list incomplete** -- the inline asm for fastcall does
+   NOT declare ECX/EDX as clobbered after `call`. This could cause the Zig compiler
+   to assume those registers are preserved, leading to register corruption in the
+   calling detour function. Fix: rewrite getLiveUIParent to call Lua API functions
+   directly via typed function pointers (same pattern as main.zig's lua struct),
+   avoiding hook.fastcall entirely.
+
+2. **Reentrancy** -- vtable hooks (GetWidth/GetHeight) fire during layout calculation,
+   which can happen many times per frame. Each call to getLiveUIParent does a full
+   Lua stack push/pop cycle. If layout triggers a metamethod or callback that
+   reenters layout, the Lua stack could be corrupted.
+
+3. **Dependency list inconsistency** -- vtable hook HEAL path writes the new UIParent
+   address directly into `anchor+0x0C`, but the PauseAnimationGroup dependency was
+   registered on the OLD (dead) address. The dependency list on the new UIParent
+   doesn't know about these anchors. This could cause issues when the new UIParent
+   is later destroyed.
+
+### Next Steps for Heal Fix
+
+1. **Rewrite getLiveUIParent with direct Lua calls** -- use typed function pointers
+   for each Lua API function instead of hook.fastcall into GetFrameFromLua. This
+   eliminates the clobber list risk and allows per-step error checking. Key addresses:
+   - `getContext` (0x7040d0): `fn() callconv(fc) u32`
+   - `lua_pushstring` (0x6f3890): `fn(u32, [*:0]const u8) callconv(fc) void`
+   - `lua_gettable` (0x6f3a40): `fn(u32, i32) callconv(fc) void`
+   - `lua_type` (0x6f3400): `fn(u32, i32) callconv(fc) i32`
+   - `lua_settop` (0x6f3080): `fn(u32, i32) callconv(fc) void`
+   - `lua_rawgeti` (0x6f3bc0): `fn(u32, i32, i32) callconv(fc) void`
+   - `lua_touserdata` (0x6f3740): `fn(u32, i32) callconv(fc) u32`
+
+2. **Add reentrancy guard** -- static bool to prevent recursive getLiveUIParent calls.
+
+3. **Cache result** -- call GetFrameFromLua once per stale-pointer batch, reuse for
+   all heals in the same layout pass. Invalidate on next frame/event.
+
+4. **Fix dependency list** -- after healing an anchor's relativeTo, call
+   PauseAnimationGroup on the new UIParent to register the dependency. Without
+   this, the new UIParent's destruction won't clean up these anchors.
+
+### Module currently DISABLED by default
+
+Build flag changed to `orelse false` in build.zig. Enable with `-Dframecrash=true`.
+
+---
+
+## Uninvestigated: NULL this in PrepareModelForRender (0x710450)
+
+Crash observed 2026-03-25:
+```
+0x0071045A: MOV EAX, [ESI + 0x10]  -- ESI=ECX=0 (NULL this pointer)
+ACCESS_VIOLATION reading 0x00000010
+```
+
+Call chain:
+```
+CM2Scene_ExecuteRenderPass (0x708900)
+  -> RenderBatches (0x70B371)
+    -> DrawCallback (0x70D960)
+      -> ValidateClientObjectAndProcessWithManagerLookup (0x6C7780)
+        -> PrepareModelForRender (0x710450) -- CRASH
+```
+
+Root cause: at 0x6C77A8, `MOV EAX, [EAX+0xD8]` reads a field that can be NULL. The
+parent object is NULL-checked but the +0xD8 field is not. Then `MOV ECX, EAX` passes
+NULL as this to PrepareModelForRender.
+
+```asm
+0x6C77A4: TEST EAX, EAX        ; parent object null check
+0x6C77A6: JZ skip               ; OK
+0x6C77A8: MOV EAX, [EAX+0xD8]  ; read child -- CAN BE NULL
+0x6C77AE: PUSH 0
+0x6C77B0: PUSH 0
+0x6C77B2: MOV ECX, EAX          ; this = possibly NULL
+0x6C77B4: CALL PrepareModelForRender  ; CRASH if ECX=0
+```
+
+PrepareModelForRender: thiscall(ECX=this, stack: 2 params), RET 0x8.
+
+Fix options:
+1. Hook PrepareModelForRender with NULL-this guard (protects all callers)
+2. Patch call site at 0x6C77AE to add TEST EAX,EAX + JZ (needs code cave, only 11 bytes available for 15 bytes of patched code)
+3. Binary patch PrepareModelForRender prologue (needs to preserve RET 0x8 stack cleanup)

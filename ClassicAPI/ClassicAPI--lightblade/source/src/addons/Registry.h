@@ -1,0 +1,59 @@
+// This file is part of ClassicAPI.
+//
+// ClassicAPI is free software: you can redistribute it and/or modify it under the terms
+// of the GNU General Public License as published by the Free Software Foundation, either
+// version 3 of the License, or (at your option) any later version.
+//
+// ClassicAPI is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+// PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with
+// ClassicAPI. If not, see <https://www.gnu.org/licenses/>.
+
+#pragma once
+
+#include "Offsets.h"
+
+#include <cstdint>
+#include <type_traits>
+
+namespace Addons {
+
+// Walk the engine's intrusive AddOn-registry linked list, calling `fn(entry)`
+// for each `AddOnEntry *`. Head at `[VAR_ADDON_LIST_HEAD]`; the next-pointer
+// field is at `entry + [VAR_ADDON_LIST_CTRL] + 4` (= `entry + 0x10`); a
+// low-bit-1 sentinel or NULL terminates. This is the same traversal the
+// engine's own load pass (`FUN_0051F600`) and scan tail loop use.
+//
+// `fn` may return `void` (always continue) or `bool` (return `false` to STOP
+// early, e.g. once a by-name search finds its entry). A visitor must not
+// unlink the entry it is given and then continue: the walk reads that
+// entry's next-pointer after the call. Shared by `Addons::Embedded` (find the
+// embedded entry) and `Addons::Rescan` (snapshot / diff / fix-up passes).
+template <typename Fn> void ForEachEntry(Fn fn) {
+    const int linkOffset = *reinterpret_cast<const int *>(
+        static_cast<uintptr_t>(Offsets::VAR_ADDON_LIST_CTRL));
+    uintptr_t entry = *reinterpret_cast<const uintptr_t *>(
+        static_cast<uintptr_t>(Offsets::VAR_ADDON_LIST_HEAD));
+    while ((entry & 1) == 0 && entry != 0) {
+        if constexpr (std::is_void_v<decltype(fn(entry))>) {
+            fn(entry);
+        } else {
+            if (!fn(entry))
+                return;
+        }
+        entry = *reinterpret_cast<const uintptr_t *>(entry + linkOffset + 4);
+    }
+}
+
+// Resolves Lua arg 1 (index or name) to the addon's registry record, with
+// the arg handling of stock `Script_GetAddOnDependencies` (`0x0048E5E0`) —
+// the same shape 3.3.5 gives every `(index or "name")` addon global:
+// `lua_isnumber` first (so a numeric string like `"3"` is an index), an
+// out-of-range index raises the engine's own range error with the addon
+// count, anything else non-string raises `usage`, and an unknown *name*
+// returns nullptr with no error.
+const uint8_t *ResolveRecord(void *L, const char *usage);
+
+} // namespace Addons

@@ -1,0 +1,481 @@
+{
+  "upstream": "https://octowow.st/git/bdot1/DmorphOcto",
+  "source": {
+    "kind": "repository",
+    "host": "octowow.st",
+    "owner": "bdot1",
+    "repo": "DmorphOcto",
+    "name": "DmorphOcto",
+    "url": "https://octowow.st/git/bdot1/DmorphOcto",
+    "api": "https://octowow.st/git/api/v1/repos/bdot1/DmorphOcto"
+  },
+  "commit": "262333a852aeba0ef1ee42c302c84ffc6860b28a",
+  "sourceFiles": {
+    ".gitattributes.upstream": {
+      "sha256": "af56cd557ebbf4a4ecc8653bf0a4893e7cf3e703dc5be9c4ea2e61d3d982e6bb",
+      "bytes": 40
+    },
+    ".gitignore.upstream": {
+      "sha256": "acdc730d67a98397007a4ce9327e567c8532dc2c863f80587dca6be5a930341b",
+      "bytes": 227
+    },
+    "Bindings.xml": {
+      "sha256": "84f76261dfb63bf8d7fd34df23c1a0fbcfd469ae081aac55b4d7b742162a1665",
+      "bytes": 260
+    },
+    "CLAUDE.md": {
+      "sha256": "19c5780cad7fe4dbc863f5138cd67143a8eaa49ff7292995f5431cb903dfd838",
+      "bytes": 97701
+    },
+    "Data/CharOptions.lua": {
+      "sha256": "74f4249e20ddd976b270a1afe43618ad46ef6e8e6496086f074aac060b02a683",
+      "bytes": 26504
+    },
+    "Data/ClassicTags.lua": {
+      "sha256": "0046157d89432ad17dbc3ffd229c5060ee594821a1a3599260314ff5f95dd171",
+      "bytes": 25449
+    },
+    "Data/Creatures.lua": {
+      "sha256": "f73841065ac80945b48e05739eee90d2b243491c7fd6723e54f773f4677703cd",
+      "bytes": 270127
+    },
+    "Data/Glows.lua": {
+      "sha256": "2da1116e89f1a9e3766c6d3161396c0e45bb72a0ebbbb860779464ceac31fc06",
+      "bytes": 2258
+    },
+    "Data/HiddenItems.lua": {
+      "sha256": "8e5b82a41af9666a4b865718062aad9f7dce3415e74f8c511b223a4e14b02940",
+      "bytes": 512
+    },
+    "Data/HiddenModels.lua": {
+      "sha256": "c18a195afa9bee8b4d6c69791336c1d9b592e7b61842597109c97d567427aebc",
+      "bytes": 1055
+    },
+    "Data/Items.lua": {
+      "sha256": "3559870d6a9734e1f913777d75559ad9e3f374c8fb0287c41aff42d8c7f2b99f",
+      "bytes": 272187
+    },
+    "Data/ItemSets.lua": {
+      "sha256": "deb56c95d6b7f40fca073c19a0b11006159555b83bb1582919138a73f18253f1",
+      "bytes": 21535
+    },
+    "Data/ItemsExtra.lua": {
+      "sha256": "64a3d6f1aebe62db981eee75f080e4cb5b154542099f13bb95f3ed63301ad144",
+      "bytes": 146218
+    },
+    "Data/ItemTypes.lua": {
+      "sha256": "381158970b276c6019fe912e10dc4a2e663879230347c1c494a80a1326d61db0",
+      "bytes": 69967
+    },
+    "Data/Looks.lua": {
+      "sha256": "8e99fe8744c2cd1147a839e25aaeb3d8740398eb5420ccf438b6a188a86b9070",
+      "bytes": 170491
+    },
+    "Data/ModelFrames.lua": {
+      "sha256": "aeb2330d406239b4a7888a57716a3df88766c8d16677d6c8eb962d37777e8e9f",
+      "bytes": 149368
+    },
+    "Data/Models.lua": {
+      "sha256": "56475e191aacbf1efc05279900797511cfdbacdf77b1d0a97252564485400b9a",
+      "bytes": 122223
+    },
+    "Data/ModelTags.lua": {
+      "sha256": "84c85a87510581f5d748cdde5cf8925624ada96d09d31d36e8b93d5471758308",
+      "bytes": 32854
+    },
+    "Data/PortedFrames.lua": {
+      "sha256": "8dc6175ae6c9a2c61c4ddddd43e015bbaa076c3022e0dfcdfb07ac3c54d1e209",
+      "bytes": 220514
+    },
+    "Data/Slutmog.lua": {
+      "sha256": "b9bc216c5635986c1dd84fe4640d82fb0bffd9a2f809e2fd47735686bd8ba665",
+      "bytes": 1907
+    },
+    "DmorphOcto.lua": {
+      "sha256": "e5710f4493f241dd40f41271ab3037c8e193654e633a3482a1ffded397df64bb",
+      "bytes": 137228
+    },
+    "DmorphOcto.toc": {
+      "sha256": "154f5682b6174e5646de1836986da614e4fa86543a60c3341cb452bd975f6bf2",
+      "bytes": 1132
+    },
+    "docs/.nojekyll": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/banner.png": {
+      "sha256": "e5ebd595161ff80e9416b2055ae9dddf08e8242e00c5bc456aa5934be29a60fc",
+      "bytes": 1091993
+    },
+    "docs/favourites.jpg": {
+      "sha256": "d1f7eaf0389016b5c0e01c0a67b0fc998f9829055e854960336745c0dbd0d8da",
+      "bytes": 167886
+    },
+    "docs/glows.jpg": {
+      "sha256": "87084a4cfa1559ccb99f19d84b918235d4fdb862aad6e1a0192dcf234588acef",
+      "bytes": 177001
+    },
+    "docs/index.html": {
+      "sha256": "3282a4b5b793d227185bb47997450de197849e266bb41b2f7072ac9ffe179351",
+      "bytes": 21506
+    },
+    "docs/items.jpg": {
+      "sha256": "638075775cdd2394a86bf15e5ca6ef2c295247ccc426fe511dabb4625d530ab4",
+      "bytes": 187194
+    },
+    "docs/models.jpg": {
+      "sha256": "18e58960f5112f9141c7f6ae32a811fbc847a3939462f5e644788eb05541a9a2",
+      "bytes": 169288
+    },
+    "docs/morphs.jpg": {
+      "sha256": "1d10474cb41a85c39da79803f93f5cda16e1de04917e2108683a41edee4b53c7",
+      "bytes": 217064
+    },
+    "docs/mounts.jpg": {
+      "sha256": "0b1f36c256dba43d21dd720be7de6940eabf86107c932706f24bb16b96cfe917",
+      "bytes": 170899
+    },
+    "docs/ported-armour.jpg": {
+      "sha256": "619a69f0a6124b71fec312dbd95af801486847116e6cc0fbe020ffa8a4fc2f7f",
+      "bytes": 114847
+    },
+    "docs/ported-glow.jpg": {
+      "sha256": "c4c7734cce6a656f6c2f5135c3946c0e16de3c29197d10b4e0fa1328fcce6d35",
+      "bytes": 134744
+    },
+    "docs/ported-glow.webp": {
+      "sha256": "bcf8a70f5754368e4aa08a4e8d450749e1d33f978807dbbd5a29a50548cba2ba",
+      "bytes": 196718
+    },
+    "docs/ported-gunner.jpg": {
+      "sha256": "4efc702909e0562c40f70ef97eff74c72fc7e490b8e7675c8286b90fad494efc",
+      "bytes": 103545
+    },
+    "docs/ported-jetbike.jpg": {
+      "sha256": "e953f689b2aeeedb3ed41ecbec8ac47047fab8d6626bd7ed08927c1d1aa3b591",
+      "bytes": 71736
+    },
+    "docs/ported-mount.jpg": {
+      "sha256": "4f6b1049c3f26b5b907ad3a74524aa741398b8982f4a2a053fa5d675e3f5030c",
+      "bytes": 137353
+    },
+    "docs/ported-owl.jpg": {
+      "sha256": "cb8813509f0a0fd9b4bd23af72ccaaa6639031923e10b6eaed7befc33f296b51",
+      "bytes": 101125
+    },
+    "docs/ported-pandaria.jpg": {
+      "sha256": "4e33de3b795295e66465417a420f507e2b47e426e5155a4bbdbec659b40761f0",
+      "bytes": 102557
+    },
+    "docs/races.jpg": {
+      "sha256": "50393823a4bbe389d2ddceb521faa0bb3c23b8200a6b03dc0920d03ce147a63b",
+      "bytes": 179385
+    },
+    "docs/sets.jpg": {
+      "sha256": "928d6b985356504843db11c4d2433402a338280b769d9ff51cda9df68ea5865f",
+      "bytes": 182394
+    },
+    "docs/slutmog.jpg": {
+      "sha256": "047275a2d62244a5db38c84c5ab04d4d317ad489ebbafbb781e980a9c13f9954",
+      "bytes": 181128
+    },
+    "docs/src/banner.html": {
+      "sha256": "098f8e3bbb9abeda4166933ef4870ca684a9fc6926769d04a65c2b56196224ff",
+      "bytes": 7901
+    },
+    "docs/src/hero-group.jpg": {
+      "sha256": "64e56f22c1abfab01558341cd6c449e3973e3c7d04c4467832f24776dac1227a",
+      "bytes": 303231
+    },
+    "docs/src/morph-dragon.jpg": {
+      "sha256": "8412c8762890c16ff5536dc605d2f71235a92854d4e3f34d7ae75cdb736307e2",
+      "bytes": 180372
+    },
+    "docs/src/morph-horse.jpg": {
+      "sha256": "e1f2153f6b342c740ff920ffd45bb744d9a43dfe4d4f4458ecd059cda8352a06",
+      "bytes": 174438
+    },
+    "docs/src/morph-mech.jpg": {
+      "sha256": "fba2cad076412549c8949ef1decc3d79dbcbb22ed3783a00054e06d50070580f",
+      "bytes": 161146
+    },
+    "docs/src/morph-rider.jpg": {
+      "sha256": "93c9e7bd5b3908a8ab40ecf0404ebe4c4d042332be854a319c38ab63203a4f69",
+      "bytes": 153469
+    },
+    "docs/src/morphs.html": {
+      "sha256": "54642a6c2c8db6d884ee0f1b25b984b35b6563247b9b3d167bb2fd35ca23f31f",
+      "bytes": 1951
+    },
+    "docs/src/ported-armour.jpg": {
+      "sha256": "e01044b52d5ec0cffca406f2ffbc99a88bfbeafa5c6b90fcc888207493266e13",
+      "bytes": 170702
+    },
+    "docs/src/ported-glow-sword.jpg": {
+      "sha256": "af16073ec97cb53841c761c233053f8d11e0f3d3fc34a0a89075f9726ff71eec",
+      "bytes": 172763
+    },
+    "docs/src/ported-gunner.jpg": {
+      "sha256": "6c74cfa0738e5845828145a24026471c0ab0057e2f9e3adabe4cde342ea7ea53",
+      "bytes": 206198
+    },
+    "docs/src/ported-jetbike.jpg": {
+      "sha256": "5fc30a6bc1b4f1c6b00b5b6d22fe6f03d7ec51812321c73d0cb49cdc0c0132fa",
+      "bytes": 108938
+    },
+    "docs/src/ported-owl.jpg": {
+      "sha256": "b8217037d82ecaf2e08a3911a549a74b515c555c397455c64f8727ec1f16aacd",
+      "bytes": 116147
+    },
+    "docs/src/ported-pandaria.jpg": {
+      "sha256": "4e33de3b795295e66465417a420f507e2b47e426e5155a4bbdbec659b40761f0",
+      "bytes": 102557
+    },
+    "docs/src/ported-warmachine.jpg": {
+      "sha256": "de896e69fc1352b41dff360dd8157bf3de5e8ea36282aafed9d2c96de0285b28",
+      "bytes": 214755
+    },
+    "docs/src/world-crowd.jpg": {
+      "sha256": "6d005b2e0931109e12dcaa725d386f22b3f27c71d052c1eb91f6dd2b4b233671",
+      "bytes": 168256
+    },
+    "docs/src/world-drake.jpg": {
+      "sha256": "8c795b2915735dbd71b40501b0d3a2742ed4e02c2a3ded8abe5d68ab50814d8a",
+      "bytes": 161151
+    },
+    "docs/src/world-tiger.jpg": {
+      "sha256": "6ade9bf0495207824fa1ffeb78a50ccdd78da586b9cb1c91b506e9c8e571f673",
+      "bytes": 141882
+    },
+    "docs/src/world.html": {
+      "sha256": "254265c4c1301cac4be8e0f96bb6c9c64aed3b0e1a9a0c0ab1d92a5e9f7bdfdc",
+      "bytes": 1948
+    },
+    "docs/wardrobe.jpg": {
+      "sha256": "385b73940f7a84e05e88f8dab6802b2990cf38c72563d8cc9059fbc3287f3c09",
+      "bytes": 148784
+    },
+    "docs/weather.jpg": {
+      "sha256": "bbf8cef631fccf50cbb590ea4b1148811ffa2f6ee37ae6de114c80d2946f8148",
+      "bytes": 164159
+    },
+    "docs/world.jpg": {
+      "sha256": "62917939e026d04fbe06289cff823ea4de9d283004e5023e786dc9a37b181b92",
+      "bytes": 179807
+    },
+    "helper/build.sh": {
+      "sha256": "f4513e480d6bf46387a9c402b053b420c9de185019eb45c5c18033a82d2f948b",
+      "bytes": 639
+    },
+    "helper/DmorphHelper.c": {
+      "sha256": "5b025b98f135e395cc2cf94ca30e6733fd3e6ce6b9e695cbbe0b3973bdc9a64e",
+      "bytes": 47985
+    },
+    "helper/DmorphHelper.dll": {
+      "sha256": "af99438bba7bf9e61f9a405f13fb69542885d74aae303001511b174f6fa538b3",
+      "bytes": 44032
+    },
+    "helper/minhook/include/MinHook.h": {
+      "sha256": "e34bbf7b855c842694f6e3dd78e2d280e99ed9732501e3dc1532a8626a8db8e5",
+      "bytes": 7529
+    },
+    "helper/minhook/LICENSE.txt": {
+      "sha256": "4f21f857550d7be854da6ea5f2da4e6775ca4e3fbb535e4f3d961c47d0bf3335",
+      "bytes": 4446
+    },
+    "helper/minhook/src/buffer.c": {
+      "sha256": "75a789eb718bd5ed2de039ccd330736a31d0a2d14e43d8e15e6cd2332432482d",
+      "bytes": 9827
+    },
+    "helper/minhook/src/buffer.h": {
+      "sha256": "9769702bd625249e59a19ede05c84365fcc7707e1fa0e5df08df42227cee13e3",
+      "bytes": 1820
+    },
+    "helper/minhook/src/hde/hde32.c": {
+      "sha256": "7749d5720abd98f3e2cbe7b17d02ecd9215f66917e8d9bd0af8a32b58a7e3657",
+      "bytes": 16710
+    },
+    "helper/minhook/src/hde/hde32.h": {
+      "sha256": "5132de5be8ac7a9d054420f5caef0fb01437faa892f03b3cdc77f795973bf15a",
+      "bytes": 2450
+    },
+    "helper/minhook/src/hde/hde64.c": {
+      "sha256": "35a6596188905a85d21d7d928bbb636e146dadd10c372762486a1c8541d0641d",
+      "bytes": 18759
+    },
+    "helper/minhook/src/hde/hde64.h": {
+      "sha256": "84063581e7e2f15262b789283669ecc0984f6497dd40c44ab7abdd7b90776249",
+      "bytes": 2637
+    },
+    "helper/minhook/src/hde/pstdint.h": {
+      "sha256": "604d1cdf45c5a95bc9cf1bbf39ca05ef83013541101d34971c5cd7577e3d5247",
+      "bytes": 1662
+    },
+    "helper/minhook/src/hde/table32.h": {
+      "sha256": "a8a59b03cbb2cdbd7dc3c1cd7a95c4b46faf2fc3d195f8540654c7e3565e3f2f",
+      "bytes": 3508
+    },
+    "helper/minhook/src/hde/table64.h": {
+      "sha256": "7b4d49f3733cbf9fb93e678cb6a408c6897bc9fcb33b94740eaded928617a4c1",
+      "bytes": 3577
+    },
+    "helper/minhook/src/hook.c": {
+      "sha256": "3060d3c42f03a2f11324cbee95d853071757ed0fe4b1bc9eb5f0d8fc9e346a37",
+      "bytes": 26645
+    },
+    "helper/minhook/src/trampoline.c": {
+      "sha256": "d837f8555681c3762468d712c43f2064ed31dee610e0b02965fd8aa54b88172f",
+      "bytes": 10714
+    },
+    "helper/minhook/src/trampoline.h": {
+      "sha256": "27426751dde36cdd8346469e61cdcca47950b1056a69f21cc63f4b41743faf6a",
+      "bytes": 3795
+    },
+    "HOW TO INSTALL.txt": {
+      "sha256": "a6e28df39be0112ff5ba72853c6d7a35ac01655890389cbe83be53464d60e221",
+      "bytes": 2096
+    },
+    "Install DmorphHelper.bat": {
+      "sha256": "06a9355f577e55ee070c077b1bd3ffbb46e3b609d3a934a663fd43e96840c5d6",
+      "bytes": 286
+    },
+    "media/fonts/README.txt": {
+      "sha256": "c3d4a9d66451c48b8f00b21f459473df2945053dd6f7cfcca9cb55c040b7cde3",
+      "bytes": 197
+    },
+    "media/fonts/Roboto.ttf": {
+      "sha256": "79e851404657dac2106b3d22ad256d47824a9a5765458edb72c9102a45816d95",
+      "bytes": 171676
+    },
+    "Pack Ported.bat": {
+      "sha256": "42558a14dd1aed848fe2c2c294cc8a4ffcc36903958d6dcb5e6dfa7154d77bf2",
+      "bytes": 456
+    },
+    "README.md": {
+      "sha256": "585dba18afdc693b7a08674e3e049ac4ff747258c9a8c9338b5717fe309eb170",
+      "bytes": 21458
+    },
+    "Remove DmorphHelper.bat": {
+      "sha256": "8c2459b2bbbd5530720517027d58102ea42570cbfab6eabf98ee937f40911ad0",
+      "bytes": 225
+    },
+    "Share.lua": {
+      "sha256": "dcb9f465960ca5286bce27367ef868f9346bfe8a9ac21e20df02377e53e47316",
+      "bytes": 39603
+    },
+    "tests/layout.lua": {
+      "sha256": "ed2b95d58d7458bcdc00e7b1071c06fa3c81ec7ed925c3da8fff3a122cb59dc7",
+      "bytes": 4972
+    },
+    "tests/make_game_fixture.py": {
+      "sha256": "7d78559336fc7f3d909d0b7a5d8993c94e862eba34660331f18155f0d5e49bd5",
+      "bytes": 17474
+    },
+    "tests/mock_wow.lua": {
+      "sha256": "eebb767fef2a57168c693c15ddb3ee977c9138ac865118380c3ba2f1fc4ca10e",
+      "bytes": 24491
+    },
+    "tests/ported_check.lua": {
+      "sha256": "7a2f664c2064416cf48fc37845ca25747c8f9a687ed9e4c93ebc3888f1018dd4",
+      "bytes": 914
+    },
+    "tests/run_tests.lua": {
+      "sha256": "7f82d1c1c54f92c4adda41cfc6e39d37803c13811db5a846b6edc724e501beee",
+      "bytes": 140255
+    },
+    "tools/build_data.py": {
+      "sha256": "978e34d482d4098392bb20bdbc0676cc28efbed464803d4b39c77730154eb82c",
+      "bytes": 13023
+    },
+    "tools/build_frames.ps1": {
+      "sha256": "94226a387d9e295f77f14fe858e6729d7275ed642c656ad2c3c4556514d9f474",
+      "bytes": 5846
+    },
+    "tools/build_items.ps1": {
+      "sha256": "d9fac51ec4380db1bb2fbed825dd0f0abfa1e9476dafd4a026191e8a30cb8b06",
+      "bytes": 15528
+    },
+    "tools/build_models.ps1": {
+      "sha256": "510448496197ffbbb3b6af3f51544085cd59f47ed827315b1ac4e77d1dda9eb0",
+      "bytes": 31907
+    },
+    "tools/build_options.ps1": {
+      "sha256": "c78b7e1c5dc2a30eb85da04941f327d2e4cf05c01a672e09a170bd6b1adb4843",
+      "bytes": 22998
+    },
+    "tools/data/classic_item_displays.tsv": {
+      "sha256": "907aa0f6419413be563b41b1d83e5795769b137ae06e3f10764b9849501ab4aa",
+      "bytes": 110607
+    },
+    "tools/data/retail_mounts.tsv": {
+      "sha256": "26a3f2f3618db44901b5446e81b413ef583cf31bc15fb138870670ebc80f31e1",
+      "bytes": 10887
+    },
+    "tools/data/turtle_creatures.tsv": {
+      "sha256": "dbf654c3491ae5118d15e36b15cce823d12e26a2b342804e7b397f398a6091dd",
+      "bytes": 27589
+    },
+    "tools/data/turtle_items.tsv": {
+      "sha256": "ddb721ba31cd902b5914963f080dd324b6372273dc7669ed2f0824eeeb73f28b",
+      "bytes": 351519
+    },
+    "tools/data/turtle_other_items.txt": {
+      "sha256": "8d1c1a4a057e660d0d96018cd5aea575dca7a071d395a317e1b1c7bea1210536",
+      "bytes": 55386
+    },
+    "tools/data/turtle_ranks.tsv": {
+      "sha256": "7556237fe69144e0a07ec7fc2a130ea4e0665a1d9f00c0d8a7a497598dc1bf9e",
+      "bytes": 14477
+    },
+    "tools/data/wotlk_creatures.tsv": {
+      "sha256": "860792bb089eac5e3253492e9f23762ccfc536123b3c7a0e5ddc91da311af1ae",
+      "bytes": 9978
+    },
+    "tools/install_helper.ps1": {
+      "sha256": "d7eea04dcdca1a41e059455ea6ef808fb16e35250b8db03049bfa48261f69bbe",
+      "bytes": 4687
+    },
+    "tools/LuaHost/LuaHost.csproj": {
+      "sha256": "e396882ae3bcca5e988ba6c445658e7651f92c71271d067dac46e9e9ebfa56ad",
+      "bytes": 235
+    },
+    "tools/LuaHost/Program.cs": {
+      "sha256": "5bd0759f3c4d9f9f759592fe59fc269358f604c6a6927963504f07def6b1037f",
+      "bytes": 3292
+    },
+    "tools/MpqDbc.cs": {
+      "sha256": "d583834db04101acb72cd5294a025314e7b651ec4fe491b7823730340fb8497d",
+      "bytes": 20093
+    },
+    "tools/pack/Install Ported.bat": {
+      "sha256": "71dd0b1578911f5ed7650184715a70930c9fc3ccd408773e2bc0451d6833dba4",
+      "bytes": 262
+    },
+    "tools/pack/install_ported.ps1": {
+      "sha256": "eb376b114ab2e923377ef80b62e3c79c888c80246c40d7edd5cec92ea05571f0",
+      "bytes": 13467
+    },
+    "tools/pack/Remove Ported.bat": {
+      "sha256": "1af3953967eb4c106e950afff8c18eeca2188152f06d7f1011e845cce2ac2063",
+      "bytes": 277
+    },
+    "tools/pack_ported.ps1": {
+      "sha256": "904c1b8ac8df7d989db32149d395795e66f01878a36edc43b79180cb8b09d81c",
+      "bytes": 5916
+    },
+    "tools/run_tests.ps1": {
+      "sha256": "a34814ce506f60254a9421398ae69fea606dd08e94732e9f3f9955e51ffa471a",
+      "bytes": 848
+    },
+    "tools/update_from_game.ps1": {
+      "sha256": "82d15dd23ec8e19633de3d26b251e5d6f93085861b7b3ca2c3fce5c52cb7a8f9",
+      "bytes": 1113
+    },
+    "UI.lua": {
+      "sha256": "0408bc718c8887996b201f81a4f2b985ae01c4d4556022ef2c6c690a05ba19ad",
+      "bytes": 153311
+    }
+  },
+  "symlinks": {},
+  "releases": {}
+}

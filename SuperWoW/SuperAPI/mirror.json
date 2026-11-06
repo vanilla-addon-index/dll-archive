@@ -1,0 +1,85 @@
+{
+  "upstream": "https://github.com/balakethelock/SuperAPI",
+  "source": {
+    "kind": "repository",
+    "host": "github.com",
+    "owner": "balakethelock",
+    "repo": "SuperAPI",
+    "name": "SuperAPI",
+    "url": "https://github.com/balakethelock/SuperAPI",
+    "api": "https://api.github.com/repos/balakethelock/SuperAPI"
+  },
+  "commit": "901322dc88890a2ea10610b8228fb43c9c2a3610",
+  "sourceFiles": {
+    "libs/AceAddon-2.0/AceAddon-2.0.lua": {
+      "sha256": "6561a1a96465f5276c784989a2c989e21b1b8f666391fccf4b64ab87a0a63d54",
+      "bytes": 34783
+    },
+    "libs/AceConsole-2.0/AceConsole-2.0.lua": {
+      "sha256": "e79a393e9ec88e1f2618e4768dd61b8c81e09fb9457b97f00266cdb9d652f1b0",
+      "bytes": 67656
+    },
+    "libs/AceDB-2.0/AceDB-2.0.lua": {
+      "sha256": "a57404bbff9dab8d53ff5e1752219a8c8e7042c0ebcb2edd6b5a7eaf8b9d39c8",
+      "bytes": 45257
+    },
+    "libs/AceDebug-2.0/AceDebug-2.0.lua": {
+      "sha256": "2b2eea5d384b15264cce5883a170815f558ccadb72b0343d9dcbf0a3cbd2baac",
+      "bytes": 8049
+    },
+    "libs/AceEvent-2.0/AceEvent-2.0.lua": {
+      "sha256": "1a2c79dd8db1f2fcf290297bdb5e731b013f94eef4cbc1e7213872ea60e90b43",
+      "bytes": 28954
+    },
+    "libs/AceHook-2.1/AceHook-2.1.lua": {
+      "sha256": "1a837a24dd8af5b4ee51011fe99e8fde7e39b1af3ba908535a4cb445174eb79e",
+      "bytes": 16946
+    },
+    "libs/AceLibrary/AceLibrary.lua": {
+      "sha256": "09cfc0b69a0feb644fa1a9e5fc6715a4e76e0b2f6c7c04a3a0ea693d633770cd",
+      "bytes": 23114
+    },
+    "libs/AceLocale-2.2/AceLocale-2.2.lua": {
+      "sha256": "f751df94f961870d2e35818a6f5774f7441786958ee6fd8adf227479f896a385",
+      "bytes": 15957
+    },
+    "libs/AceModuleCore-2.0/AceModuleCore-2.0.lua": {
+      "sha256": "a3de67878b122a9f6c937462b9641f7a029b55605107f2db03953fe7a1d412ff",
+      "bytes": 13981
+    },
+    "libs/AceOO-2.0/AceOO-2.0.lua": {
+      "sha256": "0447ac520cae9b5f9544f9619c23a89c0e192bc7891763e2a0269a5d664f79df",
+      "bytes": 30469
+    },
+    "libs/Dewdrop/Dewdrop-2.0.lua": {
+      "sha256": "c51aa331b91d1bc7f8023f8c02814a0556e39a39d392f5029b06bf0aee266664",
+      "bytes": 82495
+    },
+    "libs/FuBarPlugin/FuBarPlugin-2.0.lua": {
+      "sha256": "9102d327901e72e0523f7d21c989c32cd698a7b6d66e5cb0bf5cdff3eef5f73b",
+      "bytes": 44995
+    },
+    "libs/Tablet/Tablet-2.0.lua": {
+      "sha256": "2456e593be577cdd8340cd0edc1fce94926a1f9e7dee7f26798bf8b3128dbf06",
+      "bytes": 83748
+    },
+    "README.md": {
+      "sha256": "e141be4f6b2d2cff28553fa101c9368c883a0e1446cc8eae5f0961d242f76ea7",
+      "bytes": 1020
+    },
+    "SuperAPI.lua": {
+      "sha256": "7583211c265f085374f422fce9ffeb489e9d9856a14bbb158dd30ef5af6a080a",
+      "bytes": 6904
+    },
+    "SuperAPI.toc": {
+      "sha256": "1eff2704960083859e7bf4c7f01ccc12181969118a442d9bf2891cef2d6622d2",
+      "bytes": 741
+    },
+    "SuperAPIOptions.lua": {
+      "sha256": "f866c1c6d26327bd4fd6d8038ed5e4ee8bbd470e2b2a2119f118e34c6875e210",
+      "bytes": 10908
+    }
+  },
+  "symlinks": {},
+  "releases": {}
+}

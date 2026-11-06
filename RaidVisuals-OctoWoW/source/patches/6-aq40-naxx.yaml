@@ -1,0 +1,356 @@
+#foo 9000 base
+
+##############################################
+### AQ40 #####################################
+##############################################
+
+### bug trio #################################
+# kri being eaten will remove bonus effects
+# so we have to use a plain AreaModel replacement for our indicator
+SpellVisualKit.dbc:
+  - type: insert
+    key: 9000
+    values:
+      WorldEffect: 2968
+      # not quite right, this will color the caster
+      # CharProc_1: 1
+      # CharParamZero_1: 16716055.0
+      # CharParamOne_1: 2.0
+      # CharParamTwo_1: 2.0
+
+SpellVisual.dbc:
+  - type: copy
+    key: 7080
+    values:
+      ID: 9000
+      AreaKit: 9000
+      AreaModel: 4714 # 20y kri jagged
+      MissileModel: 675 # avoids launching a empty box
+      HasMissile: 1 #disable secondary ground effect renderings
+
+Spell.dbc:
+  - type: update
+    key: 25786 #toxic vapors, kri death
+    values:
+      SpellVisualID_1: 9000
+      Speed: 255.0 #any speed is required for HasMissle to use extra effect kits
+##############################################
+
+### viscidus #################################
+SpellVisualKit.dbc:
+  - type: insert
+    key: 9001
+    values:
+      BaseEffect: 4713 #12y jagged, can't color a WorldEffect
+      WorldEffect: 2968
+      CharProc_1: 1
+      CharParamZero_1: 1217603104 # green
+      CharParamOne_1: 0.5
+      CharParamTwo_1: 1.0
+
+SpellVisual.dbc:
+  - type: copy
+    key: 7409
+    values:
+      ID: 9001
+      StateKit: 221 #poison green
+      AreaKit: 9001
+      AreaModel: 0 #2968, moved to visualkit or it remains much too long
+      HasMissile: 1 #disable secondary ground effect renderings
+
+Spell.dbc:
+  - type: update
+    key: 25989 #toxin, cast by viscidus cloud npc
+    values:
+      SpellVisualID_1: 9001
+      DurationIndex: 1 # 10s
+      Speed: 255.0
+##############################################
+
+
+### Anubisath Guardian ##########################################
+# Explode provided in zg-aq20.yaml
+##################################################################
+
+### twin emps #################################
+# bilzzard indicators provided in blizzard.yaml
+
+# bug explosion range
+SpellVisualKit.dbc:
+  - type: copy
+    key: 854
+    values:
+      ID: 9002
+      BaseEffect: 4715  # 17y jagged ring
+      WorldEffect: 4801 # 10y X
+      CharProc_1: 1
+      CharParamZero_1: 16716055.0 # red tint
+      CharParamOne_1: 1.0
+
+SpellVisual.dbc:
+  - type: copy
+    key: 7420
+    values:
+      ID: 9002
+      StateKit: 9002
+
+Spell.dbc:
+  - type: update
+    key: 804 # explode bug. companion spell mutate bug 802
+    values:
+      SpellVisualID_1: 9002
+
+# ranges after teleport, not useful, just noise
+# SpellVisualKit.dbc:
+#   - type: insert
+#     key: 9003
+#     values:
+#       BaseEffect: 4752 #a 15y white
+#       CharProc_1: 1
+#       CharParamZero_1: 16716055.0
+#       CharParamOne_1: 2.0
+#       CharParamTwo_1: 2.0
+#       # WorldEffect: 4902 #a 20y ring
+#       # CharProc_1: 14
+#       # CharParamZero_1: 0.5
+
+# SpellVisual.dbc:
+#   - type: insert
+#     key: 9003
+#     values:
+#       StateKit: 9003
+#       HasArea: 1
+#       HasMissile: 1
+#       AreaModel: 4902
+
+# Spell.dbc:
+#   - type: update
+#     key: 799 # twins teleport, kel'nilash, indicate aggro radius and explosion radius
+#     values:
+#       SpellVisualID_1: 9003
+
+# Spell.dbc:
+#   - type: update
+#     key: 800 # twins teleport, vek'lor, indicate aggro radius and explosion radius
+#     values:
+#       SpellVisualID_1: 9003
+###############################################
+
+### ouro #################################
+# dirt mound
+SpellVisualKit.dbc:
+  - type: copy
+    key: 6466
+    values:
+      ID: 9108
+      BaseEffect: 4908 #a 8y ring, model is 2.25x scale so it's about an 18y effect
+      WorldEffect: 2994 # popcorn
+
+SpellVisual.dbc:
+  - type: copy
+    key: 7430
+    values:
+      ID: 9108
+      CastKit: 9108
+
+Spell.dbc:
+  - type: update
+    key: 26093 # quake
+    values:
+      SpellVisualID_1: 9108
+#######################################
+
+### anubisath sentinels ######################
+SpellVisualKit.dbc:
+  - type: insert
+    key: 9017
+    values:
+      # BreathEffect: 88
+      RightHandEffect: 88 #lightning
+  - type: insert
+    key: 9016
+    values:
+      RightHandEffect: 94 #rage
+  - type: insert
+    key: 9014
+    values:
+      ChestEffect: 70 # rejuv
+  - type: insert
+    key: 9013
+    values:
+      BreathEffect: 623 #shadow precast
+  - type: copy
+    key: 252
+    values:
+      Id: 9011
+      LeftHandEffect: 287 #fire precast
+  - type: copy
+    key: 252
+    values:
+      Id: 9010
+      LeftHandEffect: 17 #shadow precast
+
+
+SpellVisual.dbc:
+  # - type: insert
+  #   key: 9018
+  #   values:
+  #     StateKit: 9018
+  - type: insert
+    key: 9017
+    values:
+      StateKit: 9017
+  - type: insert
+    key: 9016
+    values:
+      StateKit: 9016
+  # - type: copy
+  #   key: 7460
+  #   updates:
+  #     Id: 9015
+  #     StateKit: 9015
+  - type: insert
+    key: 9014
+    values:
+      StateKit: 9014 # rejuv
+  - type: insert
+    key: 9013
+    values:
+      StateKit: 9013
+  # - type: insert
+  #   key: 9012
+  #   values:
+  #     StateKit: 9012
+  - type: copy
+    key: 154
+    values:
+      Id: 9011
+      StateKit: 9011
+  - type: copy
+    key: 154
+    values:
+      Id: 9010
+      StateKit: 9010
+
+Spell.dbc:
+  # - type: update
+  #   key: 21737 # periodic knock away aura 21737
+  #   updates:
+  #     SpellVisualID_1: 9018 # was 0
+  - type: update
+    key: 2834 # periodic thunderclap aura 2834
+    values:
+      SpellVisualID_1: 9017 # was 0
+  - type: update
+    key: 9347 # periodic mortal strike aura 9347
+    values:
+      SpellVisualID_1: 9016 # was 0
+  # - type: update
+  #   key: 25777 # thorns aura 25777 #already visible
+  #   updates:
+  #     SpellVisualID_1: 9015 # was 7460
+  - type: update
+    key: 2147 # mending aura 2147
+    values:
+      SpellVisualID_1: 9014 # was 0
+  - type: update
+    key: 2148 # periodic shadow storm aura 2148
+    values:
+      SpellVisualID_1: 9013 # was 0
+  - type: update
+    key: 812 # periodic mana burn aura 812
+    values: # give a nice scary purple
+      SpellVisualID_1: 561 # was 0
+  - type: update
+    key: 13022 # fire and arcane reflect 13022
+    values: #give a reflection bubble effect
+      SpellVisualID_1: 9011 #was 19
+  - type: update
+    key: 19595 # shadow and frost reflect 19595
+    values: #give a reflection bubble effect
+      SpellVisualID_1: 9010 #was 0
+###############################################
+
+##############################################
+### NAXX #####################################
+##############################################
+
+### spiders ##############################
+SpellVisual.dbc:
+  - type: update
+    key: 5100 # add an actual coloring to poison charge 28431 visual
+    values:
+      StateKit: 221
+##########################################
+
+### faerlina acolytes #####################
+# more visible cast for shadow bolt volley 28448
+# affects kara netherwalkers but not in a way that matters
+SpellVisualKit.dbc:
+  - type: copy
+    key: 114
+    values:
+      ID: 9020
+      LeftHandEffect: 2222
+      RightHandEffect: 2222
+
+SpellVisual.dbc:
+  - type: copy
+    key: 2318
+    values:
+      ID: 9020
+      PrecastKit: 9020
+
+Spell.dbc:
+  - type: update
+    key: 28448 # shadow bolt volley
+    values:
+      SpellVisualID_1: 9020
+###########################################
+
+### faerlina ##############################
+# rof provided in rain_of_fire.yaml
+###########################################
+
+### thaddius ##############################
+# color thaddius charges using gnarlmoon visuals
+Spell.dbc:
+  - type: update
+    key: 28059 #positive charge main buff
+    values:
+      SpellVisualID_1: 6589
+  - type: update
+    key: 28084 #negative charge main buff
+    values:
+      SpellVisualID_1: 6539
+###########################################
+
+### sapph ##############################
+# saph Blizzard is an npc that casts Chill(28547)
+SpellVisualKit.dbc:
+  - type: copy
+    key: 6591
+    values:
+      ID: 9025
+      CharParamOne_1: 1.0 #reduce blizzard shards from 15 to 1
+      WorldEffect: 4981 #add a prehit animation, slightly speeds up players seeing the effect
+
+SpellVisual.dbc:
+  - type: copy
+    key: 7608
+    values:
+      ID: 9025
+      # StateKit: 668
+      AreaModel: 4980 #7y orange circle
+      AreaKit: 9025
+      HasMissile: 1
+      MissileModel: 234
+      MissileDestinationAttachment: 2
+
+Spell.dbc:
+  - type: update
+    key: 28547 #chill 28547
+    values:
+      SpellVisualID_1: 9025
+      Speed: 255.0
+########################################

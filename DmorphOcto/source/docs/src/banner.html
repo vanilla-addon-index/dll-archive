@@ -1,0 +1,96 @@
+<!doctype html>
+<!-- Source of docs/banner.png (1280x640, GitHub's social preview size). Fonts come from the EPLTowers addon next to this one.
+     Render: msedge --headless=new --hide-scrollbars --force-device-scale-factor=1 --window-size=1280,640 --allow-file-access-from-files --screenshot=banner.png banner.html
+     Picture: hero-group.jpg (the user's group shot, no UI or names). Colours are taken from it: fel green #72F92B / #9FFE3C
+     (the left character's glows), purple #B44CFF / #CB70FF (the mount's outline), teal #43FADD (the middle character's glow).
+     Numbers (19 Oct 2026, counted from Data/ and DMorph_Ported\Ported.lua): 16,674 creatures (13,383 models), 950 mount models,
+     13,655 items, 351 sets; pack 8,157 creature looks, 2,193 mounts, 12,798 weapons + 36,091 armour = 48,889 items, 915 sets, 33 glows. -->
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Fira;src:url(../../../EPLTowers/fonts/FiraSansCondensed-Regular.ttf);font-weight:400}
+@font-face{font-family:Fira;src:url(../../../EPLTowers/fonts/FiraSansCondensed-SemiBold.ttf);font-weight:600}
+:root{--fel:#72f92b;--fel2:#9ffe3c;--pur:#b44cff;--pur2:#cb70ff;--pur3:#d192fd;--teal:#43fadd}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1280px;height:640px;overflow:hidden}
+body{font-family:Fira,sans-serif;color:#f1ecff;position:relative;
+ background:
+  radial-gradient(ellipse 430px 330px at 70px 70px,rgba(114,249,43,.30),transparent 70%),
+  radial-gradient(ellipse 520px 420px at 250px 640px,rgba(180,76,255,.48),transparent 70%),
+  radial-gradient(ellipse 300px 260px at 420px 300px,rgba(67,250,221,.10),transparent 70%),
+  linear-gradient(170deg,#0f1a0b 0%,#0d0a14 40%,#170a26 100%)}
+.pic{position:absolute;left:360px;top:0;width:920px;height:640px;clip-path:polygon(120px 0,100% 0,100% 100%,0 100%);overflow:hidden}
+.pic img{width:100%;height:100%;object-fit:cover;object-position:18% 40%;filter:saturate(1.22) contrast(1.06) brightness(1.04)}
+.pic:after{content:"";position:absolute;inset:0;background:
+  linear-gradient(90deg,rgba(13,10,20,.55),transparent 22%),
+  radial-gradient(ellipse 380px 300px at 20% 30%,rgba(114,249,43,.10),transparent 70%),
+  radial-gradient(ellipse 420px 320px at 62% 60%,rgba(180,76,255,.12),transparent 70%)}
+.edge{position:absolute;left:360px;top:0;width:124px;height:640px;
+ background:linear-gradient(var(--fel2),var(--fel) 30%,var(--teal) 48%,var(--pur2) 66%,var(--pur));
+ clip-path:polygon(117px 0,124px 0,7px 100%,0 100%);filter:drop-shadow(0 0 12px rgba(180,76,255,.9)) drop-shadow(0 0 6px rgba(114,249,43,.6))}
+.left{position:absolute;left:38px;top:28px;width:430px}
+.kicker{font-size:15px;letter-spacing:4px;color:var(--fel2);font-weight:600;text-shadow:0 0 10px rgba(114,249,43,.6)}
+h1{font-family:"Segoe UI Black","Segoe UI",sans-serif;font-weight:900;font-size:96px;line-height:.92;letter-spacing:-2px;margin-top:4px}
+h1 span{background-clip:text;-webkit-background-clip:text;color:transparent}
+h1 .d{background-image:linear-gradient(180deg,#d6ff7a 0%,var(--fel2) 35%,var(--fel) 70%,#3fc214 100%);filter:drop-shadow(0 0 16px rgba(114,249,43,.75))}
+h1 .m{background-image:linear-gradient(180deg,#f0d8ff 0%,var(--pur3) 30%,var(--pur2) 55%,var(--pur) 80%,#7d22d6 100%);filter:drop-shadow(0 0 18px rgba(180,76,255,.85))}
+.sub{font-size:24px;font-weight:600;color:#fff;line-height:1.15;margin-top:6px;text-shadow:0 0 12px rgba(180,76,255,.45)}
+ul{list-style:none;margin-top:15px;display:grid;gap:7px}
+li{font-size:20px;font-weight:600;white-space:nowrap}
+li span{color:#b9a9d6;font-weight:400}
+li b{color:var(--fel2);text-shadow:0 0 10px rgba(114,249,43,.55)}
+.pack{margin-top:15px;padding:9px 13px;border-radius:7px;border:2px solid var(--pur);width:356px;
+ background:linear-gradient(135deg,rgba(180,76,255,.45),rgba(60,14,110,.65) 60%,rgba(114,249,43,.16));
+ box-shadow:0 0 22px rgba(180,76,255,.7),inset 0 0 22px rgba(0,0,0,.35)}
+.pack .h{font-size:13px;letter-spacing:2px;color:var(--pur3);font-weight:600}
+.pack .n{font-size:18px;font-weight:600;color:#f1e4ff;margin-top:2px;line-height:1.3}
+.pack .n b{color:var(--fel2);font-size:22px;text-shadow:0 0 10px rgba(114,249,43,.6)}
+.url{position:absolute;left:40px;bottom:20px;font-size:16px;color:#9d8fb8}
+.url b{color:var(--pur2)}
+/* The slogan plate on the ground under the group */
+.ground{position:absolute;left:360px;bottom:0;width:920px;height:150px;clip-path:polygon(28px 0,100% 0,100% 100%,0 100%);
+ background:linear-gradient(0deg,rgba(10,6,18,.88) 0%,rgba(10,6,18,.55) 45%,transparent 100%)}
+.forge{position:absolute;left:520px;bottom:14px;width:610px;text-align:center;padding:4px 18px 8px;border-radius:12px;border:2px solid transparent;
+ background:linear-gradient(rgba(14,8,24,.80),rgba(14,8,24,.86)) padding-box,
+            linear-gradient(90deg,var(--fel2),var(--teal) 45%,var(--pur2) 75%,var(--pur)) border-box;
+ box-shadow:-14px 0 26px -6px rgba(114,249,43,.55),14px 0 26px -6px rgba(180,76,255,.75),0 8px 24px rgba(0,0,0,.6)}
+.forge .big{font-family:"Segoe UI Black","Segoe UI",sans-serif;font-weight:900;font-size:44px;line-height:1.05;letter-spacing:1px;text-transform:uppercase;
+ background-image:linear-gradient(90deg,#d6ff7a 0%,var(--fel2) 18%,var(--teal) 48%,var(--pur3) 72%,var(--pur) 100%);
+ -webkit-background-clip:text;background-clip:text;color:transparent;
+ filter:drop-shadow(0 0 12px rgba(67,250,221,.45)) drop-shadow(0 0 18px rgba(180,76,255,.45))}
+.forge .small{font-size:18px;font-weight:600;color:#eee4ff;letter-spacing:.3px;margin-top:1px}
+.forge .small b{color:var(--fel2);font-weight:600}
+.forge .small i{font-style:normal;color:var(--pur3)}
+/* The download badge: a small copy of the slogan plate */
+.badge{position:absolute;right:24px;top:20px;display:flex;align-items:center;gap:9px;padding:6px 16px 7px 12px;border-radius:10px;border:2px solid transparent;
+ background:linear-gradient(rgba(14,8,24,.82),rgba(14,8,24,.88)) padding-box,
+            linear-gradient(90deg,var(--fel2),var(--teal) 45%,var(--pur2) 75%,var(--pur)) border-box;
+ box-shadow:-10px 0 20px -6px rgba(114,249,43,.6),10px 0 20px -6px rgba(180,76,255,.8),0 6px 18px rgba(0,0,0,.6)}
+.badge .ico{font-size:18px;filter:drop-shadow(0 0 6px rgba(67,250,221,.6))}
+.badge .txt{font-family:"Segoe UI Black","Segoe UI",sans-serif;font-weight:900;font-size:19px;letter-spacing:1px;text-transform:uppercase;line-height:1;
+ background-image:linear-gradient(90deg,#d6ff7a 0%,var(--fel2) 20%,var(--teal) 50%,var(--pur3) 75%,var(--pur) 100%);
+ -webkit-background-clip:text;background-clip:text;color:transparent;
+ filter:drop-shadow(0 0 8px rgba(67,250,221,.4)) drop-shadow(0 0 12px rgba(180,76,255,.4))}
+</style></head><body>
+<div class="pic"><img src="hero-group.jpg"></div>
+<div class="ground"></div>
+<div class="edge"></div>
+<div class="forge"><div class="big">Forge your illusion!</div>
+  <div class="small">👯 Share <b>DMorph</b> with your friends to <i>see each other's looks</i></div></div>
+<div class="badge"><span class="ico">⬇️</span><span class="txt">Free on GitHub</span></div>
+<div class="left">
+  <div class="kicker">MORPH ADDON · WOW 1.12 · OCTOWOW</div>
+  <h1><span class="d">D</span><span class="m">Morph</span></h1>
+  <div class="sub">Become any creature,<br>ride any mount, wear any item</div>
+  <ul>
+    <li>🐲 <b>16,000+</b> creatures <span>3D previews</span></li>
+    <li>🐎 <b>950</b> mounts <span>on your own keys</span></li>
+    <li>🧝 Every race <span>real skin, face, hair</span></li>
+    <li>🗡️ <b>13,000+</b> items · <b>351</b> sets</li>
+    <li>✨ Glows · ⛈️ weather · 📏 size</li>
+    <li>👯 Friends see your morphs</li>
+  </ul>
+  <div class="pack"><div class="h">🚀 + OPTIONAL PORTED PACK</div>
+    <div class="n"><b>8,157</b> creatures · <b>2,193</b> mounts<br><b>48,889</b> weapons &amp; armour · <b>915</b> sets</div></div>
+</div>
+<div class="url"><b>github.com/bdot89/DmorphOcto</b> · v2.21</div>
+</body></html>

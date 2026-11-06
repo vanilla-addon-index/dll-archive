@@ -1,0 +1,362 @@
+{
+  "upstream": "https://github.com/brues-code/nampower",
+  "source": {
+    "kind": "repository",
+    "host": "github.com",
+    "owner": "brues-code",
+    "repo": "nampower",
+    "name": "nampower",
+    "url": "https://github.com/brues-code/nampower",
+    "api": "https://api.github.com/repos/brues-code/nampower"
+  },
+  "commit": "2c7f51cd436e9b0ce88271e84ce5a77c19f2c23b",
+  "sourceFiles": {
+    ".github/ISSUE_TEMPLATE/bug_report.md": {
+      "sha256": "6f6690b24f339588e589bdb0bb98d91a59871090b6c6a209a813c717507526bc",
+      "bytes": 565
+    },
+    ".github/ISSUE_TEMPLATE/custom.md": {
+      "sha256": "a062d66844de4e399924f13739309fcd6fa478edca7a6733ba2f9bdb85b9f45d",
+      "bytes": 126
+    },
+    ".github/ISSUE_TEMPLATE/feature_request.md": {
+      "sha256": "1f48c52f209a971b8e7eae4120144d28fcf8ee38a7778a7b4d8cf1ab356617d2",
+      "bytes": 595
+    },
+    ".github/workflows/msvc_cmake.yml": {
+      "sha256": "8d3c7a27c35bceecb9baad452e0221d706270b94fe84d0fc95a46cdb669fdfb2",
+      "bytes": 6860
+    },
+    ".gitignore.upstream": {
+      "sha256": "29ce2aea677fdbd50aea42e5f58e23c573f19ed65dc2971bca5517e57fbbc783",
+      "bytes": 151
+    },
+    "CMakeLists.txt": {
+      "sha256": "f81d1e7ec15fbc4acd1b9dfd39bc8ebe5760ffcdd04080fbdc432ac2791d180e",
+      "bytes": 3920
+    },
+    "DBC_FIELDS.md": {
+      "sha256": "5bbcc64630afad1a9abe235c84ddfa645b8a7da48a7f416646c7b12844da527a",
+      "bytes": 2942
+    },
+    "EVENTS.md": {
+      "sha256": "255199d497bce95af2e128d2c31225de789508378a808f09ea331349a9f9757b",
+      "bytes": 37800
+    },
+    "LICENSE.txt": {
+      "sha256": "50c972da72d5b1202b6e00d284933d3d6b10407cb811d2f38b40096c764f795a",
+      "bytes": 1523
+    },
+    "loader/CMakeLists.txt": {
+      "sha256": "fc5c1266f0dcb50db139fbb5f47e7bc9474ecffada3dcbcb6bc092ba259b8441",
+      "bytes": 364
+    },
+    "loader/Icons8-Windows-8-Sports-Stopwatch.ico": {
+      "sha256": "5bc0df5e77af065a1611eeb99553a5f26f3e2f7389554b914754b09c304a5212",
+      "bytes": 165184
+    },
+    "loader/loader.rc": {
+      "sha256": "992d49cb8786d4877dc98760b0ec94ee2a06d334d6887fec097c0b76b5a1ba81",
+      "bytes": 3318
+    },
+    "loader/main.cpp": {
+      "sha256": "3c3ab76492c12154be81ad4abc1468026e6f5e75d42b8df906961967c1f9d64c",
+      "bytes": 4176
+    },
+    "loader/resource.h": {
+      "sha256": "47fe5ed2acb69f7e98bedb8acb4782623c2f5faf712ff73f908b00dab002e7cb",
+      "bytes": 900
+    },
+    "nampower/auras.cpp": {
+      "sha256": "8038779cb078652a6a6049a1efad1745c69a69a1cf652f298717a43a17b91c28",
+      "bytes": 9609
+    },
+    "nampower/auras.hpp": {
+      "sha256": "fb85bb5d649b10fb97fc303fa51b23d7bb8f5f8365ee2b2547d27a3777da236a",
+      "bytes": 1414
+    },
+    "nampower/autoattack.cpp": {
+      "sha256": "4fc0d6d75a40861683c10293790f41d57129c84adf3e7e193eff5b16e3e66aa4",
+      "bytes": 4262
+    },
+    "nampower/autoattack.hpp": {
+      "sha256": "df90ccb64f8bbd541438e86c858134e70271228888929c64c1ee221a3dcd73a4",
+      "bytes": 777
+    },
+    "nampower/castqueue.h": {
+      "sha256": "c1d6b8c75f73a810a981497556aedc8e5638e2ef6c63c1ded4136f625da506bc",
+      "bytes": 6106
+    },
+    "nampower/cdatastore.cpp": {
+      "sha256": "00a831fc0376ae57ef394359c50962bf9f6a0b9cb61736fb6393d3d411946a1c",
+      "bytes": 6352
+    },
+    "nampower/cdatastore.hpp": {
+      "sha256": "699030163ad56e5abb2b74279b002da45048ae621751c1137cfe4af8337fc3f6",
+      "bytes": 6720
+    },
+    "nampower/chat.cpp": {
+      "sha256": "b52d1b2a6ca8971d2ede6cb4f1509bbe5edd96c314f9a54b4474b31081956c1d",
+      "bytes": 6818
+    },
+    "nampower/chat.hpp": {
+      "sha256": "87edbb3c090a1f0cfd6ab3474804f93b9b5d262db16f3de0d9f233250f78bd4d",
+      "bytes": 392
+    },
+    "nampower/CMakeLists.txt": {
+      "sha256": "d6f60f3a6c7536ca60b9f6154741e94a2f6392c26e5dbec715b519d0f096d010",
+      "bytes": 2257
+    },
+    "nampower/cooldown_scripts.cpp": {
+      "sha256": "ffe3cd42c69c95bb87cdb8d59a5ae2c6876edf00c62e94a673016842a33d93b9",
+      "bytes": 16409
+    },
+    "nampower/cooldown_scripts.hpp": {
+      "sha256": "f361d64bbe63fe99e1df0c74b610393d2fda506232c4f3748f7ca0b0e44afad2",
+      "bytes": 287
+    },
+    "nampower/cooldown.hpp": {
+      "sha256": "39985dc8657b09351265852f6fc86c940f883ad395244d57f7b099eed423927c",
+      "bytes": 1053
+    },
+    "nampower/dbc_fields.cpp": {
+      "sha256": "32d62db52c1569eee4682e4fac49359a78f503f4daf5ebb86bb31628677756ca",
+      "bytes": 13857
+    },
+    "nampower/dbc_fields.hpp": {
+      "sha256": "b538fc5ab2998aebd5df312f5e12d792c6ca945b9603e8de52a34fdfe218fac3",
+      "bytes": 8679
+    },
+    "nampower/file_scripts.cpp": {
+      "sha256": "e8fd70eda23b734ba31d59a00bc12609dd1a589a90840afbdb959977422a1738",
+      "bytes": 20956
+    },
+    "nampower/file_scripts.hpp": {
+      "sha256": "34d420757ad6bcc62b6478392bf36436a6a8a1713e225f512feafc782e04c2ed",
+      "bytes": 568
+    },
+    "nampower/game.cpp": {
+      "sha256": "17097fe08c856b7a6524b58c02d814d7a78a6baa28306b8b39f167aaae67e5db",
+      "bytes": 13732
+    },
+    "nampower/game.hpp": {
+      "sha256": "fdbae41f25954cdfad935e5bb2a571325216d3e59c68c1b9b26853982027ca85",
+      "bytes": 84089
+    },
+    "nampower/helper.cpp": {
+      "sha256": "7d04b51a37d894ac69623740ba0403fe27c855e79433616b705ab6a188ff1fd5",
+      "bytes": 18753
+    },
+    "nampower/helper.hpp": {
+      "sha256": "54e13563c3013368218559803366eb5980a3547c1480e38523dacf63faaa3fca",
+      "bytes": 4220
+    },
+    "nampower/item_scripts.cpp": {
+      "sha256": "e2a9665b7eeeb3f0bcd1593864d74ae01946d9cb17d301700a9267b672dd9394",
+      "bytes": 56032
+    },
+    "nampower/item_scripts.hpp": {
+      "sha256": "284fa9bb9154cc5b8ff54d5243d2f4b54cdac17b77f383d11d84c7d632d68ac4",
+      "bytes": 890
+    },
+    "nampower/items.cpp": {
+      "sha256": "96ffc4b8b009681b7a5b54a9e8a110395f1dbcaf94955949e8c2925cc12b4e08",
+      "bytes": 24091
+    },
+    "nampower/items.hpp": {
+      "sha256": "1ed475cb2d0f434c4ca49272b70da23da25d4b1dc7b23a26ddfb2a614b46e8cb",
+      "bytes": 4780
+    },
+    "nampower/logging.cpp": {
+      "sha256": "e771c0c7f1235674fa7f0b13b85c9c4c0bbfa908bcea8b1772da025294a3569f",
+      "bytes": 104
+    },
+    "nampower/logging.hpp": {
+      "sha256": "67a2d5c579913b0eac3dfaf991b1baf5841ae705001a4a8e3a5a82f03d51afb1",
+      "bytes": 765
+    },
+    "nampower/lua_refs.cpp": {
+      "sha256": "eb5202180aeafac9d508589bb134b11e25b18384b8cd57e1733507300697dbc4",
+      "bytes": 1273
+    },
+    "nampower/lua_refs.hpp": {
+      "sha256": "f9f1e3b813fc6814ba33feba7082055f1169090ac6a076facb3d0122d236d00d",
+      "bytes": 422
+    },
+    "nampower/main.cpp": {
+      "sha256": "47556dc645d572cacb8a529b7dad86d22ebc6980db383c5705342a89a10d829d",
+      "bytes": 107760
+    },
+    "nampower/main.hpp": {
+      "sha256": "5e3231160b2324f8f00a9784207b5e37833509dfa02cb026d287eda93d7fe4a3",
+      "bytes": 12485
+    },
+    "nampower/misc_scripts.cpp": {
+      "sha256": "ecd01f952e29ae1e25d5f9b8574cbb8b51c60f00789b58a4b3d99abce9d962a3",
+      "bytes": 5455
+    },
+    "nampower/misc_scripts.hpp": {
+      "sha256": "6b48ce2289fe07c68d297433c129ade0d6d70bf6b7ece14611a4c8dd853bfd97",
+      "bytes": 389
+    },
+    "nampower/offsets.hpp": {
+      "sha256": "164e563c669f022477aa417369bccf64bd658756fd96ab9af04b4fdf74e08727",
+      "bytes": 10672
+    },
+    "nampower/party_member_fields.cpp": {
+      "sha256": "cb15448b418241e4f8cf9042a816c4769b5703df8dfdf1ab335f8cc5b9ffb9ee",
+      "bytes": 7195
+    },
+    "nampower/party_member_fields.hpp": {
+      "sha256": "086f5fd7906c0571c998ac1ce46f2814d26e70572de94cfaf801c7ef71de0d95",
+      "bytes": 1610
+    },
+    "nampower/pet.cpp": {
+      "sha256": "44981cb9aec8ef683eacb155e91362fa7f40f61eca5fb81a0158a90c0214f357",
+      "bytes": 11469
+    },
+    "nampower/pet.hpp": {
+      "sha256": "398fc00297cf9f350ff0fc84333dfbcc46e82d2fc1379c71525915cd6dc32b68",
+      "bytes": 1010
+    },
+    "nampower/player_scripts.cpp": {
+      "sha256": "9cbd6df530eca5bddaab7b37a379f1249005b1b33e8568b955f6507ce5ba559a",
+      "bytes": 16105
+    },
+    "nampower/player_scripts.hpp": {
+      "sha256": "f088edb8da83d65cfee1cb3b8292a61a5e29aa6559b75ff195b04578d1c8c8cf",
+      "bytes": 626
+    },
+    "nampower/quest.cpp": {
+      "sha256": "5ab1d8d2d6a28f60e2a671e0add392796307c0e8c479e74799f3e1b5f7424f5a",
+      "bytes": 3739
+    },
+    "nampower/quest.hpp": {
+      "sha256": "b97c1f41f4cc612ab79fea91141bae98f9f8b3af0757c4c2029d69a441cecbaa",
+      "bytes": 253
+    },
+    "nampower/spell_scripts.cpp": {
+      "sha256": "31e5e6ef433412002e77da49307045674fb1646e447f7c20fbd7d0e72a5b75cf",
+      "bytes": 37824
+    },
+    "nampower/spell_scripts.hpp": {
+      "sha256": "ebdc3165470ed28d39d77c521a2c18e1d8c7398d33ee7c23ed47a6bc4d538a08",
+      "bytes": 1549
+    },
+    "nampower/spellcast.cpp": {
+      "sha256": "b93b148b5e1a7183386ac64e482cc2a2e8a23566dbab40089112ca87734ef86c",
+      "bytes": 43009
+    },
+    "nampower/spellcast.hpp": {
+      "sha256": "587f0168f80ab5fe636ae8cf8b6fc2b9a86c73774bd4b95a13595fea36befbf0",
+      "bytes": 1844
+    },
+    "nampower/spellchannel.cpp": {
+      "sha256": "d6d3db0a02445b259db40b8b3fdb63bd1112a1591fe251818b173748bc52f0d9",
+      "bytes": 7352
+    },
+    "nampower/spellchannel.hpp": {
+      "sha256": "431da29cb2d7e23e038eff9fe673aa1dc48971ea8db42e9e1d909c33d6ab6e7e",
+      "bytes": 322
+    },
+    "nampower/spellevents.cpp": {
+      "sha256": "501385acf98678df0430aaf62524c77c5a28a9e2ed6dfbf5fa48e77be2a93d5e",
+      "bytes": 63233
+    },
+    "nampower/spellevents.hpp": {
+      "sha256": "567306453ac8d765af81a387bbed9559ed351d07a12ce7c53f7f3b4cba4a2605",
+      "bytes": 2527
+    },
+    "nampower/tooltip.cpp": {
+      "sha256": "5fd52ca887ef4a8cfc5d06002f84487244e6fdb93bd4d27644e12e4bfb0b7cd0",
+      "bytes": 7446
+    },
+    "nampower/tooltip.hpp": {
+      "sha256": "310ddd11d144ba653ea5aea0a6303fb6a0b0a09a8d48dc889d2925177f8363fa",
+      "bytes": 2420
+    },
+    "nampower/types.h": {
+      "sha256": "7018d1e7305e408287fd8b3598fc4d0c03df454e06df223fff04baa3ebb92920",
+      "bytes": 4562
+    },
+    "nampower/unit_fields.cpp": {
+      "sha256": "ae5082034c56b2faf83739a563d1880a403d288912c37f8a2219d23f0d57c2fe",
+      "bytes": 7462
+    },
+    "nampower/unit_fields.hpp": {
+      "sha256": "dd9acb5fb929bca92e8c9cbda2ed71f6e52dc085b4c6e610ccb70e077ee6485e",
+      "bytes": 738
+    },
+    "nampower/unit_scripts.cpp": {
+      "sha256": "a15bf0b4398f713d8ebba2503ce4840befc944ae7d1043be1068fea42e59ab6f",
+      "bytes": 20141
+    },
+    "nampower/unit_scripts.hpp": {
+      "sha256": "7139bcda2ede5fd265a521f6f9753b3d87f72b3faf84d23f8d208a4b03468c72",
+      "bytes": 745
+    },
+    "nampower/unit.cpp": {
+      "sha256": "daf21c926c141d3f83db568825bc20f1d652c3d5d316f0f6741251a75b0fe98c",
+      "bytes": 14613
+    },
+    "nampower/unit.hpp": {
+      "sha256": "df5a13a661968511c2128022a3430402fc5b0038b1516c9cc570e96d0a6aed58",
+      "bytes": 4482
+    },
+    "nampower.map": {
+      "sha256": "b426f361b36daf34f87a28fdb0579b8a0a3f854f3c2b68e4a0cc3c0403c2a59e",
+      "bytes": 2140004
+    },
+    "README.md": {
+      "sha256": "4fa5e23cbbc01e629b86ac9cf1d27e733b5e28b380c6a405cbd67a0f3d8f3230",
+      "bytes": 32742
+    },
+    "SCRIPTS.md": {
+      "sha256": "73a4f01b7c4a45611a2703eb9d416756a4383c72573e6d864cb48cd7a7c955a1",
+      "bytes": 66933
+    },
+    "UNIT_FIELDS.md": {
+      "sha256": "2787ade3ec295485d0de2ccf757868a352e9d9aeffbf84f13d8be4267846ac65",
+      "bytes": 9006
+    }
+  },
+  "symlinks": {},
+  "releases": {
+    "375040765": {
+      "tag": "v4.6.1",
+      "folder": "v4.6.1--375040765",
+      "assets": {
+        "525454583": {
+          "sha256": "934606af7092ac8d633da312fd73d06d6e980263fa8123b20c1b90bedac7d8bd",
+          "bytes": 4610298,
+          "id": "525454583",
+          "name": "nampower-v4.6.1.zip",
+          "url": "https://github.com/brues-code/nampower/releases/download/v4.6.1/nampower-v4.6.1.zip",
+          "path": "releases/v4.6.1--375040765/assets/nampower-v4.6.1.zip"
+        },
+        "525454585": {
+          "sha256": "304bdb35bc00b18ee092b3bc01195319f717c37d9c6babe6775e8fe278229d22",
+          "bytes": 1058816,
+          "id": "525454585",
+          "name": "nampower.dll",
+          "url": "https://github.com/brues-code/nampower/releases/download/v4.6.1/nampower.dll",
+          "path": "releases/v4.6.1--375040765/assets/nampower.dll"
+        },
+        "525454586": {
+          "sha256": "f9a421d9d0dcf2e11857098f8dc05216b8ac21bdb5ea44cba2bba58f2478cbba",
+          "bytes": 14766080,
+          "id": "525454586",
+          "name": "nampower.pdb",
+          "url": "https://github.com/brues-code/nampower/releases/download/v4.6.1/nampower.pdb",
+          "path": "releases/v4.6.1--375040765/assets/nampower.pdb"
+        }
+      },
+      "source": {
+        "sha256": "430a87097ec396d0811fea32f7b76d6fc24333153b272aef1bec97102bcb472f",
+        "bytes": 437090,
+        "path": "releases/v4.6.1--375040765/upstream-source.tar.gz",
+        "url": "https://api.github.com/repos/brues-code/nampower/tarball/v4.6.1"
+      }
+    }
+  }
+}

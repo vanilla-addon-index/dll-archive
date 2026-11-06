@@ -1,0 +1,9 @@
+{
+  "id": "240",
+  "tag": "v1.3",
+  "name": "WowPresence v1.3",
+  "body": "# WowPresence v1.3\r\n\r\n## What's New\r\n\r\n- Added independent privacy control for:\r\n  - Character Name\r\n  - Guild\r\n  - Race\r\n  - Faction\r\n  - Class\r\n  - Level\r\n  - Zone\r\n- Added a dedicated Race flag.\r\n- Full detail mask is now `127`.\r\n- Fixed Discord Rich Presence combinations that previously failed when Name, Zone or Level were not shared.\r\n- Race is no longer always shown and can now be disabled independently.\r\n- Improved handling of empty Discord Rich Presence fields.\r\n- Updated README with standalone privacy configuration examples.\r\n\r\n## Included\r\n\r\n- `WowPresence.zip` — ready-to-install package containing `WowPresence.dll`, `WowPresence.exe`, and the WowPresence configuration folder.\r\n",
+  "published": "2026-09-02T13:54:32Z",
+  "prerelease": false,
+  "url": "https://octowow.st/git/Dusk/WowPresence/releases/tag/v1.3"
+}

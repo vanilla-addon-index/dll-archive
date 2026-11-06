@@ -1,0 +1,12 @@
+name: Discover new client mods
+on:
+  schedule:
+    - cron: '23 1 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  archive:
+    uses: ./.github/workflows/archive.yml
+    with:
+      mode: discover

@@ -1,0 +1,9 @@
+{
+  "id": "279186483",
+  "tag": "v1.1.2",
+  "name": "v1.1.2",
+  "body": "- Fix crash on reallocating, freeing, or getting size of >16 MiB memory block\r\n- Fix usage string of visibleItemID morph functions\r\n\r\n**Full Changelog**: https://github.com/isfir/VanillaHelpers/compare/v1.1.1...v1.1.2",
+  "published": "2026-01-22T22:45:44Z",
+  "prerelease": false,
+  "url": "https://github.com/isfir/VanillaHelpers/releases/tag/v1.1.2"
+}

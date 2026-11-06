@@ -1,0 +1,16 @@
+.{
+    .name = .weirdutils,
+    .version = "0.1.0",
+    .fingerprint = 0x54f0a9542562d318,
+    .dependencies = .{
+        .zhook = .{
+            .url = "https://codeberg.org/marcelinevq/zhook/archive/f1b252ed61ad839f00310c386761d068f293ad0f.tar.gz",
+            .hash = "zhook-0.1.0-pFkSYC6FAACAnkqu0k_DJBWdL0gJjrM22IfXeQPJAMov",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}

@@ -1,0 +1,66 @@
+{
+  "upstream": "https://github.com/Phridgey/OctoBus",
+  "source": {
+    "kind": "repository",
+    "host": "github.com",
+    "owner": "Phridgey",
+    "repo": "OctoBus",
+    "name": "OctoBus",
+    "url": "https://github.com/Phridgey/OctoBus",
+    "api": "https://api.github.com/repos/Phridgey/OctoBus"
+  },
+  "commit": "67f608992a3979cdd08c5ece6f79d5208ec42a0d",
+  "sourceFiles": {
+    ".gitignore.upstream": {
+      "sha256": "51a6b7e2d7492f770d05f6087edb31a242acd513b0d3cccfd6f09b276822e741",
+      "bytes": 9
+    },
+    "CHANGELOG.md": {
+      "sha256": "ba781738bbe14c035973aae66d0c98343ba40a975cf0b3651b96613cb538b427",
+      "bytes": 9479
+    },
+    "OctoBus.lua": {
+      "sha256": "addac5843554a308b4a24c92b1841cdead16401cc2ca4518db2f6b8b00d7e746",
+      "bytes": 84262
+    },
+    "OctoBus.toc": {
+      "sha256": "3ce6227ce7c1e7c751c50c63f84cd4b95be01eab88835528579d62fe94e759a0",
+      "bytes": 280
+    },
+    "OctoBusOptions.lua": {
+      "sha256": "a0b505e2e2c143d7bba04babda577cc72dc69cb7841a3d9ce6a25238eaf53cc8",
+      "bytes": 8424
+    },
+    "README.md": {
+      "sha256": "c3b753ec9377a5250d32476256850dd872ee9add02afbe2e3e2888ecf0082bf7",
+      "bytes": 15324
+    },
+    "ZepSense_src/ZepSense_v5.c": {
+      "sha256": "48c3ce07df405b17095d12a710d4b422ad5a44697edff37f02a376eb4ee088e1",
+      "bytes": 16170
+    }
+  },
+  "symlinks": {},
+  "releases": {
+    "409912475": {
+      "tag": "1.3.1",
+      "folder": "1.3.1--409912475",
+      "assets": {
+        "631766243": {
+          "sha256": "8e68dfbb64cf95fabf255b7c36679e4487db5336461fb9a1b966014df918d932",
+          "bytes": 48640,
+          "id": "631766243",
+          "name": "ZepSense.dll",
+          "url": "https://github.com/Phridgey/OctoBus/releases/download/1.3.1/ZepSense.dll",
+          "path": "releases/1.3.1--409912475/assets/ZepSense.dll"
+        }
+      },
+      "source": {
+        "sha256": "4c9806465086a12a9d6332ce3973d212365312a25c44d4179dd435f86a1522ec",
+        "bytes": 29478,
+        "path": "releases/1.3.1--409912475/upstream-source.tar.gz",
+        "url": "https://api.github.com/repos/Phridgey/OctoBus/tarball/1.3.1"
+      }
+    }
+  }
+}

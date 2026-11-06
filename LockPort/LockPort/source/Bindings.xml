@@ -1,0 +1,8 @@
+<Bindings>
+	<Binding name="LOCKPORT_SUMMON_NEXT" header="LOCKPORT">
+		LockPort:SummonNext()
+	</Binding>
+	<Binding name="LOCKPORT_TOGGLE">
+		LockPort:Toggle()
+	</Binding>
+</Bindings>

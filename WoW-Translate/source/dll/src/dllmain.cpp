@@ -1,0 +1,95 @@
+// dllmain.cpp - Main DLL entry point for WoWTranslate
+// Chinese to English translation for WoW 1.12
+
+#include <windows.h>
+#include <string>
+
+#include "../include/lua_interface.h"
+#include "../include/translator_core.h"
+#include "../include/curl_bridge.h"
+#include "../include/logging.h"
+#include "../include/utils.h"
+
+using namespace std;
+
+// Global module handle
+HMODULE g_hModule = nullptr;
+
+// DLL entry point
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
+{
+    switch (ul_reason_for_call)
+    {
+    case DLL_PROCESS_ATTACH:
+    {
+        // Store module handle
+        g_hModule = hModule;
+
+        // Initialize logging first
+        if (!InitializeLogging()) {
+            MessageBoxW(NULL, L"Failed to initialize logging system.", L"WoWTranslate", MB_OK | MB_ICONERROR);
+            return FALSE;
+        }
+
+        LOG_INFO("WoWTranslate: DLL_PROCESS_ATTACH");
+        LOG_INFO("Initializing WoWTranslate library v0.1...");
+
+        // Initialize translation client
+        g_translator = std::make_unique<TranslationClient>();
+        if (!g_translator) {
+            LOG_ERROR("Failed to create translation client");
+            MessageBoxW(NULL, L"Failed to initialize translation system.", L"WoWTranslate", MB_OK | MB_ICONERROR);
+            return FALSE;
+        }
+
+        // Load WoWTranslate.ini next to the DLL if present (lets a custom HTTPS
+        // endpoint be configured without in-game commands); otherwise fall back
+        // to the Google Free endpoint immediately — no API key needed.
+        if (!g_translator->LoadConfigFromIni()) {
+            if (!g_translator->ConfigureGoogleFree()) {
+                LOG_WARNING("Translation client failed to initialize at load time");
+            }
+        }
+
+        // Initialize Lua interface
+        if (!InitializeLuaInterface()) {
+            LOG_ERROR("Failed to initialize Lua interface");
+            MessageBoxW(NULL, L"Failed to initialize Lua interface.", L"WoWTranslate", MB_OK | MB_ICONERROR);
+            return FALSE;
+        }
+
+        // Note: curl_global_init() is deliberately NOT called here. It happens
+        // lazily on the worker thread's first HTTP request (see curl_bridge.cpp)
+        // to avoid calling LoadLibrary from inside DllMain/loader lock.
+
+        LOG_INFO("WoWTranslate initialization complete");
+        break;
+    }
+    case DLL_PROCESS_DETACH:
+    {
+        LOG_INFO("WoWTranslate: DLL_PROCESS_DETACH");
+
+        // Cleanup in reverse order
+        CleanupLuaInterface();
+
+        if (g_translator) {
+            g_translator->Cleanup();
+            g_translator.reset();
+        }
+
+        // curl_global_cleanup() here is fine (cleanup doesn't LoadLibrary), but
+        // if unloading became async/lpReserved != NULL in the future this could
+        // still race a lingering worker-thread request. The worker thread is
+        // joined via g_translator->Cleanup() above before this runs, so there's
+        // no concurrent curl use left by this point.
+        CurlBridgeGlobalCleanup();
+
+        CleanupLogging();
+        break;
+    }
+    case DLL_THREAD_ATTACH:
+    case DLL_THREAD_DETACH:
+        break;
+    }
+    return TRUE;
+}

@@ -1,0 +1,7 @@
+## Interface: 11200
+## Title: [WeirdUtils] Minimap Icons
+## Notes: Minimap tracking spell dropdown
+## Version: 1.0
+## SavedVariablesPerCharacter: WeirdUtils_MinimapIconsSettings
+
+MinimapIcons.lua

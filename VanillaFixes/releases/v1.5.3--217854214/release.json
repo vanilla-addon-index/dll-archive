@@ -1,0 +1,9 @@
+{
+  "id": "217854214",
+  "tag": "v1.5.3",
+  "name": "v1.5.3",
+  "body": "### Changes in 1.5.3:\r\n\r\n* Updated to DXVK 2.6.1 (#79)\r\n* Added `dxvk.allowFse` to DXVK configuration to preserve exclusive fullscreen support\r\n\r\n### Files\r\n\r\n**vanillafixes-1.5.3.zip:**\r\nThis is VanillaFixes without any extra files. Extract into the game directory and use VanillaFixes.exe to launch the game.\r\n\r\n**vanillafixes-1.5.3-dxvk.zip:**\r\nThis version includes a copy of [DXVK 2.6.1](https://github.com/doitsujin/dxvk). DXVK is recommended for the best performance. \r\n\r\n### If your antivirus blocks VanillaFixes:\r\nSome antiviruses detect the launcher as a malicious file: https://www.virustotal.com/gui/file/72ea02aa34b61675d6f9ffc99fc64bc3d0c3e68e139f3f885eb04cac5167bc07\r\n\r\nThis is a false positive that occurs because the launcher injects a DLL into another program (WoW.exe). The function causing the false positive can be found [here](https://github.com/hannesmann/vanillafixes/blob/v1.5.3/src/loader.c#L156). All code for VanillaFixes is open source and can be built yourself if you prefer.",
+  "published": "2025-05-11T20:54:59Z",
+  "prerelease": false,
+  "url": "https://github.com/hannesmann/vanillafixes/releases/tag/v1.5.3"
+}

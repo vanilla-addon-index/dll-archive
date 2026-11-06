@@ -1,0 +1,241 @@
+//
+// Created by pmacc on 9/21/2024.
+//
+
+#pragma once
+
+#include <hadesmem/patcher.hpp>
+
+#include <fstream>
+#include <string>
+
+#include "game.hpp"
+#include "types.h"
+#include "castqueue.h"
+#include "cdatastore.hpp"
+
+namespace Nampower {
+    constexpr uint32_t MAX_TIME_SINCE_LAST_CAST_FOR_QUEUE = 10000; // time limit in ms after which queued casts are ignored in errors
+    constexpr uint32_t DYNAMIC_BUFFER_INCREMENT = 5; // amount to adjust buffer in ms on errors/lack of errors
+    constexpr uint32_t BUFFER_INCREASE_FREQUENCY = 5000; // time in ms between changes to raise buffer
+    constexpr uint32_t BUFFER_DECREASE_FREQUENCY = 10000; // time in ms between changes to lower buffer
+
+    // Disenchant quality bitmasks
+    constexpr uint32_t DISENCHANT_QUALITY_GREEN = 0x01;   // Uncommon
+    constexpr uint32_t DISENCHANT_QUALITY_BLUE = 0x02;    // Rare
+    constexpr uint32_t DISENCHANT_QUALITY_PURPLE = 0x04;  // Epic
+
+    constexpr uint32_t MAJOR_VERSION = 4;
+    constexpr uint32_t MINOR_VERSION = 6;
+    constexpr uint32_t PATCH_VERSION = 1;
+
+    constexpr int32_t LUA_REGISTRYINDEX = -10000;
+    constexpr int32_t LUA_GLOBALSINDEX = -10001;
+
+    extern uint32_t gLastErrorTimeMs;
+    extern uint32_t gLastBufferIncreaseTimeMs;
+    extern uint32_t gLastBufferDecreaseTimeMs;
+
+    extern uint32_t gBufferTimeMs;   // adjusts dynamically depending on errors
+
+    extern uint32_t gDisenchantItemId;
+    extern uint32_t gDisenchantQuality;
+    extern bool gDisenchantIncludeSoulbound;
+    extern uint32_t gNextDisenchantTimeMs;
+
+    extern bool gForceQueueCast;
+    extern bool gNoQueueCast;
+
+    extern uint64_t gNextCastId;
+
+    extern uint32_t gRunningAverageLatencyMs;
+    extern uint32_t gLastServerSpellDelayMs;
+
+    extern hadesmem::PatchDetourBase *castSpellDetour;
+
+    /* Configurable settings set by user */
+    extern UserSettings gUserSettings;
+
+    extern LastCastData gLastCastData;
+    extern CastData gCastData;
+
+    extern CastSpellParams gLastNormalCastParams;
+    extern CastSpellParams gLastOnSwingCastParams;
+
+    extern CastQueue gNonGcdCastQueue;
+    extern CastQueue gCastHistory;
+
+    extern bool gScriptQueued;
+    extern bool gQueuesProcessed;
+
+    using RangeCheckSelectedT = bool (__fastcall *)(uintptr_t *playerUnit, const game::SpellRec *,
+                                                    std::uint64_t targetGuid, char ignoreErrors);
+    using CGSpellBook_CastSpellT = void (__fastcall *)(uint32_t spellSlot, int bookType, uint64_t target);
+    using Spell_C_CastSpellT = bool (__fastcall *)(uintptr_t *playerUnit, uint32_t spellId, game::CGItem_C *item,
+                                           std::uint64_t targetGuid);
+    using SendCastT = void (__fastcall *)(game::SpellCast *, char unk);
+    using CancelSpellT = void (__fastcall *)(bool, bool, game::SpellCastResult);
+    using CancelAutoRepeatSpellT = void (__stdcall *)();
+    using SignalEventT = void (__fastcall *)(game::Events);
+    using PacketHandlerT = int (__stdcall *)(uint32_t *opCode, CDataStore *packet);
+    using FastCallPacketHandlerT = int (__fastcall *)(uint32_t unk, uint32_t opCode, uint32_t unk2, CDataStore *packet);
+    using ISceneEndT = int *(__fastcall *)(uintptr_t *unk);
+    using EndSceneT = int (__fastcall *)(uintptr_t *unk);
+    using OnSpriteRightClickT = int (__fastcall *)(uint64_t objectGUID);
+    using CGGameUI_TargetT = void (__stdcall *)(uint64_t objectGUID);
+    using CGGameUI_HandleObjectTrackChangeT = void (__stdcall *)(uint64_t guid, uint32_t param3, uint32_t param4);
+    using Spell_C_SpellFailedT = void (__fastcall *)(uint32_t, game::SpellCastResult, int, int, bool);
+    using Spell_C_GetAutoRepeatingSpellT = int (__cdecl *)();
+    using SpellGoT = void (__fastcall *)(uint64_t *, uint64_t *, uint32_t, CDataStore *);
+    using Spell_C_HandleSpriteClickT = bool (__fastcall *)(game::CSpriteClickEvent *event);
+    using Spell_C_HandleTerrainClickT = uint32_t (__fastcall *)(game::CTerrainClickEvent *event);
+    using CGWorldFrame_OnLayerTrackTerrainT = void (__fastcall *)(void *thisptr, int dummy_edx, int param_1);
+    using CGUnit_C_AddChatBubbleT = void (__fastcall *)(uintptr_t *thisptr, void *dummy_edx, game::CHAT_COMMAND_ID chatType, char *msg);
+    using CGChat_GetChatColorT = void (__fastcall *)(uint32_t *color, game::CHAT_COMMAND_ID chatType);
+    using CGUnit_RemoveChatBubbleT = void (__fastcall *)(void *thisptr, void *dummy_edx);
+    using CGChatBubbleFrame_GetNewChatBubbleT = uintptr_t *(__thiscall *)(void *thisptr);
+    using CGChatBubbleFrame_InitializeT = void (__thiscall *)(uintptr_t *thisptr, uint64_t *unitGuid, char *msg, uint32_t *color);
+    using GetUnitPositionT = game::C3Vector* (__fastcall *)(void *thisptr, void *dummy_edx, game::C3Vector *outPos);
+    using CSimpleTop_OnKeyDownT = bool (__fastcall *)(EVENT_DATA_KEY *param_1, int param_2);
+    using CSimpleTop_OnKeyUpT = bool (__fastcall *)(EVENT_DATA_KEY *param_1, int param_2);
+    using IsModifierKeyDownT = uint32_t (__fastcall *)(int param_1);
+    using Script_IsAltKeyDownT = uint32_t (__fastcall *)(void *param_1);
+    using UpdateSyncKeyStateT = void (__fastcall *)(void *evtContext, uint32_t key, int *syncType);
+    using Spell_C_TargetSpellT = bool (__fastcall *)(
+            uint32_t *player,
+            uint32_t *spellId,
+            uint32_t unk3,
+            float unk4);
+    using Spell_C_GetCastTimeT = uint32_t (__fastcall *)(uint32_t spellId, uint64_t *casterGuid, int avoidRounding);
+    using Spell_C_GetSpellCooldownT = int (__fastcall *)(uint32_t spellId, uint32_t isPetSpell,
+                                                         uint32_t *duration, uint64_t *startTime, uint32_t *enable);
+    using Spell_C_IsSpellUsableT = int (__fastcall *)(const game::SpellRec *spellRec, uint32_t *usesManaReturn);
+    using Spell_C_GetSpellRadiusT = float (__fastcall *)();
+    using Spell_C_GetSpellModifiersT = void (__fastcall *)(const game::SpellRec *spellRec, int *returnVal, game::SpellModOp modOp);
+
+    using CGPlayer_C_OnAttackIconPressedT = int (__fastcall *)(uintptr_t *this_ptr, void *dummy_edx, uint64_t guid);
+    using AttackRoundInfo_ReadPacketT = void (__fastcall *)(void *thisptr, void *dummy_edx, CDataStore *param_2);
+    using CGActionBar_UseActionT = void (__fastcall *)(uint32_t param_1, int param_2, int param_3);
+    using CGCharacterInfo_UseItemT = void (__fastcall *)(uintptr_t *this_ptr, void *dummy_edx, uint32_t itemSlot, uint64_t *targetGuid);
+
+    using GetSpellSlotAndTypeT = int32_t (__fastcall *)(const char *, uint32_t *);
+    using GetSpellSlotFromLuaT = uint32_t (__fastcall *)(uintptr_t *luaState, uint32_t *slot, uint32_t *type);
+    using GetTimeMsT = uint64_t (__stdcall *)();
+
+    using GetClientConnectionT = uintptr_t *(__stdcall *)();
+    using GetNetStatsT = void (__thiscall *)(uintptr_t *connection, float *param_1, float *param_2, uint32_t *param_3);
+    using ClientServices_SendT = void (__fastcall *)(CDataStore *param_1);
+
+    using LoadScriptFunctionsT = void (__stdcall *)();
+    using FrameScript_RegisterFunctionT = void (__fastcall *)(char *name, uintptr_t *func);
+    using FrameScript_Object_RegisterScriptEventT = uint32_t (__fastcall *)(void *thisPtr, void *dummy_edx, char *param_1);
+    using FrameScript_CreateEventsT = void (__fastcall *)(int param_1, uint32_t maxEventId);
+    using FramescriptSetEventCountT = void (__fastcall *)(void *thisPtr, void *dummy_edx, uint32_t count);
+
+    using LuaGetContextT = uintptr_t *(__fastcall *)(void);
+    using LuaGetTableT = void (__fastcall *)(uintptr_t *luaState, int globalsIndex);
+    using LuaCallT = void (__fastcall *)(const char *code, const char *unused);
+    using LuaScriptT = uint32_t (__fastcall *)(uintptr_t *luaState);
+    using FrameScript_ExecuteT = void (__fastcall *)(int param_1);
+    using GetGUIDFromNameT = std::uint64_t (__fastcall *)(const char *);
+    using GetUnitFromNameT = uintptr_t *(__fastcall *)(const char *);
+    using GetNamesFromGUIDT = char **(__fastcall *)(uint64_t *guid, int *numNamesReturn);
+    using SignalEventParamSingleStringT = int (__cdecl *)(uint32_t eventCode, const char *format, const char *str);
+    using SendUnitSignalT = void (__fastcall *)(uint64_t *guid, uint32_t eventCode);
+    using lua_gettableT = void (__fastcall *)(uintptr_t *luaState, int globalsIndex);
+    using lua_gettopT = int (__fastcall *)(uintptr_t *);
+    using lua_typeT = int (__fastcall *)(uintptr_t *, int);
+    using lua_isstringT = bool (__fastcall *)(uintptr_t *, int);
+    using lua_isnumberT = bool (__fastcall *)(uintptr_t *, int);
+    using lua_toflagT = uint32_t (__fastcall *)(uintptr_t *, int, uint32_t);
+    using lua_tostringT = char *(__fastcall *)(uintptr_t *, int);
+    using lua_tonumberT = double (__fastcall *)(uintptr_t *, int);
+    using lua_pushnumberT = void (__fastcall *)(uintptr_t *, double);
+    using lua_pushstringT = void (__fastcall *)(uintptr_t *, char *);
+    using lua_pushbooleanT = void (__fastcall *)(uintptr_t *, bool);
+    using lua_pcallT = int (__fastcall *)(uintptr_t *, int nArgs, int nResults, int errFunction);
+    using lua_pushnilT = void (__fastcall *)(uintptr_t *);
+    using lua_errorT = void (__cdecl *)(uintptr_t *, const char *);
+    using lua_settopT = void (__fastcall *)(uintptr_t *, int);
+    using lua_newtableT = void (__fastcall *)(uintptr_t *);
+    using lua_settableT = void (__fastcall *)(uintptr_t *, int);
+    using luaL_refT = int (__fastcall *)(uintptr_t *, int);
+    using lua_touserdataT = void *(__fastcall *)(uintptr_t *, int);
+    using lua_rawgetiT = void (__fastcall *)(uintptr_t *, int, int);
+    using luaL_unrefT = void (__fastcall *)(uintptr_t *, int, int);
+
+    using Spell_C_CooldownEventTriggeredT = void (__fastcall *)(uint32_t spellId,
+                                                                uint64_t *targetGUID,
+                                                                int param_3,
+                                                                int clearCooldowns);
+
+    using SpellVisualsInitializeT = void (__stdcall *)(void);
+    using WowSysMessageOutputInitializeT = void (__fastcall *)(void);
+
+    using PlaySpellVisual = void (__stdcall *)(int **param_1, void *param_2, int param_3, void **param_4);
+    using CGUnit_C_ClearCastingSpellT = void (__thiscall *)(uintptr_t *unit, uint32_t param_1, int param_2,
+                                                            int param_3);
+    using CGUnit_C_ClearSpellEffectT = void (__thiscall *)(uintptr_t *unit, uint32_t param_1, int param_2);
+    using CGUnit_C_GetEquippedItemAtSlotT = game::CGItem * (__thiscall *)(uintptr_t *unit, uint32_t slot);
+    using CGBag_C_GetItemAtSlotT = game::CGItem_C * (__thiscall *)(uintptr_t *bag, uint32_t slot);
+    using CGUnit_C_GetBagT = uintptr_t * (__thiscall *)(uintptr_t *unit);
+    using CanInspectUnitT = bool (__fastcall *)(uintptr_t *unit);
+    using GetContainerGuidT = uint64_t (__fastcall *)(int32_t bagIndex);
+
+    using GetBuffByIndexT = uintptr_t *(__fastcall *)(int index);
+
+    using TargetUnitT = void (__fastcall *)(uint64_t *guid);
+
+    using CVarLookupT = game::CVar *(__fastcall *)(const char *);
+    using SetCVarT = int (__fastcall *)(uintptr_t *luaPtr);
+    using CVarRegisterT = int *(__fastcall *)(char *name, char *help, int unk1, const char *defaultValuePtr,
+                                              void *callbackPtr,
+                                              int category, char unk2, int unk3);
+
+    using InvalidFunctionPtrCheckT = void (__fastcall *)(uint32_t param_1);
+
+    using CGGameUI_DisplayErrorT = void (__cdecl *)(uint32_t errorCode);
+
+    using XMLNode_GetAttributeByNameT = uint32_t (__thiscall *)(void *thisptr, const char *name);
+
+    void RegisterLuaFunction(char *, uintptr_t *func);
+
+    void LuaCall(const char *code);
+
+    uintptr_t *GetLuaStatePtr();
+
+    uint64_t GetWowTimeMs();
+
+    uint32_t GetLatencyMs();
+
+    uint32_t GetServerDelayMs();
+
+    bool InSpellQueueWindow(uint32_t remainingCastTime, uint32_t remainingGcd, bool spellIsTargeting);
+
+    bool IsNonSwingSpellQueued();
+
+    void ResetChannelingFlags();
+
+    void ResetCastFlags();
+
+    void ResetOnSwingFlags();
+
+    void ClearQueuedSpells();
+
+    void ResetDisenchantState();
+
+    bool processQueues();
+
+    uint32_t EffectiveCastEndMs();
+
+    void SetTarget(uint64_t target);
+
+    void SetSelectionTarget(uint64_t target);
+
+    void SetAttackTarget(uint64_t target);
+
+    const char *GetStringCvar(const char *cvar);
+
+    void loadUserVar(const char *cvar);
+
+}

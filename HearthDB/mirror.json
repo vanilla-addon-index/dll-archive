@@ -1,0 +1,69 @@
+{
+  "upstream": "https://octowow.st/git/lightblade/HearthDB",
+  "source": {
+    "kind": "repository",
+    "host": "octowow.st",
+    "owner": "lightblade",
+    "repo": "HearthDB",
+    "name": "HearthDB",
+    "url": "https://octowow.st/git/lightblade/HearthDB",
+    "api": "https://octowow.st/git/api/v1/repos/lightblade/HearthDB"
+  },
+  "commit": "c42ca6f21eae090ceccf9aecd55a173be3746a6c",
+  "sourceFiles": {
+    ".cargo/config.toml": {
+      "sha256": "ceda28e4f191122f57338370a3d8acfa62c6f917188c8b22489fc07d2368d155",
+      "bytes": 50
+    },
+    ".gitignore.upstream": {
+      "sha256": "3a50a692ef0023516382f2117317dc8623de9f6ff3d430a4282bf5579e74ee51",
+      "bytes": 36
+    },
+    "Cargo.lock": {
+      "sha256": "87e2d8f7b537b3ae8d84ae6f0eb161efce8e24a827a9a475bb9f003a503218e9",
+      "bytes": 8652
+    },
+    "Cargo.toml": {
+      "sha256": "40ed87c55b573e928b398f6ea9bf78b8161dad946ff85d30470d33a07e10ec02",
+      "bytes": 211
+    },
+    "LICENSE": {
+      "sha256": "fb981668c18a279e285fc4d83fba1e836cc84dd4daa73c9697d3cfd2d8aca6e0",
+      "bytes": 34674
+    },
+    "Makefile": {
+      "sha256": "db403753cc21aa6aa2ccb1ddc922ea3ed5686a02b430c2b3c9bf84dcebc65ffe",
+      "bytes": 906
+    },
+    "README.md": {
+      "sha256": "40f0c34724512bda424454aac0fa136583216e7d7ff014893ac10d7156712b03",
+      "bytes": 16196
+    },
+    "src/async_worker.rs": {
+      "sha256": "fc46ec61fb9717daf2c2036822ccc3a45dc252c489fa6636fe4c491e9f8defe5",
+      "bytes": 9476
+    },
+    "src/compat.rs": {
+      "sha256": "4e5f1cc42e73fcd257bb832d05b9bc78593d1ee3238e8342e9e0a1df5c7e088d",
+      "bytes": 2577
+    },
+    "src/db.rs": {
+      "sha256": "fd3876480a0b4fc10a017536b8ea4dbf36a13f901852cfb9bcb5be836d6bf4bd",
+      "bytes": 26496
+    },
+    "src/lib.rs": {
+      "sha256": "91e9142353f7bde3142c6543c2fdf77eeb7a4cc08d360e62c237a12af1556900",
+      "bytes": 5433
+    },
+    "src/lua.rs": {
+      "sha256": "20b6e268734c2cb4aaff28f90462f8644d92b5c5114bad2ad9fc9d03c678708f",
+      "bytes": 5183
+    },
+    "src/offsets.rs": {
+      "sha256": "633cb1014a19de09858b9a14169c3d3e272996b82fdcbf7c51b12fc8d07009e3",
+      "bytes": 4532
+    }
+  },
+  "symlinks": {},
+  "releases": {}
+}

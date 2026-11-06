@@ -1,0 +1,14 @@
+<Bindings>
+    <Binding name="Interact" header="INTERACT">
+        InteractNearest(0)
+    </Binding>
+    <Binding name="Interact (auto-loot)">
+        InteractNearest(1)
+    </Binding>
+    <Binding name="Loot Corpse">
+        LootAllCorpses(1)
+    </Binding>
+    <Binding name="Loot All Corpses">
+        LootAllCorpses()
+    </Binding>
+</Bindings>

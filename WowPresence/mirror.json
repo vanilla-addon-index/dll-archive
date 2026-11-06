@@ -1,0 +1,70 @@
+{
+  "upstream": "https://octowow.st/git/Dusk/WowPresence",
+  "source": {
+    "kind": "repository",
+    "host": "octowow.st",
+    "owner": "Dusk",
+    "repo": "WowPresence",
+    "name": "WowPresence",
+    "url": "https://octowow.st/git/Dusk/WowPresence",
+    "api": "https://octowow.st/git/api/v1/repos/Dusk/WowPresence"
+  },
+  "commit": "74deea17914a508a91b48ce96ff3f2b8af25e438",
+  "sourceFiles": {
+    ".github/workflows/build.yml": {
+      "sha256": "87c2726ab695677ab2587c8e8b654b27c0bc4b9d9b11cb15ac4abaf5dbd8bfce",
+      "bytes": 3443
+    },
+    "config/discord_application_id": {
+      "sha256": "dd8e8fabc386321c20efe2c0fc0a379d51c75066a568c4d632c2395005e6fbd3",
+      "bytes": 39
+    },
+    "config/discord_broadcast_flags": {
+      "sha256": "743c7850cccfba5e53a9002663ec1ddd1079315a98bdbfdde10e6044f56abefe",
+      "bytes": 4
+    },
+    "README.md": {
+      "sha256": "e93673082e64f9f47c03ba1c5f4ff31c05fd1035d2d606e11c77fc2e7ded3657",
+      "bytes": 7626
+    },
+    "RELEASE_NOTES.md": {
+      "sha256": "4b5f183ebb05a0dff26092b0ceb163ebb38ae3ce2e3cc594eb26cbebd2629ca6",
+      "bytes": 677
+    },
+    "src/WowPresence.c": {
+      "sha256": "53fdac110816e020419157e38355dc75b8b1f183ef53ea16af20c71fb06a2a6b",
+      "bytes": 31240
+    },
+    "src/WowPresenceLauncher.c": {
+      "sha256": "6618b2d1901f26da001673353411301c7f3a13fd9852cbce3cd187aacc9809f7",
+      "bytes": 18537
+    },
+    "THIRD_PARTY_NOTICES.md": {
+      "sha256": "3bfc4ae6eeac646eca8232af81a324818e49ed96a889142dc327d9a6a0907ce2",
+      "bytes": 1485
+    }
+  },
+  "symlinks": {},
+  "releases": {
+    "240": {
+      "tag": "v1.3",
+      "folder": "v1.3--240",
+      "assets": {
+        "55": {
+          "sha256": "9b2dca9c69b5ab3b6dae3ef3b3efc9671779a227802ebb6ac98cb22bc6ea448a",
+          "bytes": 141423,
+          "id": "55",
+          "name": "WowPresence.zip",
+          "url": "https://octowow.st/git/Dusk/WowPresence/releases/download/v1.3/WowPresence.zip",
+          "path": "releases/v1.3--240/assets/WowPresence.zip"
+        }
+      },
+      "source": {
+        "sha256": "6b21a14cd31ada61487cabde2af54e0643b9ede41fc1b69b16e75dfe7e94149c",
+        "bytes": 17718,
+        "path": "releases/v1.3--240/upstream-source.tar.gz",
+        "url": "https://octowow.st/git/api/v1/repos/Dusk/WowPresence/archive/v1.3.tar.gz"
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "upstream": "https://github.com/RetroCro/TurtleWoW-Mods/blob/main/Archive/DLL%20BACKUP/perfboostsettings.zip",
+  "source": {
+    "kind": "file",
+    "url": "https://raw.githubusercontent.com/RetroCro/TurtleWoW-Mods/main/Archive/DLL%20BACKUP/perfboostsettings.zip",
+    "filename": "perfboostsettings.zip",
+    "name": "perfboostsettings.zip"
+  },
+  "file": {
+    "sha256": "9a0e0d74e8c638589ecf7a50b83e37fbe069ff95b41083ded34e30f4e6b2e3ba",
+    "bytes": 233299,
+    "path": "releases/files/perfboostsettings.zip",
+    "url": "https://raw.githubusercontent.com/RetroCro/TurtleWoW-Mods/main/Archive/DLL%20BACKUP/perfboostsettings.zip"
+  },
+  "sourceFiles": {}
+}

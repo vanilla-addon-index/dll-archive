@@ -1,0 +1,13 @@
+[package]
+name    = "hearthdb"
+version = "0.4.1"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+name       = "HearthDB"
+
+[dependencies]
+rusqlite = { version = "0.39", features = ["bundled"] }
+minhook  = "0.9"
+

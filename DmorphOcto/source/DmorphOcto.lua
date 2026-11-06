@@ -1,0 +1,4186 @@
+-- DMorph for OctoWoW: morph state, wardrobe, catalogue search and the chat
+-- commands. The window lives in UI.lua and calls the same DmorphOcto.*
+-- functions as the commands.
+--
+-- DMorph itself is a DLL built for WotLK 3.3.5a (build 12340) with that
+-- client's addresses hardcoded, so it can't run on OctoWoW's 1.12.1 client.
+-- This addon drives the morph API of VanillaHelpers.dll (v1.1.0+) instead:
+-- OctoLauncher ships it as the "vanillaHelpers" mod and it is built for the
+-- 1.12.1 client.
+--
+-- The client runs Lua 5.0: no #, no %, no string.match, no select(), and
+-- table.getn() counts element by element, so long lists keep their own count.
+
+local VERSION = "2.23.0"
+local PREFIX = "|cff33ff99DMorph|r: "
+-- VANILLAHELPERS_VERSION is major * 10000 + minor * 100 + patch; morphing
+-- came in v1.1.0. Older versions load and set it, but can't morph.
+local MORPH_VERSION = 10100
+
+local function VersionText(v)
+	return format("%d.%d.%d", math.floor(v / 10000), math.floor(math.mod(v, 10000) / 100), math.mod(v, 100))
+end
+
+-- The other client mods that load the same way as VanillaHelpers. If none
+-- of them runs either, the game wasn't started through OctoLauncher.
+local function OtherClientMods()
+	local mods = {}
+	if SUPERWOW_VERSION then
+		table.insert(mods, "SuperWoW")
+	end
+	if type(C_Item) == "table" then
+		table.insert(mods, "ClassicAPI")
+	end
+	if type(GetNampowerVersion) == "function" then
+		table.insert(mods, "nampower")
+	end
+	if type(UnitXP) == "function" then
+		table.insert(mods, "UnitXP")
+	end
+	return mods
+end
+
+-- Why morphing doesn't work, and how to fix it (one chat-sized message).
+local function MissingAPI()
+	if type(VANILLAHELPERS_VERSION) == "number" and VANILLAHELPERS_VERSION < MORPH_VERSION then
+		return "VanillaHelpers v" .. VersionText(VANILLAHELPERS_VERSION) .. " is running, but morphing needs v1.1.0 or newer. "
+			.. "Update the 'vanillaHelpers' mod in OctoLauncher, close the game and start it again."
+	elseif type(VANILLAHELPERS_VERSION) == "number" then
+		return "VanillaHelpers is running but its morph functions are missing: reinstall the 'vanillaHelpers' mod in OctoLauncher "
+			.. "and restart the game."
+	elseif table.getn(OtherClientMods()) > 0 then
+		return "VanillaHelpers isn't running, so morphing is unavailable (your other client mods are, so only it is missing). "
+			.. "Tick the 'vanillaHelpers' mod in OctoLauncher, close the game completely and press Play again."
+	end
+	return "VanillaHelpers isn't running, so morphing is unavailable. No client mods are running at all: start the game "
+		.. "from OctoLauncher (not WoW.exe), with the 'vanillaHelpers' mod ticked. Close the game completely first."
+end
+
+-- Player model display IDs, indexed by race ID. VanillaHelpers recognises
+-- exactly these and rewrites race and gender as well, so your own skin, face
+-- and hair carry over. Race 10 is the High Elf on Turtle-based clients.
+local RACES = {
+	{ name = "Human",     male = 49,    female = 50,    faction = "Alliance" },
+	{ name = "Orc",       male = 51,    female = 52,    faction = "Horde" },
+	{ name = "Dwarf",     male = 53,    female = 54,    faction = "Alliance" },
+	{ name = "Night Elf", male = 55,    female = 56,    faction = "Alliance" },
+	{ name = "Undead",    male = 57,    female = 58,    faction = "Horde" },
+	{ name = "Tauren",    male = 59,    female = 60,    faction = "Horde" },
+	{ name = "Gnome",     male = 1563,  female = 1564,  faction = "Alliance" },
+	{ name = "Troll",     male = 1478,  female = 1479,  faction = "Horde" },
+	{ name = "Goblin",    male = 6894,  female = 6895,  faction = "Horde" },
+	{ name = "High Elf",  male = 15476, female = 15475, faction = "Alliance" },
+}
+local RACE_ALIASES = {
+	human = 1, orc = 2, dwarf = 3, nightelf = 4, ne = 4, undead = 5, scourge = 5,
+	forsaken = 5, tauren = 6, gnome = 7, troll = 8, goblin = 9, highelf = 10,
+	bloodelf = 10,
+}
+-- UnitRace() file tokens, only used when the native model isn't in RACES.
+local RACE_TOKENS = {
+	HUMAN = 1, ORC = 2, DWARF = 3, NIGHTELF = 4, SCOURGE = 5, TAUREN = 6,
+	GNOME = 7, TROLL = 8, GOBLIN = 9, HIGHELF = 10, BLOODELF = 10,
+}
+
+-- Inventory slots that show on the character model, numbered like DMorph
+-- and GetInventorySlotInfo(). Neck, rings and trinkets have no model.
+local SLOT_ORDER = { 1, 3, 4, 5, 6, 7, 8, 9, 10, 15, 16, 17, 18, 19 }
+local SLOT_NAMES = {
+	[1] = "Head", [3] = "Shoulder", [4] = "Shirt", [5] = "Chest", [6] = "Waist",
+	[7] = "Legs", [8] = "Feet", [9] = "Wrist", [10] = "Hands", [15] = "Back",
+	[16] = "Main hand", [17] = "Off hand", [18] = "Ranged", [19] = "Tabard",
+}
+-- The slots whose enchant glow DmorphHelper can change.
+local GLOW_SLOT = { [16] = true, [17] = true, [18] = true }
+local SLOT_ALIASES = {
+	head = 1, shoulder = 3, shoulders = 3, shirt = 4, chest = 5, waist = 6,
+	belt = 6, legs = 7, feet = 8, boots = 8, wrist = 9, wrists = 9, hands = 10,
+	gloves = 10, back = 15, cloak = 15, mainhand = 16, offhand = 17,
+	ranged = 18, tabard = 19,
+}
+
+DmorphOcto = {
+	VERSION = VERSION,
+	MissingAPI = MissingAPI,
+	RACES = RACES,
+	SLOT_ORDER = SLOT_ORDER,
+	SLOT_NAMES = SLOT_NAMES,
+	GLOW_SLOTS = { 16, 17, 18 },
+}
+local M = DmorphOcto
+
+-- An outfit is { display, race, gender (0 male, 1 female), items[slot] }.
+local db      -- DmorphOctoDB, per character: the outfit currently applied
+local account -- DmorphOctoAccount, shared: saved outfits and the minimap button
+local nativeRace, nativeGender
+local sessionReady = false
+local warnedMissingAPI = false
+local pendingApply
+local listeners = {}
+local creatures
+local items = {}
+local sets
+local looks = {}
+local InitDB -- defined under State; the catalogue needs it first
+
+local function Print(msg)
+	DEFAULT_CHAT_FRAME:AddMessage(PREFIX .. msg)
+end
+
+local function Report(ok, message)
+	Print(message)
+end
+
+local function HasMorphAPI()
+	return type(SetUnitDisplayID) == "function"
+		and type(SetUnitVisibleItemID) == "function"
+		and type(UnitDisplayInfo) == "function"
+end
+M.HasMorphAPI = HasMorphAPI
+
+-- VanillaHelpers reports bad input with lua_error, so every call is guarded.
+-- A nil value clears that override.
+local function Morph(fn, a1, a2, a3)
+	return pcall(fn, a1, a2, a3)
+end
+
+local function ParseID(text)
+	local n = tonumber(text or "")
+	if n and n >= 0 and n <= 2147483647 and n == math.floor(n) then
+		return n
+	end
+end
+M.ParseID = ParseID
+
+local function Trim(text)
+	local _, _, trimmed = strfind(text or "", "^%s*(.-)%s*$")
+	return trimmed
+end
+
+local function RaceModel(race, gender)
+	if gender == 1 then
+		return RACES[race].female
+	end
+	return RACES[race].male
+end
+
+function M.DescribeBody(race, gender)
+	if gender == 1 then
+		return RACES[race].name .. " female"
+	end
+	return RACES[race].name .. " male"
+end
+
+local function RaceList()
+	local list = ""
+	for race = 1, table.getn(RACES) do
+		list = list .. ", " .. race .. " " .. RACES[race].name
+	end
+	return strsub(list, 3)
+end
+
+local function SlotList()
+	local list = ""
+	for i = 1, table.getn(SLOT_ORDER) do
+		local slot = SLOT_ORDER[i]
+		list = list .. ", " .. slot .. " " .. strlower(SLOT_NAMES[slot])
+	end
+	return strsub(list, 3)
+end
+
+-- Catalogue -----------------------------------------------------------------
+
+-- Data/*.lua hold the catalogue as text so the game loads it quickly; each
+-- list is parsed the first time it's needed. An entry is
+-- { id, name, lowercase name, quality, kind }.
+local function NewCatalog()
+	return { ids = {}, names = {}, lower = {}, quality = {}, kind = {}, byID = {}, count = 0 }
+end
+
+local function AddEntry(catalog, id, name, quality, kind)
+	local n = catalog.count + 1
+	catalog.count = n
+	catalog.ids[n], catalog.names[n], catalog.lower[n] = id, name, strlower(name)
+	catalog.quality[n], catalog.kind[n] = quality, kind
+	if not catalog.byID[id] then
+		catalog.byID[id] = n
+	end
+end
+
+local function Before(a, b)
+	return a[3] < b[3] or (a[3] == b[3] and a[1] < b[1])
+end
+
+-- Merges two name-sorted lists. The data files are sorted the way Lua
+-- compares strings, so this is one pass.
+local function Merge(a, n, b, m)
+	local out, k, i, j = {}, 0, 1, 1
+	while i <= n or j <= m do
+		local x, y = a[i], b[j]
+		if not y or (x and not Before(y, x)) then
+			i = i + 1
+		else
+			x, j = y, j + 1
+		end
+		k = k + 1
+		out[k] = x
+	end
+	return out, k
+end
+
+local function Fill(catalog, list, count)
+	for i = 1, count do
+		local e = list[i]
+		AddEntry(catalog, e[1], e[2], e[4], e[5])
+	end
+	return catalog
+end
+
+-- Creature models by kind: a creature's name, or named after the model file;
+-- 2 and 3 are the same for the models OctoWoW added to the stock 1.12.1 client.
+M.KIND_CREATURE, M.KIND_MODEL, M.KIND_NEW, M.KIND_NEW_MODEL = 0, 1, 2, 3
+-- Models brought over from later expansions by the porting tool, listed in
+-- Data/Ported.lua (only on a PC that has the tool's patch-Z.mpq).
+M.KIND_PORTED = 4
+M.MODEL_FILTERS = {
+	{ text = "All models" },
+	{ text = "Creatures", kinds = { [0] = true, [2] = true } },
+	{ text = "Bosses", tag = "boss" },
+	{ text = "Rare creatures", tag = "rare" },
+	{ text = "Mounts", tag = "mount" },
+	{ text = "Other models", kinds = { [1] = true, [3] = true } },
+	{ text = "New in OctoWoW", kinds = { [2] = true, [3] = true } },
+	{ text = "Ported (later expansions)", kinds = { [4] = true } },
+}
+-- Items and sets are kind 0 (stock 1.12.1) or 2 (added by Turtle WoW / OctoWoW).
+M.ITEM_FILTERS = {
+	{ text = "All items" },
+	{ text = "1.12 items", kinds = { [0] = true } },
+	{ text = "New in OctoWoW", kinds = { [2] = true } },
+	{ text = "Ported (later expansions)", kinds = { [4] = true } },
+}
+M.SET_FILTERS = {
+	{ text = "All sets" },
+	{ text = "1.12 sets", kinds = { [0] = true } },
+	{ text = "New in OctoWoW", kinds = { [2] = true } },
+	{ text = "Ported (later expansions)", kinds = { [4] = true } },
+}
+-- Item and set quality, as GetItemInfo() numbers it.
+-- Item kinds (class * 100 + subclass, Data/ItemTypes.lua), in the order the
+-- filter lists them: armour by material, then weapons.
+M.ITEM_TYPES = {
+	{ 401, "Cloth" }, { 402, "Leather" }, { 403, "Mail" }, { 404, "Plate" }, { 406, "Shield" },
+	{ 400, "Miscellaneous" }, { 407, "Libram" }, { 408, "Idol" }, { 409, "Totem" },
+	{ 215, "Dagger" }, { 213, "Fist weapon" }, { 200, "One-handed axe" }, { 204, "One-handed mace" },
+	{ 207, "One-handed sword" }, { 201, "Two-handed axe" }, { 205, "Two-handed mace" },
+	{ 208, "Two-handed sword" }, { 206, "Polearm" }, { 210, "Staff" }, { 217, "Spear" }, { 202, "Bow" },
+	{ 218, "Crossbow" }, { 203, "Gun" }, { 216, "Thrown" }, { 219, "Wand" }, { 214, "Miscellaneous weapon" },
+	{ 220, "Fishing pole" },
+}
+M.ITEM_TYPE_NAMES = {}
+for i = 1, table.getn(M.ITEM_TYPES) do
+	M.ITEM_TYPE_NAMES[M.ITEM_TYPES[i][1]] = M.ITEM_TYPES[i][2]
+end
+-- GetItemInfo's English sub-types, for items no data file knows.
+local SUBTYPES = {
+	Armor = { Miscellaneous = 400, Cloth = 401, Leather = 402, Mail = 403, Plate = 404, Shields = 406,
+		Librams = 407, Idols = 408, Totems = 409 },
+	Weapon = { ["One-Handed Axes"] = 200, ["Two-Handed Axes"] = 201, Bows = 202, Guns = 203,
+		["One-Handed Maces"] = 204, ["Two-Handed Maces"] = 205, Polearms = 206, ["One-Handed Swords"] = 207,
+		["Two-Handed Swords"] = 208, Staves = 210, ["Fist Weapons"] = 213, Miscellaneous = 214, Daggers = 215,
+		Thrown = 216, Spears = 217, Crossbows = 218, Wands = 219, ["Fishing Pole"] = 220 },
+}
+
+M.QUALITY_FILTERS = {
+	{ text = "Any quality" },
+	{ text = "Poor", quality = 0 },
+	{ text = "Common", quality = 1 },
+	{ text = "Uncommon", quality = 2 },
+	{ text = "Rare", quality = 3 },
+	{ text = "Epic", quality = 4 },
+	{ text = "Legendary", quality = 5 },
+}
+
+-- Display and item IDs that can't show in this client: Data/HiddenModels.lua
+-- and Data/HiddenItems.lua, written by tools/build_models.ps1 and
+-- tools/build_items.ps1 from the game's own files.
+local hiddenModels, hiddenItems
+
+local function ReadIDs(text)
+	local set = {}
+	for id in string.gfind(text or "", "%d+") do
+		set[tonumber(id)] = true
+	end
+	return set
+end
+
+local function HiddenModels()
+	if not hiddenModels then
+		hiddenModels = ReadIDs(DmorphOcto_HiddenModels)
+		DmorphOcto_HiddenModels = nil
+	end
+	return hiddenModels
+end
+
+local function HiddenItems()
+	if not hiddenItems then
+		hiddenItems = ReadIDs(DmorphOcto_HiddenItems)
+		DmorphOcto_HiddenItems = nil
+	end
+	return hiddenItems
+end
+
+-- Display IDs from Data/Ported.lua: only PCs with the same ported pack have
+-- their models. Others see your own model instead (Share.lua sends ported
+-- looks apart, tagged with the pack, to DMorph users who have the same one).
+local portedIDs = {}
+
+-- Which ported pack this PC has: the porting tool's DmorphOcto_PortedPack if
+-- it wrote one, else how many models, items and sets Ported.lua's three lists
+-- have (read here, as Ported.lua loads before this file and the lists are
+-- dropped once parsed). Two PCs with the same pack (Pack Ported.bat /
+-- Install Ported.bat) match. Rows, not the lists' sizes (before 2.17.1): a
+-- fix to the names or tags (mount names, rider poses) changed the size and
+-- stopped two PCs with the same models seeing each other's ported looks.
+local function Rows(text)
+	local _, n = string.gsub(text or "", "\n", "\n")
+	return n
+end
+local portedPack
+if type(DmorphOcto_PortedPack) == "string" then
+	portedPack = DmorphOcto_PortedPack
+elseif DmorphOcto_PortedData or DmorphOcto_PortedItems then
+	portedPack = "P" .. Rows(DmorphOcto_PortedData) .. "x" .. Rows(DmorphOcto_PortedItems)
+		.. "x" .. Rows(DmorphOcto_PortedSets)
+end
+if portedPack and not strfind(portedPack, "^%w+$") then
+	portedPack = nil
+end
+
+-- Rider poses: ported mounts whose riders Blizzard poses another way (Ported.lua's
+-- tag "rider<animation>": 120 stands crouched on the mage discs, boards, kites
+-- and carpets, 97 sits). DmorphHelper v14 (DmorphHelper_SetRiderPose) puts them
+-- on whoever rides one. Read now, before the list is parsed and dropped.
+local riderPoses = {}
+for id, anim in string.gfind(DmorphOcto_PortedData or "", "(%d+)\t[^\t\r\n]*\t[^\t\r\n]*rider(%d+)") do
+	riderPoses[tonumber(id)] = tonumber(anim)
+end
+function M.GetRiderPose(displayID)
+	return riderPoses[tonumber(displayID or 0)]
+end
+
+local posesRegistered
+local function RegisterRiderPoses()
+	if posesRegistered or type(DmorphHelper_SetRiderPose) ~= "function" or not next(riderPoses) then
+		return
+	end
+	posesRegistered = true
+	for id, anim in pairs(riderPoses) do
+		-- An error: the helper couldn't change the game's riding pose (/dmorph check says so).
+		if not pcall(DmorphHelper_SetRiderPose, id, anim) then
+			return
+		end
+	end
+end
+function M.GetPortedPack()
+	return portedPack
+end
+function M.IsPorted(displayID)
+	M.GetCreatureCatalog()
+	return portedIDs[tonumber(displayID or 0)] == true
+end
+
+-- Creatures.lua (named creatures) and Models.lua (every other display ID the
+-- client has) together list every model, less the ones that can't show.
+function M.GetCreatureCatalog()
+	if creatures then
+		return creatures
+	end
+	local hidden = HiddenModels()
+	local named, other, n, m = {}, {}, 0, 0
+	for id, name in string.gfind(DmorphOcto_CreatureData or "", "(%d+)\t([^\r\n]+)") do
+		id = tonumber(id)
+		if not hidden[id] then
+			n = n + 1
+			named[n] = { id, name, strlower(name), 0, M.KIND_CREATURE }
+		end
+	end
+	for id, kind, name in string.gfind(DmorphOcto_ModelData or "", "(%d+)\t(%d)\t([^\r\n]+)") do
+		id = tonumber(id)
+		if not hidden[id] then
+			m = m + 1
+			other[m] = { id, name, strlower(name), 0, tonumber(kind) }
+		end
+	end
+	DmorphOcto_CreatureData, DmorphOcto_ModelData = nil, nil -- the parsed tables replace the text
+	local all, count = Merge(named, n, other, m)
+	-- Data/Ported.lua: displayID<TAB>name<TAB>tags ("mount").
+	local ported, p, portedMounts = {}, 0, {}
+	for id, name, tags in string.gfind(DmorphOcto_PortedData or "", "(%d+)\t([^\t\r\n]+)\t?([^\r\n]*)") do
+		id = tonumber(id)
+		p = p + 1
+		ported[p] = { id, name, strlower(name), 0, M.KIND_PORTED }
+		portedIDs[id] = true
+		if strfind(tags, "mount") then
+			portedMounts[id] = true
+		end
+	end
+	DmorphOcto_PortedData = nil
+	table.sort(ported, Before)
+	creatures = Fill(NewCatalog(), Merge(all, count, ported, p))
+	-- Tags for the filters: bosses and rares by display and name, mounts by
+	-- display. Data/ModelTags.lua (OctoWoW's client and Turtle WoW's ranks) and
+	-- Data/ClassicTags.lua (the 1.12.1 database); a boss stays a boss. A mount
+	-- with its own name (Blizzard's) is listed under that name only, not under
+	-- every creature that shares the display.
+	local byName, mounts, mountTitles, titled = {}, {}, {}, {}
+	for _, text in ipairs({ DmorphOcto_TagData or "", DmorphOcto_ClassicTagData or "" }) do
+		for id, tag, name in string.gfind(text, "(%d+)\t(%a+)\t([^\r\n]*)") do
+			if tag == "mount" then
+				mounts[tonumber(id)] = true
+				if name ~= "" then
+					mountTitles[id .. "\t" .. strlower(name)] = true
+				end
+			else
+				local key = id .. "\t" .. strlower(name)
+				if byName[key] ~= "boss" then
+					byName[key] = tag
+				end
+			end
+		end
+	end
+	DmorphOcto_TagData, DmorphOcto_ClassicTagData = nil, nil
+	for id in pairs(portedMounts) do
+		mounts[id] = true
+	end
+	-- Displays with an entry under the mount's own name (else every entry counts).
+	for i = 1, creatures.count do
+		if mountTitles[creatures.ids[i] .. "\t" .. creatures.lower[i]] then
+			titled[creatures.ids[i]] = true
+		end
+	end
+	creatures.tags = {}
+	for i = 1, creatures.count do
+		local id = creatures.ids[i]
+		local key = id .. "\t" .. creatures.lower[i]
+		local tag = byName[key]
+		if mounts[id] and (not titled[id] or mountTitles[key]) then
+			tag = (tag and (tag .. " ") or "") .. "mount"
+		end
+		creatures.tags[i] = tag
+	end
+	return creatures
+end
+
+-- Inventory slots by the INVTYPE_ name GetItemInfo() returns.
+local EQUIP_SLOTS = {
+	INVTYPE_HEAD = { 1 }, INVTYPE_SHOULDER = { 3 }, INVTYPE_BODY = { 4 }, INVTYPE_CHEST = { 5 },
+	INVTYPE_ROBE = { 5 }, INVTYPE_WAIST = { 6 }, INVTYPE_LEGS = { 7 }, INVTYPE_FEET = { 8 },
+	INVTYPE_WRIST = { 9 }, INVTYPE_HAND = { 10 }, INVTYPE_CLOAK = { 15 }, INVTYPE_TABARD = { 19 },
+	INVTYPE_WEAPON = { 16, 17 }, INVTYPE_2HWEAPON = { 16 }, INVTYPE_WEAPONMAINHAND = { 16 },
+	INVTYPE_SHIELD = { 17 }, INVTYPE_WEAPONOFFHAND = { 17 }, INVTYPE_HOLDABLE = { 17 },
+	INVTYPE_RANGED = { 18 }, INVTYPE_THROWN = { 18 }, INVTYPE_RANGEDRIGHT = { 18 },
+}
+
+-- Developers' test items ("Kazgrim Test Helm", "1000 Test dagger 60 blue"):
+-- "test" as a word in the name.
+local function IsTestItem(lower)
+	local at, stop = strfind(lower, "test", 1, true)
+	while at do
+		if not strfind(strsub(lower, at - 1, at - 1), "%a") and not strfind(strsub(lower, stop + 1, stop + 1), "%a") then
+			return true
+		end
+		at, stop = strfind(lower, "test", stop + 1, true)
+	end
+	return false
+end
+
+local function ParseItems(text, kind, list, n, skip)
+	local hidden = HiddenItems()
+	for id, quality, name in string.gfind(text or "", "(%d+)\t(%d)\t([^\r\n]+)") do
+		id = tonumber(id)
+		if not ((skip and skip[id]) or hidden[id] or IsTestItem(strlower(name))) then
+			n = n + 1
+			list[n] = { id, name, strlower(name), tonumber(quality), kind }
+		end
+	end
+	return list, n
+end
+
+-- Items the game told us about in this or an earlier session (see Item
+-- lookup), saved as DmorphOctoAccount.itemInfo[id] = "slots<TAB>quality<TAB>name".
+local function LearnedItems(slot, skip)
+	local list, n, hidden = {}, 0, HiddenItems()
+	for id, info in pairs(account.itemInfo) do
+		if info and not skip[id] and not hidden[id] then
+			local _, _, slots, quality, name = strfind(info, "^([%d,]+)\t(%-?%d+)\t(.+)$")
+			if slots and strfind("," .. slots .. ",", "," .. slot .. ",", 1, true) and not IsTestItem(strlower(name)) then
+				n = n + 1
+				list[n] = { id, name, strlower(name), tonumber(quality), M.KIND_NEW }
+			end
+		end
+	end
+	table.sort(list, Before)
+	return list, n
+end
+
+-- itemID -> kind, from Data/ItemTypes.lua and ItemsExtra.lua's item cache
+-- kinds, read once.
+local itemTypes
+local function ReadItemTypes()
+	itemTypes = {}
+	for _, text in ipairs({ DmorphOcto_ItemTypeData or "", DmorphOcto_ItemTypeExtra or "" }) do
+		for kind, list in string.gfind(text, "(%d+)\t([%d,]+)") do
+			kind = tonumber(kind)
+			for id in string.gfind(list, "%d+") do
+				itemTypes[tonumber(id)] = kind
+			end
+		end
+	end
+	DmorphOcto_ItemTypeData, DmorphOcto_ItemTypeExtra = nil, nil
+end
+
+-- Ported weapons (Data/Ported.lua, DmorphOcto_PortedItems): item IDs only this
+-- PC has. DmorphHelper v10+ answers the game's item cache for them with a real
+-- item of the same kind (the template: held and sheathed the same) showing
+-- the ported model. Kind -> the slots it fits (armour lines name their slot).
+local PORTED_SLOTS = {
+	[200] = { 16, 17 }, [204] = { 16, 17 }, [207] = { 16, 17 }, [213] = { 16, 17 }, [215] = { 16, 17 },
+	[201] = { 16 }, [205] = { 16 }, [206] = { 16 }, [208] = { 16 }, [210] = { 16 },
+	[202] = { 18 }, [203] = { 18 }, [216] = { 18 }, [218] = { 18 }, [219] = { 18 },
+	[214] = { 17 }, [406] = { 17 },
+}
+local portedItems
+local function PortedItems()
+	if not portedItems then
+		portedItems = {}
+		-- virtualID<TAB>display<TAB>kind<TAB>template<TAB>name[<TAB>slot[<TAB>quality]]
+		-- (slot 0 or none: the slots its kind fits; quality none: epic).
+		for id, display, kind, template, name, slot, quality in string.gfind(DmorphOcto_PortedItems or "",
+			"(%d+)\t(%d+)\t(%d+)\t(%d+)\t([^\t\r\n]+)\t?(%d*)\t?(%d*)") do
+			slot = tonumber(slot)
+			if slot == 0 then
+				slot = nil
+			end
+			portedItems[tonumber(id)] = { display = tonumber(display), kind = tonumber(kind), template = tonumber(template),
+				name = name, slot = slot, quality = tonumber(quality) or 4 }
+		end
+		DmorphOcto_PortedItems = nil
+	end
+	return portedItems
+end
+
+function M.IsPortedItem(itemID)
+	return PortedItems()[tonumber(itemID or 0)] ~= nil
+end
+
+local function HasVirtualItems()
+	return type(DmorphHelper_SetVirtualItem) == "function"
+end
+M.HasVirtualItems = HasVirtualItems
+
+-- Tells DmorphHelper about every ported weapon, and asks the server for the
+-- template items the game hasn't seen (their records are copied).
+local portedRegistered
+local function RegisterPortedItems()
+	if portedRegistered or not HasVirtualItems() or not next(PortedItems()) then
+		return
+	end
+	portedRegistered = true
+	local asked = {}
+	for id, p in pairs(PortedItems()) do
+		pcall(DmorphHelper_SetVirtualItem, id, p.template, p.display)
+		if not asked[p.template] then
+			asked[p.template] = true
+			local ok, name = pcall(GetItemInfo, p.template)
+			if not (ok and name) and type(C_Item) == "table" then
+				pcall(C_Item.RequestLoadItemDataByID, p.template)
+			end
+		end
+	end
+end
+M.RegisterPortedItems = RegisterPortedItems
+
+-- An item's kind (401 cloth, 215 dagger, ...: M.ITEM_TYPES), or nil. Items no
+-- data file knows are asked from the game, which knows the ones it has seen.
+function M.GetItemType(itemID)
+	local ported = PortedItems()[itemID]
+	if ported then
+		return ported.kind
+	end
+	if not itemTypes then
+		ReadItemTypes()
+	end
+	local kind = itemTypes[itemID]
+	if not kind then
+		local ok, _, _, _, _, class, subclass = pcall(GetItemInfo, itemID)
+		kind = ok and SUBTYPES[class or ""] and SUBTYPES[class][subclass or ""]
+		if kind then
+			itemTypes[itemID] = kind
+		end
+	end
+	return kind
+end
+
+-- The kinds a catalogue's entries have, in M.ITEM_TYPES' order, each with how
+-- many: { { kind, name, count }, ... }.
+function M.GetCatalogTypes(catalog)
+	local counts = {}
+	for i = 1, catalog.count do
+		local kind = catalog.types and catalog.types[i]
+		if kind then
+			counts[kind] = (counts[kind] or 0) + 1
+		end
+	end
+	local list = {}
+	for i = 1, table.getn(M.ITEM_TYPES) do
+		local kind = M.ITEM_TYPES[i][1]
+		if counts[kind] then
+			table.insert(list, { kind, M.ITEM_TYPES[i][2], counts[kind] })
+		end
+	end
+	return list
+end
+
+-- Every item that fits the slot: Items.lua (the 1.12.1 database), then
+-- ItemsExtra.lua (Turtle WoW and OctoWoW) and the items looked up in game.
+function M.GetItemCatalog(slot)
+	if not items[slot] then
+		InitDB()
+		local base, n = ParseItems(DmorphOcto_ItemData and DmorphOcto_ItemData[slot], 0, {}, 0)
+		local seen = {}
+		for i = 1, n do
+			seen[base[i][1]] = true
+		end
+		local extra, m = ParseItems(DmorphOcto_ItemExtra and DmorphOcto_ItemExtra[slot], M.KIND_NEW, {}, 0, seen)
+		for i = 1, m do
+			seen[extra[i][1]] = true
+		end
+		local learned, k = LearnedItems(slot, seen)
+		local both, count = Merge(base, n, extra, m)
+		local all, total = Merge(both, count, learned, k)
+		-- Ported weapons and armour that fit the slot, with their Retail quality.
+		local ported, p = {}, 0
+		for id, item in pairs(PortedItems()) do
+			local slots = item.slot and { item.slot } or PORTED_SLOTS[item.kind] or {}
+			for i = 1, table.getn(slots) do
+				if slots[i] == slot then
+					p = p + 1
+					ported[p] = { id, item.name, strlower(item.name), item.quality, M.KIND_PORTED }
+				end
+			end
+		end
+		table.sort(ported, Before)
+		local catalog = Fill(NewCatalog(), Merge(all, total, ported, p))
+		catalog.types = {}
+		for i = 1, catalog.count do
+			catalog.types[i] = M.GetItemType(catalog.ids[i])
+		end
+		items[slot] = catalog
+	end
+	return items[slot]
+end
+
+-- The Slutmog tab's list (user, 18 Oct: "its own tab"): every revealing piece
+-- (Data/Slutmog.lua) and OctoWoW's invisible Unseen Fashion items, from the
+-- armour slots' item lists; catalog.slots[i] is the slot it's worn in.
+-- Rebuilt when looked-up items join the lists.
+local slutmogCatalog
+M.SLUTMOG_SLOTS = { 1, 3, 4, 5, 6, 7, 8, 9, 10, 15, 19 }
+function M.GetSlutmogCatalog()
+	local version = M.GetItemsVersion()
+	if not slutmogCatalog or slutmogCatalog.version ~= version then
+		local list, n, slotOf = {}, 0, {}
+		for s = 1, table.getn(M.SLUTMOG_SLOTS) do
+			local slot = M.SLUTMOG_SLOTS[s]
+			local c = M.GetItemCatalog(slot)
+			for i = 1, c.count do
+				local id = c.ids[i]
+				if not slotOf[id] and M.IsSlutmogItem(id, c.lower[i]) then
+					n = n + 1
+					list[n] = { id, c.names[i], c.lower[i], c.quality[i], c.kind[i] }
+					slotOf[id] = slot
+				end
+			end
+		end
+		table.sort(list, Before)
+		slutmogCatalog = Fill(NewCatalog(), list, n)
+		slutmogCatalog.slots = {}
+		for i = 1, slutmogCatalog.count do
+			slutmogCatalog.slots[i] = slotOf[slutmogCatalog.ids[i]]
+		end
+		slutmogCatalog.version = version
+	end
+	return slutmogCatalog
+end
+
+-- The slots an item can be morphed into, or nil if it isn't known.
+local itemSlots
+function M.GetItemSlots(itemID)
+	if not itemSlots then
+		itemSlots = {}
+		for i = 1, table.getn(SLOT_ORDER) do
+			local slot = SLOT_ORDER[i]
+			for id in pairs(M.GetItemCatalog(slot).byID) do
+				local list = itemSlots[id]
+				if not list then
+					list = {}
+					itemSlots[id] = list
+				end
+				table.insert(list, slot)
+			end
+		end
+	end
+	return itemSlots[itemID]
+end
+
+-- Item lists are rebuilt the next time they're needed (after a lookup).
+local function ForgetItemLists()
+	items, itemSlots = {}, nil
+	if sets then
+		sets.qualityKnown = nil
+	end
+end
+
+-- An item's quality from the item lists, or nil.
+local function ItemQuality(itemID)
+	local slots = M.GetItemSlots(itemID)
+	if slots then
+		local catalog = M.GetItemCatalog(slots[1])
+		return catalog.quality[catalog.byID[itemID]]
+	end
+end
+
+-- Every item set in the client, with the pieces that show on a character. A
+-- set's quality is that of its best known piece.
+function M.GetSetCatalog()
+	if not sets then
+		sets = NewCatalog()
+		sets.pieces = {}
+		local list, n = {}, 0
+		local function Pieces(text)
+			local pieces = {}
+			for piece in string.gfind(text, "%d+") do
+				table.insert(pieces, tonumber(piece))
+			end
+			return pieces
+		end
+		for id, kind, name, pieces in string.gfind(DmorphOcto_SetData or "", "(%d+)\t(%d)\t([^\t\r\n]+)\t([%d,]+)") do
+			n = n + 1
+			list[n] = { tonumber(id), name, strlower(name), tonumber(kind), Pieces(pieces) }
+		end
+		-- Data/Ported.lua's sets (DmorphOcto_PortedSets: name<TAB>virtual items),
+		-- only on the PC that has them; numbered after every real set.
+		local p = 0
+		for name, pieces in string.gfind(DmorphOcto_PortedSets or "", "([^\t\r\n]+)\t([%d,]+)") do
+			p = p + 1
+			n = n + 1
+			list[n] = { 900000 + p, name, strlower(name), M.KIND_PORTED, Pieces(pieces) }
+		end
+		DmorphOcto_SetData, DmorphOcto_PortedSets = nil, nil
+		if p > 0 then
+			table.sort(list, Before)
+		end
+		for i = 1, n do
+			AddEntry(sets, list[i][1], list[i][2], nil, list[i][4])
+			sets.pieces[sets.count] = list[i][5]
+		end
+	end
+	if not sets.qualityKnown then
+		sets.qualityKnown = true
+		sets.types = {}
+		for i = 1, sets.count do
+			-- Quality: the best piece's. Kind: the armour most pieces are made of.
+			local best, materials, kind = nil, {}, nil
+			for k = 1, table.getn(sets.pieces[i]) do
+				local quality = ItemQuality(sets.pieces[i][k])
+				if quality and (not best or quality > best) then
+					best = quality
+				end
+				local piece = M.GetItemType(sets.pieces[i][k])
+				if piece and piece >= 401 and piece <= 404 then
+					materials[piece] = (materials[piece] or 0) + 1
+					if not kind or materials[piece] > materials[kind] then
+						kind = piece
+					end
+				end
+			end
+			sets.quality[i], sets.types[i] = best, kind
+		end
+	end
+	return sets
+end
+
+-- The game's dressed NPCs of a race and gender (Data/Looks.lua), the fewest
+-- clothes first. Each look is { displayID, skin, face, hair style, hair
+-- colour, facial hair, pieces of clothing, outfit number }.
+function M.GetLooks(race, gender)
+	local key = race .. ":" .. gender
+	if not looks[key] then
+		local list, n, hidden = {}, 0, HiddenModels()
+		local text = DmorphOcto_LookData and DmorphOcto_LookData[key] or ""
+		for a, b, c, d, e, f, g, h in string.gfind(text, "(%d+),(%d+),(%d+),(%d+),(%d+),(%d+),(%d+),(%d+)") do
+			if not hidden[tonumber(a)] then
+				n = n + 1
+				list[n] = { tonumber(a), tonumber(b), tonumber(c), tonumber(d), tonumber(e), tonumber(f), tonumber(g), tonumber(h) }
+			end
+		end
+		looks[key] = list
+	end
+	return looks[key]
+end
+
+-- The character creator's rows and the look field each one reads. NPC looks
+-- are fixed combinations, so a row's < > goes to the next value some NPC of
+-- that race has, in the look that keeps the most of the other rows.
+M.LOOK_FEATURES = { "Skin colour", "Face", "Hair style", "Hair colour", "Facial hair", "Outfit" }
+local LOOK_FIELDS = { 2, 3, 4, 5, 6, 8 }
+-- What keeping each row is worth when another one changes. Each outweighs
+-- all the ones below it: skin colour, hair style, hair colour, face, facial
+-- hair, outfit.
+local FEATURE_WEIGHTS = { 32, 4, 16, 8, 2, 1 }
+
+-- The values row f (1-6) has among a race and gender's looks, sorted.
+function M.GetLookValues(race, gender, f)
+	local list = M.GetLooks(race, gender)
+	local field = LOOK_FIELDS[f]
+	local seen, values = {}, {}
+	for k = 1, table.getn(list) do
+		local v = list[k][field]
+		if not seen[v] then
+			seen[v] = true
+			table.insert(values, v)
+		end
+	end
+	table.sort(values)
+	return values
+end
+
+-- Row f's value in a look.
+function M.LookValue(look, f)
+	return look[LOOK_FIELDS[f]]
+end
+
+-- The position of the look that has `value` in row f and keeps the most of
+-- look `from`'s other rows (then the most similar clothes), or nil.
+function M.FindLook(race, gender, f, value, from)
+	local list = M.GetLooks(race, gender)
+	local field, want = LOOK_FIELDS[f], list[from]
+	local best, bestScore
+	for k = 1, table.getn(list) do
+		local look = list[k]
+		if look[field] == value then
+			local keep, pieces = 0, 0
+			if want then
+				for g = 1, 6 do
+					if g ~= f and look[LOOK_FIELDS[g]] == want[LOOK_FIELDS[g]] then
+						keep = keep + FEATURE_WEIGHTS[g]
+					end
+				end
+				pieces = math.abs(look[7] - want[7])
+			end
+			local score = keep * 1000 - pieces * 20 - look[7]
+			if not best or score > bestScore then
+				best, bestScore = k, score
+			end
+		end
+	end
+	return best
+end
+
+-- Every value of row f and, for each, the look FindLook picks from look `from`.
+function M.GetLookChoices(race, gender, f, from)
+	local values, at = M.GetLookValues(race, gender, f), {}
+	for i = 1, table.getn(values) do
+		at[values[i]] = M.FindLook(race, gender, f, values[i], from)
+	end
+	return values, at
+end
+
+-- Row f of look `from` one value along (step 1 or -1, wrapping around). Returns
+-- the new look's position, its place among the row's values, how many values
+-- there are, and the other rows that had to change with it ({} if none); or
+-- nil when every NPC of the race has the same value.
+function M.StepLook(race, gender, f, from, step)
+	local list = M.GetLooks(race, gender)
+	local values = M.GetLookValues(race, gender, f)
+	local n, cur = table.getn(values), list[from]
+	if n < 2 or not cur then
+		return nil
+	end
+	local pos = 1
+	for i = 1, n do
+		if values[i] == cur[LOOK_FIELDS[f]] then
+			pos = i
+		end
+	end
+	pos = math.mod(pos - 1 + step + n, n) + 1
+	local k = M.FindLook(race, gender, f, values[pos], from)
+	local changed = {}
+	for g = 1, 6 do
+		if g ~= f and list[k][LOOK_FIELDS[g]] ~= cur[LOOK_FIELDS[g]] then
+			table.insert(changed, g)
+		end
+	end
+	return k, pos, n, changed
+end
+
+-- Item lookup -------------------------------------------------------------------
+
+-- ItemsExtra.lua lists items whose slot isn't known offline: OctoWoW items
+-- from Atlas-CFM's loot tables and the item sets. In the background, a few a
+-- second, the addon reads them from the client's cache or (with ClassicAPI)
+-- asks the server, and saves the answers account-wide. Found ones join the
+-- item lists and the sets.
+local LOOKUP_STEP, LOOKUP_TIMEOUT, LOOKUP_PARALLEL = 0.25, 20, 4
+local lookup = { pos = 1, count = 0, ids = {}, waiting = {}, waitCount = 0, left = 0, version = 0 }
+
+local function CanAskServer()
+	return type(C_Item) == "table" and type(C_Item.RequestLoadItemDataByID) == "function"
+end
+
+-- "slots<TAB>quality<TAB>name" for an item the client knows, false if it
+-- doesn't show on a character, nil if the client doesn't know it yet.
+local function ReadItemInfo(itemID)
+	local ok, name, _, quality, _, _, _, _, equipLoc = pcall(GetItemInfo, itemID)
+	if not (ok and name) then
+		return nil
+	end
+	local slots = EQUIP_SLOTS[equipLoc or ""]
+	if not slots then
+		return false
+	end
+	return table.concat(slots, ",") .. "\t" .. (quality or 1) .. "\t" .. string.gsub(name, "\t", " ")
+end
+
+local function Record(itemID, info)
+	if account.itemInfo[itemID] == nil and info ~= nil then
+		account.itemInfo[itemID] = info
+		lookup.left = lookup.left - 1
+		if info then
+			lookup.changed = true
+		end
+	end
+end
+
+-- How many items are still to be looked up, and how many there were.
+function M.GetLookupStatus()
+	return lookup.left, lookup.count
+end
+
+-- Bumped whenever looked-up items join the lists, so the window can redraw.
+function M.GetItemsVersion()
+	return lookup.version
+end
+
+local function StartLookup()
+	if lookup.started then
+		return
+	end
+	lookup.started = true
+	for id in string.gfind(DmorphOcto_ItemPending or "", "(%d+)\t") do
+		id = tonumber(id)
+		lookup.count = lookup.count + 1
+		lookup.ids[lookup.count] = id
+		if account.itemInfo[id] == nil then
+			lookup.left = lookup.left + 1
+		end
+	end
+	DmorphOcto_ItemPending = nil
+	-- OctoWoW's "Summer Collection of Unseen Fashion" (invisible pieces; the tabard
+	-- is 109): asked for once so they join the lists and the Slutmog filter.
+	for id = 100, 160 do
+		if account.itemInfo[id] == nil then
+			lookup.count = lookup.count + 1
+			lookup.ids[lookup.count] = id
+			lookup.left = lookup.left + 1
+		end
+	end
+end
+
+local function LookupTick(elapsed)
+	for id, wait in pairs(lookup.waiting) do
+		if wait <= elapsed then
+			-- No answer: try again next session.
+			lookup.waiting[id] = nil
+			lookup.waitCount = lookup.waitCount - 1
+		else
+			lookup.waiting[id] = wait - elapsed
+		end
+	end
+	local askServer = CanAskServer()
+	local checked = 0
+	while lookup.pos <= lookup.count and checked < 40 and lookup.waitCount < LOOKUP_PARALLEL do
+		local id = lookup.ids[lookup.pos]
+		lookup.pos = lookup.pos + 1
+		if account.itemInfo[id] == nil and not lookup.waiting[id] then
+			checked = checked + 1
+			local info = ReadItemInfo(id)
+			if info ~= nil then
+				Record(id, info)
+			elseif askServer then
+				lookup.waiting[id] = LOOKUP_TIMEOUT
+				lookup.waitCount = lookup.waitCount + 1
+				pcall(C_Item.RequestLoadItemDataByID, id)
+				break -- one question per step
+			end
+		end
+	end
+	if lookup.changed then
+		lookup.changed = nil
+		lookup.version = lookup.version + 1
+		ForgetItemLists()
+	end
+	return lookup.pos > lookup.count and lookup.waitCount == 0
+end
+
+-- ClassicAPI's ITEM_DATA_LOAD_RESULT(itemID, success).
+local function LookupAnswer(itemID, success)
+	if not lookup.waiting[itemID] then
+		return
+	end
+	lookup.waiting[itemID] = nil
+	lookup.waitCount = lookup.waitCount - 1
+	if success then
+		Record(itemID, ReadItemInfo(itemID))
+	else
+		Record(itemID, false) -- the server has no such item
+	end
+end
+
+-- Slutmog: the revealing pieces Data/Slutmog.lua lists (read once) and any item
+-- named like OctoWoW's invisible "Summer Collection of Unseen Fashion".
+local slutmog
+function M.IsSlutmogItem(itemID, lowerName)
+	if not slutmog then
+		slutmog = {}
+		for id in string.gfind(DmorphOcto_SlutmogData or "", "(%d+)") do
+			slutmog[tonumber(id)] = true
+		end
+		DmorphOcto_SlutmogData = nil
+	end
+	return slutmog[itemID] or (lowerName and strfind(lowerName, "unseen fashion", 1, true)) and true or false
+end
+
+-- Whether entry i passes a filter from the *_FILTERS lists ({ kinds = ..., tag
+-- = ... }) and a quality from QUALITY_FILTERS. Both are optional.
+local function Keep(catalog, i, filter, quality, kind)
+	if kind and not (catalog.types and catalog.types[i] == kind) then
+		return false
+	end
+	if filter then
+		if filter.kinds and not filter.kinds[catalog.kind[i]] then
+			return false
+		end
+		if filter.tag then
+			local tags = catalog.tags and catalog.tags[i]
+			if not (tags and strfind(tags, filter.tag, 1, true)) then
+				return false
+			end
+		end
+	end
+	-- Legendary also lists artifacts (quality 6: the Warglaives of Azzinoth).
+	return not quality or catalog.quality[i] == quality or (quality == 5 and catalog.quality[i] == 6)
+end
+
+-- Positions of the catalogue entries matching the text, plus how many there
+-- are: an exact ID first, then names starting with the text, then names
+-- containing it. byID lists them by ID instead; kind keeps only one item kind.
+function M.FilterCatalog(catalog, text, filter, quality, byID, kind)
+	local query = strlower(Trim(text))
+	local result, n = {}, 0
+	local number = ParseID(query)
+	local later, m = {}, 0
+	for i = 1, catalog.count do
+		if Keep(catalog, i, filter, quality, kind) then
+			local at = query == "" or strfind(catalog.lower[i], query, 1, true)
+			if query == "" or catalog.ids[i] == number or at == 1 then
+				n = n + 1
+				result[n] = i
+			elseif at then
+				m = m + 1
+				later[m] = i
+			end
+		end
+	end
+	for i = 1, m do
+		result[n + i] = later[i]
+	end
+	n = n + m
+	if byID then
+		local ids = catalog.ids
+		table.sort(result, function(a, b)
+			return ids[a] < ids[b] or (ids[a] == ids[b] and a < b)
+		end)
+	end
+	return result, n
+end
+
+-- The catalogue's name for a display ID and what kind of entry it is, or nil.
+function M.GetDisplayName(displayID)
+	local catalog = M.GetCreatureCatalog()
+	local index = catalog.byID[displayID]
+	if index then
+		return catalog.names[index], catalog.kind[index]
+	end
+end
+
+-- How a preview frames a display so the whole model shows (Data/ModelFrames.lua
+-- and, for ported models, Data/PortedFrames.lua (one pack's), both made by
+-- tools/build_frames.ps1): the half height the model's portrait camera sees
+-- at its target, the target (x, y, z), the middle of the model's vertices
+-- (x, y, z), its height and widest side, in model units. nil when the
+-- display has no data. Last: whether the model has a full-body ("character
+-- info", type 1) camera.
+local frameModels, frameDisplays
+local function ParseFrames(data, models, displays)
+	if type(data) ~= "table" or type(data.models) ~= "string" or type(data.displays) ~= "string" then
+		return
+	end
+	local rows = {}
+	for line in string.gfind(data.models, "[^\n]+") do
+		local values, n = {}, 0
+		for v in string.gfind(line, "%S+") do
+			n = n + 1
+			values[n] = tonumber(v)
+		end
+		if n == 10 then
+			table.insert(rows, values)
+		elseif n == 9 then
+			values[10] = 0
+			table.insert(rows, values)
+		elseif n == 7 then
+			-- 2.21.0's lines: no x / y middle (taken as the model's origin).
+			table.insert(rows, { values[1], values[2], values[3], values[4], 0, 0, values[5], values[6], values[7], 0 })
+		else
+			table.insert(rows, false)
+		end
+	end
+	local base = table.getn(models)
+	for i = 1, table.getn(rows) do
+		models[base + i] = rows[i]
+	end
+	for id, row in string.gfind(data.displays, "(%d+):(%d+)") do
+		local values = rows[tonumber(row)]
+		if values then
+			displays[tonumber(id)] = base + tonumber(row)
+		end
+	end
+end
+
+function M.GetModelFrame(displayID)
+	if not frameModels then
+		frameModels, frameDisplays = {}, {}
+		ParseFrames(DmorphOcto_ModelFrames, frameModels, frameDisplays)
+		-- Ported frames come with DMorph (Data/PortedFrames.lua) for one pack:
+		-- the display IDs only mean those models with that pack.
+		local ported = DmorphOcto_PortedFrames
+		if type(ported) == "table" and (not ported.pack or ported.pack == M.GetPortedPack()) then
+			ParseFrames(ported, frameModels, frameDisplays)
+		end
+		-- The strings aren't needed once parsed.
+		DmorphOcto_ModelFrames, DmorphOcto_PortedFrames = nil, nil
+	end
+	local f = frameDisplays[displayID or 0] and frameModels[frameDisplays[displayID]]
+	if f then
+		return f[1], f[2], f[3], f[4], f[5], f[6], f[7], f[8], f[9], f[10] == 1
+	end
+end
+
+function M.DescribeDisplay(displayID)
+	local name = M.GetDisplayName(displayID)
+	if name then
+		return name .. " (" .. displayID .. ")"
+	end
+	return "display " .. displayID
+end
+
+-- The item's name from the client's cache, or else from the catalogue: the
+-- slot's own list first, then the others (a shirt can be morphed onto the chest).
+function M.DescribeItem(itemID, slot)
+	if itemID == 0 then
+		return "nothing (your own gear hidden)"
+	end
+	-- The game answers a ported item with its template's record, name and all
+	-- (the Sets tooltip listed "Layered Tunic"): its own name is in Ported.lua.
+	local ported = PortedItems()[itemID]
+	if ported then
+		return "[" .. ported.name .. "] (" .. itemID .. ")"
+	end
+	local ok, name = pcall(GetItemInfo, itemID)
+	if not (ok and name) then
+		name = nil
+		local lists = { slot }
+		for i = 1, table.getn(SLOT_ORDER) do
+			table.insert(lists, SLOT_ORDER[i])
+		end
+		for i = 1, table.getn(lists) do
+			local catalog = SLOT_NAMES[lists[i]] and M.GetItemCatalog(lists[i])
+			local index = catalog and catalog.byID[itemID]
+			if index then
+				name = catalog.names[index]
+				break
+			end
+		end
+	end
+	if name then
+		return "[" .. name .. "] (" .. itemID .. ")"
+	end
+	return "item " .. itemID
+end
+
+function M.DescribeOutfit(outfit)
+	local look = "your own model"
+	if outfit.display then
+		look = M.DescribeDisplay(outfit.display)
+	elseif outfit.race then
+		look = M.DescribeBody(outfit.race, outfit.gender)
+	end
+	local count = 0
+	for _, id in pairs(outfit.items) do
+		if id ~= 0 then -- 0: a slot a set hid
+			count = count + 1
+		end
+	end
+	local extra = ""
+	if outfit.look then
+		extra = extra .. ", own face"
+	end
+	if outfit.glows and next(outfit.glows) then
+		extra = extra .. ", glows"
+	end
+	if outfit.mount then
+		extra = extra .. ", mount"
+	end
+	if count == 1 then
+		return look .. ", 1 item" .. extra
+	end
+	return look .. ", " .. count .. " items" .. extra
+end
+
+-- State ---------------------------------------------------------------------
+
+-- Five look values (skin colour, face, hair style, hair colour, facial hair),
+-- copied, or nil if look isn't one.
+local function ValidLook(look)
+	if type(look) ~= "table" then
+		return nil
+	end
+	for i = 1, 5 do
+		local v = look[i]
+		if type(v) ~= "number" or v < 0 or v > 255 or v ~= math.floor(v) then
+			return nil
+		end
+	end
+	return { look[1], look[2], look[3], look[4], look[5] }
+end
+
+-- Drops anything that isn't a usable ID, e.g. from a hand-edited file.
+local function SanitizeOutfit(outfit)
+	outfit.display = ParseID(outfit.display)
+	if outfit.display == 0 then
+		outfit.display = nil
+	end
+	outfit.mount = ParseID(outfit.mount)
+	if outfit.mount == 0 then
+		outfit.mount = nil
+	end
+	if not (type(outfit.race) == "number" and RACES[outfit.race]) then
+		outfit.race = nil
+	end
+	if outfit.gender ~= 1 then
+		outfit.gender = 0
+	end
+	if type(outfit.items) ~= "table" then
+		outfit.items = {}
+	end
+	for slot, itemID in pairs(outfit.items) do
+		itemID = ParseID(itemID)
+		if not SLOT_NAMES[slot] or itemID == 0 then
+			itemID = nil
+		end
+		outfit.items[slot] = itemID
+	end
+	-- Weapon glows (DmorphHelper): slot -> enchant ID, 0 for none.
+	if type(outfit.glows) ~= "table" then
+		outfit.glows = {}
+	end
+	for slot, enchantID in pairs(outfit.glows) do
+		enchantID = ParseID(enchantID)
+		if not GLOW_SLOT[slot] or (enchantID and enchantID > 1000000) then
+			enchantID = nil
+		end
+		outfit.glows[slot] = enchantID
+	end
+	-- An outfit's own look: { race, gender, the five values }.
+	local look = outfit.look
+	if type(look) == "table" and RACES[look.race] and (look.gender == 0 or look.gender == 1) and ValidLook(look) then
+		outfit.look = ValidLook(look)
+		outfit.look.race, outfit.look.gender = look.race, look.gender
+	else
+		outfit.look = nil
+	end
+	return outfit
+end
+
+-- The current look as an outfit: db, plus the look picked for your body.
+local function CopyOutfit(outfit)
+	local copy = { display = outfit.display, race = outfit.race, gender = outfit.gender, mount = outfit.mount,
+		items = {}, glows = {} }
+	for slot, itemID in pairs(outfit.items) do
+		copy.items[slot] = itemID
+	end
+	for slot, enchantID in pairs(outfit.glows) do
+		copy.glows[slot] = enchantID
+	end
+	local race, gender = M.GetBodyRace()
+	local look = race and ValidLook(outfit.looks[race .. ":" .. gender])
+	if look then
+		look.race, look.gender = race, gender
+		copy.look = look
+	end
+	return copy
+end
+
+function InitDB()
+	if db then
+		return
+	end
+	if type(DmorphOctoDB) ~= "table" then
+		DmorphOctoDB = {}
+	end
+	db = SanitizeOutfit(DmorphOctoDB)
+	-- Mount skins per mount (own display -> skin) and the mounts ridden.
+	if type(db.mountSkins) ~= "table" then
+		db.mountSkins = {}
+	end
+	for real, skin in pairs(db.mountSkins) do
+		if type(real) ~= "number" or not ParseID(skin) or ParseID(skin) == 0 then
+			db.mountSkins[real] = nil
+		end
+	end
+	local ridden = {}
+	if type(db.ridden) == "table" then
+		for i = 1, table.getn(db.ridden) do
+			local id = ParseID(db.ridden[i])
+			if id and id > 0 then
+				table.insert(ridden, id)
+			end
+		end
+	end
+	db.ridden = ridden
+	-- DmorphHelper: the look picked per body ("race:gender" -> five values),
+	-- and per weapon slot and for the look, the real values last seen and
+	-- what was last written.
+	local picked = {}
+	if type(db.looks) == "table" then
+		for key, look in pairs(db.looks) do
+			local _, _, race = strfind(type(key) == "string" and key or "", "^(%d+):[01]$")
+			if race and RACES[tonumber(race)] then
+				picked[key] = ValidLook(look)
+			end
+		end
+	end
+	db.looks = picked
+	db.lookReal, db.lookWritten = ValidLook(db.lookReal), ValidLook(db.lookWritten)
+	-- Your size (DmorphHelper v2): the picked one, the real one last seen and
+	-- what was last written, each 0.1-10.
+	-- The languages your character speaks (CaptureNative): names, or nil.
+	if type(db.languages) == "table" then
+		local names = {}
+		for i = 1, table.getn(db.languages) do
+			if type(db.languages[i]) == "string" then
+				table.insert(names, db.languages[i])
+			end
+		end
+		db.languages = table.getn(names) > 0 and names or nil
+	else
+		db.languages = nil
+	end
+	if type(db.defaultLanguage) ~= "string" then
+		db.defaultLanguage = nil
+	end
+	-- Your own race and gender, last read cleanly (CaptureNative).
+	if not (type(db.ownRace) == "number" and RACES[db.ownRace]) then
+		db.ownRace = nil
+	end
+	if db.ownGender ~= 0 and db.ownGender ~= 1 then
+		db.ownGender = nil
+	end
+	local time = tonumber(db.time)
+	db.time = time and time >= 0 and time < 1440 and math.floor(time) or nil
+	local weatherKind = type(db.weather) == "table" and tonumber(db.weather[1])
+	local weatherStrength = type(db.weather) == "table" and tonumber(db.weather[2])
+	if weatherKind and weatherStrength and weatherKind >= 0 and weatherKind <= 3 and weatherStrength >= 0
+		and weatherStrength <= 1 then
+		db.weather = { weatherKind, weatherStrength }
+	else
+		db.weather = nil
+	end
+	for _, key in ipairs({ "scale", "scaleReal", "scaleWritten" }) do
+		local v = tonumber(db[key])
+		if not (v and v >= 0.1 and v <= 10) then
+			v = nil
+		end
+		db[key] = v
+	end
+	for _, key in ipairs({ "glowReal", "glowWritten" }) do
+		local kept = {}
+		if type(db[key]) == "table" then
+			for slot, pair in pairs(db[key]) do
+				if GLOW_SLOT[slot] and type(pair) == "table" and type(pair[1]) == "number" and type(pair[2]) == "number" then
+					kept[slot] = { pair[1], pair[2] }
+				end
+			end
+		end
+		db[key] = kept
+	end
+	if type(DmorphOctoAccount) ~= "table" then
+		DmorphOctoAccount = {}
+	end
+	account = DmorphOctoAccount
+	if type(account.outfits) ~= "table" then
+		account.outfits = {}
+	end
+	-- Items looked up in game: id -> "slots<TAB>quality<TAB>name", or false.
+	if type(account.itemInfo) ~= "table" then
+		account.itemInfo = {}
+	end
+	for id, info in pairs(account.itemInfo) do
+		if type(id) ~= "number" or (info ~= false and type(info) ~= "string") then
+			account.itemInfo[id] = nil
+		end
+	end
+	for name, outfit in pairs(account.outfits) do
+		if type(name) == "string" and type(outfit) == "table" then
+			SanitizeOutfit(outfit)
+		else
+			account.outfits[name] = nil
+		end
+	end
+	-- Favourites: { id = displayID, mount = true or nil }, oldest first, each once.
+	local favourites, seen = {}, {}
+	if type(account.favourites) == "table" then
+		for i = 1, table.getn(account.favourites) do
+			local fav = account.favourites[i]
+			local id = type(fav) == "table" and ParseID(fav.id)
+			if id and id > 0 then
+				local mount = fav.mount and true or nil
+				local key = (mount and "mount" or "model") .. id
+				if not seen[key] then
+					seen[key] = true
+					table.insert(favourites, { id = id, mount = mount })
+				end
+			end
+		end
+	end
+	account.favourites = favourites
+	-- Sharing with other DMorph users (Share.lua): on unless switched off.
+	account.shareOff = account.shareOff == true or nil
+	account.setsKeepOwnGear = account.setsKeepOwnGear == true or nil
+	account.othersOff = account.othersOff == true or nil
+end
+
+function M.GetState()
+	InitDB()
+	return db
+end
+
+function M.GetAccount()
+	InitDB()
+	return account
+end
+
+function M.GetNative()
+	return nativeRace, nativeGender
+end
+
+-- Called after every change, so the window can redraw.
+function M.RegisterListener(fn)
+	table.insert(listeners, fn)
+end
+
+local function Notify()
+	for i = 1, table.getn(listeners) do
+		listeners[i]()
+	end
+end
+
+local function CaptureNative()
+	nativeRace, nativeGender = nil, nil
+	local ok, _, native = pcall(UnitDisplayInfo, "player")
+	if ok and native then
+		for race = 1, table.getn(RACES) do
+			if RACES[race].male == native then
+				nativeRace, nativeGender = race, 0
+			elseif RACES[race].female == native then
+				nativeRace, nativeGender = race, 1
+			end
+		end
+	end
+	if not nativeRace then
+		local _, token = UnitRace("player")
+		nativeRace = RACE_TOKENS[strupper(token or "")]
+		local sex = UnitSex("player")
+		if sex == 3 then
+			nativeGender = 1
+		elseif sex == 2 then
+			nativeGender = 0
+		end
+	end
+	-- Logging in during a race morph, VanillaHelpers can still show the
+	-- morph's race and model here (its overrides outlive a logout), and the
+	-- morph was taken for your own race: NPCs of your faction hostile, no
+	-- flight paths, until a /reload (user, 13 Oct). So your race is kept per
+	-- character (db.ownRace) whenever it's read cleanly, and a read that is
+	-- the saved morph's race, or of the other faction (a race morph doesn't
+	-- change your faction), uses the kept one.
+	local morphRace = db.race
+	if not morphRace and db.display then
+		for race = 1, table.getn(RACES) do
+			if RACES[race].male == db.display or RACES[race].female == db.display then
+				morphRace = race
+			end
+		end
+	end
+	local faction = UnitFactionGroup("player")
+	local suspect = nativeRace and morphRace and nativeRace == morphRace
+	-- Only with a morph on: without one the read is clean, whatever faction
+	-- a server gives a race.
+	local wrongFaction = (db.race or db.display) and nativeRace and RACES[nativeRace] and RACES[nativeRace].faction
+		and faction and RACES[nativeRace].faction ~= faction
+	if suspect or wrongFaction then
+		if db.ownRace and RACES[db.ownRace] and (not faction or RACES[db.ownRace].faction == faction) then
+			nativeRace, nativeGender = db.ownRace, db.ownGender
+		elseif wrongFaction then
+			-- Nothing kept yet: at least a race of your faction.
+			nativeRace = faction == "Horde" and 2 or 1
+		end
+		return -- the languages read now would be the morph's
+	end
+	if nativeRace then
+		db.ownRace, db.ownGender = nativeRace, nativeGender
+	end
+	-- The game lists the languages of the race it thinks you are, and a race
+	-- morph changes that (a Gnome morph lists Common and Gnomish), so the
+	-- ones your character speaks are read now, with your own race showing,
+	-- and kept for chat (see SpeakableLanguage).
+	local languages = {}
+	for i = 1, 20 do
+		local got, name = pcall(GetLanguageByIndex, i)
+		if not (got and type(name) == "string") then
+			break
+		end
+		table.insert(languages, name)
+	end
+	if table.getn(languages) > 0 then
+		local got, default = pcall(GetDefaultLanguage)
+		db.languages = languages
+		db.defaultLanguage = got and default or nil
+	end
+end
+
+-- Runs once per UI session, before the first morph is applied.
+local function EnsureSession()
+	if sessionReady then
+		return
+	end
+	-- VanillaHelpers' overrides can outlive a /reload, and a race morph also
+	-- replaces the native model ID, so drop ours before reading the real one.
+	if db.display or db.race then
+		Morph(SetUnitDisplayID, "player", nil)
+	end
+	-- The mount skin is put back on by the mount watcher once you ride.
+	if type(SetUnitMountDisplayID) == "function" and (db.mount or next(db.mountSkins)) then
+		Morph(SetUnitMountDisplayID, "player", nil)
+	end
+	CaptureNative()
+	RegisterPortedItems()
+	RegisterRiderPoses()
+	sessionReady = true
+end
+
+-- Every action that morphs starts here.
+local function Begin()
+	InitDB()
+	if not HasMorphAPI() then
+		return false
+	end
+	EnsureSession()
+	return true
+end
+
+-- .morph and the race/gender morph share UNIT_FIELD_DISPLAYID: last one wins.
+local function BodyDisplayID()
+	if db.display then
+		return db.display
+	end
+	if db.race then
+		return RaceModel(db.race, db.gender)
+	end
+end
+
+-- After a body change the game is still building the model, and a look or
+-- glow written into it then could mix with the old one; so DmorphHelper's
+-- watcher holds off this long, then runs (see Glows and your own look).
+local helperHold, helperWait = 0, 0
+
+-- A race morph makes VanillaHelpers tell the game you are that race (the
+-- model's skin needs it), and two windows go by that race: the flight map (a
+-- Horde character morphed into a Human sees no Horde flight paths) and the
+-- spellbook (spells change places). While one of them is open your own race
+-- is back, and the morph returns when it closes. raceHeld: why ("taxi",
+-- "spellbook").
+local raceHeld = {}
+
+local function DisplayRace(display)
+	for race = 1, table.getn(RACES) do
+		if RACES[race].male == display or RACES[race].female == display then
+			return race
+		end
+	end
+end
+
+-- A race morph's race stays in the game's race byte (the game textures your
+-- model from it, so it has to). DmorphHelper (v6+) puts your own race in only
+-- while the game reads an incoming chat message (so it understands your
+-- languages) or works out your base reputations (built once from your race:
+-- with another faction's race, NPCs of your own faction turn hostile), and
+-- the addon does below while the flight map, spellbook or reputation list is
+-- open: the byte alone, no rebuild, so your model doesn't change. The helper
+-- is told your own race all the time, not only during a race morph, so a
+-- loading screen during one can't build your reputations with the wrong
+-- race. raceKept: the race it was told (0: none yet).
+local raceKept = 0
+local raceSwapped = {} -- reasons the byte holds your own race (HoldRace)
+
+local function MorphRace()
+	local morph = DisplayRace(BodyDisplayID() or 0)
+	if sessionReady and morph and nativeRace and morph ~= nativeRace then
+		return morph
+	end
+end
+
+local function KeepRace()
+	if type(DmorphHelper_SetOwnRace) ~= "function" then
+		return
+	end
+	local want = sessionReady and nativeRace or 0
+	if want ~= raceKept and pcall(DmorphHelper_SetOwnRace, want) then
+		raceKept = want
+	end
+end
+
+local function ApplyBody()
+	helperHold, helperWait = 0.5, 0.5
+	if next(raceHeld) then
+		return true -- it goes on when the flight map or spellbook closes
+	end
+	local ok, err = Morph(SetUnitDisplayID, "player", BodyDisplayID())
+	KeepRace()
+	if next(raceSwapped) and MorphRace() then
+		pcall(DmorphHelper_SetRace, "player", nativeRace) -- still open
+	end
+	return ok, err
+end
+
+-- The race byte has to match the model you show: the game paints your skin,
+-- hair and gear by that race, and with another race's there you stand there
+-- half naked in the wrong skin (user, 18 Oct: after changing race and set;
+-- neither a /reload nor Reset everything helped, only restarting the game).
+-- VanillaHelpers keeps the byte it found when a race morph went on and puts
+-- it back when the morph comes off; if the byte held another race just then,
+-- that race stays for good. So once a second the byte is checked against the
+-- model the game shows (a racial model's race, else your own) and repaired.
+-- Not while a window holds your own race (HoldRace). raceRepairs: how many.
+local raceRepairs = 0
+local function RepairRace()
+	if not (sessionReady and nativeRace) or next(raceSwapped) or next(raceHeld)
+		or type(DmorphHelper_GetRace) ~= "function" or type(DmorphHelper_SetRace) ~= "function" then
+		return
+	end
+	local ok, display = pcall(UnitDisplayInfo, "player")
+	local got, race = pcall(DmorphHelper_GetRace, "player")
+	if not (ok and type(display) == "number" and got and type(race) == "number") then
+		return
+	end
+	local want = DisplayRace(display) or nativeRace
+	if race ~= want and pcall(DmorphHelper_SetRace, "player", want) then
+		raceRepairs = raceRepairs + 1
+		if type(DmorphHelper_Rebuild) == "function" then
+			pcall(DmorphHelper_Rebuild, "player")
+		end
+	end
+end
+M.RepairRace = RepairRace
+function M.GetRaceRepairs()
+	return raceRepairs
+end
+
+-- Holds (on) or releases your own race for a reason. Returns whether the
+-- race was changed back just now, so the window can redraw.
+function M.HoldRace(reason, on)
+	-- With DmorphHelper: only the race byte, for as long as the window is open.
+	if type(DmorphHelper_SetRace) == "function" then
+		if on then
+			local morph = MorphRace()
+			if not morph or not pcall(DmorphHelper_SetRace, "player", nativeRace) then
+				return false
+			end
+			local first = not next(raceSwapped)
+			raceSwapped[reason] = true
+			return first
+		end
+		if raceSwapped[reason] then
+			raceSwapped[reason] = nil
+			local morph = MorphRace()
+			if not next(raceSwapped) and morph then
+				pcall(DmorphHelper_SetRace, "player", morph)
+			end
+		end
+		return false
+	end
+	-- Without it: your own model while the window is open.
+	if on then
+		local held = next(raceHeld) ~= nil
+		if held then
+			raceHeld[reason] = true
+			return false
+		end
+		local race = DisplayRace(BodyDisplayID() or 0)
+		if not (sessionReady and race and race ~= nativeRace and HasMorphAPI()) then
+			return false
+		end
+		raceHeld[reason] = true
+		helperHold = 1000000 -- no picked look on your own race meanwhile
+		if M.HasHelper() and db.lookWritten and db.lookReal then
+			local l = db.lookReal
+			if pcall(DmorphHelper_SetLook, "player", l[1], l[2], l[3], l[4], l[5]) then
+				db.lookWritten = nil
+			end
+		end
+		Morph(SetUnitDisplayID, "player", nil)
+		return true
+	end
+	if raceHeld[reason] then
+		raceHeld[reason] = nil
+		if not next(raceHeld) then
+			ApplyBody()
+		end
+	end
+	return false
+end
+
+-- A template the game knows for a ported item: its own, else any item of the
+-- same kind the game has cached. Wearing a ported item whose template the
+-- server never sent turned the player white until a relog (guns, thrown).
+local knownTemplate = {}
+-- Where an armour slot's template may be worn (GetItemInfo's equip location).
+-- The template's record says where the game draws the piece: a ported
+-- shoulder copying a helmet was drawn on the head (user, 13 Oct: purple
+-- pieces hanging off the shoulder with some sets).
+local SLOT_EQUIP = {
+	[1] = { INVTYPE_HEAD = true }, [3] = { INVTYPE_SHOULDER = true }, [4] = { INVTYPE_BODY = true },
+	[5] = { INVTYPE_CHEST = true, INVTYPE_ROBE = true }, [6] = { INVTYPE_WAIST = true }, [7] = { INVTYPE_LEGS = true },
+	[8] = { INVTYPE_FEET = true }, [9] = { INVTYPE_WRIST = true }, [10] = { INVTYPE_HAND = true },
+	[15] = { INVTYPE_CLOAK = true }, [19] = { INVTYPE_TABARD = true },
+}
+
+-- Whether the game knows item id and it can stand in for ported item p:
+-- armour must be worn in p's slot, weapons only need to be known.
+local function TemplateFits(p, id)
+	local ok, name, _, _, _, _, _, _, equip = pcall(GetItemInfo, id)
+	if not (ok and name) then
+		return false
+	end
+	return not p.slot or (SLOT_EQUIP[p.slot] and SLOT_EQUIP[p.slot][equip or ""]) or false
+end
+
+-- The item whose record ported item p copies: its own template if the game
+-- knows it, else a known item worn in the same slot (armour) or of the same
+-- kind (weapons), else nil (and the template is asked for).
+local function PortedTemplate(p)
+	if TemplateFits(p, p.template) then
+		return p.template
+	end
+	local key = p.kind
+	if p.slot then
+		key = "slot" .. p.slot
+	end
+	local cached = knownTemplate[key]
+	if cached and TemplateFits(p, cached) then
+		return cached
+	end
+	if p.slot then
+		for id in pairs(M.GetItemCatalog(p.slot).byID) do
+			if not PortedItems()[id] and TemplateFits(p, id) then
+				knownTemplate[key] = id
+				return id
+			end
+		end
+	else
+		if not itemTypes then
+			ReadItemTypes()
+		end
+		for id, kind in pairs(itemTypes) do
+			if kind == p.kind and TemplateFits(p, id) then
+				knownTemplate[key] = id
+				return id
+			end
+		end
+	end
+	if type(C_Item) == "table" then
+		pcall(C_Item.RequestLoadItemDataByID, p.template)
+	end
+	return nil
+end
+
+-- Whether a ported item can go on another player here: DmorphHelper knows
+-- the virtual items and the game knows a template to copy.
+function M.CanShowPortedItem(itemID)
+	local p = PortedItems()[tonumber(itemID or 0)]
+	if not (p and HasVirtualItems()) then
+		return false
+	end
+	RegisterPortedItems()
+	local template = PortedTemplate(p)
+	if not template then
+		return false
+	end
+	if template ~= p.template then
+		p.template = template
+		pcall(DmorphHelper_SetVirtualItem, itemID, template, p.display)
+	end
+	return true
+end
+
+-- The icon of the known item a ported piece copies (the piece's own ID has
+-- none until the game has that item: the slot showed a question mark).
+function M.GetPortedIcon(itemID)
+	if not M.CanShowPortedItem(itemID) then
+		return nil
+	end
+	local p = PortedItems()[tonumber(itemID)]
+	local ok, _, _, _, _, _, _, _, _, texture = pcall(GetItemInfo, p.template)
+	return ok and texture or nil
+end
+
+local function ApplyItem(slot)
+	local id = db.items[slot]
+	if id and M.IsPortedItem(id) then
+		-- A ported armour piece goes in its own slot only. Outfits saved before
+		-- the pack renumbered its pieces (13 Oct) put a belt on the head, gloves
+		-- on the shoulders...; the game draws each piece where its record says,
+		-- and the clash left the character invisible, white in previews (user, 16 Oct).
+		local piece = PortedItems()[id]
+		if piece.slot and piece.slot ~= slot then
+			db.items[slot] = nil
+			Morph(SetUnitVisibleItemID, "player", slot, nil)
+			return false, (SLOT_NAMES[slot] or ("Slot " .. slot)) .. ": \"" .. piece.name .. "\" is a "
+				.. (SLOT_NAMES[piece.slot] or "other") .. " piece (from an outfit saved with an older ported pack?), "
+				.. "so your own gear shows there."
+		end
+		if not HasVirtualItems() then
+			return false, "Ported items need DmorphHelper v11: close the game, double-click \"Install DmorphHelper.bat\" "
+				.. "in Interface\\AddOns\\DmorphOcto, then start the game from OctoLauncher."
+		end
+		RegisterPortedItems()
+		local p = PortedItems()[id]
+		local template = PortedTemplate(p)
+		if not template then
+			return false, "The game hasn't loaded an item to copy for this ported " .. string.lower(M.ITEM_TYPE_NAMES[p.kind] or "item")
+				.. " yet. Wait a few seconds and pick it again."
+		end
+		if template ~= p.template then
+			p.template = template
+			pcall(DmorphHelper_SetVirtualItem, id, template, p.display)
+		end
+	end
+	return Morph(SetUnitVisibleItemID, "player", slot, id)
+end
+
+-- Mount morphs need VanillaHelpers' SetUnitMountDisplayID (v1.1.0 has it).
+local function HasMountAPI()
+	return type(SetUnitMountDisplayID) == "function"
+end
+M.HasMountAPI = HasMountAPI
+
+-- Mount skins -----------------------------------------------------------------
+
+-- A skin is a display ID your mount shows instead of its own: db.mount for all
+-- your mounts, db.mountSkins[real display] for one of them. VanillaHelpers'
+-- mount override holds the model whatever the server says, so it would keep
+-- you on a mount after you dismount. So the skin is only put on while you
+-- ride: when the mount field turns non-zero you mounted, and the buff that
+-- came with it is the mount's; when that buff goes, you dismounted and the
+-- override comes off, which lets the game's own mount and dismount through.
+local watch = {}
+
+local function BuffTextures()
+	local set, any = {}, false
+	for i = 1, 32 do
+		local ok, texture = pcall(UnitBuff, "player", i)
+		if not (ok and texture) then
+			break
+		end
+		set[texture], any = true, true
+	end
+	return set, any
+end
+
+local function SkinFor(real)
+	return db.mountSkins[real] or db.mount
+end
+
+local function StopSkin()
+	if watch.active then
+		watch.active, watch.skin = nil, nil
+		Morph(SetUnitMountDisplayID, "player", nil)
+	end
+end
+
+local function RememberRidden(real)
+	for i = 1, table.getn(db.ridden) do
+		if db.ridden[i] == real then
+			return
+		end
+	end
+	table.insert(db.ridden, real)
+	if table.getn(db.ridden) > 20 then
+		table.remove(db.ridden, 1)
+	end
+end
+
+-- Runs every tenth of a second.
+local function OnTaxi()
+	local ok, flying = pcall(UnitOnTaxi, "player")
+	return ok and flying and true or false
+end
+
+local function WatchMount()
+	if not (sessionReady and HasMountAPI()) then
+		return
+	end
+	-- A flight path's bird is the game's, not your mount: no skin on it (and
+	-- one already on comes off as the flight starts).
+	if OnTaxi() then
+		if watch.active then
+			StopSkin()
+			Notify()
+		end
+		watch.real = nil
+		return
+	end
+	if watch.active then
+		local buffs = BuffTextures()
+		for texture in pairs(watch.candidates) do
+			if not buffs[texture] then
+				-- The mount's buff is gone: you dismounted.
+				StopSkin()
+				watch.last, watch.real = buffs, nil
+				Notify()
+				return
+			end
+		end
+		-- Each change tells the listeners (the window, and Share.lua so other
+		-- DMorph users see the skin come and go).
+		local skin = SkinFor(watch.real)
+		if not skin then
+			StopSkin()
+			Notify()
+		elseif skin ~= watch.skin then
+			watch.skin = skin
+			Morph(SetUnitMountDisplayID, "player", skin)
+			Notify()
+		end
+		return
+	end
+	local ok, _, _, field = pcall(UnitDisplayInfo, "player")
+	if not ok then
+		return
+	end
+	if field and field > 0 then
+		if watch.real ~= field then
+			watch.real = field
+			RememberRidden(field)
+			Notify()
+		end
+		local skin = SkinFor(field)
+		if skin and skin ~= field then
+			local buffs, any = BuffTextures()
+			local candidates, found = {}, false
+			for texture in pairs(buffs) do
+				if not (watch.last and watch.last[texture]) then
+					candidates[texture], found = true, true
+				end
+			end
+			-- The mount's buff comes with it. Without a new one there's
+			-- nothing that would say when you dismount (a skin would then
+			-- stay on, and the game would think you still ride), so wait
+			-- for it; only if you were mounted before we could look (a
+			-- login or /reload in the saddle) does any buff going count.
+			if not found and not watch.last then
+				candidates, found = buffs, any
+			end
+			if found then
+				watch.candidates, watch.skin, watch.active = candidates, skin, true
+				Morph(SetUnitMountDisplayID, "player", skin)
+				Notify()
+			end
+		end
+	else
+		if watch.real then
+			watch.real = nil
+			Notify()
+		end
+		if db.mount or next(db.mountSkins) then
+			watch.last = BuffTextures()
+		end
+	end
+end
+
+-- Whether you ride, the display ID of your own mount, and the skin it shows.
+function M.GetMountState()
+	InitDB()
+	if watch.real then
+		return true, watch.real, watch.skin
+	end
+	return false
+end
+
+-- The mounts you've ridden on this character (their own display IDs).
+function M.GetRiddenMounts()
+	InitDB()
+	return db.ridden
+end
+
+function M.GetMountSkin(real)
+	InitDB()
+	if real then
+		return db.mountSkins[real]
+	end
+	return db.mount
+end
+
+-- What other DMorph users should see: your body's display ID (nil when you
+-- aren't morphed), your item morphs (slot -> item ID), and the mount skin
+-- showing now (nil on foot or without a skin).
+function M.GetSharedLook()
+	InitDB()
+	local mount
+	if watch.active then
+		mount = watch.skin
+	end
+	-- Ported models are only on this PC: others would see nothing, so they
+	-- see your own model or mount instead.
+	local display = BodyDisplayID()
+	if display and M.IsPorted(display) then
+		display = nil
+	end
+	if mount and M.IsPorted(mount) then
+		mount = nil
+	end
+	local items = {}
+	for slot, id in pairs(db.items) do
+		if not M.IsPortedItem(id) then
+			items[slot] = id
+		end
+	end
+	return display, items, mount
+end
+
+-- Your picked weapon glows for other DMorph users (2.23.0, user: "weapon glows
+-- are not sharing"): slot (16-18) -> enchant ID, 0 for "No glow". A glow only
+-- hovered in the Glows tab isn't sent.
+function M.GetSharedGlows()
+	InitDB()
+	local glowsOut = {}
+	for slot in pairs(GLOW_SLOT) do
+		if db.glows[slot] then
+			glowsOut[slot] = db.glows[slot]
+		end
+	end
+	return glowsOut
+end
+
+-- Whether this PC can show a glow someone sent: 0 (no glow) or an enchant in
+-- the glow list (a ported one only with the ported pack's glows).
+function M.IsKnownGlow(enchantID)
+	if enchantID == 0 then
+		return true
+	end
+	local all = M.GetGlows()
+	if not all.byEnchant then
+		all.byEnchant = {}
+		for i = 1, all.count do
+			all.byEnchant[all.enchant[i]] = true
+		end
+	end
+	return all.byEnchant[enchantID] or false
+end
+
+-- The ported parts of your look (display, items, mount), which only DMorph
+-- users with the same ported pack can show; nil where a part isn't ported.
+function M.GetSharedPorted()
+	InitDB()
+	local display, mount = BodyDisplayID(), nil
+	if watch.active then
+		mount = watch.skin
+	end
+	if not (display and M.IsPorted(display)) then
+		display = nil
+	end
+	if not (mount and M.IsPorted(mount)) then
+		mount = nil
+	end
+	local items = {}
+	for slot, id in pairs(db.items) do
+		if M.IsPortedItem(id) then
+			items[slot] = id
+		end
+	end
+	return display, items, mount
+end
+
+-- Glows and your own look (DmorphHelper.dll) ----------------------------------
+
+-- DmorphHelper.dll (helper/ in this folder) does two things VanillaHelpers
+-- can't, on your screen only like every morph: it rewrites a weapon slot's
+-- enchant IDs, which the game draws the enchant's glow from, and your skin
+-- colour, face, hair style, hair colour and facial hair (the values character
+-- creation sets). The server sends the real values again now and then (a new
+-- enchant, a loading screen), so a watcher puts the chosen ones back once a
+-- second. Whatever it reads that it didn't write is the real value, kept so
+-- "your own" can put it back.
+-- How to install it: the .bat in the addon folder copies the DLL into the
+-- game folder and adds it to dlls.txt (an addon can't write files there).
+local INSTALL_HELPER = "Close the game, double-click \"Install DmorphHelper.bat\" in Interface\\AddOns\\DmorphOcto, "
+	.. "then start the game from OctoLauncher."
+local MISSING_HELPER = "DmorphHelper.dll isn't loaded, so weapon glows, your size and real skin, face and hair changes "
+	.. "are unavailable. " .. INSTALL_HELPER
+M.MISSING_HELPER = MISSING_HELPER
+-- The DmorphHelper_Version() the DLL in helper\ reports. An older one in the
+-- game folder (DMorph was updated, the DLL wasn't copied again) is flagged.
+local HELPER_VERSION = 16
+-- Rows 1-5 of the Races tab, in DmorphHelper_GetLook's order.
+local OWN_LOOK_NPC = { "npcSkin", "npcFace", "npcHairStyle", "npcHairColour" }
+
+local function HasHelper()
+	return type(DmorphHelper_GetItemEnchants) == "function" and type(DmorphHelper_SetItemEnchants) == "function"
+		and type(DmorphHelper_GetLook) == "function" and type(DmorphHelper_SetLook) == "function"
+end
+M.HasHelper = HasHelper
+
+-- The DmorphHelper version running (nil: none), and the one this DMorph
+-- comes with.
+function M.GetHelperVersion()
+	if not HasHelper() then
+		return nil, HELPER_VERSION
+	end
+	local ok, version = pcall(DmorphHelper_Version)
+	return ok and tonumber(version) or 0, HELPER_VERSION
+end
+
+-- What DMorph needs and what it can use, for the window's Setup check and
+-- /dmorph check: { name, state = "ok" / "bad" / "off" (optional, missing), text }.
+function M.GetSetupReport()
+	local report = {}
+	local function Add(name, state, text)
+		table.insert(report, { name = name, state = state, text = text })
+	end
+	if HasMorphAPI() then
+		local version = ""
+		if type(VANILLAHELPERS_VERSION) == "number" then
+			version = " v" .. VersionText(VANILLAHELPERS_VERSION)
+		end
+		Add("VanillaHelpers", "ok", "Running" .. version .. ": morphing works.")
+	else
+		Add("VanillaHelpers", "bad", MissingAPI())
+	end
+	local helperVersion = M.GetHelperVersion()
+	if helperVersion and helperVersion < HELPER_VERSION then
+		Add("DmorphHelper", "bad", "An older DmorphHelper (v" .. helperVersion .. ") is in the game folder; this DMorph "
+			.. "comes with v" .. HELPER_VERSION .. ". " .. INSTALL_HELPER)
+	elseif HasHelper() then
+		local poses = ""
+		if type(DmorphHelper_GetRiderPose) == "function" then
+			local ok, _, works = pcall(DmorphHelper_GetRiderPose, 1)
+			if ok and works == 1 then
+				poses = " Riders stand on discs, boards and carpets."
+			else
+				poses = " It couldn't change the riding pose (another mod changed that part of the game?)."
+			end
+		end
+		Add("DmorphHelper", "ok", "Running v" .. helperVersion .. " (this DMorph comes with v" .. HELPER_VERSION .. "): weapon "
+			.. "glows, size, real skin, face and hair, and your own faction and languages during race morphs work." .. poses)
+	else
+		Add("DmorphHelper", "off", "Optional, not running: weapon glows and real skin, face and hair need it. "
+			.. INSTALL_HELPER)
+	end
+	if type(C_Item) == "table" then
+		Add("ClassicAPI", "ok", "Running: 3D previews of models work.")
+	else
+		Add("ClassicAPI", "off", "Optional, not running: the Models tab shows a list instead of 3D previews.")
+	end
+	if SUPERWOW_VERSION then
+		Add("SuperWoW", "ok", "Running: other DMorph users' morphs show without targeting them.")
+	else
+		Add("SuperWoW", "off", "Optional, not running: target or mouse over other DMorph users to see their morphs.")
+	end
+	return report
+end
+
+-- Every glow the client can draw (Data/Glows.lua): per glow its visual ID, an
+-- enchant ID that shows it, its name (the shortest enchant name), all the
+-- enchant names and its effect models. Then the porting tool's glows from
+-- later expansions (Data/Ported.lua's DmorphOcto_PortedGlows, same format;
+-- its patch adds the enchants), marked ported.
+local glows
+function M.GetGlows()
+	local text, portedText = DmorphOcto_GlowData or "", DmorphOcto_PortedGlows or ""
+	if not glows or glows.text ~= text or glows.portedText ~= portedText then
+		glows = { text = text, portedText = portedText, count = 0, visual = {}, enchant = {}, name = {}, names = {},
+			models = {}, search = {}, ported = {} }
+		local sources = { text, portedText }
+		for s = 1, 2 do
+			for visual, enchant, names, models in string.gfind(sources[s], "(%d+)\t(%d+)\t([^\t\n]*)\t([^\t\n]*)") do
+				local n = glows.count + 1
+				glows.count = n
+				glows.visual[n], glows.enchant[n] = tonumber(visual), tonumber(enchant)
+				local _, _, first = strfind(names, "^([^;]+)")
+				glows.name[n] = first or ("Glow " .. visual)
+				glows.names[n], glows.models[n] = names, models
+				glows.search[n] = strlower(names .. " " .. models .. " " .. visual .. " " .. enchant)
+				if s == 2 then
+					glows.ported[n] = true
+					glows.search[n] = glows.search[n] .. " ported"
+				end
+			end
+		end
+	end
+	return glows
+end
+
+-- The glows whose names, effect models or IDs have every word of text.
+function M.FilterGlows(text)
+	local all, words = M.GetGlows(), {}
+	for word in string.gfind(strlower(text or ""), "%S+") do
+		table.insert(words, word)
+	end
+	local result, count = {}, 0
+	for i = 1, all.count do
+		local keep = true
+		for k = 1, table.getn(words) do
+			if not strfind(all.search[i], words[k], 1, true) then
+				keep = false
+				break
+			end
+		end
+		if keep then
+			count = count + 1
+			result[count] = i
+		end
+	end
+	return result, count
+end
+
+function M.DescribeGlow(enchantID)
+	if enchantID == 0 then
+		return "no glow"
+	end
+	local all = M.GetGlows()
+	for i = 1, all.count do
+		if all.enchant[i] == enchantID then
+			return all.name[i]
+		end
+	end
+	return "enchant " .. enchantID
+end
+
+-- The glow picked for a weapon slot (an enchant ID, 0 for none, nil for your
+-- own) and the slot's real permanent enchant, if seen.
+function M.GetGlow(slot)
+	InitDB()
+	local real = db.glowReal[slot]
+	return db.glows[slot], real and real[1]
+end
+
+-- The skin colours, faces and hair a race and gender can wear
+-- (Data/CharOptions.lua), or nil.
+function M.GetLookOptions(race, gender)
+	local all = DmorphOcto_CharOptions
+	local o = type(all) == "table" and race and all[race .. ":" .. gender]
+	if type(o) == "table" and type(o.skin) == "table" and table.getn(o.skin) > 0 then
+		return o
+	end
+end
+
+-- The values row f (1-5) can have with the rest of look, sorted: a face needs
+-- its skin colour, a hair colour its hair style.
+local function LookChoices(o, look, f)
+	local list
+	if f == 1 then
+		list = o.skin
+	elseif f == 2 then
+		list = o.face and o.face[look[1]]
+	elseif f == 3 then
+		list = o.hairStyle
+	elseif f == 4 then
+		list = o.hairColour and o.hairColour[look[3]] or o.anyHairColour
+	else
+		list = o.facialHair
+	end
+	return type(list) == "table" and list or {}
+end
+
+local function Nearest(list, value)
+	local best
+	for i = 1, table.getn(list) do
+		local v = list[i]
+		if v == value then
+			return v
+		end
+		if not best or math.abs(v - value) < math.abs(best - value) then
+			best = v
+		end
+	end
+	return best or value
+end
+
+-- Makes look one the race can wear, row by row; returns the rows changed.
+local function ClampLook(o, look)
+	local changed = {}
+	for f = 1, 5 do
+		local v = Nearest(LookChoices(o, look, f), look[f])
+		if v ~= look[f] then
+			look[f] = v
+			table.insert(changed, f)
+		end
+	end
+	return changed
+end
+
+-- Row f of a look: its choices, the value's place among them (0 if it isn't
+-- one), and whether only NPCs have that value.
+function M.LookRow(o, look, f)
+	local values = LookChoices(o, look, f)
+	local pos = 0
+	for i = 1, table.getn(values) do
+		if values[i] == look[f] then
+			pos = i
+		end
+	end
+	local npc = OWN_LOOK_NPC[f] and type(o[OWN_LOOK_NPC[f]]) == "table" and o[OWN_LOOK_NPC[f]][look[f]] and true
+	return values, pos, npc or false
+end
+
+local function SameValues(a, b)
+	if not (a and b) then
+		return false
+	end
+	for i = 1, 5 do
+		if a[i] ~= b[i] then
+			return false
+		end
+	end
+	return true
+end
+
+local function CopyLook(look)
+	return { look[1], look[2], look[3], look[4], look[5] }
+end
+
+local function ReadLook()
+	local ok, a, b, c, d, e = pcall(DmorphHelper_GetLook, "player")
+	if ok and type(a) == "number" then
+		return { a, b, c, d, e }
+	end
+end
+
+-- Your real look: what the game has, unless that's what we wrote.
+local function RealLook()
+	local current = HasHelper() and ReadLook()
+	if current and not SameValues(current, db.lookWritten) then
+		return current
+	end
+	return db.lookReal or current
+end
+
+-- The body your look shows on (race, gender), its options, the look it has
+-- (5 values, or nil when unknown) and whether that's one you picked.
+function M.GetLookState()
+	InitDB()
+	local race, gender = M.GetBodyRace()
+	local o = M.GetLookOptions(race, gender)
+	local picked = race and db.looks[race .. ":" .. gender]
+	if picked then
+		return race, gender, o, picked, true
+	end
+	return race, gender, o, M.FittedLook(o, RealLook()), false
+end
+
+-- Your own look as the body's race can wear it: a value that race doesn't
+-- have (a Tauren's hair style on a Gnome) has no texture, and the game
+-- draws it green, so it moves to the closest one that race has.
+function M.FittedLook(o, look)
+	if not (o and look) then
+		return look
+	end
+	local fitted = CopyLook(look)
+	ClampLook(o, fitted)
+	return fitted
+end
+
+-- Your size needs DmorphHelper v2.
+local function HasScale()
+	return type(DmorphHelper_GetScale) == "function" and type(DmorphHelper_SetScale) == "function"
+end
+M.HasScale = HasScale
+
+-- Puts the picked size on (the server sends the real one again now and
+-- then), and the real one back once nothing is picked.
+local function WatchScale()
+	if not HasScale() then
+		return
+	end
+	local ok, current = pcall(DmorphHelper_GetScale, "player")
+	if not (ok and type(current) == "number") then
+		return
+	end
+	local written = db.scaleWritten
+	if not (written and math.abs(current - written) < 0.001) then
+		db.scaleReal = current
+	end
+	local want = db.scale or (written and db.scaleReal)
+	if want and math.abs(current - want) >= 0.001 and pcall(DmorphHelper_SetScale, "player", want) then
+		db.scaleWritten = want
+	end
+	if not db.scale then
+		db.scaleWritten = nil
+	end
+end
+
+-- Puts the picked glows and look on, and puts the real ones back where
+-- nothing is picked any more.
+-- Item morphs the game put back. VanillaHelpers keeps an item morph against
+-- the server's writes, but in combat some slots showed the real item again
+-- (user report, 14 Oct: head, waist, legs, feet, sometimes hands while
+-- tanking; shoulders, chest and weapons stayed), and asking it again changes
+-- nothing while it still holds the morph. DmorphHelper v13 also returns the
+-- item a slot shows: a morphed slot showing another item gets its morph again
+-- (VanillaHelpers then writes it, as the value differs).
+-- Each repair reloads your model. A slot the game puts back again and again
+-- would reload it every second, which can leave you running on the spot
+-- (user, 14 Oct): after 5 repairs of one slot in 10 seconds that slot is left
+-- alone for a minute, with a note. /dmorph itemcheck off|on|log; /dmorph
+-- status counts the repairs.
+local itemCheck = { on = true, log = false, clock = 0, count = {}, recent = {}, pausedUntil = {} }
+M.itemCheck = itemCheck
+local function CheckItems()
+	if not (sessionReady and HasHelper()) or not itemCheck.on then
+		return
+	end
+	local now = itemCheck.clock
+	for slot, item in pairs(db.items) do
+		local ok, _, _, shown = pcall(DmorphHelper_GetItemEnchants, "player", slot)
+		if ok and type(shown) == "number" and shown ~= item and (itemCheck.pausedUntil[slot] or -1) <= now then
+			local recent, kept = itemCheck.recent[slot] or {}, {}
+			for i = 1, table.getn(recent) do
+				if now - recent[i] < 10 then
+					table.insert(kept, recent[i])
+				end
+			end
+			if table.getn(kept) >= 5 then
+				itemCheck.pausedUntil[slot] = now + 60
+				itemCheck.recent[slot] = {}
+				Print((SLOT_NAMES[slot] or ("Slot " .. slot)) .. ": the game keeps switching it back (it shows item " .. shown
+					.. "), so DMorph leaves it alone for a minute rather than reload your model nonstop.")
+			else
+				table.insert(kept, now)
+				itemCheck.recent[slot] = kept
+				itemCheck.count[slot] = (itemCheck.count[slot] or 0) + 1
+				if itemCheck.log then
+					Print((SLOT_NAMES[slot] or ("Slot " .. slot)) .. " showed item " .. shown .. ": put " .. item .. " back.")
+				end
+				ApplyItem(slot)
+			end
+		end
+	end
+end
+M.CheckItems = CheckItems
+
+-- Your gear's durability changing (hits taken, a death, a repair) makes the
+-- game redraw those body parts from your real items although the morphs are
+-- still on, so CheckItems sees nothing wrong (users, 14-15 Oct: "every time
+-- the durability on the items changes the original skin is visible again";
+-- head, waist, legs, feet, hands while tanking). The model is rebuilt from the
+-- morphs then, as VanillaHelpers does when a morph goes on: at most once a
+-- second, and gear events right after our own rebuild are ignored (no loop).
+local function RebuildForItems()
+	if not (itemCheck.on and sessionReady and HasHelper() and type(DmorphHelper_Rebuild) == "function") or not next(db.items) then
+		itemCheck.rebuildPending = nil
+		return
+	end
+	if itemCheck.clock - (itemCheck.lastRebuild or -100) < 1 then
+		itemCheck.rebuildPending = true
+		return
+	end
+	itemCheck.rebuildPending = nil
+	itemCheck.lastRebuild = itemCheck.clock
+	itemCheck.ignoreUntil = itemCheck.clock + 0.5
+	if pcall(DmorphHelper_Rebuild, "player") then
+		itemCheck.rebuilds = (itemCheck.rebuilds or 0) + 1
+		if itemCheck.log then
+			Print("Your gear changed: your model was rebuilt with your item morphs.")
+		end
+	end
+end
+
+-- Glows hovered in the Glows tab (M.PreviewGlow), per slot.
+local glowPreview = {}
+local function WatchHelper()
+	if not (sessionReady and HasHelper()) or helperHold > 0 then
+		return
+	end
+	RepairRace()
+	CheckItems()
+	WatchScale()
+	local current = ReadLook()
+	if current then
+		if not SameValues(current, db.lookWritten) then
+			db.lookReal = current
+		end
+		local race, gender = M.GetBodyRace()
+		local want = race and db.looks[race .. ":" .. gender]
+		if not want and race then
+			-- Your own look, fitted to the race (see M.FittedLook).
+			local real = db.lookReal or current
+			local fitted = M.FittedLook(M.GetLookOptions(race, gender), real)
+			if fitted and not SameValues(fitted, real) then
+				want = fitted
+			end
+		end
+		local restore = not want and db.lookWritten
+		if restore then
+			want = db.lookReal
+		end
+		if want and not SameValues(current, want) then
+			if pcall(DmorphHelper_SetLook, "player", want[1], want[2], want[3], want[4], want[5]) then
+				db.lookWritten = CopyLook(want)
+			end
+		end
+		if restore then
+			db.lookWritten = nil
+		end
+	end
+	for slot in pairs(GLOW_SLOT) do
+		local ok, p, t = pcall(DmorphHelper_GetItemEnchants, "player", slot)
+		if ok and type(p) == "number" then
+			local written = db.glowWritten[slot]
+			if not (written and written[1] == p and written[2] == t) then
+				db.glowReal[slot] = { p, t }
+			end
+			local want
+			-- A glow hovered in the Glows tab shows until the mouse moves on (M.PreviewGlow).
+			local pick = glowPreview[slot] or db.glows[slot]
+			if pick then
+				want = { pick, 0 }
+			elseif written then
+				want = db.glowReal[slot]
+			end
+			if want and (want[1] ~= p or want[2] ~= t) then
+				if pcall(DmorphHelper_SetItemEnchants, "player", slot, want[1], want[2]) then
+					db.glowWritten[slot] = { want[1], want[2] }
+				end
+			end
+			if not pick then
+				db.glowWritten[slot] = nil
+			end
+		end
+	end
+end
+
+-- Shows a glow on a weapon without picking it (the Glows tab's hover, user
+-- 19 Oct: the preview box can't draw enchants, your character can); nil
+-- ends it and your picked or own glow comes back.
+function M.PreviewGlow(slot, enchantID)
+	if not GLOW_SLOT[slot] or glowPreview[slot] == enchantID then
+		return
+	end
+	glowPreview[slot] = enchantID
+	WatchHelper()
+end
+
+-- Glow and look actions need both DLLs.
+local function HelperBegin()
+	if not Begin() then
+		return false, MissingAPI()
+	end
+	if not HasHelper() then
+		return false, MISSING_HELPER
+	end
+	return true
+end
+
+-- Your size, 0.1-10 (1 = normal), or nil for your own. It works on any
+-- model: a small Ragnaros, a giant Tauren.
+function M.SetScale(scale)
+	local ok, err = HelperBegin()
+	if not ok then
+		return false, err
+	end
+	if not HasScale() then
+		return false, "Changing your size needs DmorphHelper v2 (this DMorph comes with it). " .. INSTALL_HELPER
+	end
+	if scale ~= nil then
+		scale = tonumber(scale)
+		if not (scale and scale >= 0.1 and scale <= 10) then
+			return false, "Size is a number from 0.1 to 10 (1 is normal)."
+		end
+		scale = math.floor(scale * 100 + 0.5) / 100
+	end
+	db.scale = scale
+	WatchScale()
+	Notify()
+	if scale then
+		return true, format("Size: %d%%. Only you see it.", math.floor(scale * 100 + 0.5))
+	end
+	return true, "Your own size again."
+end
+
+-- The size you picked (nil: your own) and the real one last seen.
+function M.GetScale()
+	InitDB()
+	return db.scale, db.scaleReal
+end
+
+-- Weather (DmorphHelper v8) ---------------------------------------------------------
+
+-- The game draws four kinds of weather, each from 0 to 1 strong (the server
+-- picks per zone). A picked one stays on in every zone, on your screen only,
+-- until you go back to the server's.
+M.WEATHER_KINDS = { [0] = "Clear skies", "Rain", "Snow", "Sandstorm" }
+M.WEATHERS = {
+	{ key = "Clear", kind = 0, intensity = 0, text = "Clear skies" },
+	{ key = "LightRain", kind = 1, intensity = 0.25, text = "Light rain" },
+	{ key = "Rain", kind = 1, intensity = 0.55, text = "Rain" },
+	{ key = "HeavyRain", kind = 1, intensity = 1, text = "Heavy rain" },
+	{ key = "LightSnow", kind = 2, intensity = 0.25, text = "Light snow" },
+	{ key = "Snow", kind = 2, intensity = 0.55, text = "Snow" },
+	{ key = "HeavySnow", kind = 2, intensity = 1, text = "Blizzard" },
+	{ key = "LightSandstorm", kind = 3, intensity = 0.25, text = "Light sandstorm" },
+	{ key = "Sandstorm", kind = 3, intensity = 0.55, text = "Sandstorm" },
+	{ key = "HeavySandstorm", kind = 3, intensity = 1, text = "Heavy sandstorm" },
+}
+local WEATHER_WORDS = { clear = 0, sun = 0, sunny = 0, fine = 0, none = 0, rain = 1, snow = 2, sand = 3,
+	sandstorm = 3, storm = 3, dust = 3 }
+local WEATHER_STRENGTH = { light = 0.25, medium = 0.55, normal = 0.55, heavy = 1, strong = 1 }
+
+local function HasWeather()
+	return type(DmorphHelper_SetWeather) == "function" and type(DmorphHelper_ClearWeather) == "function"
+		and type(DmorphHelper_GetWeather) == "function"
+end
+M.HasWeather = HasWeather
+
+-- "Heavy rain (100%)", "Clear skies".
+function M.DescribeWeather(kind, intensity)
+	local name = M.WEATHER_KINDS[kind] or "Unknown weather"
+	if not kind or kind == 0 then
+		return name
+	end
+	return format("%s (%d%%)", name, math.floor((intensity or 0) * 100 + 0.5))
+end
+
+-- Time of day (DmorphHelper v9): the world's light, sky, sun and moon at a
+-- picked time; the clock and the server keep the real one.
+M.TIMES = {
+	{ key = "Dawn", minutes = 360, text = "Dawn" },
+	{ key = "Noon", minutes = 720, text = "Noon" },
+	{ key = "Dusk", minutes = 1170, text = "Dusk" },
+	{ key = "Night", minutes = 0, text = "Midnight" },
+}
+local TIME_WORDS = { dawn = 360, sunrise = 360, morning = 540, day = 720, noon = 720, midday = 720,
+	afternoon = 900, dusk = 1170, sunset = 1170, evening = 1260, night = 0, midnight = 0 }
+
+local function HasTime()
+	return type(DmorphHelper_SetTime) == "function" and type(DmorphHelper_GetTime) == "function"
+end
+M.HasTime = HasTime
+
+-- "22:30".
+function M.DescribeTime(minutes)
+	minutes = math.floor(minutes or 0)
+	return format("%d:%02d", math.floor(minutes / 60), math.mod(minutes, 60))
+end
+
+-- Puts the picked weather and time on (after a loading screen or zone
+-- change, the helper has usually kept them; this is the backup).
+local function ApplyWeather()
+	if db and db.weather and HasWeather() then
+		pcall(DmorphHelper_SetWeather, db.weather[1], db.weather[2])
+	end
+	if db and db.time and HasTime() then
+		pcall(DmorphHelper_SetTime, db.time)
+	end
+end
+
+-- minutes after midnight (0-1439), or nil for the real time.
+function M.SetTime(minutes)
+	local ok, err = HelperBegin()
+	if not ok then
+		return false, err
+	end
+	if not HasTime() then
+		return false, "Changing the time of day needs DmorphHelper v9 (this DMorph comes with it). " .. INSTALL_HELPER
+	end
+	if minutes ~= nil then
+		minutes = tonumber(minutes)
+		if not minutes then
+			return false, "The time is hours and minutes, e.g. 22:30."
+		end
+		minutes = math.mod(math.floor(minutes + 0.5), 1440)
+		if minutes < 0 then
+			minutes = minutes + 1440
+		end
+	end
+	if not pcall(DmorphHelper_SetTime, minutes or -1) then
+		return false, "DmorphHelper couldn't change the time of day."
+	end
+	db.time = minutes
+	Notify()
+	if minutes then
+		return true, "Time of day: " .. M.DescribeTime(minutes) .. ". Only you see it."
+	end
+	return true, "The real time of day again."
+end
+
+-- The time you picked (minutes; nil: the real time) and the real time
+-- (nil without DmorphHelper v9).
+function M.GetTime()
+	InitDB()
+	local real
+	if HasTime() then
+		local ok, _, _, r = pcall(DmorphHelper_GetTime)
+		if ok then
+			real = r
+		end
+	end
+	return db.time, real
+end
+
+-- kind: 0 clear, 1 rain, 2 snow, 3 sandstorm, or nil for the server's
+-- weather; intensity 0-1 (rain, snow and sandstorm need more than 0).
+function M.SetWeather(kind, intensity)
+	local ok, err = HelperBegin()
+	if not ok then
+		return false, err
+	end
+	if not HasWeather() then
+		return false, "Changing the weather needs DmorphHelper v8 (this DMorph comes with it). " .. INSTALL_HELPER
+	end
+	if kind == nil then
+		if not pcall(DmorphHelper_ClearWeather) then
+			return false, "There's no weather to change outside the world."
+		end
+		db.weather = nil
+		Notify()
+		return true, "The server's weather again."
+	end
+	kind = tonumber(kind)
+	if not (kind and kind >= 0 and kind <= 3 and kind == math.floor(kind)) then
+		return false, "Weather is 0 (clear), 1 (rain), 2 (snow) or 3 (sandstorm)."
+	end
+	intensity = tonumber(intensity) or 0.55
+	if kind == 0 then
+		intensity = 0
+	elseif not (intensity >= 0.05 and intensity <= 1) then
+		return false, "Weather strength is 5% to 100%."
+	end
+	intensity = math.floor(intensity * 100 + 0.5) / 100
+	if not pcall(DmorphHelper_SetWeather, kind, intensity) then
+		return false, "There's no weather to change outside the world."
+	end
+	db.weather = { kind, intensity }
+	Notify()
+	return true, "Weather: " .. M.DescribeWeather(kind, intensity) .. ". Only you see it, outdoors."
+end
+
+-- The weather you picked (kind, intensity; nil: the server's) and the
+-- server's (kind, intensity; nil without DmorphHelper v8).
+function M.GetWeather()
+	InitDB()
+	local serverKind, serverIntensity
+	if HasWeather() then
+		local ok, _, _, _, k, i = pcall(DmorphHelper_GetWeather)
+		if ok then
+			serverKind, serverIntensity = k, i
+		end
+	end
+	if db.weather then
+		return db.weather[1], db.weather[2], serverKind, serverIntensity
+	end
+	return nil, nil, serverKind, serverIntensity
+end
+
+-- enchantID: an enchant whose glow the slot shows, 0 for no glow, nil for
+-- your own.
+function M.SetGlow(slot, enchantID)
+	local ok, err = HelperBegin()
+	if not ok then
+		return false, err
+	end
+	if not GLOW_SLOT[slot] then
+		return false, "Glows show on weapons: main hand (16), off hand (17) or ranged (18)."
+	end
+	if enchantID ~= nil then
+		enchantID = ParseID(enchantID)
+		if not enchantID or enchantID > 1000000 then
+			return false, "Enchant IDs are whole numbers."
+		end
+	end
+	db.glows[slot] = enchantID
+	glowPreview[slot] = nil -- picked now: the hover look is over
+	WatchHelper()
+	Notify()
+	if not enchantID then
+		return true, SLOT_NAMES[slot] .. ": your own glow."
+	end
+	return true, SLOT_NAMES[slot] .. ": " .. M.DescribeGlow(enchantID) .. "."
+end
+
+M.LOOK_ROWS = { "Skin colour", "Face", "Hair style", "Hair colour", "Facial hair" }
+
+local function RowName(f, gender)
+	if f == 5 and gender == 1 then
+		return "Features"
+	end
+	return M.LOOK_ROWS[f]
+end
+M.LookRowName = RowName
+
+local function NoOptions(race, gender)
+	if not race then
+		return "Couldn't detect your race, pick one first."
+	end
+	return "There's no skin, face and hair list for " .. M.DescribeBody(race, gender)
+		.. " yet. Close the game and run tools\\update_from_game.ps1, then try again."
+end
+
+-- "the face and hair colour"
+local function JoinRows(rows, gender)
+	local names = {}
+	for i = 1, table.getn(rows) do
+		table.insert(names, strlower(RowName(rows[i], gender)))
+	end
+	local n = table.getn(names)
+	if n == 1 then
+		return names[1]
+	end
+	return table.concat(names, ", ", 1, n - 1) .. " and " .. names[n]
+end
+
+local function PickLook(race, gender, look)
+	db.looks[race .. ":" .. gender] = CopyLook(look)
+	WatchHelper()
+	Notify()
+end
+
+-- Your model (race morph or your own) with these five values, made valid for
+-- it. Returns ok, message.
+function M.SetOwnLook(values)
+	local ok, err = HelperBegin()
+	if not ok then
+		return false, err
+	end
+	local race, gender, o = M.GetLookState()
+	if not o then
+		return false, NoOptions(race, gender)
+	end
+	local look = CopyLook(values)
+	local changed = ClampLook(o, look)
+	PickLook(race, gender, look)
+	if table.getn(changed) > 0 then
+		return true, M.DescribeBody(race, gender) .. " has no such " .. JoinRows(changed, gender)
+			.. ", so the closest one is on."
+	end
+	return true, "Look set."
+end
+
+-- Row f (1-5) of your model's look one value along (step 1 or -1, wrapping).
+-- A row whose new value doesn't go with another row (a face is per skin
+-- colour, a hair colour per hair style) moves that one to its closest value.
+function M.StepOwnLook(f, step)
+	local ok, err = HelperBegin()
+	if not ok then
+		return false, err
+	end
+	local race, gender, o, current = M.GetLookState()
+	if not o then
+		return false, NoOptions(race, gender)
+	end
+	if not current then
+		return false, "Couldn't read your look from the game."
+	end
+	local look = CopyLook(current)
+	ClampLook(o, look)
+	local values = LookChoices(o, look, f)
+	local n = table.getn(values)
+	if n < 2 then
+		return false, M.DescribeBody(race, gender) .. " has just one " .. strlower(RowName(f, gender)) .. "."
+	end
+	local pos = 1
+	for i = 1, n do
+		if values[i] == look[f] then
+			pos = i
+		end
+	end
+	pos = math.mod(pos - 1 + step + n, n) + 1
+	look[f] = values[pos]
+	local changed = ClampLook(o, look)
+	PickLook(race, gender, look)
+	local message = RowName(f, gender) .. " " .. pos .. " of " .. n
+	local _, _, npc = M.LookRow(o, look, f)
+	if npc then
+		message = message .. " (an NPC-only one)"
+	end
+	message = message .. "."
+	if table.getn(changed) > 0 then
+		message = message .. " The " .. JoinRows(changed, gender) .. " changed too: this one doesn't come with the old one."
+	end
+	return true, message
+end
+
+-- A random look for your model, from everything its race can wear.
+function M.RandomOwnLook()
+	local ok, err = HelperBegin()
+	if not ok then
+		return false, err
+	end
+	local race, gender, o, current = M.GetLookState()
+	if not o then
+		return false, NoOptions(race, gender)
+	end
+	local look = CopyLook(current or { 0, 0, 0, 0, 0 })
+	for try = 1, 5 do
+		for f = 1, 5 do
+			local values = LookChoices(o, look, f)
+			if table.getn(values) > 0 then
+				look[f] = values[math.random(table.getn(values))]
+			end
+		end
+		if not SameValues(look, current) then
+			break
+		end
+	end
+	PickLook(race, gender, look)
+	return true, "A random " .. M.DescribeBody(race, gender) .. " look."
+end
+
+-- Back to your real skin, face and hair on the model you show.
+function M.ResetOwnLook()
+	local ok, err = HelperBegin()
+	if not ok then
+		return false, err
+	end
+	local race, gender = M.GetBodyRace()
+	if race then
+		db.looks[race .. ":" .. gender] = nil
+	end
+	WatchHelper()
+	Notify()
+	return true, "Your own face, skin and hair."
+end
+
+local function ApplySaved()
+	if not Begin() then
+		return
+	end
+	if BodyDisplayID() then
+		ApplyBody()
+	end
+	for slot in pairs(db.items) do
+		ApplyItem(slot)
+	end
+	WatchHelper()
+	ApplyWeather()
+	Notify()
+end
+
+-- Turns the outcome of the VanillaHelpers calls into (ok, message).
+local function Result(ok, err, message)
+	Notify()
+	if ok then
+		return true, message
+	end
+	return false, "|cffff5555" .. tostring(err) .. "|r"
+end
+
+-- Actions: each returns ok, message -----------------------------------------
+
+function M.ResetModel()
+	if not Begin() then
+		return false, MissingAPI()
+	end
+	db.display, db.race, db.gender = nil, nil, 0
+	db.looks = {}
+	local ok, err = ApplyBody()
+	WatchHelper()
+	return Result(ok, err, "Model reset.")
+end
+
+function M.ResetAll()
+	if not Begin() then
+		return false, MissingAPI()
+	end
+	db.display, db.race, db.gender = nil, nil, 0
+	db.looks, db.glows, db.scale = {}, {}, nil
+	local ok, err = ApplyBody()
+	WatchHelper()
+	db.mount, db.mountSkins = nil, {}
+	StopSkin()
+	for i = 1, table.getn(SLOT_ORDER) do
+		local slot = SLOT_ORDER[i]
+		db.items[slot] = nil
+		local slotOK, slotErr = ApplyItem(slot)
+		if ok and not slotOK then
+			ok, err = slotOK, slotErr
+		end
+	end
+	return Result(ok, err, "Model and items reset.")
+end
+
+function M.SetDisplay(displayID)
+	if not Begin() then
+		return false, MissingAPI()
+	end
+	displayID = ParseID(displayID)
+	if not displayID then
+		return false, "Display IDs are whole numbers."
+	end
+	if displayID == 0 then
+		return M.ResetModel()
+	end
+	db.display, db.race, db.gender = displayID, nil, 0
+	local ok, err = ApplyBody()
+	return Result(ok, err, "Morphed into " .. M.DescribeDisplay(displayID) .. ".")
+end
+
+-- The race and gender your model shows now, morphed or your own.
+function M.GetBodyRace()
+	InitDB()
+	if db.race then
+		return db.race, db.gender
+	end
+	return nativeRace, nativeGender or 0
+end
+
+-- gender is 0 or 1; anything else keeps the current gender.
+function M.SetRace(race, gender)
+	if not Begin() then
+		return false, MissingAPI()
+	end
+	if not RACES[race] then
+		return false, "Unknown race. Races: " .. RaceList()
+	end
+	if gender ~= 0 and gender ~= 1 then
+		local _
+		_, gender = M.GetBodyRace()
+	end
+	if race == nativeRace and gender == nativeGender then
+		db.display, db.race, db.gender = nil, nil, 0
+	else
+		db.display, db.race, db.gender = nil, race, gender
+	end
+	local ok, err = ApplyBody()
+	return Result(ok, err, "Race: " .. M.DescribeBody(race, gender) .. ".")
+end
+
+function M.ToggleGender()
+	if not Begin() then
+		return false, MissingAPI()
+	end
+	local race, gender = M.GetBodyRace()
+	if not race then
+		return false, "Couldn't detect your race, pick one first."
+	end
+	return M.SetRace(race, 1 - gender)
+end
+
+-- itemID 0 resets the slot.
+function M.SetItem(slot, itemID)
+	if not Begin() then
+		return false, MissingAPI()
+	end
+	if not SLOT_NAMES[slot] then
+		return false, "Neck, rings and trinkets don't show on your model. Slots: " .. SlotList()
+	end
+	itemID = ParseID(itemID)
+	if not itemID then
+		return false, "Item IDs are whole numbers."
+	end
+	if itemID == 0 then
+		itemID = nil
+	end
+	db.items[slot] = itemID
+	local ok, err = ApplyItem(slot)
+	if itemID then
+		return Result(ok, err, SLOT_NAMES[slot] .. ": " .. M.DescribeItem(itemID, slot) .. ".")
+	end
+	return Result(ok, err, SLOT_NAMES[slot] .. " reset.")
+end
+
+-- Shows nothing in an armour slot (item 0, as under a set with your own gear
+-- hidden): the slot is invisible on your character. SetItem(slot, 0) resets it.
+function M.HideItem(slot)
+	if not Begin() then
+		return false, MissingAPI()
+	end
+	if not SLOT_NAMES[slot] or slot == 16 or slot == 17 or slot == 18 then
+		return false, "Only armour slots can be made invisible."
+	end
+	db.items[slot] = 0
+	local ok, err = ApplyItem(slot)
+	return Result(ok, err, SLOT_NAMES[slot] .. ": invisible.")
+end
+
+-- Birthday suit (user, 18 Oct): every armour slot shows nothing, to build a look
+-- up from bare skin; weapons keep what they show. Use my own gear / Reset brings it back.
+function M.BirthdaySuit()
+	if not Begin() then
+		return false, MissingAPI()
+	end
+	local ok, err = true, nil
+	for i = 1, table.getn(M.SLUTMOG_SLOTS) do
+		local slot = M.SLUTMOG_SLOTS[i]
+		if db.items[slot] ~= 0 then
+			db.items[slot] = 0
+			local slotOK, slotErr = ApplyItem(slot)
+			if ok and not slotOK then
+				ok, err = slotOK, slotErr
+			end
+		end
+	end
+	return Result(ok, err, "Birthday suit: every armour slot shows nothing. Pick pieces to build up from here.")
+end
+
+-- Gives your mount a skin: any creature model, shown whenever you ride. real
+-- (a display ID from GetRiddenMounts) sets it for that mount only, else for
+-- all your mounts. displayID 0 takes the skin off.
+function M.SetMountSkin(displayID, real)
+	if not Begin() then
+		return false, MissingAPI()
+	end
+	if not HasMountAPI() then
+		return false, "This VanillaHelpers can't morph mounts: update it to v1.1.0 or newer."
+	end
+	displayID = ParseID(displayID)
+	if not displayID then
+		return false, "Display IDs are whole numbers."
+	end
+	if displayID == 0 then
+		displayID = nil
+	end
+	local target = "all your mounts"
+	if real then
+		db.mountSkins[real] = displayID
+		target = M.DescribeDisplay(real)
+	else
+		db.mount = displayID
+	end
+	WatchMount()
+	Notify()
+	if not displayID then
+		return true, "Skin for " .. target .. " removed."
+	end
+	local when = " It shows when you mount."
+	if watch.active then
+		when = ""
+	end
+	return true, "Skin for " .. target .. ": " .. M.DescribeDisplay(displayID) .. "." .. when
+end
+
+-- The skin for all your mounts (.mount, favourites).
+function M.SetMount(displayID)
+	return M.SetMountSkin(displayID)
+end
+
+-- Your own gear under sets: by default the armour slots a set has no piece
+-- for show nothing (item 0), so your real gear doesn't show through (user,
+-- 14 Oct: their pink robe looked like "a purple filler" under 5-piece sets).
+-- DmorphOctoAccount.setsKeepOwnGear keeps your own gear there instead.
+local HIDE_UNDER_SETS = { 1, 3, 4, 5, 6, 7, 8, 9, 10, 15, 19 }
+
+function M.GetHideGearUnderSets()
+	InitDB()
+	return not account.setsKeepOwnGear
+end
+
+function M.SetHideGearUnderSets(on)
+	InitDB()
+	account.setsKeepOwnGear = not on or nil
+	if on then
+		return true, "Sets hide your own gear in the slots they have no piece for (from the next set you wear)."
+	end
+	return true, "Sets keep your own gear in the slots they have no piece for (from the next set you wear)."
+end
+
+-- Puts on every piece of set `index` (its position in GetSetCatalog) whose
+-- slot is known. A piece of any set (the last one worn, or one picked on its
+-- own) in a slot this set has no piece for comes off first, so sets don't mix
+-- (user, 13 Oct: the last set's helmet stayed on); other items stay. With
+-- M.GetHideGearUnderSets (the default), armour slots the set has no piece for
+-- and that show your own gear then show nothing.
+function M.WearSet(index)
+	if not Begin() then
+		return false, MissingAPI()
+	end
+	local catalog = M.GetSetCatalog()
+	local pieces = catalog.pieces[index]
+	if not pieces then
+		return false, "Pick a set in the list first."
+	end
+	if not catalog.isPiece then
+		catalog.isPiece = {}
+		for i = 1, catalog.count do
+			for k = 1, table.getn(catalog.pieces[i]) do
+				catalog.isPiece[catalog.pieces[i][k]] = true
+			end
+		end
+	end
+	local used, slotOf, worn, unknown = {}, {}, 0, 0
+	for i = 1, table.getn(pieces) do
+		local slots = M.GetItemSlots(pieces[i])
+		if slots then
+			-- A second one-hand weapon goes in the off hand.
+			for k = 1, table.getn(slots) do
+				if not used[slots[k]] then
+					used[slots[k]], slotOf[i] = true, slots[k]
+					break
+				end
+			end
+		else
+			unknown = unknown + 1
+		end
+	end
+	-- The look the set makes, worked out for every slot first; then only the
+	-- slots that differ change (each change reloads your model, and clicking
+	-- a set again used to put its hidden slots back and hide them again, so
+	-- pieces seemed to toggle at random: user, 15 Oct). With your own gear
+	-- hidden (the default) every armour slot the set has no piece for shows
+	-- nothing, also an item picked on its own: a set shows only its pieces.
+	-- Shown: set pieces and slots a set hid are cleared, other items stay.
+	-- Weapons the set has no piece for keep what they show.
+	local target = {}
+	for i = 1, table.getn(SLOT_ORDER) do
+		target[SLOT_ORDER[i]] = db.items[SLOT_ORDER[i]]
+	end
+	for i = 1, table.getn(pieces) do
+		if slotOf[i] then
+			worn = worn + 1
+			target[slotOf[i]] = pieces[i]
+		end
+	end
+	local hide, hidden = not account.setsKeepOwnGear, 0
+	if worn > 0 then
+		local armour = {}
+		for i = 1, table.getn(HIDE_UNDER_SETS) do
+			armour[HIDE_UNDER_SETS[i]] = true
+		end
+		for i = 1, table.getn(SLOT_ORDER) do
+			local slot = SLOT_ORDER[i]
+			local current = db.items[slot]
+			if not used[slot] then
+				if hide and armour[slot] then
+					target[slot] = 0
+					hidden = hidden + 1
+				elseif current and (catalog.isPiece[current] or current == 0) then
+					target[slot] = nil -- (0 = a slot the last set hid)
+				end
+			end
+		end
+	end
+	local ok, err, changed = true, nil, 0
+	if worn > 0 then
+		for i = 1, table.getn(SLOT_ORDER) do
+			local slot = SLOT_ORDER[i]
+			if target[slot] ~= db.items[slot] then
+				db.items[slot] = target[slot]
+				changed = changed + 1
+				local slotOK, slotErr = ApplyItem(slot)
+				if ok and not slotOK then
+					ok, err = slotOK, slotErr
+				end
+			end
+		end
+		-- Already wearing it: one rebuild puts back anything the game redrew.
+		if changed == 0 and HasHelper() and type(DmorphHelper_Rebuild) == "function" then
+			pcall(DmorphHelper_Rebuild, "player")
+		end
+	end
+	local later = ""
+	if unknown > 0 then
+		later = " " .. unknown .. " more still being looked up: try again in a minute."
+	end
+	if worn == 0 then
+		Notify()
+		return false, "None of " .. catalog.names[index] .. "'s pieces are known yet." .. later
+	end
+	local count = worn .. " pieces"
+	if worn == 1 then
+		count = "1 piece"
+	end
+	if hidden > 0 then
+		count = count .. ", your own gear hidden in " .. hidden .. " slots"
+	end
+	return Result(ok, err, "Wearing " .. catalog.names[index] .. " (" .. count .. ")." .. later)
+end
+
+-- Favourites ----------------------------------------------------------------
+
+-- Models and mounts kept at hand, shared by all your characters: a list of
+-- { id = displayID, mount = true or nil }, oldest first.
+function M.GetFavourites()
+	InitDB()
+	return account.favourites
+end
+
+local function FindFavourite(displayID, mount)
+	local list = account.favourites
+	for i = 1, table.getn(list) do
+		if list[i].id == displayID and list[i].mount == mount then
+			return i
+		end
+	end
+end
+
+function M.IsFavourite(displayID, mount)
+	InitDB()
+	return FindFavourite(displayID, mount and true or nil) ~= nil
+end
+
+-- Adds the model (or, with mount set, the mount) to the favourites, or takes
+-- it off if it's there already.
+function M.ToggleFavourite(displayID, mount)
+	InitDB()
+	displayID = ParseID(displayID)
+	if not displayID or displayID == 0 then
+		return false, "Pick a model first."
+	end
+	mount = mount and true or nil
+	local what = "favourite models"
+	if mount then
+		what = "favourite mounts"
+	end
+	local index = FindFavourite(displayID, mount)
+	if index then
+		table.remove(account.favourites, index)
+		return true, "Removed " .. M.DescribeDisplay(displayID) .. " from your " .. what .. "."
+	end
+	table.insert(account.favourites, { id = displayID, mount = mount })
+	return true, "Added " .. M.DescribeDisplay(displayID) .. " to your " .. what .. "."
+end
+
+-- Wardrobe ------------------------------------------------------------------
+
+function M.GetOutfitNames()
+	InitDB()
+	local names = {}
+	for name in pairs(account.outfits) do
+		table.insert(names, name)
+	end
+	table.sort(names, function(a, b)
+		return strlower(a) < strlower(b)
+	end)
+	return names
+end
+
+function M.GetOutfit(name)
+	InitDB()
+	return account.outfits[name]
+end
+
+-- The saved name matching text, ignoring case.
+function M.FindOutfit(text)
+	InitDB()
+	text = strlower(Trim(text))
+	for name in pairs(account.outfits) do
+		if strlower(name) == text then
+			return name
+		end
+	end
+end
+
+function M.SaveOutfit(name)
+	InitDB()
+	name = Trim(name)
+	if name == "" then
+		return false, "Type a name for the outfit first."
+	end
+	local replaced = account.outfits[name] ~= nil
+	account.outfits[name] = CopyOutfit(db)
+	Notify()
+	if replaced then
+		return true, "Updated outfit \"" .. name .. "\"."
+	end
+	return true, "Saved outfit \"" .. name .. "\"."
+end
+
+-- Puts on the whole outfit: slots it doesn't morph go back to your own gear.
+function M.LoadOutfit(name)
+	if not Begin() then
+		return false, MissingAPI()
+	end
+	local outfit = account.outfits[name]
+	if not outfit then
+		return false, "There is no outfit called \"" .. tostring(name) .. "\"."
+	end
+	db.display, db.race, db.gender = outfit.display, outfit.race, outfit.gender
+	if db.race == nativeRace and db.gender == nativeGender then
+		db.race, db.gender = nil, 0
+	end
+	local ok, err = ApplyBody()
+	for i = 1, table.getn(SLOT_ORDER) do
+		local slot = SLOT_ORDER[i]
+		db.items[slot] = outfit.items[slot]
+		local slotOK, slotErr = ApplyItem(slot)
+		if ok and not slotOK then
+			ok, err = slotOK, slotErr
+		end
+	end
+	db.mount = outfit.mount
+	-- The outfit's glows, and its look for its body (else your own).
+	db.glows = {}
+	for slot, enchantID in pairs(outfit.glows) do
+		db.glows[slot] = enchantID
+	end
+	local race, gender = M.GetBodyRace()
+	if race then
+		db.looks[race .. ":" .. gender] = nil
+	end
+	local look = outfit.look
+	if look and look.race == race and look.gender == gender then
+		db.looks[race .. ":" .. gender] = ValidLook(look)
+	end
+	WatchHelper()
+	return Result(ok, err, "Loaded outfit \"" .. name .. "\".")
+end
+
+function M.DeleteOutfit(name)
+	InitDB()
+	if not account.outfits[name] then
+		return false, "There is no outfit called \"" .. tostring(name) .. "\"."
+	end
+	account.outfits[name] = nil
+	Notify()
+	return true, "Deleted outfit \"" .. name .. "\"."
+end
+
+-- Chat commands -------------------------------------------------------------
+
+local function ShowHelp()
+	Print("v" .. VERSION .. " - /dmorph opens the morph window. Chat commands:")
+	Print(".morph <displayID> - morph into any model (.morph 0 resets)")
+	Print(".race <1-10> - " .. RaceList())
+	Print(".gender - swap the gender of your race or race morph")
+	Print(".item <slot> <itemID or item link> - morph a visible item (itemID 0 resets the slot). Slots: " .. SlotList())
+	Print(".demorph - reset your model (DMorph's F5); .demorph all - reset model and items (F10)")
+	Print(".outfit [name] - list or put on saved outfits; .outfit save <name>; .outfit delete <name>")
+	Print(".mount <displayID> - morph your mount (.mount 0 resets)")
+	Print(".scale <size> - your size, e.g. .scale 0.5 or .scale 2 (.scale 0 resets; needs DmorphHelper)")
+	Print(".weather <clear/rain/snow/sandstorm> [light/heavy/5-100%] - the weather on your screen (.weather off: the server's; needs DmorphHelper)")
+	Print(".time <hh:mm or dawn/noon/dusk/night> - the time of day on your screen (.time off: the real one; needs DmorphHelper)")
+	Print(".glow <mainhand/offhand/ranged> <enchantID> - a weapon's enchant glow (0 none, own your own); needs DmorphHelper.dll")
+	Print(".share on/off - whether other DMorph users see your morph; .share others on/off - whether you see theirs")
+	Print(".dmorph status - show what is morphed; .dmorph check - is everything DMorph needs running, and how to fix it. Keys: Key Bindings > DMorph.")
+	if not HasMorphAPI() then
+		Print(MissingAPI())
+	end
+end
+
+local function ShowStatus()
+	if not HasMorphAPI() then
+		Print(MissingAPI())
+	elseif type(VANILLAHELPERS_VERSION) == "number" then
+		Print("VanillaHelpers v" .. VersionText(VANILLAHELPERS_VERSION) .. " is loaded.")
+	end
+	local helperVersion = M.GetHelperVersion()
+	if helperVersion and helperVersion < HELPER_VERSION then
+		Print("DmorphHelper v" .. helperVersion .. " is loaded, an older one: this DMorph comes with v" .. HELPER_VERSION .. ". "
+			.. INSTALL_HELPER)
+	elseif helperVersion then
+		Print("DmorphHelper v" .. helperVersion .. " is loaded: weapon glows, size and real skin, face and hair work.")
+	else
+		Print("DmorphHelper.dll is not loaded: weapon glows and real skin, face and hair changes need it. " .. INSTALL_HELPER)
+	end
+	if nativeRace then
+		Print("Your character: " .. M.DescribeBody(nativeRace, nativeGender) .. ".")
+	end
+	if db.display then
+		Print("Model: " .. M.DescribeDisplay(db.display) .. ".")
+	elseif db.race then
+		Print("Model: " .. M.DescribeBody(db.race, db.gender) .. ".")
+	else
+		Print("Model: not morphed.")
+	end
+	local list = ""
+	for i = 1, table.getn(SLOT_ORDER) do
+		local slot = SLOT_ORDER[i]
+		if db.items[slot] then
+			list = list .. ", " .. SLOT_NAMES[slot] .. " " .. M.DescribeItem(db.items[slot], slot)
+		end
+	end
+	if list == "" then
+		Print("Items: not morphed.")
+	else
+		Print("Items: " .. strsub(list, 3) .. ".")
+	end
+	for i = 1, table.getn(M.GLOW_SLOTS) do
+		local slot = M.GLOW_SLOTS[i]
+		if db.glows[slot] then
+			Print("Glow, " .. strlower(SLOT_NAMES[slot]) .. ": " .. M.DescribeGlow(db.glows[slot]) .. ".")
+		end
+	end
+	local bodies = {}
+	for key in pairs(db.looks) do
+		local _, _, race, gender = strfind(key, "^(%d+):(%d)$")
+		table.insert(bodies, M.DescribeBody(tonumber(race), tonumber(gender)))
+	end
+	if table.getn(bodies) > 0 then
+		table.sort(bodies)
+		Print("Own face, skin and hair picked for: " .. table.concat(bodies, ", ") .. ".")
+	end
+	if db.mount then
+		Print("Mount skin: " .. M.DescribeDisplay(db.mount) .. ".")
+	end
+	if db.scale then
+		Print(format("Size: %d%%.", math.floor(db.scale * 100 + 0.5)))
+	end
+	if db.weather then
+		Print("Weather: " .. M.DescribeWeather(db.weather[1], db.weather[2]) .. ".")
+	end
+	if db.time then
+		Print("Time of day: " .. M.DescribeTime(db.time) .. ".")
+	end
+	local repaired = {}
+	for i = 1, table.getn(SLOT_ORDER) do
+		local slot = SLOT_ORDER[i]
+		if itemCheck.count[slot] then
+			table.insert(repaired, SLOT_NAMES[slot] .. " " .. itemCheck.count[slot])
+		end
+	end
+	if not itemCheck.on then
+		Print("Item check: off (/dmorph itemcheck on).")
+	elseif table.getn(repaired) > 0 then
+		Print("Item morphs the game switched back and DMorph put back this session: " .. table.concat(repaired, ", ") .. ".")
+	end
+	if raceRepairs > 0 then
+		Print("Race byte left on the wrong race and put right this session: " .. raceRepairs .. " times.")
+	end
+	for real, skin in pairs(db.mountSkins) do
+		Print("Skin for " .. M.DescribeDisplay(real) .. ": " .. M.DescribeDisplay(skin) .. ".")
+	end
+end
+
+local commands = {}
+-- Other files (Share.lua) add their own chat commands here.
+M.commands = commands
+
+function commands.morph(args)
+	local displayID = ParseID(args[1] or "0")
+	if not displayID then
+		return Print("Usage: .morph <displayID>  (.morph 0 resets)")
+	end
+	Report(M.SetDisplay(displayID))
+end
+
+function commands.race(args)
+	local word = strlower(args[1] or "")
+	local race = RACE_ALIASES[word] or ParseID(word)
+	if race == 11 then
+		return Print("Draenei don't exist in the 1.12 client. Races: " .. RaceList())
+	end
+	if not race or not RACES[race] then
+		return Print("Usage: .race <1-10>  (" .. RaceList() .. ")")
+	end
+	Report(M.SetRace(race))
+end
+
+function commands.gender()
+	Report(M.ToggleGender())
+end
+
+function commands.item(args, line)
+	local word = strlower(args[1] or "")
+	local slot = SLOT_ALIASES[word] or ParseID(word)
+	if not slot or slot < 1 or slot > 19 then
+		return Print("Usage: .item <slot> <itemID>  (slots: " .. SlotList() .. ")")
+	end
+	-- Accept a shift-clicked item link as well as a plain ID.
+	local _, _, linkID = strfind(line, "item:(%d+)")
+	local itemID = ParseID(linkID or args[2] or "0")
+	if not itemID then
+		return Print("Usage: .item <slot> <itemID>  (itemID 0 resets the slot)")
+	end
+	Report(M.SetItem(slot, itemID))
+end
+
+function commands.mount(args)
+	local displayID = ParseID(args[1] or "0")
+	if not displayID then
+		return Print("Usage: .mount <displayID>  (.mount 0 resets)")
+	end
+	Report(M.SetMount(displayID))
+end
+
+-- .glow mainhand 1900, .glow offhand 0 (no glow), .glow ranged own.
+function commands.glow(args)
+	local word = strlower(args[1] or "")
+	local slot = SLOT_ALIASES[word] or ({ mh = 16, oh = 17 })[word] or ParseID(word)
+	local value = strlower(args[2] or "")
+	local enchantID = ParseID(value)
+	if not (slot and GLOW_SLOT[slot]) or not (enchantID or value == "own") then
+		return Print("Usage: .glow <mainhand/offhand/ranged> <enchantID>  (0 for no glow, own for your own)")
+	end
+	Report(M.SetGlow(slot, enchantID))
+end
+commands.enchant = commands.glow
+
+function commands.scale(args)
+	local word = strlower(args[1] or "")
+	if word == "" or word == "0" or word == "reset" or word == "own" then
+		return Report(M.SetScale(nil))
+	end
+	-- .scale 1.5 or .scale 150%
+	local _, _, number, percent = strfind(word, "^([%d%.]+)(%%?)$")
+	local scale = tonumber(number or "")
+	if scale and percent == "%" then
+		scale = scale / 100
+	end
+	if not scale then
+		return Print("Usage: .scale <size>, e.g. .scale 0.5 (half), .scale 2 or .scale 200% (double); .scale 0 resets.")
+	end
+	Report(M.SetScale(scale))
+end
+
+-- .time 22:30, .time 9, .time night, .time off
+function commands.time(args)
+	local word = strlower(args[1] or "")
+	if word == "off" or word == "real" or word == "server" or word == "reset" then
+		return Report(M.SetTime(nil))
+	end
+	local minutes = TIME_WORDS[word]
+	if not minutes then
+		local _, _, hours, mins = strfind(word, "^(%d%d?)[:%.]?(%d?%d?)$")
+		hours, mins = tonumber(hours or ""), tonumber(mins ~= "" and mins or "0")
+		if hours and mins and hours < 24 and mins < 60 then
+			minutes = hours * 60 + mins
+		end
+	end
+	if not minutes then
+		return Print("Usage: .time <hh:mm or dawn/noon/dusk/night>, e.g. .time 22:30; .time off for the real time.")
+	end
+	Report(M.SetTime(minutes))
+end
+
+-- .weather rain heavy, .weather snow 40, .weather 3 0.8, .weather off
+function commands.weather(args)
+	local word = strlower(args[1] or "")
+	if word == "off" or word == "server" or word == "reset" or word == "own" then
+		return Report(M.SetWeather(nil))
+	end
+	local kind = WEATHER_WORDS[word] or tonumber(word)
+	local strength = strlower(args[2] or "")
+	local intensity = WEATHER_STRENGTH[strength]
+	if not intensity and strength ~= "" then
+		local _, _, number, percent = strfind(strength, "^([%d%.]+)(%%?)$")
+		intensity = tonumber(number or "")
+		if intensity and (percent == "%" or intensity > 1) then
+			intensity = intensity / 100
+		end
+	end
+	if not kind or (strength ~= "" and not intensity) then
+		return Print("Usage: .weather <clear/rain/snow/sandstorm> [light/heavy or 5-100%], e.g. .weather rain heavy; "
+			.. ".weather off for the server's weather.")
+	end
+	Report(M.SetWeather(kind, intensity))
+end
+
+function commands.demorph(args)
+	if strlower(args[1] or "") == "all" then
+		return Report(M.ResetAll())
+	end
+	Report(M.ResetModel())
+end
+
+function commands.outfit(args, line)
+	local _, _, rest = strfind(line, "^%S+%s*(.-)%s*$")
+	local action = strlower(args[1] or "")
+	local _, _, name = strfind(rest, "^%S+%s*(.-)$")
+	if rest == "" then
+		local names = M.GetOutfitNames()
+		if table.getn(names) == 0 then
+			return Print("No outfits saved yet. Save your current look with .outfit save <name>.")
+		end
+		return Print("Outfits: " .. table.concat(names, ", ") .. ".")
+	elseif action == "save" then
+		return Report(M.SaveOutfit(name))
+	elseif action == "delete" then
+		return Report(M.DeleteOutfit(M.FindOutfit(name) or name))
+	end
+	Report(M.LoadOutfit(M.FindOutfit(rest) or rest))
+end
+
+-- /dmorph check: is everything DMorph uses running, and how to fix what isn't.
+local CHECK_COLOURS = { ok = "|cff33ff99", bad = "|cffff5555", off = "|cffaaaaaa" }
+local CHECK_WORDS = { ok = "OK", bad = "NOT WORKING", off = "not running" }
+
+local function ShowCheck()
+	local report = M.GetSetupReport()
+	for i = 1, table.getn(report) do
+		local entry = report[i]
+		Print(entry.name .. ": " .. CHECK_COLOURS[entry.state] .. CHECK_WORDS[entry.state] .. "|r - " .. entry.text)
+	end
+end
+
+function commands.dmorph(args)
+	local action = strlower(args[1] or "")
+	if action == "status" then
+		return ShowStatus()
+	elseif action == "check" then
+		return ShowCheck()
+	elseif action == "itemcheck" then
+		local what = strlower(args[2] or "")
+		if what == "off" then
+			itemCheck.on = false
+			return Print("Item check off: DMorph no longer puts item morphs back that the game switched back (until /reload or /dmorph itemcheck on).")
+		elseif what == "on" then
+			itemCheck.on, itemCheck.log = true, false
+			itemCheck.pausedUntil = {}
+			return Print("Item check on.")
+		elseif what == "log" then
+			itemCheck.on, itemCheck.log = true, true
+			return Print("Item check on, and every item morph it puts back is named in chat.")
+		end
+		return Print("Usage: /dmorph itemcheck on | off | log")
+	elseif action == "" and M.ToggleUI then
+		return M.ToggleUI()
+	end
+	ShowHelp()
+end
+
+-- Runs a command line such as "morph 4527". Returns false when the first word
+-- isn't one of ours, so the caller can pass the text on untouched.
+local function RunCommand(line)
+	local args = {}
+	for word in string.gfind(line, "%S+") do
+		table.insert(args, word)
+	end
+	local name = strlower(table.remove(args, 1) or "")
+	local handler = commands[name]
+	if not handler then
+		return false
+	end
+	InitDB()
+	if HasMorphAPI() then
+		EnsureSession()
+	end
+	handler(args, line)
+	return true
+end
+
+-- Chat that is spoken in a language (the rest, like emotes, isn't).
+local SPOKEN = {
+	SAY = true, YELL = true, PARTY = true, RAID = true, RAID_WARNING = true, GUILD = true,
+	OFFICER = true, WHISPER = true, CHANNEL = true, BATTLEGROUND = true,
+}
+
+-- A race morph also changes your race in VanillaHelpers, and the game then
+-- speaks that race's language by default and lists that race's languages: as
+-- an Undead morphed into a Gnome, "You don't know that language" (Common).
+-- So chat goes out in a language your own character speaks (read with your
+-- own race showing, see CaptureNative): the one asked for if you speak it,
+-- else your own default, else your faction's (Orcish / Common), else the first.
+local function SpeakableLanguage(language)
+	local list, default = db and db.languages, db and db.defaultLanguage
+	if not list then
+		-- Not read yet (no morph this session): the game's own list is right.
+		list = {}
+		for i = 1, 20 do
+			local ok, name = pcall(GetLanguageByIndex, i)
+			if not (ok and name) then
+				break
+			end
+			table.insert(list, name)
+		end
+		local ok, live = pcall(GetDefaultLanguage)
+		default = ok and live or nil
+	end
+	local known, count = {}, table.getn(list)
+	for i = 1, count do
+		known[list[i]] = true
+	end
+	if count == 0 or (language and known[language]) then
+		return language
+	end
+	if default and known[default] then
+		return default
+	end
+	local faction = UnitFactionGroup("player")
+	if faction == "Horde" and known["Orcish"] then
+		return "Orcish"
+	elseif faction == "Alliance" and known["Common"] then
+		return "Common"
+	end
+	return list[1]
+end
+
+-- DMorph's interface: commands typed into chat with a leading dot. Anything
+-- that isn't one of our commands still goes to the server as before, in a
+-- language you know (see above).
+local orig_SendChatMessage = SendChatMessage
+function SendChatMessage(msg, chatType, language, channel)
+	if type(msg) == "string" then
+		local _, _, line = strfind(msg, "^%s*%.(.*)$")
+		if line and RunCommand(line) then
+			return
+		end
+	end
+	if SPOKEN[strupper(chatType or "SAY")] then
+		language = SpeakableLanguage(language)
+	end
+	return orig_SendChatMessage(msg, chatType, language, channel)
+end
+
+SLASH_DMORPHOCTO1 = "/dmorph"
+SlashCmdList["DMORPHOCTO"] = function(msg)
+	local _, _, line = strfind(msg or "", "^%s*%.?(.*)$")
+	if not RunCommand(line) then
+		RunCommand("dmorph " .. line)
+	end
+end
+
+-- Key bindings (Bindings.xml); the reset keys stand in for DMorph's F5/F10.
+BINDING_HEADER_DMORPHOCTO = "DMorph"
+BINDING_NAME_DMORPHOCTO_TOGGLE = "Open or close the DMorph window"
+BINDING_NAME_DMORPHOCTO_RESET = "Reset model (DMorph F5)"
+BINDING_NAME_DMORPHOCTO_RESETALL = "Reset model and items (DMorph F10)"
+
+function DmorphOcto_ToggleUI()
+	RunCommand("dmorph")
+end
+
+function DmorphOcto_Reset()
+	RunCommand("demorph")
+end
+
+function DmorphOcto_ResetAll()
+	RunCommand("demorph all")
+end
+
+-- Events --------------------------------------------------------------------
+
+local frame = CreateFrame("Frame")
+frame:Hide()
+frame:RegisterEvent("VARIABLES_LOADED")
+frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+frame:SetScript("OnEvent", function()
+	InitDB()
+	if event ~= "PLAYER_ENTERING_WORLD" then
+		return
+	end
+	if not HasMorphAPI() then
+		if not warnedMissingAPI then
+			warnedMissingAPI = true
+			Print(MissingAPI())
+			Print("Open the window (/dmorph) and click Setup, or type /dmorph check, to see what's running.")
+		end
+		return
+	end
+	-- Fires after every loading screen; give the client a moment to build the
+	-- player model before re-applying the saved morph.
+	pendingApply = 0.5
+	frame:Show()
+end)
+frame:SetScript("OnUpdate", function()
+	pendingApply = pendingApply - arg1
+	if pendingApply <= 0 then
+		frame:Hide()
+		raceHeld = {} -- a loading screen closed the windows that held it
+		ApplySaved()
+	end
+end)
+
+-- Your own race while the flight map, spellbook or reputation list is open
+-- (see HoldRace). Blizzard's TaxiFrame handles TAXIMAP_OPENED before us, so
+-- once the race is back it draws the flight paths again. That alone left the
+-- map empty (user, 18 Oct): the game works out which paths you can fly when
+-- the flight master's list arrives, before this event, so DmorphHelper v16
+-- does that with your own race (its TaxiBuildRoutes hook); the spellbook and
+-- reputation list are held before they read their spells and standings.
+local held = {}
+local function HoldWhileShown(frame, reason)
+	if not frame or held[reason] then
+		return
+	end
+	held[reason] = true
+	local onShow, onHide = frame:GetScript("OnShow"), frame:GetScript("OnHide")
+	frame:SetScript("OnShow", function()
+		M.HoldRace(reason, true)
+		if onShow then
+			onShow()
+		end
+	end)
+	frame:SetScript("OnHide", function()
+		if onHide then
+			onHide()
+		end
+		M.HoldRace(reason, false)
+	end)
+end
+
+local raceFrame = CreateFrame("Frame")
+raceFrame:RegisterEvent("TAXIMAP_OPENED")
+raceFrame:RegisterEvent("TAXIMAP_CLOSED")
+raceFrame:RegisterEvent("PLAYER_LOGIN")
+raceFrame:SetScript("OnEvent", function()
+	if event == "TAXIMAP_OPENED" then
+		if M.HoldRace("taxi", true) and TaxiFrame and type(TaxiFrame_OnEvent) == "function" then
+			local saved = this
+			this = TaxiFrame
+			pcall(TaxiFrame_OnEvent, "TAXIMAP_OPENED")
+			this = saved
+		end
+	elseif event == "TAXIMAP_CLOSED" then
+		M.HoldRace("taxi", false)
+	elseif event == "PLAYER_LOGIN" then
+		HoldWhileShown(SpellBookFrame, "spellbook")
+		HoldWhileShown(ReputationFrame, "reputation")
+	end
+end)
+
+-- Item lookup runs in the background from shortly after login until every
+-- pending item has an answer.
+local lookupFrame = CreateFrame("Frame")
+lookupFrame:Hide()
+lookupFrame:SetScript("OnUpdate", function()
+	this.elapsed = this.elapsed + arg1
+	if this.elapsed >= LOOKUP_STEP then
+		if LookupTick(this.elapsed) then
+			this:Hide()
+		end
+		this.elapsed = 0
+	end
+end)
+lookupFrame:SetScript("OnEvent", function()
+	LookupAnswer(arg1, arg2)
+end)
+
+local loginFrame = CreateFrame("Frame")
+loginFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+loginFrame:SetScript("OnEvent", function()
+	this:UnregisterEvent("PLAYER_ENTERING_WORLD")
+	InitDB()
+	StartLookup()
+	if CanAskServer() then
+		pcall(lookupFrame.RegisterEvent, lookupFrame, "ITEM_DATA_LOAD_RESULT")
+	end
+	lookupFrame.elapsed = -15 -- let the login settle first
+	lookupFrame:Show()
+end)
+
+-- A picked weather: the helper keeps it when the server sends a zone's
+-- weather; entering a new zone puts it on again in case none came.
+local weatherFrame = CreateFrame("Frame")
+weatherFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+weatherFrame:SetScript("OnEvent", function()
+	ApplyWeather()
+end)
+
+-- The mount watcher: puts the mount skin on while you ride (see Mount skins).
+local mountFrame = CreateFrame("Frame")
+mountFrame:SetScript("OnUpdate", function()
+	this.wait = (this.wait or 0) - arg1
+	if this.wait <= 0 then
+		this.wait = 0.1
+		WatchMount()
+		KeepRace()
+	end
+end)
+-- Losing and getting back control (a flight path starts and lands, a fear,
+-- a stun) takes the skin off: if you're still on your mount, the watcher
+-- sees its buff and puts the skin on again a tenth of a second later.
+mountFrame:RegisterEvent("PLAYER_CONTROL_LOST")
+mountFrame:RegisterEvent("PLAYER_CONTROL_GAINED")
+mountFrame:SetScript("OnEvent", function()
+	if watch.active then
+		StopSkin()
+		watch.real = nil
+		Notify()
+	end
+end)
+
+-- Whether the game can describe every item your morphs show (a ported one
+-- through its template), so a model built now has them all.
+local LOGIN_WAIT = 12
+local function MorphedItemsLoaded()
+	for _, id in pairs(db.items) do
+		if id > 0 and not GetItemInfo(id) then
+			return false
+		end
+	end
+	return true
+end
+
+-- The durability of the item in a slot ("" for none or none shown), from a
+-- hidden tooltip: 1.12 has neither UPDATE_INVENTORY_DURABILITY nor a function
+-- that says it.
+local durabilityTip, durabilityPattern
+local function Durability(slot)
+	if not durabilityTip then
+		durabilityTip = CreateFrame("GameTooltip", "DmorphOctoDurabilityTip", nil, "GameTooltipTemplate")
+		durabilityPattern = string.gsub(DURABILITY_TEMPLATE or "Durability %d / %d", "%%d", "(%%d+)")
+	end
+	durabilityTip:SetOwner(UIParent, "ANCHOR_NONE")
+	durabilityTip:ClearLines()
+	durabilityTip:SetInventoryItem("player", slot)
+	for i = 2, durabilityTip:NumLines() do
+		local line = getglobal("DmorphOctoDurabilityTipTextLeft" .. i)
+		local _, _, now = strfind(line and line:GetText() or "", durabilityPattern)
+		if now then
+			return now
+		end
+	end
+	return ""
+end
+
+-- What you have on: the item in each slot (1-19) and the durability of the
+-- morphed ones; and how much ammo and how many thrown weapons are left.
+local function GearState()
+	local parts = {}
+	for slot = 1, 19 do
+		parts[slot] = GetInventoryItemLink("player", slot) or ""
+		if db.items[slot] then
+			parts[slot] = parts[slot] .. "@" .. Durability(slot)
+		end
+	end
+	return table.concat(parts, ";"), (GetInventoryItemCount("player", 0) or 0) .. "/" .. (GetInventoryItemCount("player", 18) or 0)
+end
+
+-- Your gear changing: item morphs are checked, and a fifth of a second later
+-- checked again and the model rebuilt with them (RebuildForItems), when the
+-- game may have redrawn a slot from your real item: another item put on, or a
+-- morphed slot's durability changed. Not for anything else UNIT_INVENTORY_CHANGED
+-- reports (bags, loot, food, every arrow, bullet or throw): rebuilding the
+-- model while you move left you running on the spot or frozen, and on every
+-- shot made a hunter blink and broke the shooting animation (users, 15-17 Oct).
+--
+-- 2.22.0 (user, 21 Oct: items still changed when losing durability, after a
+-- spirit res or being revived, and after repairing): 1.12 doesn't fire
+-- UNIT_INVENTORY_CHANGED for a durability change, so those redraws went
+-- unseen. The morphed slots' durability is now also read once a second
+-- (GEAR_POLL), and dying, releasing, being resurrected and closing a vendor
+-- (repairs) check at once; coming back to life rebuilds twice (now and
+-- RES_AGAIN seconds later), as the game builds your living model again after
+-- the events.
+local GEAR_POLL, RES_AGAIN = 1, 1.5
+local itemFrame = CreateFrame("Frame")
+-- What you have on (GearState) against the last look: a change gets the
+-- morphs checked and, a fifth of a second later, the model rebuilt.
+local function GearCheck(force)
+	if not next(db.items) then
+		itemCheck.gear, itemCheck.counts = GearState()
+		return
+	end
+	local gear, counts = GearState()
+	local changed = force or gear ~= itemCheck.gear
+	itemCheck.gear, itemCheck.counts = gear, counts
+	if itemCheck.clock < (itemCheck.ignoreUntil or -1) then
+		-- Right after our own rebuild (which changes none of this): a real
+		-- change still gets its rebuild, once the second is up.
+		if changed then
+			itemCheck.rebuildPending = true
+		end
+		return
+	end
+	CheckItems()
+	if changed then
+		itemFrame.wait = 0.2
+	end
+end
+M.GearCheck = GearCheck
+itemFrame:RegisterEvent("UNIT_INVENTORY_CHANGED")
+itemFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+itemFrame:RegisterEvent("PLAYER_DEAD")
+itemFrame:RegisterEvent("PLAYER_ALIVE")
+itemFrame:RegisterEvent("PLAYER_UNGHOST")
+itemFrame:RegisterEvent("MERCHANT_CLOSED")
+itemFrame:RegisterEvent("UPDATE_INVENTORY_ALERTS")
+itemFrame:SetScript("OnEvent", function()
+	if event == "PLAYER_ENTERING_WORLD" then
+		itemCheck.gear, itemCheck.counts = GearState()
+		-- The game can build your model before it has the items your morphs
+		-- show (a ported piece needs its template from the server), which
+		-- leaves you invisible, white in previews: then rebuilt once they're
+		-- all in (or after LOGIN_WAIT seconds), see below.
+		itemCheck.loginWait = not MorphedItemsLoaded() and 0 or nil
+		return
+	end
+	if event == "PLAYER_ALIVE" or event == "PLAYER_UNGHOST" then
+		-- Back to life (a spirit healer, a res, back at your body): rebuilt
+		-- now and once more when the game has built your living model.
+		GearCheck(true)
+		this.again = RES_AGAIN
+		return
+	end
+	if event == "UNIT_INVENTORY_CHANGED" and arg1 ~= "player" then
+		return
+	end
+	GearCheck()
+end)
+itemFrame:SetScript("OnUpdate", function()
+	-- Durability changes have no event: read them once a second.
+	this.poll = (this.poll or 0) + arg1
+	if this.poll >= GEAR_POLL then
+		this.poll = 0
+		if sessionReady and itemCheck.on and next(db.items) then
+			GearCheck()
+		end
+	end
+	if this.again then
+		this.again = this.again - arg1
+		if this.again <= 0 then
+			this.again = nil
+			GearCheck(true)
+		end
+	end
+	if itemCheck.loginWait then
+		itemCheck.loginWait = itemCheck.loginWait + arg1
+		if itemCheck.loginWait >= 1.5 and sessionReady and (MorphedItemsLoaded() or itemCheck.loginWait >= LOGIN_WAIT) then
+			itemCheck.loginWait = nil
+			RebuildForItems()
+		end
+	end
+	if this.wait then
+		this.wait = this.wait - arg1
+		if this.wait <= 0 then
+			this.wait = nil
+			CheckItems()
+			RebuildForItems()
+		end
+	elseif itemCheck.rebuildPending then
+		RebuildForItems()
+	end
+end)
+
+-- The DmorphHelper watcher: keeps the picked glows and look on (see Glows and
+-- your own look).
+local helperFrame = CreateFrame("Frame")
+helperFrame:SetScript("OnUpdate", function()
+	helperHold = helperHold - arg1
+	itemCheck.clock = itemCheck.clock + arg1
+	helperWait = helperWait - arg1
+	if helperWait <= 0 then
+		helperWait = 1
+		WatchHelper()
+	end
+end)

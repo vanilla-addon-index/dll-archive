@@ -1,0 +1,9 @@
+{
+  "id": "157",
+  "tag": "11420",
+  "name": "patch-o.mpq 1.4.20",
+  "body": "## What's Changed\r\n\r\n**Full Changelog**: [11419...11420](https://octowow.st/git/Rook/RaidVisuals-OctoWoW/compare/11419...11420)\r\n\r\n- Removed AreaTriggers.tbc \r\nThis broke certain custom raid entrance like K10, K40 and Cot.\r\nThis only removes a \"fix\" for Naxx entrance, that wasnt even working properly anyhow. ",
+  "published": "2026-07-31T18:32:14Z",
+  "prerelease": false,
+  "url": "https://octowow.st/git/Rook/RaidVisuals-OctoWoW/releases/tag/11420"
+}

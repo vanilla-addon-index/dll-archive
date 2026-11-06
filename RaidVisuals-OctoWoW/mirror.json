@@ -1,0 +1,202 @@
+{
+  "upstream": "https://octowow.st/git/Rook/RaidVisuals-OctoWoW",
+  "source": {
+    "kind": "repository",
+    "host": "octowow.st",
+    "owner": "Rook",
+    "repo": "RaidVisuals-OctoWoW",
+    "name": "RaidVisuals-OctoWoW",
+    "url": "https://octowow.st/git/Rook/RaidVisuals-OctoWoW",
+    "api": "https://octowow.st/git/api/v1/repos/Rook/RaidVisuals-OctoWoW"
+  },
+  "commit": "a2bc649e60e7fb7c1f49c3433b7d46dd7e82ef70",
+  "sourceFiles": {
+    "built/CreatureModelData.dbc": {
+      "sha256": "6318a12c1b4ad292fcfe0db4f234f8688a3aebc3116a59e7eb522bcb36889eb0",
+      "bytes": 79919
+    },
+    "built/CreatureSoundData.dbc": {
+      "sha256": "e4799ea520b0a944048d32030e91876d1322edc20f5bc344db4da9c971277a14",
+      "bytes": 63021
+    },
+    "built/SoundEntries.dbc": {
+      "sha256": "c02866768b8e0c9b0947092f6dee1f9bb642291e737fd46b042049d4addf8ccb",
+      "bytes": 1580791
+    },
+    "built/Spell.dbc": {
+      "sha256": "633a42bb08d5b8ec8099c47691186dcc84e47cae6283030efe554ce56ef6d385",
+      "bytes": 27992943
+    },
+    "built/SpellIcon.dbc": {
+      "sha256": "31ad6080b8c481d63d6491d5596f11e5232c775568a5c567302fdff28aa2aedc",
+      "bytes": 68609
+    },
+    "built/SpellVisual.dbc": {
+      "sha256": "a5fc280312582a47755bd008c9660bb9b19eff573d9675172afa7b8ecc5d60da",
+      "bytes": 151125
+    },
+    "built/SpellVisualEffectName.dbc": {
+      "sha256": "2709c3e649e6f455fe61fe0dff40bbe59910a224646eddae4df57625bcf3383e",
+      "bytes": 126013
+    },
+    "built/SpellVisualKit.dbc": {
+      "sha256": "e305c100d43401473535e00a26e521fff265daf1e422006c0995fa1faa491e55",
+      "bytes": 281421
+    },
+    "dbc/CreatureModelData.dbc": {
+      "sha256": "c38b95a5aae86c665d0d79c6ea352b6cd6fed7c033d6884ffd5ac44aa99cadc2",
+      "bytes": 79919
+    },
+    "dbc/CreatureSoundData.dbc": {
+      "sha256": "e4799ea520b0a944048d32030e91876d1322edc20f5bc344db4da9c971277a14",
+      "bytes": 63021
+    },
+    "dbc/SoundEntries.dbc": {
+      "sha256": "e2112e6966f5f5b4174cd3c533f434c697b43b8053bfe63d9e191b7c1d7142d3",
+      "bytes": 1580461
+    },
+    "dbc/Spell.dbc": {
+      "sha256": "49afeab5419ddfa6aac71673e2c13b112bb00fd134205bc751a6b18a0503c4ab",
+      "bytes": 27992943
+    },
+    "dbc/SpellIcon.dbc": {
+      "sha256": "af9d3eca8b5a85e964b7853d06db764d3ecad23d93e7f0a8327690bb243b598c",
+      "bytes": 68565
+    },
+    "dbc/SpellVisual.dbc": {
+      "sha256": "0a3096dba78e594a55630ac396a708c9767085c59d947992beaae38269158bbe",
+      "bytes": 147989
+    },
+    "dbc/SpellVisualEffectName.dbc": {
+      "sha256": "66849aa910e0399835cf20ca742b91c48d3170f917ffb2beec5c5006ab7ee8df",
+      "bytes": 123651
+    },
+    "dbc/SpellVisualKit.dbc": {
+      "sha256": "677f686e3be8c70cc687912ffc2f7aa3442913a364881e660b64bfb5015a1f95",
+      "bytes": 275401
+    },
+    "patches/0-ground_effects.yaml": {
+      "sha256": "2dbed182bba9dfdfb048cce10af8afb54b9fa4d4c723bfa99cdadf6885db1314",
+      "bytes": 8111
+    },
+    "patches/0-sounds.yaml": {
+      "sha256": "1607c24ed30e753b1d51001c902980cb0a7e569dd142909ca31afa2d5d5c8658",
+      "bytes": 2456
+    },
+    "patches/1-blizzard.yaml": {
+      "sha256": "fca9cf8b0cedb08bf571034360b024398683dc53e292975347b1dd9855df32ad",
+      "bytes": 865
+    },
+    "patches/2-rain_of_fire.yaml": {
+      "sha256": "d31ad84b64fb2fa0606185ae0846609646d9165f9c656bc4c92c5d80d01356cc",
+      "bytes": 869
+    },
+    "patches/3-flamestrike.yaml": {
+      "sha256": "3f5766d14dfd4adc07cd8db689cbd4fa4312fafc0b35655214e2ba47a744a937",
+      "bytes": 3141
+    },
+    "patches/4-zg-aq20.yaml": {
+      "sha256": "c5358af9b8ffc40aaf0cae72a26d5d93d61e83e733fff755dbebfa70c78c087f",
+      "bytes": 6946
+    },
+    "patches/5-mc-bwl-es.yaml": {
+      "sha256": "5a81ae0fba3f928ecc8906a2c26adce0340457a6d10c42739e39cb7f95143149",
+      "bytes": 5075
+    },
+    "patches/6-aq40-naxx.yaml": {
+      "sha256": "c45452b5600386efc7d6ff21f058a746e613e17784b06fe24784cec1efba22c8",
+      "bytes": 8499
+    },
+    "patches/7-kara.yaml": {
+      "sha256": "9323a044569b2f49557245506d4c01a3b379c1bb7298759d2264b02c1241d151",
+      "bytes": 6633
+    },
+    "patches/8-dungeons.yaml": {
+      "sha256": "3f8268f4413f95c1c71f99d295ca8ea2deabcfda2bfcd467d963f210f07319a8",
+      "bytes": 544
+    },
+    "patches/9-misc.yaml": {
+      "sha256": "5d8bcd409e2ce733fe02689a00457a0ab959fe114c612459b6f83f123e763aa7",
+      "bytes": 3982
+    },
+    "patches/green_water_shield.yaml": {
+      "sha256": "ac0afa161cf43fa9d891887f6382116f31d6ba54ea9dd1588c86a2d4b68bb6aa",
+      "bytes": 1580
+    },
+    "README.md": {
+      "sha256": "ae47e434538752f7e732bfdd2d198638950fdb0ea4a31822ceb34e91888ae47b",
+      "bytes": 7776
+    },
+    "schema/AreaTrigger.dbc.yaml": {
+      "sha256": "a73bf24d8730df87d4202a84edb16df99f0d32cbfb05164e5f1a236381a1fed2",
+      "bytes": 768
+    },
+    "schema/CreatureDisplayInfo.dbc.yaml": {
+      "sha256": "5fd83777071cbe65f7f90545a22a2441f8db4ac9de9100a75358e261a8910b94",
+      "bytes": 402
+    },
+    "schema/CreatureModelData.dbc.yaml": {
+      "sha256": "e77fe9614ae065a9c5667878be934e354ee5d374f9da0e155fe1a46f99212c6a",
+      "bytes": 478
+    },
+    "schema/CreatureSoundData.dbc.yaml": {
+      "sha256": "1ac39da1dfae0a77996cf6d503c53a2bf926026bbc0f9c064e8466f4a7e2c40e",
+      "bytes": 766
+    },
+    "schema/SoundEntries.dbc.yaml": {
+      "sha256": "30fa7cb4ef47f3d2d8b3e23d966c7753270408f9c409a5a1ad749917c0e5fbc9",
+      "bytes": 1099
+    },
+    "schema/spell_colors.json": {
+      "sha256": "6b4c7684493b38d5979db127ffc1784be743300ede3a160c6d7c3ceb94a747a8",
+      "bytes": 230587
+    },
+    "schema/Spell.dbc.yaml": {
+      "sha256": "c1c001abfb200a08f1acea8e92984164e622f16f5100b89a06304fb7fce2c33c",
+      "bytes": 4966
+    },
+    "schema/SpellIcon.dbc.yaml": {
+      "sha256": "7b84721fb470d76300f6dd1a1f2e33d859023cba1e7ed0b902ee490335d5f8ec",
+      "bytes": 242
+    },
+    "schema/SpellVisual.dbc.yaml": {
+      "sha256": "e5f2d84a401d4eff06f875ebd16dd0f315c254abe2c85f9ae8a2a94a10f66ac2",
+      "bytes": 741
+    },
+    "schema/SpellVisualEffectName.dbc.yaml": {
+      "sha256": "e35a6eac2f0e944f9a659b1393f660ac382e4367e0dffd7c7c6260c14b00e28c",
+      "bytes": 194
+    },
+    "schema/SpellVisualKit.dbc.yaml": {
+      "sha256": "42a62149e9d2623fd9d73773dee0af6986e3d2e5ef6a13f46c8fbe10c91a100e",
+      "bytes": 1094
+    },
+    "ss1.png": {
+      "sha256": "cbe1f16c28a414f5edf16143f49dd9d2fff363ebc53fd4a4136559e1c881abb5",
+      "bytes": 509409
+    }
+  },
+  "symlinks": {},
+  "releases": {
+    "157": {
+      "tag": "11420",
+      "folder": "11420--157",
+      "assets": {
+        "28": {
+          "sha256": "351392b1e9f3e628caad43d98d76552d5259003afd6872dc3c6ed5f677a4c7ff",
+          "bytes": 9363228,
+          "id": "28",
+          "name": "patch-O.mpq",
+          "url": "https://octowow.st/git/Rook/RaidVisuals-OctoWoW/releases/download/11420/patch-O.mpq",
+          "path": "releases/11420--157/assets/patch-O.mpq"
+        }
+      },
+      "source": {
+        "sha256": "6b3472bfc3fd516b944ed16648efd53901d584a015d3a849a23b235c97dde574",
+        "bytes": 9302390,
+        "path": "releases/11420--157/upstream-source.tar.gz",
+        "url": "https://octowow.st/git/api/v1/repos/Rook/RaidVisuals-OctoWoW/archive/11420.tar.gz"
+      }
+    }
+  }
+}

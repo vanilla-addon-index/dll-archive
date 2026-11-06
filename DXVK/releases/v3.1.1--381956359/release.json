@@ -1,0 +1,9 @@
+{
+  "id": "381956359",
+  "tag": "v3.1.1",
+  "name": "Version 3.1.1",
+  "body": "## Bug fixes and Improvements\r\n- Implemented `DXGI_SCALING_NONE` and [SetBackgroundColor](https://learn.microsoft.com/en-us/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgiswapchain1-setbackgroundcolor) methods for DXGI swap chains. This reportedly fixes some Adobe software. (PR #5871)\r\n- Fixed shader compiler crash with certain ENB shaders. (PR https://github.com/doitsujin/dxbc-spirv/pull/94)\r\n- **Call of Duty: Ghosts**: Fixed vertex explosions on player models.\r\n- **Corpse Party**: Fixed regression that would cause part of the screen to be dark. (PR #5904)\r\n- **Painkiller: Black Edition**: Fixed an issue with the game window not being sized properly. (#3762)\r\n- **Rayman 3**: Fixed regression that would cause flickering graphics. (#5886)\r\n- **Skyrim SE**: Worked around poor CPU  performance when unlocking frame rate on some setups. (#5885)\r\n- **SpellForce 2 Anniversary Edition**: Fixed an issue that could cause deadlocks. (#5874)\r\n\r\n**Note:** Unfortunately, some anti-virus software has once again started flagging our 32-bit builds.",
+  "published": "2026-09-15T17:43:25Z",
+  "prerelease": false,
+  "url": "https://github.com/doitsujin/dxvk/releases/tag/v3.1.1"
+}

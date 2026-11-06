@@ -1,0 +1,952 @@
+//
+// Created by pmacc on 1/15/2025.
+//
+
+#include "spell_scripts.hpp"
+#include "helper.hpp"
+#include "lua_refs.hpp"
+#include "offsets.hpp"
+#include "dbc_fields.hpp"
+#include <cstring>
+
+namespace Nampower {
+    namespace LuaFields {
+        static char castId[] = "castId";
+        static char spellId[] = "spellId";
+        static char guid[] = "guid";
+        static char castType[] = "castType";
+        static char castStartS[] = "castStartS";
+        static char castEndS[] = "castEndS";
+        static char castRemainingMs[] = "castRemainingMs";
+        static char castDurationMs[] = "castDurationMs";
+        static char gcdEndS[] = "gcdEndS";
+        static char gcdRemainingMs[] = "gcdRemainingMs";
+    }
+
+    // Reusable table references to reduce memory allocations
+    static int castInfoTableRef = LUA_REFNIL;
+    static int spellRecTableRef = LUA_REFNIL;
+
+    // Map to store separate references for each array field name (for Field function)
+    static std::unordered_map<std::string, int> spellRecArrayFieldRefs;
+
+    // Map to store separate references for nested array fields (for main table function)
+    static std::unordered_map<std::string, int> spellRecNestedArrayRefs;
+
+    uint32_t Script_GetCurrentCastingInfo(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        auto const castingSpellId = reinterpret_cast<uint32_t *>(Offsets::CastingSpellId);
+        lua_pushnumber(luaState, *castingSpellId);
+
+        auto const isCasting = gCastData.castEndMs > GetTime();
+        auto const isChanneling = gCastData.channeling;
+
+        auto const visualSpellId = reinterpret_cast<uint32_t *>(Offsets::VisualSpellId);
+        lua_pushnumber(luaState, *visualSpellId);
+
+        auto const autoRepeatingSpellId = reinterpret_cast<uint32_t *>(Offsets::AutoRepeatingSpellId);
+        lua_pushnumber(luaState, *autoRepeatingSpellId);
+
+        auto playerUnit = game::GetObjectPtr(game::ClntObjMgrGetActivePlayerGuid());
+        if (isCasting) {
+            lua_pushnumber(luaState, 1);
+        } else {
+            lua_pushnumber(luaState, 0);
+        }
+
+        if (isChanneling) {
+            lua_pushnumber(luaState, 1);
+        } else {
+            lua_pushnumber(luaState, 0);
+        }
+
+        if (gCastData.pendingOnSwingCast) {
+            lua_pushnumber(luaState, 1);
+        } else {
+            lua_pushnumber(luaState, 0);
+        }
+
+        auto const attackPtr = playerUnit + 0x312; // auto attacking
+        if (attackPtr && *reinterpret_cast<uint32_t *>(attackPtr) > 0) {
+            lua_pushnumber(luaState, 1);
+        } else {
+            lua_pushnumber(luaState, 0);
+        }
+
+        return 7;
+    }
+
+    uint32_t Script_GetCastInfo(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        uint32_t activeSpellId = 0;
+        uint32_t castEndTime = 0;
+
+        CastSpellParams *castParams = nullptr;
+
+        if (gCastData.channeling && gCastData.channelSpellId != 0) {
+            activeSpellId = gCastData.channelSpellId;
+            castEndTime = gCastData.channelEndMs;
+            castParams = gCastHistory.findNewestSuccessfulSpellId(activeSpellId);
+        } else if (gCastData.castSpellId != 0) {
+            activeSpellId = gCastData.castSpellId;
+            castEndTime = (gCastData.castEndMs > gCastData.gcdEndMs) ? gCastData.castEndMs : gCastData.gcdEndMs;
+            castParams = gCastHistory.findNewestWaitingForServerSpellId(activeSpellId);
+        }
+
+        if (activeSpellId == 0) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        if (castParams == nullptr || castParams->castId == 0) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        GetTableRef(luaState, castInfoTableRef);
+
+        uint32_t currentTime = GetTime();
+        uint64_t currentWowTime = GetWowTimeMs();
+        int64_t timeOffset = static_cast<int64_t>(currentWowTime) - static_cast<int64_t>(currentTime);
+
+        double castStartTimeWow = (castParams->castStartTimeMs + timeOffset) / 1000.0;
+        double castEndTimeWow = (castEndTime + timeOffset) / 1000.0;
+        double gcdEndTimeWow = (gCastData.gcdEndMs + timeOffset) / 1000.0;
+
+        PushTableValue(luaState, LuaFields::castId, castParams->castId);
+        PushTableValue(luaState, LuaFields::spellId, castParams->spellId);
+        PushTableValue(luaState, LuaFields::guid, ConvertGuidToString(castParams->guid));
+        PushTableValue(luaState, LuaFields::castType, static_cast<uint32_t>(castParams->castType));
+        PushTableValue(luaState, LuaFields::castStartS, castStartTimeWow);
+        PushTableValue(luaState, LuaFields::castEndS, castEndTimeWow);
+
+        uint32_t timeRemaining = (castEndTime > currentTime) ? (castEndTime - currentTime) : 0;
+        PushTableValue(luaState, LuaFields::castRemainingMs, timeRemaining);
+
+        uint32_t duration = (castEndTime > castParams->castStartTimeMs) ?
+                            (castEndTime - castParams->castStartTimeMs) : 0;
+        PushTableValue(luaState, LuaFields::castDurationMs, duration);
+
+        PushTableValue(luaState, LuaFields::gcdEndS, gcdEndTimeWow);
+        uint32_t gcdRemaining = (gCastData.gcdEndMs > currentTime) ? (gCastData.gcdEndMs - currentTime) : 0;
+        PushTableValue(luaState, LuaFields::gcdRemainingMs, gcdRemaining);
+
+        return 1;
+    }
+
+    uint32_t Script_ChannelStopCastingNextTick(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        if (gCastData.channeling) {
+            DEBUG_LOG("ChannelStopCastingNextTick activated, canceling next tick");
+            gCastData.cancelChannelNextTick = true;
+        }
+
+        return 0;
+    }
+
+    uint32_t Script_GetSpellIconTexture(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        if (!lua_isnumber(luaState, 1)) {
+            lua_error(luaState, "Usage: GetSpellIconTexture(spellIconId)");
+            return 0;
+        }
+
+        int32_t iconId = static_cast<int32_t>(lua_tonumber(luaState, 1));
+
+        int32_t maxIconId = *reinterpret_cast<int32_t *>(Offsets::SpellIconDBMaxId);
+        uintptr_t *iconArray = *reinterpret_cast<uintptr_t **>(Offsets::SpellIconDBArray);
+
+        if (iconId < 0 || iconId > maxIconId) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        uintptr_t iconEntry = reinterpret_cast<uintptr_t *>(iconArray)[iconId];
+        if (iconEntry == 0) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        char *texturePath = *reinterpret_cast<char **>(iconEntry + 4);
+        if (texturePath && texturePath[0] != '\0' && !strstr(texturePath, "QuestionMark")) {
+            lua_pushstring(luaState, texturePath);
+        } else {
+            lua_pushnil(luaState);
+        }
+
+        return 1;
+    }
+
+    uint32_t Script_CastSpellByNameNoQueue(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        DEBUG_LOG("Casting next spell without queuing");
+        // turn on forceQueue and then call regular CastSpellByName
+        gNoQueueCast = true;
+        auto const Script_CastSpellByName = reinterpret_cast<LuaScriptT>(Offsets::Script_CastSpellByName);
+        auto result = Script_CastSpellByName(luaState);
+        gNoQueueCast = false;
+
+        return result;
+    }
+
+    uint32_t Script_CastSpellByNameHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        if (!lua_isstring(luaState, 1)) {
+            lua_error(luaState, "Usage: CastSpellByName(name [, onSelfOrUnit])");
+            return 0;
+        }
+
+        // Check if 2nd param is strictly a string (type 4), not a number that lua_isstring would also match
+        if (lua_type(luaState, 2) == 4) {
+            auto const unitToken = lua_tostring(luaState, 2);
+            auto const unitGuid = GetUnitGuidFromString(unitToken);
+
+            if (unitGuid != 0) {
+                auto const spellName = lua_tostring(luaState, 1);
+                uint32_t bookType = 0;
+                auto spellSlot = GetSpellSlotAndTypeForName(spellName, &bookType);
+
+                if (spellSlot >= 0 && spellSlot < 100000) {
+                    auto const castSpell = reinterpret_cast<CGSpellBook_CastSpellT>(Offsets::CGSpellBook_CastSpell);
+                    castSpell(spellSlot, bookType, unitGuid);
+                }
+
+                return 0;
+            }
+        }
+
+        // Fall through to original for normal calls (no 2nd param, or number "on self" flag)
+        auto const castSpellByName = detour->GetTrampolineT<LuaScriptT>();
+        return castSpellByName(luaState);
+    }
+
+
+    uint32_t Script_CastSpellNoQueue(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        // If 3rd arg is a unit token, resolve target and call directly
+        if (lua_isstring(luaState, 3)) {
+            uint32_t spellSlot = 0, bookType = 0;
+            auto const getSpellSlotFromLua = reinterpret_cast<GetSpellSlotFromLuaT>(Offsets::GetSpellSlotFromLua);
+            if (!getSpellSlotFromLua(luaState, &spellSlot, &bookType)) {
+                lua_error(luaState, "Invalid spell slot in CastSpellNoQueue");
+                return 0;
+            }
+
+            auto const unitToken = lua_tostring(luaState, 3);
+            auto const targetGuid = GetUnitGuidFromString(unitToken);
+
+            DEBUG_LOG("CastSpellNoQueue with unit token");
+            gNoQueueCast = true;
+            auto const castSpell = reinterpret_cast<CGSpellBook_CastSpellT>(Offsets::CGSpellBook_CastSpell);
+            castSpell(spellSlot, bookType, targetGuid);
+            gNoQueueCast = false;
+
+            return 0;
+        }
+
+        DEBUG_LOG("Casting next spell without queuing");
+        gNoQueueCast = true;
+        auto const scriptCastSpell = reinterpret_cast<LuaScriptT>(Offsets::Script_CastSpell);
+        auto result = scriptCastSpell(luaState);
+        gNoQueueCast = false;
+
+        return result;
+    }
+
+    uint32_t Script_QueueSpellByName(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        DEBUG_LOG("Force queuing next cast spell");
+        // turn on forceQueue and then call regular CastSpellByName
+        gForceQueueCast = true;
+        auto const Script_CastSpellByName = reinterpret_cast<LuaScriptT>(Offsets::Script_CastSpellByName);
+        auto result = Script_CastSpellByName(luaState);
+        gForceQueueCast = false;
+
+        return result;
+    }
+
+    uint32_t Script_SpellStopCastingHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState) {
+        DEBUG_LOG("SpellStopCasting called");
+
+        ClearQueuedSpells();
+        ResetCastFlags();
+        ResetChannelingFlags();
+
+        auto const spellStopCasting = detour->GetTrampolineT<LuaScriptT>();
+        return spellStopCasting(luaState);
+    }
+
+    uint32_t Script_IsSpellInRange(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        auto param1IsString = lua_isstring(luaState, 1);
+        auto param1IsNumber = lua_isnumber(luaState, 1);
+        if (param1IsString || param1IsNumber) {
+            uint32_t spellId = 0;
+
+            if (param1IsNumber) {
+                spellId = uint32_t(lua_tonumber(luaState, 1));
+
+                if (spellId == 0) {
+                    lua_error(luaState, "Unable to parse spell id");
+                    return 0;
+                }
+            } else {
+                auto const spellName = lua_tostring(luaState, 1);
+
+                spellId = GetSpellIdFromSpellName(spellName);
+                if (spellId == 0) {
+                    lua_error(luaState,
+                              "Unable to determine spell id from spell name, possibly because it isn't in your spell book.  Try IsSpellInRange(SPELL_ID) instead");
+                    return 0;
+                }
+            }
+
+            auto spell = game::GetSpellInfo(spellId);
+            if (spell) {
+                std::set<uint32_t> validTargetTypes = {
+                    game::TARGET_UNIT_CASTER,
+                    game::TARGET_UNIT_CASTER_PET,
+                    game::TARGET_UNIT_ENEMY,
+                    game::TARGET_UNIT_FRIEND,
+                    game::TARGET_GAMEOBJECT,
+                    game::TARGET_UNIT,
+                    game::TARGET_LOCKED,
+                    game::TARGET_UNIT_PARTY,
+                    game::TARGET_UNIT_FRIEND_CHAIN_HEAL,
+                    game::TARGET_LOCATION_CASTER_TARGET_POSITION,
+                    game::TARGET_UNIT_RAID,
+                    game::TARGET_UNIT_RAID_AND_CLASS,
+                    game::TARGET_LOCATION_UNIT_POSITION};
+
+                if (validTargetTypes.count(spell->EffectImplicitTargetA[0]) == 0) {
+                    DEBUG_LOG("Invalid target type " << spell->EffectImplicitTargetA[0] << " for IsSpellInRange spellId:" << spellId);
+                    lua_pushnumber(luaState, -1.0);
+                    return 1;
+                }
+
+                char *target;
+
+                if (lua_isstring(luaState, 2)) {
+                    target = lua_tostring(luaState, 2);
+                } else {
+                    char defaultTarget[] = "target";
+                    target = defaultTarget;
+                }
+
+                uint64_t targetGUID = GetUnitGuidFromString(target);
+
+                const auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
+                if (playerGuid == 0) {
+                    lua_error(luaState, "IsSpellInRange: active player not available");
+                    return 0;
+                }
+
+                auto playerUnit = game::GetObjectPtr(playerGuid);
+                if (!playerUnit) {
+                    lua_error(luaState, "IsSpellInRange: active player unit not available");
+                    return 0;
+                }
+
+                auto const RangeCheckSelected = reinterpret_cast<RangeCheckSelectedT>(Offsets::RangeCheckSelected);
+                auto const result = RangeCheckSelected(playerUnit, spell, targetGUID, '\0');
+
+                if (result != 0) {
+                    lua_pushnumber(luaState, 1.0);
+                } else {
+                    lua_pushnumber(luaState, 0);
+                }
+                return 1;
+            } else {
+                lua_error(luaState, "Spell not found");
+            }
+        } else {
+            lua_error(luaState, "Usage: IsSpellInRange(spellName)");
+        }
+
+        return 0;
+    }
+
+    uint32_t Script_IsSpellUsable(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        auto param1IsString = lua_isstring(luaState, 1);
+        auto param1IsNumber = lua_isnumber(luaState, 1);
+
+        if (param1IsString || param1IsNumber) {
+            uint32_t spellId = 0;
+
+            if (param1IsNumber) {
+                spellId = uint32_t(lua_tonumber(luaState, 1));
+
+                if (spellId == 0) {
+                    lua_error(luaState, "Unable to parse spell id");
+                    return 0;
+                }
+            } else {
+                auto const spellName = lua_tostring(luaState, 1);
+
+                spellId = GetSpellIdFromSpellName(spellName);
+                if (spellId == 0) {
+                    lua_error(luaState,
+                              "Unable to determine spell id from spell name, possibly because it isn't in your spell book.  Try IsSpellUsable(SPELL_ID) instead");
+                    return 0;
+                }
+            }
+
+            auto spell = game::GetSpellInfo(spellId);
+            if (spell) {
+                auto const IsSpellUsable = reinterpret_cast<Spell_C_IsSpellUsableT>(Offsets::Spell_C_IsSpellUsable);
+
+                uint32_t outOfMana = 0;
+                auto const result = IsSpellUsable(spell, &outOfMana) & 0xFF;
+
+                if (result != 0) {
+                    lua_pushnumber(luaState, 1.0);
+                } else {
+                    lua_pushnumber(luaState, 0);
+                }
+
+                if (outOfMana) {
+                    lua_pushnumber(luaState, 1.0);
+                } else {
+                    lua_pushnumber(luaState, 0);
+                }
+
+                return 2;
+            } else {
+                lua_error(luaState, "Spell not found");
+            }
+        } else {
+            lua_error(luaState, "Usage: IsSpellUsable(spellName)");
+        }
+
+        return 0;
+    }
+
+    uint32_t Script_GetSpellIdForName(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        if (lua_isstring(luaState, 1)) {
+            auto const spellName = lua_tostring(luaState, 1);
+            auto const spellId = GetSpellIdFromSpellName(spellName);
+            lua_pushnumber(luaState, spellId);
+            return 1;
+        } else {
+            lua_error(luaState, "Usage: GetSpellIdForName(spellName)");
+        }
+
+        return 0;
+    }
+
+    uint32_t Script_GetSpellNameAndRankForId(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        if (lua_isnumber(luaState, 1)) {
+            auto const spellId = uint32_t(lua_tonumber(luaState, 1));
+            auto const spell = game::GetSpellInfo(spellId);
+
+            if (spell) {
+                auto const language = *reinterpret_cast<std::uint32_t *>(Offsets::Language);
+                lua_pushstring(luaState, (char *) spell->Name[language]);
+                lua_pushstring(luaState, (char *) spell->Rank[language]);
+                return 2;
+            } else {
+                DEBUG_LOG("Spell not found for id: " << spellId);
+                lua_error(luaState, "Spell not found");
+            }
+        } else {
+            lua_error(luaState, "Usage: GetSpellNameAndRankForId(spellId)");
+        }
+
+        return 0;
+    }
+
+    uint32_t Script_GetSpellSlotTypeIdForName(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        if (lua_isstring(luaState, 1)) {
+            auto const spellName = lua_tostring(luaState, 1);
+            uint32_t bookType;
+            auto spellSlot = GetSpellSlotAndTypeForName(spellName, &bookType);
+
+            // returns -1 or large number if spell not found
+            if (spellSlot < 0 || spellSlot > 100000) {
+                lua_pushnumber(luaState, 0);
+                spellSlot = 0;
+                bookType = 999;
+
+                lua_pushnumber(luaState, spellSlot);
+            } else {
+                lua_pushnumber(luaState, spellSlot + 1); // lua is 1 indexed
+            }
+
+            if (bookType == 0) {
+                char spell[] = "spell";
+                lua_pushstring(luaState, spell);
+            } else if (bookType == 1) {
+                char pet[] = "pet";
+                lua_pushstring(luaState, pet);
+            } else {
+                char unknown[] = "unknown";
+                lua_pushstring(luaState, unknown);
+            }
+
+            if (spellSlot > 0 && spellSlot < 1024) {
+                uint32_t spellId = 0;
+                if (bookType == 0) {
+                    spellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownSpells) +
+                                                            spellSlot * 4);
+                } else {
+                    spellId = *reinterpret_cast<uint32_t *>(static_cast<uint32_t>(Offsets::CGSpellBook_mKnownPetSpells) +
+                                                            spellSlot * 4);
+                }
+                lua_pushnumber(luaState, spellId);
+            } else {
+                lua_pushnumber(luaState, 0);
+            }
+
+            return 3;
+        } else {
+            lua_error(luaState, "Usage: GetSpellSlotTypeIdForName(spellName)");
+        }
+
+        return 0;
+    }
+
+    uint32_t Script_GetSpellRec(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        if (!lua_isnumber(luaState, 1)) {
+            lua_error(luaState, "Usage: GetSpellRec(spellId, [copy])");
+            return 0;
+        }
+
+        uint32_t spellId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
+
+        // Check for optional copy parameter
+        bool useCopy = false;
+        if (lua_isnumber(luaState, 2)) {
+            useCopy = static_cast<int>(lua_tonumber(luaState, 2)) != 0;
+        }
+
+        // Get spell info
+        auto spell = game::GetSpellInfo(spellId);
+        if (!spell) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        // Create new table or get reusable table based on copy parameter
+        if (useCopy) {
+            lua_newtable(luaState);
+        } else {
+            GetTableRef(luaState, spellRecTableRef);
+        }
+
+        // Push all simple fields using descriptors
+        PushFieldsToLua(luaState, spell, spellRecFields, spellRecFieldsCount);
+
+        // Push string fields manually (require language)
+        auto const language = *reinterpret_cast<uint32_t *>(Offsets::Language);
+        PushTableValue(luaState, const_cast<char *>("name"),
+                       spell->Name[language] ? const_cast<char *>(spell->Name[language])
+                                             : const_cast<char *>(""));
+        PushTableValue(luaState, const_cast<char *>("rank"),
+                       spell->Rank[language] ? const_cast<char *>(spell->Rank[language])
+                                             : const_cast<char *>(""));
+        PushTableValue(luaState, const_cast<char *>("description"),
+                       spell->Description[language] ? const_cast<char *>(spell->Description[language])
+                                                    : const_cast<char *>(""));
+        PushTableValue(luaState, const_cast<char *>("tooltip"),
+                       spell->ToolTip[language] ? const_cast<char *>(spell->ToolTip[language])
+                                                : const_cast<char *>(""));
+
+        // Push all array fields using descriptors with or without references based on copy parameter
+        if (useCopy) {
+            PushArrayFieldsToLua(luaState, spell, spellRecArrayFields, spellRecArrayFieldsCount);
+        } else {
+            PushArrayFieldsToLuaWithRefs(luaState, spell, spellRecArrayFields, spellRecArrayFieldsCount, spellRecNestedArrayRefs);
+        }
+
+        return 1; // Return the table
+    }
+
+    uint32_t Script_GetSpellRecField(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        if (!lua_isnumber(luaState, 1) || !lua_isstring(luaState, 2)) {
+            lua_error(luaState, "Usage: GetSpellRecField(spellId, fieldName, [copy])");
+            return 0;
+        }
+
+        InitializeFieldMaps();
+
+        uint32_t spellId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
+        const char *fieldName = lua_tostring(luaState, 2);
+
+        // Check for optional copy parameter
+        bool useCopy = false;
+        if (lua_isnumber(luaState, 3)) {
+            useCopy = static_cast<int>(lua_tonumber(luaState, 3)) != 0;
+        }
+
+        // Get spell info
+        auto spell = game::GetSpellInfo(spellId);
+        if (!spell) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        // O(1) hash table lookup for simple fields
+        auto simpleIt = spellRecFieldMap.find(fieldName);
+        if (simpleIt != spellRecFieldMap.end()) {
+            size_t i = simpleIt->second;
+            const char *fieldPtr = reinterpret_cast<const char *>(spell) + spellRecFields[i].offset;
+
+            switch (spellRecFields[i].type) {
+                case FieldType::INT32:
+                    lua_pushnumber(luaState, *reinterpret_cast<const int32_t *>(fieldPtr));
+                    return 1;
+                case FieldType::UINT32:
+                    lua_pushnumber(luaState, *reinterpret_cast<const uint32_t *>(fieldPtr));
+                    return 1;
+                case FieldType::UINT8:
+                    lua_pushnumber(luaState, *reinterpret_cast<const uint8_t *>(fieldPtr));
+                    return 1;
+                case FieldType::FLOAT:
+                    lua_pushnumber(luaState, *reinterpret_cast<const float *>(fieldPtr));
+                    return 1;
+                case FieldType::UINT64:
+                    lua_pushnumber(luaState, static_cast<double>(*reinterpret_cast<const uint64_t *>(fieldPtr)));
+                    return 1;
+                case FieldType::STRING: {
+                    const char *str = *reinterpret_cast<const char *const *>(fieldPtr);
+                    lua_pushstring(luaState, str ? const_cast<char *>(str) : const_cast<char *>(""));
+                    return 1;
+                }
+            }
+        }
+
+        // O(1) hash table lookup for array fields
+        auto arrayIt = spellRecArrayFieldMap.find(fieldName);
+        if (arrayIt != spellRecArrayFieldMap.end()) {
+            size_t i = arrayIt->second;
+            const auto &field = spellRecArrayFields[i];
+
+            // Create new table or get reusable table based on copy parameter
+            if (useCopy) {
+                lua_newtable(luaState);
+            } else {
+                // Get or create reusable table for this specific field name
+                GetTableRef(luaState, spellRecArrayFieldRefs[fieldName]);
+            }
+
+            const char *fieldPtr = reinterpret_cast<const char *>(spell) + field.offset;
+
+            for (size_t j = 0; j < field.count; ++j) {
+                lua_pushnumber(luaState, j + 1);
+
+                switch (field.type) {
+                    case FieldType::INT32:
+                        lua_pushnumber(luaState, reinterpret_cast<const int32_t *>(fieldPtr)[j]);
+                        break;
+                    case FieldType::UINT32:
+                        lua_pushnumber(luaState, reinterpret_cast<const uint32_t *>(fieldPtr)[j]);
+                        break;
+                    case FieldType::UINT8:
+                        lua_pushnumber(luaState, reinterpret_cast<const uint8_t *>(fieldPtr)[j]);
+                        break;
+                    case FieldType::FLOAT:
+                        lua_pushnumber(luaState, reinterpret_cast<const float *>(fieldPtr)[j]);
+                        break;
+                    default:
+                        lua_pushnumber(luaState, 0);
+                        break;
+                }
+                lua_settable(luaState, -3);
+            }
+            return 1;
+        }
+
+        // Check for special string fields (localized, need language index)
+        auto const language = *reinterpret_cast<uint32_t *>(Offsets::Language);
+        if (strcmp(fieldName, "name") == 0) {
+            lua_pushstring(luaState, spell->Name[language] ? const_cast<char *>(spell->Name[language])
+                                                           : const_cast<char *>(""));
+            return 1;
+        }
+        if (strcmp(fieldName, "rank") == 0) {
+            lua_pushstring(luaState, spell->Rank[language] ? const_cast<char *>(spell->Rank[language])
+                                                           : const_cast<char *>(""));
+            return 1;
+        }
+        if (strcmp(fieldName, "description") == 0) {
+            lua_pushstring(luaState, spell->Description[language] ? const_cast<char *>(spell->Description[language])
+                                                                  : const_cast<char *>(""));
+            return 1;
+        }
+        if (strcmp(fieldName, "tooltip") == 0) {
+            lua_pushstring(luaState, spell->ToolTip[language] ? const_cast<char *>(spell->ToolTip[language])
+                                                              : const_cast<char *>(""));
+            return 1;
+        }
+
+        // Field not found
+        lua_error(luaState, "Unknown field name");
+        return 0;
+    }
+
+    uint32_t Script_GetSpellModifiers(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr(); // pcall leads to corrupted lua state pointer on added scripts, not sure why
+
+        if (!lua_isnumber(luaState, 1) || !lua_isnumber(luaState, 2)) {
+            lua_error(luaState, "Usage: GetSpellModifiers(spellId, modifierType) - modifierType: 0=DAMAGE, 1=DURATION, 2=THREAT, 3=ATTACK_POWER, 4=CHARGES, 5=RANGE, 6=RADIUS, 7=CRITICAL_CHANCE, 8=ALL_EFFECTS, 9=NOT_LOSE_CASTING_TIME, 10=CASTING_TIME, 11=COOLDOWN, 12=SPEED, 14=COST, 15=CRIT_DAMAGE_BONUS, 16=RESIST_MISS_CHANCE, 17=JUMP_TARGETS, 18=CHANCE_OF_SUCCESS, 19=ACTIVATION_TIME, 20=EFFECT_PAST_FIRST, 21=CASTING_TIME_OLD, 22=DOT, 23=HASTE, 24=SPELL_BONUS_DAMAGE, 27=MULTIPLE_VALUE, 28=RESIST_DISPEL_CHANCE");
+            return 0;
+        }
+
+        uint32_t spellId = static_cast<uint32_t>(lua_tonumber(luaState, 1));
+        int modifierType = static_cast<int>(lua_tonumber(luaState, 2));
+
+        // Validate modifier type
+        if (modifierType < 0 || modifierType >= game::MAX_SPELLMOD) {
+            lua_error(luaState, "Invalid modifier type. Must be between 0 and 28.");
+            return 0;
+        }
+
+        // Get spell info
+        auto spell = game::GetSpellInfo(spellId);
+        if (!spell) {
+            lua_error(luaState, "Invalid spell id");
+            return 0;
+        }
+
+        // Call Spell_C_GetSpellModifierValues
+        using Spell_C_GetSpellModifierValuesT = uint32_t (__fastcall *)(game::SpellRec *spellRec, int mod, int *flatMod, uint32_t *percentMod);
+        auto const getModifierValues = reinterpret_cast<Spell_C_GetSpellModifierValuesT>(Offsets::Spell_C_GetSpellModifierValues);
+
+        int flatModificationValue = 0;
+        uint32_t percentModificationValue = 0;
+
+        auto ret = getModifierValues(const_cast<game::SpellRec *>(spell), modifierType, &flatModificationValue, &percentModificationValue);
+
+        // show flat modifications
+        lua_pushnumber(luaState, flatModificationValue);
+
+        if (flatModificationValue != 0 && percentModificationValue >= 100) {
+            percentModificationValue -= 100;
+        } else if (modifierType == 9 && percentModificationValue >= 100) {
+            percentModificationValue -= 100;
+        }
+
+        // show percent modifications
+        lua_pushnumber(luaState, percentModificationValue);
+
+        // show return
+        lua_pushnumber(luaState, ret);
+
+        return 3;
+    }
+
+    uint32_t GetSpellSlotFromLuaHook(hadesmem::PatchDetourBase *detour, uintptr_t *luaState, uint32_t *slot, uint32_t *type) {
+        luaState = GetLuaStatePtr();
+
+        // Check if first parameter is not a number
+        if (lua_isnumber(luaState, 1) == 0) {
+            const char *spellStr = lua_tostring(luaState, 1);
+
+            // Check if string starts with "spellId:" (case-insensitive)
+            if (_strnicmp(spellStr, "spellId:", 8) == 0) {
+                // Extract spell ID from string
+                uint32_t spellId = atoi(spellStr + 8);
+
+                if (spellId > 0) {
+                    // Check if second parameter has "pet"
+                    uint32_t bookType = 0;
+                    if (lua_isstring(luaState, 2)) {
+                        const char *bookTypeStr = lua_tostring(luaState, 2);
+                        if (_strcmpi(bookTypeStr, "pet") == 0) {
+                            bookType = 1;
+                        }
+                    }
+
+                    uint32_t spellSlot = ConvertSpellIdToSpellSlot(spellId, bookType);
+                    if(!spellSlot){
+                        lua_error(luaState, "Unable convert spell id to spell slot.");
+                        return 0;
+                    }
+
+                    if (slot) {
+                        *slot = spellSlot;
+                    }
+                    if (type) {
+                        *type = bookType; // Use the requested bookType
+                    }
+
+                    return 1;
+                } else {
+                    lua_error(luaState, "Unable parse spell id.  Format is spellId:123.");
+                    return 0;
+                }
+            } else {
+                uint32_t bookType;
+                auto spellSlot =  GetSpellSlotAndTypeForName(spellStr, &bookType);
+                // returns -1 or large number if spell not found
+                if (spellSlot < 0 || spellSlot > 100000) {
+                    lua_error(luaState, "Unable to find spell slot for spell name.");
+                    return 0;
+                } else {
+                    if (slot) {
+                        *slot = spellSlot;
+                    }
+                    if (type) {
+                        *type = bookType;
+                    }
+                }
+
+                return 1;
+            }
+        } else {
+            auto const getSpellSlotFromLua = detour->GetTrampolineT<GetSpellSlotFromLuaT>();
+            // Fall back to original function
+            return getSpellSlotFromLua(luaState, slot, type);
+        }
+
+        return 0;
+    }
+
+    uint32_t Script_GetSpellPower(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        auto playerGuid = game::ClntObjMgrGetActivePlayerGuid();
+        auto playerUnit = game::GetObjectPtr(playerGuid);
+
+        if (!playerUnit) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        // Get player fields pointer at byte offset 0xe68
+        auto playerFields = *reinterpret_cast<uint8_t **>(reinterpret_cast<uint8_t *>(playerUnit) + 0xe68);
+        if (!playerFields) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        // PLAYER_FIELD_MOD_DAMAGE_DONE_POS at offset 0x0FD4, NEG at 0x0FF0 (7 uint32 fields each)
+        auto modDmgDonePos = reinterpret_cast<uint32_t *>(playerFields + 0x0FD4);
+        auto modDmgDoneNeg = reinterpret_cast<uint32_t *>(playerFields + 0x0FF0);
+
+        // Optional first arg: "net" (default), "positive", or "negative"
+        const char *mode = "net";
+        if (lua_isstring(luaState, 1)) {
+            mode = lua_tostring(luaState, 1);
+        }
+
+        // Return all 7 spell schools: Physical, Holy, Fire, Nature, Frost, Shadow, Arcane
+        if (_stricmp(mode, "positive") == 0) {
+            for (int i = 0; i < 7; i++) {
+                lua_pushnumber(luaState, modDmgDonePos[i]);
+            }
+        } else if (_stricmp(mode, "negative") == 0) {
+            for (int i = 0; i < 7; i++) {
+                lua_pushnumber(luaState, modDmgDoneNeg[i]);
+            }
+        } else {
+            for (int i = 0; i < 7; i++) {
+                lua_pushnumber(luaState, static_cast<int32_t>(modDmgDonePos[i]) - static_cast<int32_t>(modDmgDoneNeg[i]));
+            }
+        }
+
+        return 7;
+    }
+
+    uint32_t Script_GetSpellDuration(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        if (!lua_isnumber(luaState, 1)) {
+            lua_error(luaState, "Usage: GetSpellDuration(spellId [, ignoreModifiers])");
+            return 0;
+        }
+
+        auto const spellId = uint32_t(lua_tonumber(luaState, 1));
+        auto const spellRec = game::GetSpellInfo(spellId);
+
+        if (!spellRec) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        bool ignoreModifiers = false;
+        if (lua_isnumber(luaState, 2)) {
+            ignoreModifiers = lua_tonumber(luaState, 2) != 0;
+        }
+
+        auto dur = game::GetSpellDuration(spellRec, ignoreModifiers);
+        if (dur > 0) {
+            lua_pushnumber(luaState, static_cast<uint32_t>(dur));
+        } else {
+            lua_pushnumber(luaState, 0);
+        }
+
+        return 1;
+    }
+
+    // SpellRange DBC record layout:
+    //  +0x00  id        (uint32)
+    //  +0x04  minRange  (float)
+    //  +0x08  maxRange  (float)
+    //  +0x0c  flags     (uint32)
+    //  +0x10  name      (char* x8 locales + uint32 mask = 36 bytes)
+    uint32_t Script_GetSpellRangeData(uintptr_t *luaState) {
+        luaState = GetLuaStatePtr();
+
+        if (!lua_isnumber(luaState, 1)) {
+            lua_error(luaState, "Usage: GetSpellRangeData(rangeIndex)");
+            return 0;
+        }
+
+        auto const rangeIndex = static_cast<int32_t>(lua_tonumber(luaState, 1));
+
+        int32_t maxRangeId = *reinterpret_cast<int32_t *>(Offsets::SpellRangeDBMaxId);
+        uintptr_t *rangeArray = *reinterpret_cast<uintptr_t **>(Offsets::SpellRangeDBArray);
+
+        if (rangeIndex < 0 || rangeIndex > maxRangeId) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        uintptr_t spellRange = reinterpret_cast<uintptr_t *>(rangeArray)[rangeIndex];
+        if (spellRange == 0) {
+            lua_pushnil(luaState);
+            return 1;
+        }
+
+        float minRange = *reinterpret_cast<float *>(spellRange + 0x04);
+        float maxRange = *reinterpret_cast<float *>(spellRange + 0x08);
+        uint32_t flags  = *reinterpret_cast<uint32_t *>(spellRange + 0x0c);
+
+        auto const language = *reinterpret_cast<uint32_t *>(Offsets::Language);
+        const char *name = *reinterpret_cast<const char **>(spellRange + 0x10 + language * 4);
+        if (!name || name[0] == '\0') {
+            // fall back to enUS (index 0)
+            name = *reinterpret_cast<const char **>(spellRange + 0x10);
+        }
+
+        lua_pushnumber(luaState, minRange);
+        lua_pushnumber(luaState, maxRange);
+        lua_pushnumber(luaState, flags);
+        lua_pushstring(luaState, name ? const_cast<char *>(name) : const_cast<char *>(""));
+
+        return 4;
+    }
+
+}

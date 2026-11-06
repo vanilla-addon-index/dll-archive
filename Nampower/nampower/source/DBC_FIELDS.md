@@ -1,0 +1,152 @@
+# DBC Field Names
+
+Related structs live in `nampower/game.hpp` (notably `SpellRec` and `ItemStats_C`).
+
+## ItemStats_C Fields (alphabetical)
+- `allowableClass`
+- `allowableRace`
+- `ammoType`
+- `area`
+- `bagFamily`
+- `block`
+- `bonding`
+- `buyPrice`
+- `class`
+- `containerSlots`
+- `delay`
+- `displayInfoID`
+- `duration`
+- `flags`
+- `inventoryType`
+- `itemLevel`
+- `itemSet`
+- `languageID`
+- `lockID`
+- `map`
+- `material`
+- `maxCount`
+- `maxDurability`
+- `pageMaterial`
+- `pageText`
+- `quality`
+- `randomProperty`
+- `rangedModRange`
+- `requiredCityRank`
+- `requiredHonorRank`
+- `requiredLevel`
+- `requiredRep`
+- `requiredRepRank`
+- `requiredSkill`
+- `requiredSkillRank`
+- `requiredSpell`
+- `sellPrice`
+- `sheatheType`
+- `stackable`
+- `startQuestID`
+- `subclass`
+
+### ItemStats_C Array Fields (alphabetical)
+- `bonusAmount`
+- `bonusStat`
+- `damageType`
+- `maxDamage`
+- `minDamage`
+- `resistances`
+- `spellCategory`
+- `spellCategoryCooldown`
+- `spellCharges`
+- `spellCooldown`
+- `spellID`
+- `spellTrigger`
+
+## SpellRec Fields (alphabetical)
+- `activeIconID`
+- `attributes`
+- `attributesEx`
+- `attributesEx2`
+- `attributesEx3`
+- `attributesEx4`
+- `auraInterruptFlags`
+- `baseLevel`
+- `castUI`
+- `category`
+- `categoryRecoveryTime`
+- `casterAuraState`
+- `castingTimeIndex`
+- `channelInterruptFlags`
+- `dispel`
+- `description` (string, defaults to current language)
+- `dmgClass`
+- `durationIndex`
+- `equippedItemClass`
+- `equippedItemInventoryTypeMask`
+- `equippedItemSubClassMask`
+- `id`
+- `interruptFlags`
+- `manaCost`
+- `manaCostPercentage`
+- `manaCostPerlevel`
+- `manaPerSecond`
+- `manaPerSecondPerLevel`
+- `name` (string, defaults to current language)
+- `maxAffectedTargets`
+- `maxLevel`
+- `maxTargetLevel`
+- `mechanic`
+- `minFactionId`
+- `minReputation`
+- `modalNextSpell`
+- `powerType`
+- `preventionType`
+- `procChance`
+- `procCharges`
+- `procFlags`
+- `rangeIndex`
+- `rank` (string, defaults to current language)
+- `recoveryTime`
+- `requiredAuraVision`
+- `school`
+- `spellFamilyFlags`
+- `spellFamilyName`
+- `spellIconID`
+- `spellLevel`
+- `spellPriority`
+- `spellVisual`
+- `spellVisual2`
+- `stackAmount`
+- `stances`
+- `stancesNot`
+- `startRecoveryCategory`
+- `startRecoveryTime`
+- `targetAuraState`
+- `targetCreatureType`
+- `targets`
+- `tooltip` (string, defaults to current language)
+
+### SpellRec Array Fields (alphabetical)
+- `description` (char* x8, one per language)
+- `dmgMultiplier`
+- `effect`
+- `effectAmplitude`
+- `effectApplyAuraName`
+- `effectBaseDice`
+- `effectBasePoints`
+- `effectChainTarget`
+- `effectDicePerLevel`
+- `effectDieSides`
+- `effectImplicitTargetA`
+- `effectImplicitTargetB`
+- `effectItemType`
+- `effectMechanic`
+- `effectMiscValue`
+- `effectMultipleValue`
+- `effectPointsPerComboPoint`
+- `effectRadiusIndex`
+- `effectRealPointsPerLevel`
+- `effectTriggerSpell`
+- `name` (char* x8, one per language)
+- `rank` (char* x8, one per language)
+- `reagent`
+- `reagentCount`
+- `tooltip` (char* x8, one per language)
+- `totem`

@@ -1,0 +1,74 @@
+{
+  "upstream": "https://octowow.st/git/paste/GlueXML",
+  "source": {
+    "kind": "repository",
+    "host": "octowow.st",
+    "owner": "paste",
+    "repo": "GlueXML",
+    "name": "GlueXML",
+    "url": "https://octowow.st/git/paste/GlueXML",
+    "api": "https://octowow.st/git/api/v1/repos/paste/GlueXML"
+  },
+  "commit": "5ad529b4655008df26b11265ba8cfd55cd6d54d9",
+  "sourceFiles": {
+    ".gitea/workflows/release.yml": {
+      "sha256": "7b8e76945699574e356db01d461b907b634c79837bb745462f238ed80f2c7443",
+      "bytes": 2494
+    },
+    "AccountLogin.lua": {
+      "sha256": "d42d699523f786c366941aa42aa4a7221d4abddbdaf1ac893328c696a531d0ad",
+      "bytes": 15525
+    },
+    "AccountLogin.xml": {
+      "sha256": "b234812fd47f42968a80202eebcfcbb22743888896d96b85bf5632de72fd99b5",
+      "bytes": 36972
+    },
+    "CharacterSelect.lua": {
+      "sha256": "20bb293156950aed5a6f8c4495110c3481dccc0a3746795e4b6bdb6e89a70aeb",
+      "bytes": 23026
+    },
+    "CharacterSelect.xml": {
+      "sha256": "f60c1c7222b23ba67e444464b7f16f3643df042265b12c368a4190aae75ff43a",
+      "bytes": 25958
+    },
+    "GlueConsole.lua": {
+      "sha256": "98fb5bc2f64ff419da6683e8c61cac3a17e7d75f456bb5a7dd2232165b3cacd6",
+      "bytes": 1981
+    },
+    "GlueConsole.xml": {
+      "sha256": "0d945d62cf9c1074351cebf2a5d33b2ea2055a40664bcede7ca6861f8ceea930",
+      "bytes": 3302
+    },
+    "mpq.yaml": {
+      "sha256": "c9d52926441e1e06650b66fabfc356e819257bebea97db48da8f90a3253b1d67",
+      "bytes": 460
+    },
+    "README.md": {
+      "sha256": "a965124f3bd1644e3d0b0240b238003193767b2556cd65d0e1f1d2f67d56ae8c",
+      "bytes": 3413
+    }
+  },
+  "symlinks": {},
+  "releases": {
+    "9": {
+      "tag": "v0.0.4",
+      "folder": "v0.0.4--9",
+      "assets": {
+        "4": {
+          "sha256": "976f60072fc2359a2e7f0bfa2140a0b93ed1c2d5b21595981b5ceee72c355f9b",
+          "bytes": 30217,
+          "id": "4",
+          "name": "patch-Z.mpq",
+          "url": "https://octowow.st/git/paste/GlueXML/releases/download/v0.0.4/patch-Z.mpq",
+          "path": "releases/v0.0.4--9/assets/patch-Z.mpq"
+        }
+      },
+      "source": {
+        "sha256": "4a9c2f3a6ff8f449900a33c0fad7148c2a67f37ca91e13a85c0bf8bc58592b3c",
+        "bytes": 22260,
+        "path": "releases/v0.0.4--9/upstream-source.tar.gz",
+        "url": "https://octowow.st/git/api/v1/repos/paste/GlueXML/archive/v0.0.4.tar.gz"
+      }
+    }
+  }
+}

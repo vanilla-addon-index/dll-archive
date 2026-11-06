@@ -1,0 +1,186 @@
+{
+  "upstream": "https://github.com/jhinzuo2/wow-translate",
+  "source": {
+    "kind": "repository",
+    "host": "github.com",
+    "owner": "jhinzuo2",
+    "repo": "wow-translate",
+    "name": "wow-translate",
+    "url": "https://github.com/jhinzuo2/wow-translate",
+    "api": "https://api.github.com/repos/jhinzuo2/wow-translate"
+  },
+  "commit": "3d522bda75fac1f6c67027fb3222982a21ea319a",
+  "sourceFiles": {
+    ".github/workflows/build-dll.yml.disable": {
+      "sha256": "02e0990e9e38189dea84d99c266d3f01aa7f359094fd2aeb5ef350289653d733",
+      "bytes": 2226
+    },
+    ".github/workflows/build.yml": {
+      "sha256": "89edbe46d7a22c613cad565092e831027dc562ae724134bad5ec86db1ad9a0ef",
+      "bytes": 5071
+    },
+    ".gitignore.upstream": {
+      "sha256": "07dbc2be1459ec702454270ace635997ddc1343e2f18b56e07f9e8d5560d6214",
+      "bytes": 339
+    },
+    "dll/build.bat": {
+      "sha256": "04ae9fa4a9b74a5dc713c3d47d6f81038a2266451cb8f2ec969f56bc7faf836e",
+      "bytes": 2933
+    },
+    "dll/CMakeLists.txt": {
+      "sha256": "44f30cb2f39d59ac03ccc9a0dc9f55543dddd33b262ae561fb993084853b10d9",
+      "bytes": 3843
+    },
+    "dll/include/curl_bridge.h": {
+      "sha256": "ae7727807e3ef09137164f47555035d6a9d21e40066cba3cc08df04823378f12",
+      "bytes": 3441
+    },
+    "dll/include/logging.h": {
+      "sha256": "385107b6d1a209be7f7af870d4f282cbe2911efc1f5fa3552c176878a031f8a2",
+      "bytes": 508
+    },
+    "dll/include/lua_interface.h": {
+      "sha256": "4af4ade2af9106c234a62ecbd87e8b9ad7aa2d310c0a063e4dc2d7f81497179d",
+      "bytes": 1462
+    },
+    "dll/include/translator_core.h": {
+      "sha256": "4589eadf292c5547b1f2c2a682e7262254d7327f270bbfdfe570c73140c2ecd2",
+      "bytes": 10216
+    },
+    "dll/include/utils.h": {
+      "sha256": "21818ed731407ef0f2c2cd08c7af70b2e6bdf90037121ac7f71e8f582aa19c7b",
+      "bytes": 413
+    },
+    "dll/include/wininet_bridge.h": {
+      "sha256": "f4c9c1ef7d079bf306e6664c2b61d0275dc1c01f09c75d12b424a7003cf01749",
+      "bytes": 1909
+    },
+    "dll/src/curl_bridge.cpp": {
+      "sha256": "fac6a515f0f935359f11c04f4ba645959b84d8fcd34641f07ef569fcdd3db4e2",
+      "bytes": 11292
+    },
+    "dll/src/dllmain.cpp": {
+      "sha256": "ccf77b4ba2745b8432bf24839fd6e9bddcfc88031692d7e7542a41cb169aa573",
+      "bytes": 3193
+    },
+    "dll/src/logging.cpp": {
+      "sha256": "12c5594f7693240479fa1e914b46a08f18d7f9e6e65b2dcb1287e667cd1933a1",
+      "bytes": 2862
+    },
+    "dll/src/lua_interface.cpp": {
+      "sha256": "33940b8c6362ad137b13cf68dd3a6776989d211fc49ea7a1e19c470d88759d5a",
+      "bytes": 18968
+    },
+    "dll/src/translator_core.cpp": {
+      "sha256": "b98def977bf8c1e15b74a4f5ef1377f84d643fdc4335176c4bdef818bced269d",
+      "bytes": 50995
+    },
+    "dll/src/utils.cpp": {
+      "sha256": "d0b81123de4412c32015e0e3fe464575bac023c0f568c57502df4f0892c173b0",
+      "bytes": 2099
+    },
+    "dll/src/wininet_bridge.cpp": {
+      "sha256": "e4257bb4b74c5fa45b228cdf2f9763b1cdf4fd57f309c09ee26fc7e876c3264b",
+      "bytes": 5278
+    },
+    "dll/src/WoWTranslate.def": {
+      "sha256": "99fecc74550ddd178ef38a499202fdde85d7b031b9c416989c7607c3a2c79d53",
+      "bytes": 65
+    },
+    "dll/third_party/json.hpp": {
+      "sha256": "9bea4c8066ef4a1c206b2be5a36302f8926f7fdc6087af5d20b417d0cf103ea6",
+      "bytes": 919975
+    },
+    "dll/third_party/MinHook.h": {
+      "sha256": "5329b2af85ce147203a3ce9e3d74b8660e66ab726395d29794dda161d2ef42da",
+      "bytes": 7710
+    },
+    "dll/third_party/MinHook.x64.lib": {
+      "sha256": "85574911be0aa6b4d4953b2bfb767d79b3726483621ac68cae1b875412b66a44",
+      "bytes": 548944
+    },
+    "dll/third_party/MinHook.x86.lib": {
+      "sha256": "e6e6733ff1458db9493ea52d8bc8445dd18f611f7689f40ebc7490e4efc78d7e",
+      "bytes": 528266
+    },
+    "Interface/AddOns/WoWTranslate/Bindings.xml": {
+      "sha256": "484acf311591dcc3319efbc13e855f5c9072b7892f354fc475195d222d177a6e",
+      "bytes": 198
+    },
+    "Interface/AddOns/WoWTranslate/WoWTranslate_API.lua": {
+      "sha256": "dc283ef329bfec4742ff730dd6a87f66217e16ae8fad6028adacc7ad3e231896",
+      "bytes": 24678
+    },
+    "Interface/AddOns/WoWTranslate/WoWTranslate_Cache.lua": {
+      "sha256": "c1240453118451c95ba90b52d0ffb29d6d58abf450ebd8234c0824ef968e3965",
+      "bytes": 1461
+    },
+    "Interface/AddOns/WoWTranslate/WoWTranslate_Config.lua": {
+      "sha256": "d2118b45fb5db05eb5fff9515136829ad5d0b93e6769349fa6e7826649847bb3",
+      "bytes": 38305
+    },
+    "Interface/AddOns/WoWTranslate/WoWTranslate_Glossary.lua": {
+      "sha256": "eef5aa40bb7e2ca270cda8db7553770930309a8ea95d771865ce5792a87ebdc9",
+      "bytes": 69476
+    },
+    "Interface/AddOns/WoWTranslate/WoWTranslate_Minimap.lua": {
+      "sha256": "01f4a4c4c76d7615692eea2ff7f2f5f2db868111c0eebf2e41291005a922852e",
+      "bytes": 4624
+    },
+    "Interface/AddOns/WoWTranslate/WoWTranslate_OutGlossary.lua": {
+      "sha256": "e60cd50e9cc8f04ee0cb68d66c4bf671a050d6b1e574c34c9d9d60b6e4d245d8",
+      "bytes": 36303
+    },
+    "Interface/AddOns/WoWTranslate/WoWTranslate_OutgoingToggle.lua": {
+      "sha256": "c5c5c7683447b8f076a380f1dcb9ba3d7832e1fc1bc865acd2e132f9f10e7c4e",
+      "bytes": 216
+    },
+    "Interface/AddOns/WoWTranslate/WoWTranslate.lua": {
+      "sha256": "d1ed8a0b0b4c53f4d6b711fa75acf74a932901f30f8970fb11e2ab890f96461b",
+      "bytes": 265960
+    },
+    "Interface/AddOns/WoWTranslate/WoWTranslate.toc": {
+      "sha256": "2a3a95ff0b8169b898c1afa1920c4c2fb6de8dfad03243c1ebbff52e4727c411",
+      "bytes": 453
+    },
+    "LICENSE": {
+      "sha256": "84d442cd46c73eb58106c3a767f0351c6cc559a1de6852b71aa0683934a1f1b7",
+      "bytes": 1095
+    },
+    "README.md": {
+      "sha256": "ec51a5a8f287d7f7c6cfee085b561e6a7af8c83f51a7c3cc98502eb07c035d29",
+      "bytes": 5476
+    },
+    "scripts/install-macos.sh": {
+      "sha256": "db553e511a085258677cd76bfa0d6e264029de8b86e2ae787d0fa71e508da175",
+      "bytes": 3840
+    },
+    "WoWTranslate.ini.example": {
+      "sha256": "a1597d4964f259bcc2589f7d0534fff2f6eafc78f8fd4ead513dd8c9bdd68a05",
+      "bytes": 1581
+    }
+  },
+  "symlinks": {},
+  "releases": {
+    "377155744": {
+      "tag": "v1.5",
+      "folder": "v1.5--377155744",
+      "assets": {
+        "530831913": {
+          "sha256": "4ad4492951d48c07e3816647df3480d5b57fa338aae500d28c7b19dbc36c7114",
+          "bytes": 277636,
+          "id": "530831913",
+          "name": "WowTranslatev1.3-O.zip",
+          "url": "https://github.com/jhinzuo2/wow-translate/releases/download/v1.5/WowTranslatev1.3-O.zip",
+          "path": "releases/v1.5--377155744/assets/WowTranslatev1.3-O.zip"
+        }
+      },
+      "source": {
+        "sha256": "ddd56f6217222f2e9360fe8270a7babf272d45e680cf7d748748a174861f824d",
+        "bytes": 461280,
+        "path": "releases/v1.5--377155744/upstream-source.tar.gz",
+        "url": "https://api.github.com/repos/jhinzuo2/wow-translate/tarball/v1.5"
+      }
+    }
+  }
+}

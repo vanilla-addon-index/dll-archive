@@ -1,0 +1,858 @@
+# Backporting inline `|T…|t` texture escape sequences to 1.12
+
+The 1.12 text engine shows `|Tpath:height:width:…|t` markup as literal text.
+This project makes it draw the icon inline in FontStrings, chat, and tooltips —
+the way 4.3.4 and later clients do. The feature is complete and shipped
+([src/text/InlineTexture.cpp](../src/text/InlineTexture.cpp),
+[src/text/InlineTexturePool.cpp](../src/text/InlineTexturePool.cpp)).
+
+This file is the reverse-engineering map. **Current design** below states what
+ships today. Everything from **Goal & spec** down is the historical RE trail —
+the 4.3.4 study, the 1.12 injection map, and the bring-up plan. It is kept for
+the addresses and the reasoning, not as a description of the current code.
+
+## Current design (shipped)
+
+Each icon renders as an **engine-managed region** (a pooled `CSimpleTexture`)
+anchored to its owning FontString. The engine draws the region every frame and
+moves it with its line, so texture residency and scroll tracking are correct by
+construction. (A raw-GxU-quad renderer existed during bring-up and was removed
+in `56c2670`; its RE is the "REMOVED" section below.)
+
+The DLL hooks the engine's own text pipeline — no companion addon:
+
+- **Positioning** — a co-hook on the glyph emitter `FUN_005ccbe0` records each
+  icon at its pen position and delegates the plain text runs to the engine
+  (segmented delegation, below). The pen read-back needed a fix: the engine's
+  pen is lazy and omits the last glyph's own advance, so a coin sat on its
+  digits; the emitter now adds the true terminal advance from the engine's own
+  glyph-advance helpers (`550cf5e`).
+- **Rendering** — 4.3.4's `CSimpleEmbeddedTexture` model. Each icon is a
+  pooled `CSimpleTexture` with no frame, anchored to its fontstring: it is in
+  no draw layer, so the fontstring draws it. The fontstring's batch call
+  (`FUN_FONTSTRING_EMIT` `0x00772E50`, 4.3.4's `CSimpleFontString::Draw` →
+  `QueueTextures`) adds the icons right after its text, and only when the text
+  went in, so an icon shows exactly when its line does — hidden, faded out, off
+  screen, or scrolled off the top of a chat frame — in the same frame.
+- **No one-frame lag** — 4.3.4 sets the embedded textures up in `UpdateString`,
+  right after it builds the string. The `RebuildString` co-hook does the same:
+  a rebuild drops the fontstring's icons, lays the new node out now (the
+  ensure-built call the paint makes) and applies the placements at once, so a
+  string's icons draw with its text wherever it was rebuilt (a chat line laid
+  out by its frame, a tooltip line, a rect change). The paint-pass co-hook
+  `FUN_005c8fe0` still walks the icon records and queues them to
+  `Text::InlineTexturePool` for the next frame tick: the backstop for a string
+  whose placement can't be computed at rebuild time.
+- **Placement coordinates** — text pen space IS render-target pixels. The
+  engine stores node positions NORMALIZED (fs-local anchor ÷
+  `[0x832A44]`/`[0x832A48]` per axis, `FUN_0041ade0`), and the origin finalize
+  `FUN_005cdf70` multiplies by the integer raster dimensions
+  `[0xC2B9A4]`/`[0xC2B9A0]` (rounded, with the justify shift and vertical
+  align folded in). So the flush converts pen → fs-relative anchor with
+  `K = raster ÷ anchorExtent`, **per axis**, from those four live globals — no
+  calibration, no cache, correct at every resolution and UI scale (`968335d`).
+  Two earlier forms both failed: an empirical K (`origin ÷ rect edge`) that
+  chat could never self-derive (its rect edge sits near screen x = 0 and
+  failed the divide guard) and so rode a global cache seeded by whichever
+  fontstring derived first — right only at the layout it was calibrated on;
+  then a closed form built from the SetPoint px factor, which used the wrong
+  global pair. Full derivation chain at `VAR_TEXT_RASTER_X/Y` in `Offsets.h`.
+- **Fade / parent alpha** — icons fade with their line (the pool mirrors the
+  fs's folded colour alpha per frame, `3ca3b7e`), and segmented GLYPHS do too:
+  a bit-3 (standalone FontString) node's baked per-glyph colours never re-bake
+  on an alpha change (the engine's colour-change invalidate `FUN_005ccb40`
+  skips bit-3 nodes), so the flush mirrors the node's live alpha byte
+  (node+0x2c — SetTextColor alpha × frame-chain alpha, kept folded by the
+  engine) into every baked colour, change-detected per page (`bd14a93`). An
+  earlier `0xFF` alpha force at emit was a misdiagnosis of a bubble that built
+  while faded out; it froze icon-line text fully opaque while everything
+  around it faded.
+- **Size, spacing and alignment are 4.3.4's rules** (decompiled source in
+  `C:\Git\wowdecomp15595`; 3.3.5 has the same). See "Icon geometry" below.
+  Every hand-tuned constant this module once carried (a 0.18 × font lead/trail
+  pad, a 0.6 × font vertical centre, a −1px region nudge, a size multiplier)
+  is gone.
+- **Measure** — three cold FontString-level co-hooks make measure match the
+  drawn result: width (`FUN_00772890`), height (`FUN_007729B0`), and wrap
+  (`FUN_005C7260`). `GetStringWidth`, `fontstring:GetStringHeight`, wrap
+  breaks, and line height all count the icon.
+- **Tall icons** — a line holding an icon taller than the font moves itself
+  and the lines after it down by the overflow, as 4.3.4 does, so it does not
+  overlap its neighbors; the icon aligns by the line's vertical justification
+  (below). A hyperlink
+  that contains a tall icon is hoverable across the whole icon
+  (`49934b0`, `b9d0705`).
+- **Chat fade** — icons fade in lockstep with their chat line (`3ca3b7e`).
+- **Edit boxes** — render the icons in their text, as 4.3.4 does; the caret,
+  the mouse and the arrow keys treat an icon as one character, Ctrl+C
+  drops icons (4.3.4's 0x1500 strip mask), and a multi-line box's caret,
+  selection and click rows follow the lines a tall icon moves (below;
+  4.3.4's own rows do not). Typed markup stays literal by the engine's own
+  input escape (below).
+- **Payload** — the full
+  `|Tpath:height:width:offsetX:offsetY:texW:texH:left:right:top:bottom:r:g:b|t`:
+  size, pen offset, sprite-sheet crop, and vertex tint. BLP and uncompressed
+  TGA.
+- **Anti-spoof** — chat neutralizes a player-injected `|T` the way the edit
+  box neutralizes a typed one (the `|` is doubled).
+- **Raid markers** — `{rt1}`/`{skull}`/… become icons in the CHAT_MSG text and,
+  separately, in the speech bubble after its escape strip (4.3.4's
+  `CGChatBubbleFrame::ParseRaidIcons`).
+
+Every fs-level measure path now counts icons: width (`FUN_00772890`), height
+(`FUN_007729B0`), wrap (`FUN_005C7260`), and the substring measure
+(`FUN_00772AE0` — an earlier note claimed nothing consumed it; its xrefs
+refute that: the GameTooltip auto-size measures each WRAPPED SEGMENT of a
+wrap-enabled line through it, so icon-bearing wrapped tooltip lines
+undersized their tooltip until it was hooked too). The Lua control surface is
+one toggle: `_classicapi_InlineTexEnable` (the whole-feature kill switch; the
+SEH latch trips it on a fault). The
+bring-up tune / stat / probe functions were removed (`5e5677b`, `6800a9a`).
+
+## REMOVED (bring-up record) — the raw-GxU-quad rendering primitive
+
+This was the FIRST renderer: each icon drawn as a raw textured quad through the
+text VB path. It shipped, then was removed in `56c2670` for the engine-region
+model (regions are resident by construction; the quad path needed the texture-
+residency machinery below and still flickered on VRAM pressure — see
+`docs/InlineTextureResidency.md`). This section is the address record for the
+removed code, not a description of the current renderer. `LoadTextureByPath`,
+`DrawTexturedQuad`, and the GxU device offsets it names are gone from
+`Offsets.h`; the values live here and in git history.
+
+An arbitrary texture draws through the text VB path as a coloured, alpha-blended
+quad. The end-to-end recipe:
+
+1. **Load by path** — `LoadTextureByPath` replicates `FUN_00770200`'s load: build
+   flags via `FUN_0058a980(&flags, DAT_00878cf0, 0,0, 0,0,0, 1, 0)`, then
+   `FUN_00449d90(path, &desc, flags, 0, 1)` with a byte-identical 5-dword desc
+   (`{PTR_FUN_007ffa10, 8, &self8, (&self8)|1, 0}`). Returns the **HTEXTURE**
+   (0x15c-byte struct; path@+0xc, flags@+0x110, refcount@+4).
+2. **THE KEY — residency + correct bind via `FUN_0044acf0(HTEXTURE, 1, 0)`.**
+   This is the engine's own "get renderable texture" call (what the widget
+   render uses every frame). It returns the bindable **CGxTexture** at
+   `[HTEXTURE+0x140]` and, with force=1, drives the streaming load
+   (`FUN_0044ad50` submits/prioritises it via `[HTEXTURE+0x138]`). **Calling it
+   every frame is the live reference that makes the texture resident** — no
+   hidden widget, no manual BLP decode. This was the entire multi-session
+   blocker: WoW streams textures and only loads ones a live frame references; a
+   standalone `FUN_00449d90` texture never loads on its own. Binding the raw
+   HTEXTURE is `SetTexture([HTEXTURE+0x48]=0)` = a **white** quad; the D3D
+   handle lives on the CGxTexture (`[CGxTexture+0x48]`), not the HTEXTURE.
+   Dead ends that wasted time: manually invoking the decode callback
+   `FUN_0044a260` (fills `[+0x120]` but not the bindable `+0x140`, and faults);
+   binding `[HTEXTURE+0x48]` or `[HTEXTURE+0x120]` (both wrong offsets); forcing
+   the streamable flag `tex[0x3c]|=0x80` (crashes in d3d9 — the bind's stream-in
+   vfunc corrupts the resource).
+3. **Bind** — `FUN_00589e80(0x17, cgxTex)` (selector 0x17 = text texture stage).
+4. **Colour** — the font stage's default stage-0 COLOROP is already MODULATE, so
+   `texture.rgb × diffuse(white)` = the icon's true colours; texture alpha works
+   too. No colorop override is needed for a plain white vertex. (If a tint is
+   wanted later: COLOROP is D3DTSS internal state `0x42` via `FUN_005a2570`; the
+   engine leaves COLORARG1 at the D3D default = TEXTURE. Do NOT poke it directly
+   mid-draw — it leaks `MODULATE` to the whole UI when a fault skips the restore.
+   Use the engine's selector `0x1f` (value→COLOROP/ALPHAOP preset table at
+   `DAT_0080a25c`/`DAT_0080a274`; value 1 = MODULATE/MODULATE).)
+5. **Quad** — lock the shared dynamic VB `FUN_0058a140(0, 0x18, 0x800)`, get the
+   write ptr `FUN_0058a080`, write **4 verts** of the format
+   `{float x,y,z; u32 colorBGRA; float u,v}` (stride 0x18) in corner order
+   **TL, TR, BL, BR** (matches the shared quad index buffer `{0,1,2, 2,1,3}` and
+   the device cull winding), submit `FUN_005c8f40(&handle, 4)`, unlock
+   `FUN_0058a0a0(handle, 0)`.
+6. **Where** — co-hook the text paint pass `FUN_005c8fe0` and draw after the
+   original glyph flush (device is in the correct textured-UI state there).
+   Coordinate space is **per-layout pixels, y-down**; glyph verts live at small
+   local coords (a probed glyph was at ~(9,33)–(17,50)). Draw coords must be
+   within the layout's rendered area (a fixed (100,100) test lands in chat).
+
+The build-side gotcha: the D3D device (default backend, `FUN_0058dd70`) is
+actually **OpenGL** (`glMaterialfv`/`glFogi`) — the D3D backend is `FUN_0058ba70`
+(`FUN_00598ce0`, vtable `PTR_FUN_00809ef8`); its state applier is `vtable[1]` =
+`FUN_005a2f00`, which maps engine selectors to D3D via `FUN_005a2570`
+(SetRenderState `+0xe4`, SetTextureStageState `+0x10c`, SetSamplerState `+0x114`,
+SetTexture `+0x104`). Selector map (shared across GL/D3D backends): 7=blend,
+0x10=depthtest, 0x14=cullface, 0x17-0x1e=texture bind (8 units),
+0x1f-0x26=colorop/alphaop preset (unit 0-7).
+
+## SOLVED — positioning, measure/wrap, edit boxes, texcoords
+
+The primitive draws at arbitrary coords; the rest is knowing WHERE and WHEN.
+Everything is in [src/text/InlineTexture.cpp](../src/text/InlineTexture.cpp);
+offsets under the "Inline texture escape" + positioning blocks in
+[Offsets.h](../src/Offsets.h).
+
+### The text render hierarchy (verified)
+
+```
+frame → renderNode [frame+0x118] → group [renderNode+0x18]
+      → node [group+0x18]        → line [node+0x24]  ← the emitter's `this`
+```
+
+- Main UI render `FUN_007657d0(DAT_00cf0bd8)` walks strata → frames, calls
+  `FUN_0076fb00(renderNode)` per frame's render node.
+- `FUN_0076fb00` draws the frame's Texture regions then `FUN_005c1ef0(group)` →
+  `FUN_005c8b70(group)` → `FUN_005c8fe0(node)` per node.
+- `FUN_005c8fe0(node)` = the **paint pass** we co-hook: ensures each line built
+  (`FUN_005cd6a0` → `FUN_005cdc20` → the emitter), then binds each font page and
+  copies the line's per-page glyph batches into the dynamic VB, translated by the
+  line origin `[line+0x70]/[+0x74]`.
+- The **emitter** `FUN_005ccbe0(line, text, len, colorState, penXYZ, pageMask,
+  linkState)` builds one wrapped line's glyph quads. `this` (the "line"/node the
+  icon list keys on) owns batches `[+0xa0+page*4]` and origin `[+0x70]`. **Note
+  the render node the emitter sees has NO back-pointer up to the frame.**
+
+### Positioning — segmented delegation (co-hook the emitter)
+
+We do NOT reimplement the emitter's intricate glyph vertex math. Instead, in the
+`FUN_005ccbe0` co-hook, for a line containing an inline texture:
+
+1. Split the line at icon boundaries. Render each **plain run** by calling the
+   ORIGINAL emitter on just that substring — the engine still draws every glyph.
+2. Thread the pen across runs: on return the emitter leaves the final node-local
+   pen x in **`linkState[4]`**, stored with `FSTP dword` — a **FLOAT bit
+   pattern**, not an int. Read it as a float (`*(float*)&linkState[4]`); an
+   int-cast yields garbage (this bug hid the icon off-screen and dropped the
+   trailing text).
+3. Record an `IconRecord` at the pen (node-local `x`,`y`) into `g_nodeIcons[line]`
+   and advance the pen by the icon width. No draw runs during the build — icons
+   are recorded and **flushed** in the `FUN_005c8fe0` paint co-hook, which
+   computes each icon's pen-space position (line origin `[line+0x70]/[+0x74]`
+   maps node-local → pen, the same translate the glyph copy `FUN_005c8710`
+   applies), converts pen → anchor with the per-axis K (see **Placement
+   coordinates** in Current design), and queues it to `Text::InlineTexturePool`
+   as a placement RELATIVE TO THE OWNING FONTSTRING. The pool applies
+   placements on the next frame tick.
+4. Restore `penXYZ[0]` on exit (the original never writes it; the draw builder
+   does NOT reset it between left-justified lines, so leaving it mutated
+   cascade-shifts every following line).
+
+### The span rule — `|T…|t` only, `||` is always a literal pipe
+
+One scanner, `IconSpanAt`, decides what a span is, with 4.3.4's
+`GxuDetermineQuotedCode` CODE_TEXTURESTART rule: after `|T` (or `|A`), the
+FIRST `|` must be followed by `t` (`a`), and an empty `|T|t` is literal.
+Anything else is not a span and draws as text. Every walker steps over `||`
+as a pair, because `||` is the escaped pipe in both engines.
+
+That is what keeps typed markup literal everywhere — chat display, edit
+boxes, macros: the edit box stores a typed `|` as `||` (`0x77c254`; Paste
+goes through the same `InsertChar`, as in 4.3.4), so a typed `|Tpath|t` is
+`||Tpath||t` in every buffer it reaches.
+
+(An earlier version matched a "doubled" `||T…||t` form too, on the belief
+that the FontString sanitizer doubled unknown escapes. Stock 1.12 has no
+such sanitizer — not SetText `0x771d80`, its grammar pass `0x7716f0`,
+FitText `0x771ec0`, nor the edit box's RebuildLabel `0x77d4d0`. The `||T`
+seen in chat lines was typed text, and our own `{rt1}` expansion emitted it
+on purpose to survive the bubble's escape strip. Matching it turned every
+typed `|T` into an icon, which is why the edit box needed the suppression
+gates the span rule replaced.)
+
+### bit-3 batch-clear mode
+
+The emitter clears the line's page batches at its top only when node flag
+`[line+0x5c] & 0x08` is set (the FontString/static case). Calling the original
+per segment would then wipe all but the last run. Handled by doing the clear
+ONCE per build (a `len==0` original call with bit 3 still set), then clearing
+bit 3 so the per-segment calls APPEND, restoring flags on exit. Bit 5 (shadow)
+isn't set for these nodes, so the only added work is a harmless colour append.
+
+Clearing bit 3 has one more consequence: it switches the engine from the
+UNIFORM colour path (node+0x2c, consulted live at every paint) to baked
+PER-GLYPH colours the paint uses verbatim. The build-time alpha in colorState
+is already correct (the engine folds SetTextColor alpha × frame-chain alpha
+into node+0x2c on every alpha change), but the baked copies never refresh —
+the flush's alpha mirror keeps them tracking later fades. See **Fade / parent
+alpha** in Current design.
+
+### Multi-line / multi-icon accumulation
+
+The draw builder walks a node's wrapped lines by calling the emitter repeatedly
+on the SAME node, advancing the text pointer. So the icon list is cleared ONCE
+per build — on the first wrapped line, detected by `text == [node+0x48]` (the
+node's text start) — and icons ACCUMULATE across lines. Multiple icons per line
+fall out of the segmentation loop naturally.
+
+### Icon geometry — 4.3.4's rules, ported
+
+**Size** (`ParseEmbeddedTexture`, 0x00617BA0 in 4.3.4). A WRITTEN size is not
+pixels: it multiplies by `fontPx / (14 × ddcWidthScale)`, the reduction of the
+engine's `windowPx / (aspectComp × 1024) × fontHeight / NDCToDDCWidth(14 /
+(aspectComp × 1024))` (the call list of the real apwow.exe function confirms
+`CoordinateGetAspectCompensation` + `NDCToDDCWidth`). So sizes are relative to
+a 14-unit font and follow the text's size, UI scale and resolution. 1.12 holds
+ddcWidthScale in the same Coordinate static (`VAR_COORD_DDC_WIDTH_SCALE`,
+0x00832A44 — the four statics sit at 0x00832A40 with 4.3.4's exact initial
+values). On top of that, every size multiplies by the fontstring's layout
+scale (`fs+0x7C`) — 3.3.5's `CGxString::m_scale`, applied again although the
+font height already includes it. 4.3.4 dropped this factor; 3.3.5's was kept
+after a side-by-side look in game. Every wrap gets the same scale, as 4.3.4
+passes `m_layoutScale` to every `CalcWrapPoint`: the draw builder through the
+node's owner, and the three fs-level callers (the height getter, the
+display-text truncation inside the rebuild, the break array) through a
+fontstring scope their co-hooks set (`WrapLayoutScale`). Size cases: height ≤ 0 → font height; width absent → the height;
+width > 0 → width × scale, or a RATIO of the height when the height came from
+the font (`:0:2` is twice as wide); width ≤ 0 → the font height. Offsets are
+screen pixels and move only the drawn texture (+x right, +y UP), never the
+layout. `ResolveIconSize` is the one implementation.
+
+**Spacing** (`InitializeTextLine`, case CODE_TEXTURESTART). An icon starts at
+the previous glyph's INK edge — bearing + cell width, clamped to ≥ 0 and
+capped at the glyph's own advance (`FUN_TEXT_GLYPH_BASE_ADVANCE`) — plus
+the face's outline ink (4 × scale thick / 2 × scale thin, `face+0x180` bits 3 /
+0; the same constants the 1.12 emitter grows its line by); with no glyph
+since the line start or the last icon it starts at the pen, no gap. The next
+glyph starts at `floor(iconRight + 0.5)` with no kerning against the icon.
+1.12's emitter doesn't report its last glyph's position (its pen is lazy), so
+`drawRun` replays the run's placements with the emitter's own helpers — the
+pair advance, the snap rounding (`FADD 0.5; __ftol`), `FUN_TEXT_GLYPH_DESC`
+(`CGxFont::NewCodeDesc`) and `FUN_TEXT_GLYPH_BEARING` — and floors the cell
+width in snap mode exactly as the emitter draws the quad. Measures count an
+icon as its width plus the outline gap when a glyph precedes it
+(`SumIconAdvances`); the engine measures width alone, but counting the gap
+keeps measure and render in step for tooltips and right-justified text. The
+advance cap is ClassicAPI's: every measure counts the preceding glyph by its
+advance, so an ink edge past the advance (a glyph cell wider than its step —
+seen on "[" in chat) pushed each following icon and the rest of the line past
+the measured width, and wrapped chat lines overran the frame edge.
+
+**Vertical** (same case + `CreateGeometry`). By the node's vertical justify
+(`OFF_TEXT_NODE_JUSTIFY_V`, node+0x50: 0 top / 1 middle / 2 bottom — the
+branch of the origin finalize `FUN_005cdf70`): top → the icon's top on the line
+top; bottom → its bottom on the baseline; middle → centred on the font height
+below the line top. The baseline is `penXYZ[1]` and the line top is the draw
+builder's `linkState[1]` (baseline + font height + spacing), 4.3.4's
+m_baseLineHeight / m_lineHeight.
+
+**Tall lines** (`CGxString::InitializeText` + `InitializeViewTranslation` +
+`GxuFontGetWrappedTextHeight`), mirrored step for step:
+- A line whose tallest icon reaches past the font height moves down by that
+  overflow, and every later line with it: all of it before the line for
+  bottom justify, all after for top, `floor(overflow / 2)` before and after
+  for middle. The emitter co-hook moves the builder's pen y and link band
+  (`penXYZ[1]` = its `local_48`, `linkState[1]/[3]` = its `local_74[0]/[2]`),
+  which the builder lowers per line, so the move carries forward.
+- The node's summed overflow (`m_extraLineHeight`) joins the text height the
+  origin finalize justifies by: the `FUN_TEXT_NODE_FINALIZE_ORIGIN` co-hook
+  raises the node position y (`+0x24`) by half / all of it for middle /
+  bottom justify for the call, so the engine's own math and rounding produce
+  4.3.4's origin. It also runs on every reposition (`FUN_005ccb10`).
+- `GetStringHeight` adds the same per-line overflows, summed. The wrap
+  stepper reports each line's overflow during the engine's own height pass,
+  so the lines are the engine's breaks; the sum is kept per fontstring while
+  the engine serves its cached height.
+A link's hit band grows toward where its icon reaches (below for top, above
+for bottom, half each way for middle); 4.3.4 keeps the band at the text.
+
+### Measure / wrap — co-hook the tokenizer
+
+Line wrap is decided by the measure/fit functions (`FUN_005c6940`, `FUN_005c7470`
+via `FUN_005c7260`), which all share the `|`-tokenizer `FUN_005c2810`. Left
+alone, they count the hidden path text and wrap early. Fix: co-hook the
+tokenizer — when it's at an inline-texture span, consume the whole span as ONE
+near-zero-width token so every measure/fit caller ignores the path characters.
+The emitter detects icons independently (it scans the raw bytes), so the draw
+path is unaffected.
+
+### Measure width: FIXED at the fs-level choke (`GetStringWidth` counts icons)
+
+The tokenizer reports an icon span as a **near-zero-width** token, so at the
+gxu loop level every measure caller counts the icon as ~0 pixels wide. (The
+emitter still reserves the render width, so text after an icon positions
+correctly.) An earlier version of this doc concluded that the gap could not
+be closed cleanly, because the gxu engine has **no single cold choke**:
+
+- `FUN_005c6940` (width), `FUN_005c7470`/`FUN_005c7260` (wrap), and the
+  hit-test loop each tokenize and accrue width independently.
+- The token contract has no width field.
+- The per-glyph helpers (`FUN_005cabd0`/`FUN_005c6b70`) are the hottest text
+  functions in the engine.
+
+That analysis was right about the gxu level. The choke sits ONE LEVEL UP:
+**`FUN_00772890` = `CSimpleFontString::GetStringWidthInternal`**
+(`Offsets::FUN_FONTSTRING_STRING_WIDTH`) is cold, MinHook-safe, and the single
+funnel for exactly 4 callers:
+
+- `Script_GetStringWidth` (0x0079E510)
+- the GameTooltip auto-size (0x00530640)
+- the editbox selection-piece placer (0x0077DE70, a whole last line's width)
+- the layout effective-width vmethod (`FUN_00772930` = fs+0x24 vtbl +0x1C,
+  which feeds auto-width fontstring layout)
+
+It lazily computes into the `fs+0xFC` cache (anchor units, 0.0 sentinel) via
+the measure core `FUN_0044D670`, then divides the pen-space result by
+`fs+0x7C`.
+
+The co-hook lives in `src/text/InlineTexture.cpp`. It calls the original,
+then adds the icons' advances (`SumIconAdvances`) whenever the feature is
+on — the same condition the tokenizer hook intercepts on, so measure and
+render never disagree.
+
+The icon sum is computed in TRUE PEN PX — the exact numbers the emitter
+reserves — and bridged into the getter's return space by the font height
+known in both spaces: `sumPen × (fontHInt / fontHPen)`. `ResolveFsPenFont`
+replicates the render chain: `fontHPen = round((fontHInt × fs+0x7C, floored
+at [0x801628]/rasterY) × rasterY)` (the rebuild's node fontSize + the node
+ctor's min clamp + the emitter's own height helper), and the outline ink
+resolves through `face = [[fs+0xE0]+0x20]` — the same object the node stores
+at +0x44. fs-built nodes are always in snap mode (no fs-flag maps to node
+bit 7), so the snap-truncated advances are exact. The per-icon advance comes
+from `IconAdvancePen`, the **same helper** the emitter reserves with — so the
+measured width matches the rendered width by construction, outline ink and
+pixel snapping included. (An earlier bridge used the SetPoint push factor
+`div×1024/mul ≈ 1468` as the intermediate — the units cancelled for `:0`
+icons, but it couldn't express the truncation or the ink.)
+
+Unit trap (hit on first flight): escape sizes are UI PIXELS. Do NOT divide
+the icon sum by `fs+0x7C` — that field is the layout UI *scale* (~0.68–1.0).
+The original's own `out / fs+0x7C` applies to a value the measure core
+already ran through the `FUN_0041AD80` gxu→internal converter, not to raw
+pixels. The `/0x7C` version measured a 16px icon as +44k px.
+
+The hook NEVER writes the `fs+0xFC` cache: the original can serve the cached
+value, so the icon sum is re-derived and re-added per call (idempotent).
+
+The same hook also fixes two layout consumers for free: tooltips auto-size
+wide enough for icon-bearing lines, and auto-width fontstrings lay out at
+their true rendered width.
+
+### Wrap: FIXED at the shared stepper (`FUN_TEXT_WRAP_STEPPER` = 0x005C7260)
+
+Wrap decisions also measured icons as ~0, so a chat line with prefix icons
+broke as if the icons were not there and the emitter's real advances ran past
+the right edge. The choke is the wrap-stepper dispatcher `FUN_005C7260`: it
+lays out one wrapped line per call, and its exactly 4 callers are EVERY wrap
+consumer — the draw builder `FUN_005CDC20` (render breaks), the height
+measure `FUN_005C2070`, the chars-that-fit counter `FUN_005C21C0` (ellipsis),
+and the break-array computer `FUN_005C2430` (behind `FUN_00772B60`).
+
+The co-hook shrinks the `wrapWidth` argument by a **minimal feasible
+shrink** whenever the feature is on. The stepper reports each
+probe's measured (icons-at-zero) line width in `outWidth`, which gives a
+direct feasibility check: the line renders inside the frame iff its icons
+fit in the shrink plus the spare the break left (`iconSum ≤ s + (probeW −
+outWidth)`). The hook probes sandboxed (local out-params plus a COPY of the
+`p10` in/out state byte, so the caller's first-line state is not consumed):
+s = 0 first (feasible → no shrink at all — the common short-message case),
+escalate by the measured deficit when infeasible, bisect down after the
+first feasible hit; ≤8 probes, and with no feasible hit the last escalation
+target wins (wraps early rather than overflowing). The feasibility check
+carries a HALF-GLYPH tolerance: an auto-width fontstring (single anchor, no
+width — e.g. pfUI's addon-list labels) wraps at the icon-inclusive string
+width our GetStringWidth hook feeds the effective-width vmethod, so its line
+fits with exactly zero slack, and cross-computation drift between the two
+hooks' unit chains (plus OUTLINE extras and the trailing-glyph quirk) read
+"fits exactly" as "1px over" — shrinking a zero-slack line forces a wrap
+that had no business existing. Genuine icon overflow is ≥ a full icon, so
+half a glyph separates drift from real overflow. `outBreak` and
+`outNext − text` are byte counts; `outBreak == len` means the whole text
+fit. Two rejected earlier schemes, for the record: a naive whole-remaining-
+text sum shredded an 8-icon line to one word per line, and a fixed-point
+iteration on the icon count oscillated (a ~55-byte zero-width escape makes
+the break↔icon-count coupling discontinuous — no fixed point exists).
+`text` always points at the REMAINING text, so a continuation line whose
+icons are behind it gets sum = 0. Because all four consumers share the hook,
+render breaks, `GetStringHeight`, truncation, and break arrays shift
+together. (A `_classicapi_InlineTexWrap(n)` ring dumped the last 8
+icon-bearing calls during bring-up; removed with the other diagnostics in
+`5e5677b`.)
+
+Unit trap #2 (hit TWICE): the stepper's inputs are gxu-normalized, PER AXIS —
+fontH is normalized-Y (× rasterY = pen px) and wrapWidth/outWidth are
+normalized-X (× rasterX = pen px). Both caller flavors land there: the draw
+builder passes node+0x1C/+0x3C (normalized at block creation), and the
+fs-level callers (the path chat wraps through) x-normalize their widths
+inside `FUN_0044d670` before gxu. First flight subtracted raw pixels and
+annihilated the small normalized widths (2-glyph chat fragments). The second
+converted with `fontH / fontHPx` — a Y-AXIS factor applied to an X-axis
+width — overshrinking the budget by the render aspect (×1.33 at 4:3, ×2.37
+at 2560×1080): icon-bearing chat lines wrapped a word or two early, worse per
+icon and per aspect. The correct pen-x → width-units factor is `1/rasterX`,
+and the glyph-relative tolerances use `fontHPx/rasterX` so "half a glyph"
+means an actual glyph width.
+
+**Chat hyperlink hover over inline icons works (verified).** An emote wrapped in a
+hyperlink — `|Htel:name|h|T…|t|h`, the TwitchEmotes pattern — pops its tooltip when
+you hover the *icon*, not just adjacent text. The hover region is NOT re-measured
+on hover: the engine records each hyperlink's screen rect at layout time into a
+`GXUFONTHYPERLINKINFO` array (32-byte entries: rect + link data) via `FUN_005cd310`,
+called from the draw builder `FUN_005cdc20` — the same layout pass that runs the
+line through our co-hooked tokenizer (`FUN_005c2810`) and wrap-stepper
+(`FUN_005c7260`). So the recorded rect rides the same icon-aware position
+accounting the wrap fix installs; the icon lands inside the hover region for free,
+and hovering it fires the frame's `OnHyperlinkEnter`. This is a consequence of the
+wrap fix, not a separate feature. (`FUN_005cd310` itself, from benilla
+font/string "Hyperlink regions", difftested: it multiplies the rect's y fields
+`+0x08`/`+0x10` by 1/H and its x fields `+0x0c`/`+0x14` by 1/W and appends the
+32-byte record to the array at `+0x7c`. Ghidra's own decompile of the call
+args is mangled.)
+
+**Still icon-blind (accepted residuals):**
+
+- Sub-pixel only for an icon after a glyph: layout starts it at that glyph's
+  INK edge while measures count the glyph's advance, so the two differ by the
+  glyph's right bearing — the same discrepancy 4.3.4 has between its own
+  layout and measure loops. A string-final icon measures exactly (the gxu
+  width loop ends on the last glyph's ink, which is where the icon starts).
+  What remains is the icon region's ±0.5px placement rounding and the base
+  loop's ~0 contribution for the payload-0 icon token.
+- An fs whose `fs+0xFC` cache was filled while the feature was toggled
+  differently (`_classicapi_InlineTexEnable`) keeps its old base width until
+  the next `SetText`/font change re-dirties it. Debug-toggle-only.
+
+### Edit boxes — 4.3.4's model, no special case
+
+4.3.4's edit box renders `|T…|t` in its text: no frame code ever sets the
+FontString style bit 0x10000 that `ConvertStringFlags` maps to the gxu
+texture-off flag 0x1000. Its cursor treats the span as one markup token
+(`UpdateTextInfo` / `GetNumToLen`), and its `CopyToClipboard` strips with
+0x1500 — colours, links AND textures. Typed markup never renders because a
+typed `|` is stored as `||` (`CSimpleEditBox.cpp`, `ch == '|'`). 1.12 does
+the same input escape, so ClassicAPI's edit boxes need no special case:
+
+- **Render** — the label FontString (`RebuildLabel` `0x77d4d0`,
+  `SetText(buffer + scroll, 0)`, no pipe doubling) renders like any other,
+  and its regions parent to the edit box, so a ScrollFrame clips them.
+- **Cursor** — the class array (`0x77ba90`) tokenizes through our tokenizer
+  hook, so a span is one class-6 letter: Left/Right cross it in one step,
+  Backspace deletes it whole, and an insert can never land inside it.
+  Class 6 is also the safe class — a skip class (0/4) as the last token
+  hangs the step loop (benilla ui/editboxmarkup "Faults"). 4.3.4 joins an
+  icon with the following character into one step; ours is its own step.
+- **Caret x** — `FUN_0077DA80` measures the line through
+  `FUN_00772AE0`, whose co-hook adds the icons.
+- **Rows (multi-line)** — `PlaceCaret` (`0x77da80`), `PlaceSelectionPiece`
+  (`0x77de70`) and `GetIndexAtPoint` (`0x77d0d0`) step rows of one height
+  (font height + spacing, pixel-aligned), as 4.3.4's `UpdateVisibleCursor`,
+  `UpdateHighlightArea` and `ConvertCoordinateToIndex` do — while the render
+  moves a tall-icon line and every line after it down by the overflow
+  (`InitializeText`; the emitter co-hook) and the box grows to match (the
+  string-height co-hook). 4.3.4 has that fault too; `EditBox::IconRows`
+  (`src/editbox/IconRows.cpp`) gives each placer the render's move, from
+  `Text::InlineTexture::LineIconShift` over the box's own line table: the
+  click's y is moved onto the uniform row of the icon-aware row under it
+  before the engine maps it; a selection piece is re-anchored after the
+  engine placed it, with the engine's own x; the caret likewise, then
+  `OnCursorChanged` fired once with the moved y through
+  `FUN_FRAME_RUN_SCRIPT_VARIADIC` exactly as `PlaceCaret` fires it (its own
+  fire muted for the call by emptying the slot), so
+  `ScrollingEditBoxMixin:ScrollCursorIntoView` scrolls to the real caret.
+- **Click → cursor, single-line window** — `GetIndexAtPoint` (`0x77d0d0`),
+  `RebuildLabel` and `MeasureWindow` count characters with
+  `FUN_FONTSTRING_FIT_TEXT` (`0x772bc0` → `0x44d860` → `0x5c6c50`), whose
+  kernel counts an icon as one character of no width. Its co-hook mirrors
+  4.3.4's `GxuFontGetMaxCharsWithinWidth`: the run before each icon is fitted
+  by the original with the budget the earlier icons left, and an icon fits
+  when the icon-aware width through its end does.
+- **Ctrl+C** — `CopySelection` (`0x77e1d0`) pushes 0x500; patched to 4.3.4's
+  0x1500, and the `GxuStripControlCodes` (`0x5c2590`) co-hook honours 0x1000
+  by dropping spans and stray `|t`. Paste re-escapes every `|`
+  (`InsertChar` per character), as in 4.3.4.
+
+(History: before the span rule, every typed `|T` reached the emitter as a
+matching `||T`, so edit boxes were special-cased with three gates — node
+flag bit 6, a focused-buffer pointer test, and a content compare of the
+render line against the focused input — plus a re-entry bracket so the
+delegated raw layout did not draw blank. All removed. Node flag bit 6 is
+NON-SPACE-WRAP, not "editable"; the gate only worked because the macro
+editor sets it.)
+
+### Descriptor fields + the vertical flip
+
+`ParseIcon` handles the full positional payload
+`path:height:width:offsetX:offsetY:texW:texH:left:right:top:bottom:r:g:b`.
+Texcoords crop a sprite sheet to one cell: `u = left/texW, right/texW`,
+`v = top/texH, bottom/texH` — e.g. `UI-RaidTargetingIcons` is a 256×256 sheet,
+4×2 grid of 64×64, so marker N's cell is `256:256:<col*64>:<+64>:<row*64>:<+64>`.
+
+**Vertex colour (`r:g:b`, 0-255):** the last three positional fields tint the
+icon. They pack to `0xFFrrggbb` — the same `0xAARRGGBB` order the tokenizer's
+`|cAARRGGBB` colour path builds (verified from `FUN_005c2810`'s colour branch),
+so the value flows straight into the quad's vertex colour and the font stage's
+default MODULATE COLOROP multiplies `texture.rgb × tint`. White (`255:255:255`,
+the default) = untinted. Because parsing is positional, a tint needs all the
+preceding fields present; the `TintIcon` helper passes `0`s for width..bottom
+(texW/texH `0` disables the texcoord crop → full texture) so the colour lands in
+the trailing slots.
+
+**Texcoord order:** the region's 4-float texcoord setter
+(`FUN_SIMPLETEXTURE_SET_TEXCOORD`) takes the rect **Y-FIRST INTERLEAVED**
+(`{v0, u0, v1, u1}`), matching the engine's `{yA, left, yB, right}` rect
+convention — diagnosed in-game when `{u0,v0,u1,v1}` rendered a raid-mark crop as
+the wrong cell. v is top-down, same as the `|T` payload's top/bottom fields.
+(The removed quad path had the inverse concern: the OpenGL backend put v=0 at
+the bottom, so the quad mapped the TOP screen corners to v1 — kept here as the
+backend note.)
+
+### Build / deploy / test cadence
+
+- `set -o pipefail; cmake --build build --config Release 2>&1 | tail -5 && cp build/Release/ClassicAPI.dll "C:/WoW/Octo/dll/ClassicAPI.dll"`
+  — `pipefail` stops a failed build from deploying a stale DLL.
+- **The client must be fully EXITED to relink** (it loads a symlink to the
+  linker's output). DLL changes need a full restart, not `/reload`.
+- **The embedded `!!!ClassicAPI` addon is symlinked**, so Lua-only changes (the
+  `TextureTest()` harness in `Util/AddOnCompat.lua`) need only `/reload`.
+
+### Remaining / optional
+
+- **Measure width, height, wrap** — all DONE (the three fs-level co-hooks in
+  Current design). Vertex-colour tint (`:r:g:b`) — DONE. The bring-up
+  diagnostics (`_classicapi_InlineTexSuppress/Tune/Stats/ProbeFS/RegionCal/Wrap`
+  and the capture globals) were REMOVED (`5e5677b`); only
+  `_classicapi_InlineTexEnable` remains.
+- **Animated emotes** — no DLL work is needed: a TwitchEmotes-style animator
+  re-`SetText`s each line ~30fps and rewrites the `|T` texcoords to crop the
+  current film-strip frame. That is addon Lua. RLE-compressed TGAs do not
+  decode in 1.12 (uncompressed only) — convert with
+  `magick in.tga -compress none in.tga` (no `-orient`/`-flip`: the region
+  renderer's texcoord order shows the frame right-side-up).
+- **Still icon-blind** (accepted): the hyperlink hit-test past a tall icon
+  OUTSIDE the link on the same line. The substring measure `FUN_00772AE0` was
+  hooked once its real consumer surfaced (the tooltip auto-size measures
+  wrapped SEGMENTS with it).
+
+## Goal & spec
+
+Render the modern inline-texture escape (warcraft.wiki.gg/wiki/UI_escape_sequences#Textures):
+
+```
+|Tpath:height[:width[:offsetX:offsetY[:texWidth:texHeight:left:right:top:bottom[:rV:gV:bV]]]]|t
+```
+
+Atlas markup is also supported:
+
+```
+|A:atlasName:height:width[:offsetX:offsetY]|a
+```
+
+It shares every scanner, measure, wrap and placement stage with `|T` — only the
+payload parser differs. `ParseAtlasIcon` resolves the name through
+`Texture::Atlas` and fills the SAME `IconDesc`, because an atlas is exactly the
+"path + normalized sub-rect" that struct already carries for a `|T` span with
+texcoords. A `height`/`width` of `0` resolves to the atlas's own pixel size at
+PARSE time (not the line font height `|T` falls back to), which is what keeps the
+rest of the pipeline marker-agnostic. Tiling atlases draw one quad, so
+`tilesHorizontally` / `tilesVertically` are not honored here.
+
+Adding any further marker means touching `IconStartLen`, `FindIconClose`,
+`InlineSpanLen`, the ghost guard in `FlushLayout` — and, mandatory,
+`chat/IconFilter.cpp`, or the marker becomes a chat-spoof vector.
+
+FileDataID paths are Legion+ — 1.12 resolves texture PATH strings only.
+
+## Confirmed: 1.12 has ZERO inline-texture support
+
+In-game test on the target client — all of these render as literal text, no
+icon:
+
+```
+|TInterface\Icons\INV_Misc_Coin_01:16|t
+|TInterface\Icons\INV_Misc_Coin_01:16:16|t
+|TInterface\Icons\INV_Misc_Coin_01:16:16:0:0|t
+```
+
+Root cause (see 1.12 map below): the shared escape tokenizer has no `T`/`t`
+case, so `|T` falls through to "literal `|` + ordinary glyphs".
+
+## Reference: 4.3.4 (`C:\WoW\Proudmoore\apwow.exe`, build 15595)
+
+4.3.4's text pipeline is a shared `|`-tokenizer feeding per-purpose loops that
+`switch` on the returned token type. It DOES support `|T`.
+
+- **Tokenizer `FUN_00613980`** — reads one token, returns a type code, bytes
+  consumed (`*param2`), payload char (`*param5`). `|`-switch token types:
+  `1`=color(`|c`+8 hex), `2`=reset(`|r`), `3`=break(`|n`/newline), `4`=`||`,
+  `5`=`|H`, `6`=`|h`, **`7`=texture(`|T`…`|t`)**, `8`=`|t`, `9`/`10`=`|K`/`|k`
+  callback, `0xb`/`0xc`=`|W`/`|w`, `0`=ordinary glyph. The `T` case scans
+  forward to the closing `|t` and returns 7 with the whole span's byte length.
+- **Field parser `FUN_00617ba0(tokenStart, &desc, size)`** — splits the `|T`
+  payload on `:` (helpers: `FUN_0040fa50`=strchr, `FUN_004b3d00`=atof,
+  `FUN_004b3480`=atoi) into a **0x40-byte descriptor**:
+
+  | off | field |
+  |----|-------|
+  | `+0x10`/`+0x14` | path ptr / length (up to first `:`) |
+  | `+0x18` | height (font-scaled) — required |
+  | `+0x1C` | width (defaults to height) |
+  | `+0x20`/`+0x24` | offsetX / offsetY |
+  | `+0x28`–`+0x34` | 4 normalized texcoords (texel ÷ texW/texH) |
+  | `+0x3C` | hasTexCoords flag |
+  | `+0x38`–`+0x3B` | vertex B/G/R/A |
+  | `+0x3D` | hasColor flag |
+
+- **Measure loop `FUN_00618430`** — walks tokens; `case 7` calls
+  `FUN_00617ba0` and adds the texture width to the pen.
+- **Draw emitter `FUN_0061ea10`** (analog of 1.12 `FUN_005ccbe0`) — its
+  `case 7` is the texture draw:
+  1. `FUN_00617ba0(tokenStart, &desc)` — parse fields into the descriptor
+     (stored inline on the line-state struct at `param7+0xb`, 0x10 dwords).
+  2. Compute pen x, width (`desc.width[+0x18 dword = param7[0x12]] * scale`),
+     and y from the justify mode `[obj+0x58]` (0=baseline, 1=center, 2=top).
+  3. Copy the descriptor to a stack struct and call **`FUN_0061e820`** — the
+     inline-texture quad emit. (`FUN_0061dd50` handles a region-state 1→2
+     transition when a texture interrupts a hyperlink capture.)
+- **`FUN_0061e820`** — normalizes the 4 quad corners (÷ screen w/h from
+  `DAT_00dd9ea0`/`DAT_00dd9ea4`) and calls `FUN_0061e410(1, &verts)`.
+- **`FUN_0061e410(count=1, &verts)`** (`__thiscall`, ECX = a vertex-buffer
+  object) — appends `count` quads of **0x40 bytes** (one quad = pos + texcoords)
+  to a **dedicated inline-texture vertex buffer**, growing it as needed
+  (`FUN_0061db40`). So inline textures accumulate in their OWN batch, separate
+  from the per-font-page glyph batches, each quad carrying its own texture
+  (bound at flush). This is the concrete confirmation of the "separate quad
+  path" — the backport must add such a batch + flush on the 1.12 side.
+
+## Target: 1.12 (`C:\WoW\Octo\WoW.exe`, build 5875) injection map
+
+Same architecture as 4.3.4, different addresses and token numbering. Reached
+from `Script_GetStringWidth` (`FUN_0079e510`) → `FUN_00772890` →
+`FUN_0044d670` → `FUN_005c2050` → the loops.
+
+- **Shared tokenizer `FUN_005c2810`** — `~11 callers`. `|`-switch token types:
+  `0`=color(`|c`), `1`=reset(`|r`), `2`=break(`|n`/newline), `3`=`||`,
+  `4`=`|H`, `5`=`|h`, `6`=ordinary glyph. **No `T`/`t` case** → `|T` hits the
+  fall-through (`*param5=0x7c; return 6`) = literal `|` then glyphs. Adding a
+  texture token means picking an unused code (e.g. `7`).
+- **Measure loop `FUN_005c6940`** — `switch`: `0/1/4/5` zero-width, `2` break,
+  default glyph (advance via `FUN_005c6b70`; kerning `FUN_005ca2d0`/
+  `FUN_005ca4b0`). No texture case.
+- **Fit/width loops** `FUN_005c6c50` (chars-into-width + per-char x, for
+  cursor/wrap) and `FUN_005c7470` (truncation/ellipsis). Same switch shape.
+- **Draw builder `FUN_005cdc20`** — reads the layout object's text at `[+0x48]`,
+  handles line-wrap / justify (`[+0x54]`) / color state, per line calls the
+  glyph emitter and `FUN_005cd310` (hyperlink rect registration).
+- **Glyph emitter `FUN_005ccbe0`** — the real quad emitter. Per glyph:
+  `FUN_005cabd0(fontFace,char)` → glyph record (atlas **page** at `rec[10]`,
+  advance `rec[0x12]`, texcoords `rec[0x18..0x1b]`), then appends 4 verts to a
+  **per-atlas-page** batch at `[obj + page*4 + 0xa0]`. `case 0/1` set/reset
+  color, `4/5` open/close hyperlink region, default = glyph.
+
+### The architectural wrinkle
+
+Glyph quads batch **per font-atlas page**. An inline `|T` texture is an
+arbitrary texture, not a font page, so it cannot join that batch — it needs a
+**separate textured-quad draw** (its own draw call, correctly ordered against
+the glyph batches so it appears inline). This is the substantive work, not the
+tokenizing. 4.3.4 solves it exactly this way — captured below: its draw `case 7`
+appends the quad to a dedicated inline-texture vertex buffer at
+`renderObject+0x9c`, separate from the per-font-page glyph batches (see the
+`FUN_0061ea10` / `FUN_0061e820` items under Open items).
+
+## Strategy
+
+The tokenizer is shared by ~11 callers, so DON'T just make it return a new
+type — the other callers' `switch`es would hit `default` and mis-handle it.
+Instead:
+
+1. **Reimplement (co-hook) the measure loop `FUN_005c6940` and the draw
+   builder `FUN_005cdc20`/emitter `FUN_005ccbe0`** — copy existing logic
+   (fully decompiled), delegate every non-texture token to the original
+   handling, and add an inline `|T…|t` case: measure → advance pen by texture
+   width; draw → emit the arbitrary-texture quad.
+2. **Port `FUN_00617ba0`** (field parse → 0x40 descriptor). Standalone, safe to
+   write now from the 4.3.4 decompilation; needs 1.12 equivalents of strchr/
+   atof/atoi (trivial or already in `Offsets.h`).
+3. **Leave the shared tokenizer `FUN_005c2810` and the other ~9 callers
+   untouched** — they keep rendering `|T` literally (wrap/cursor math slightly
+   off inside a texture in v1 — cosmetic, extend later).
+4. **Texture load by path** — reuse the engine's `Texture:SetTexture` loader;
+   **quad emit** — the primitive 4.3.4's draw case uses (to pin).
+
+Risk: the hot text path (every string every frame). But these are
+deterministic C functions, NOT the contended nampower/SuperWoW targets, so the
+MinHook-collision concern is low. Reimplementing two complex loops faithfully
+is the real cost.
+
+## Incremental slices
+
+1. Fixed-size `|Tpath:height|t` — render + width only (ignore width/offset/
+   texcoord/color). Proves the end-to-end quad path.
+2. width, offsetX/Y.
+3. texcoords (`texW:texH:l:r:t:b`).
+4. vertex color.
+5. correct wrap/cursor (extend `FUN_005c6c50`/`FUN_005c7470`).
+
+## Open items / next steps
+
+- [x] **4.3.4 draw-side `case 7`** — captured: `FUN_0061ea10` case 7 →
+      `FUN_00617ba0` (parse) + `FUN_0061e820`→`FUN_0061e410` (append quad to a
+      dedicated inline-texture vertex buffer). Separate batch, per-quad texture.
+- [x] **4.3.4 inline-texture buffer located** — `FUN_0061e820` (`RET 0x40`,
+      i.e. a 0x40-byte quad struct by value) does `ADD ECX,0x9c` before
+      `FUN_0061e410`, so the dedicated inline-texture vertex buffer is at
+      **renderObject+0x9c** (glyph batches are the `+0xa0 + page*4` array — the
+      two are adjacent but distinct). Quad struct: positions at `+0x8..+0x14`,
+      texcoords at `+0x20..+0x2c` (rest = z / texture handle / color). Appended
+      one quad at a time via `FUN_0061e410(this=buf@+0x9c, count, &quad)`.
+- [x] **Flush + path→texture load** — NOT traced on the 4.3.4 side by design;
+      its purpose (the flush + per-quad texture bind + path→load mechanism) is
+      fully answered on the **1.12 side** below: paint/flush `FUN_005c8fe0`,
+      bind `FUN_00589e80(0x17,tex)` + draw `FUN_005c8f40`, load `FUN_00449d90`.
+      4.3.4's own `+0x9c`-buffer flush is not needed — we implement against 1.12.
+- [x] **1.12 path→texture loader** — `FUN_00770200(textureObj, path, flag,
+      blend=DAT_00878cf0, flag)`. It's the string-path branch of
+      `Script_Texture_SetTexture` (`FUN_0079bb40`, method-table entry at
+      `0x0087c1a0`). This is how a `|T` path becomes a bound texture.
+- [x] **1.12 batch render + textured-quad GPU primitive — FOUND.** The paint
+      pass is `FUN_005c8fe0(layoutObj)`: it ensures each line built
+      (`FUN_005cd6a0`), then per font page (stride 0x18, indices 0..7 over
+      `[obj+0x18c+page*0x18]` = the page's texture object) does:
+      - **bind texture:** `FUN_00589e80(0x17, texturePage)` (0x17 = the texture
+        render-state selector),
+      - **lock dynamic VB:** `FUN_0058a140(0, stride=0x18, 0x800)` → handle;
+        `FUN_0058a080(handle)` → vertex data ptr,
+      - copy the page's built verts from the per-page batch at
+        `[lineObj + 0xa0 + page*4]` (`FUN_005ce090`=count, `FUN_005ce0c0`=copy),
+      - **draw:** `FUN_005c8f40(&handle, vertCount)` (flush/submit),
+      - **unlock:** `FUN_0058a0a0(handle, 0)`.
+
+      **Vertex stride = 0x18** (24 bytes = pos + uv + packed color). So an inline
+      `|T` quad = 4 (or 6) such verts, bound to its own texture. Reuse path for
+      the `|T` draw: `FUN_00589e80(0x17, inlineTex)` → write quad verts →
+      `FUN_005c8f40`. **`FUN_005c8fe0` is the co-hook site for strategy B** —
+      after the glyph batches are drawn, draw the frame's collected `|T` quads.
+- [x] **Path → bindable texture handle — RESOLVED.** `FUN_00770200`
+      (SetTexture-by-path) internally calls **`FUN_00449d90(path, &desc, flags,
+      0, 1)`** — the general path→CGxTexture loader (normalizes path, by-name
+      cache, creates on miss via `FUN_0044a140`/`FUN_0044a310`, returns a
+      **fallback texture on failure so never null**) — and stores the handle at
+      `textureObj+0xcc`. That handle is the SAME CGxTexture type
+      `FUN_00589e80(0x17, tex)` binds (the `tex[0x3c]` streamable flag +
+      non-null `*tex` that `FUN_00593840` checks are CGxTexture fields; font
+      pages and Texture widgets bind identically). So a `|T` draws as:
+      `tex = FUN_00449d90(path,&desc,flags,0,1)` → `FUN_00589e80(0x17,tex)` →
+      write 4 verts (stride 0x18) → `FUN_005c8f40(&vb,n)`. No scratch widget
+      needed if we replicate `FUN_00770200`'s descriptor setup
+      (`FUN_0058a980(&desc, blend, …)` then `FUN_00449d90`); or, simplest, keep
+      one scratch Texture object, `FUN_00770200(scratch,path,…)`, read
+      `[scratch+0xcc]`. The internal by-name cache makes repeats cheap.
+
+Two implementation strategies once the primitive is pinned:
+- **A (mirror 4.3.4):** own a separate inline-texture vertex buffer, flush it
+  in the paint pass alongside the glyph batches. Faithful, more integration.
+- **B (immediate):** at paint time, draw each collected `|T` quad immediately
+  via the GxU primitive (bind `FUN_00770200`'d texture, draw one quad). Simpler;
+  inline textures are few, so per-quad draw calls are fine. Likely the better
+  first cut.
+- [ ] Confirm 1.12's tokenizer flag bits (`param4 & 0x100/0x200/0x400/0x800`)
+      that gate color/escape handling, so the reimplemented loops pass them
+      through unchanged.
+
+## Reality check on scope — how it actually landed
+
+The plan above feared reimplementing 1.12's glyph emitter `FUN_005ccbe0` (a
+long, intricate function) and the measure loop. It did not come to that. The
+shipped design avoids both:
+
+- **Positioning** does NOT reimplement the emitter — it SEGMENTS the line at
+  icon boundaries and delegates each plain run to the ORIGINAL emitter, so the
+  engine still lays out every glyph. We only track where the icons go.
+- **Rendering** does NOT stand up a separate quad batch — icons are
+  engine-managed regions anchored to their FontString (the removed quad batch
+  was strategy B; regions replaced it).
+- **Measure** does NOT reimplement the loops — three cold co-hooks on the
+  fs-level width / height / wrap functions add the icons' contribution and call
+  the originals.
+
+The result is the largest feature in the project, but built from co-hooks that
+delegate to the engine rather than from reimplemented layout code. It was
+verified by in-game iteration over many build/test rounds, as expected.

@@ -1,0 +1,58 @@
+name: Archive engine
+on:
+  workflow_call:
+    inputs:
+      mode:
+        type: string
+        required: true
+permissions:
+  contents: write
+concurrency:
+  group: archive-writer
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: main
+          lfs: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 22
+      - name: Check archive engine
+        run: npm test
+      - name: Configure archive writer
+        run: |
+          git lfs install --local --skip-smudge
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+      - name: Synchronize sources
+        id: sync
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODE: ${{ inputs.mode }}
+          ARCHIVE_ALLOW_LFS_POINTERS: '1'
+          ARCHIVE_TRACK_LARGE: '1'
+        run: |
+          case "$MODE" in discover|update) ;; *) exit 1 ;; esac
+          node scripts/archive.mjs "$MODE"
+      - name: Verify and save successful mirrors
+        if: '!cancelled() && steps.sync.outcome != ''skipped'''
+        env:
+          ARCHIVE_ALLOW_LFS_POINTERS: '1'
+        run: |
+          npm run verify
+          git add --all
+          if git diff --cached --quiet; then
+            echo 'No archive changes.'
+          else
+            git commit -m 'Synchronize client-mod archive'
+            git push origin HEAD:main
+          fi
+      - name: Report source failures
+        if: steps.sync.outcome == 'failure'
+        run: exit 1

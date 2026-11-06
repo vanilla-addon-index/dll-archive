@@ -1,0 +1,16 @@
+{
+  "upstream": "https://github.com/RetroCro/TurtleWoW-Mods#no1600x1200",
+  "source": {
+    "kind": "file",
+    "url": "https://raw.githubusercontent.com/RetroCro/TurtleWoW-Mods/main/Archive/DLL%20BACKUP/no1600x1200.dll",
+    "filename": "no1600x1200.dll",
+    "name": "no1600x1200.dll"
+  },
+  "file": {
+    "sha256": "0df2274116278e8330dd7069902b642f1a83f33fefd909807a22eda197d88652",
+    "bytes": 104960,
+    "path": "releases/files/no1600x1200.dll",
+    "url": "https://raw.githubusercontent.com/RetroCro/TurtleWoW-Mods/main/Archive/DLL%20BACKUP/no1600x1200.dll"
+  },
+  "sourceFiles": {}
+}

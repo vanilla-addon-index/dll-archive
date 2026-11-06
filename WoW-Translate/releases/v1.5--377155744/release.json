@@ -1,0 +1,9 @@
+{
+  "id": "377155744",
+  "tag": "v1.5",
+  "name": "WoW-Translate with O's patches",
+  "body": "basically same as @paokkerkir/wow-translate on the DLL Side.\r\n\r\nO's patches from Discord merged ontop of this.\r\n\r\nbased on WoW-Translate V1.3 ",
+  "published": "2026-08-26T13:15:18Z",
+  "prerelease": false,
+  "url": "https://github.com/jhinzuo2/wow-translate/releases/tag/v1.5"
+}

@@ -1,0 +1,4 @@
+.gitignore
+d3d9x_headers/
+xwinSDK/
+.vscode/

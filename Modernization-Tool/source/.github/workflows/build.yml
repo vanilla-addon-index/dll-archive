@@ -1,0 +1,103 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'test/**'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - 'main'
+  workflow_dispatch:
+
+
+concurrency:
+  group: modernization-${{ forgejo.workflow }}-${{ forgejo.event_name }}-${{ forgejo.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: https://code.forgejo.org/actions/checkout@v4
+
+      # Self-hosted Windows runner: use the Python already installed on the host.
+      # actions/setup-python tries to modify machine-wide registry keys and needs
+      # elevated rights on this runner.
+      - name: Verify runner Python
+        shell: powershell
+        run: |
+          $version = python -c "import platform; print(platform.python_version())"
+          if ($LASTEXITCODE -ne 0) { throw "Python is not available on the runner PATH." }
+          Write-Host "Runner Python: $version"
+          if ($version -ne "3.12.10") {
+            throw "Expected Python 3.12.10 on the self-hosted runner, found $version."
+          }
+
+      - name: Install pinned build toolchain
+        run: python -m pip install --disable-pip-version-check -r requirements-build.txt
+
+      - name: Verify build toolchain
+        run: |
+          python --version
+          pyinstaller --version
+          python -m pip show pyinstaller pyinstaller-hooks-contrib
+
+      # Direct pushes to test/** run validation only. PRs, main, tags and
+      # explicit manual runs still validate a real Windows build.
+      - name: Prepare bundled remote fallbacks
+        if: ${{ forgejo.event_name != 'push' || forgejo.ref == 'refs/heads/main' || startsWith(forgejo.ref, 'refs/tags/v') }}
+        run: python scripts/prepare_remote_fallbacks.py
+
+      - name: Syntax check
+        run: python -m py_compile setup_tool.py setup_tool_dynamic.py setup_tool_responsive.py dxvk_fps.py remote_packages.py tests/test_safety.py tests/test_dxvk_fps_limit.py scripts/prepare_remote_fallbacks.py
+
+      - name: Unit safety tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Build EXE
+        if: ${{ forgejo.event_name != 'push' || forgejo.ref == 'refs/heads/main' || startsWith(forgejo.ref, 'refs/tags/v') }}
+        run: >
+          pyinstaller
+          --noconsole
+          --onefile
+          --icon=PurpleWowLogo.ico
+          --add-data "PurpleWowLogo.ico;."
+          --add-data "Payload;Payload"
+          --add-data "vanilla-tweaks.exe;."
+          --name "WoW_Modernization_Tool"
+          setup_tool_responsive.py
+
+      - name: Verify EXE exists
+        if: ${{ forgejo.event_name != 'push' || forgejo.ref == 'refs/heads/main' || startsWith(forgejo.ref, 'refs/tags/v') }}
+        shell: powershell
+        run: |
+          if (-not (Test-Path "dist/WoW_Modernization_Tool.exe")) { throw "Build output missing" }
+          Get-Item "dist/WoW_Modernization_Tool.exe" | Format-List Name,Length,LastWriteTime
+
+      - name: Create ZIP package
+        if: ${{ forgejo.event_name != 'push' || forgejo.ref == 'refs/heads/main' || startsWith(forgejo.ref, 'refs/tags/v') }}
+        shell: powershell
+        run: |
+          $zip = "dist/WoW_Modernization_Tool.zip"
+          if (Test-Path $zip) { Remove-Item $zip -Force }
+          Compress-Archive -Path "dist/WoW_Modernization_Tool.exe" -DestinationPath $zip -CompressionLevel Optimal
+          if (-not (Test-Path $zip)) { throw "ZIP package missing" }
+          Get-Item $zip | Format-List Name,Length,LastWriteTime
+
+      # Keep the finished EXE/ZIP available for manual release publishing.
+      # Artifacts are uploaded for explicit manual runs and version tags.
+      - name: Upload build artifact
+        if: ${{ forgejo.event_name == 'workflow_dispatch' || startsWith(forgejo.ref, 'refs/tags/v') }}
+        uses: https://code.forgejo.org/forgejo/upload-artifact@v4
+        with:
+          name: WoW_Modernization_Tool-test
+          path: |
+            dist/WoW_Modernization_Tool.exe
+            dist/WoW_Modernization_Tool.zip
+          if-no-files-found: error
+          retention-days: 7

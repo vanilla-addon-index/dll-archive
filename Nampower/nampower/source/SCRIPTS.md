@@ -1,0 +1,1748 @@
+# Nampower Custom Lua Functions
+
+This document describes all custom Lua functions added by Nampower.
+
+For custom events, see [EVENTS.md](EVENTS.md). For installation, configuration, and general usage information, see the main [README.md](README.md).
+
+## Table of Contents
+- [Performance Optimization - Table References](#performance-optimization---table-references)
+- [Custom Lua Functions](#custom-lua-functions)
+  - [Inventory and Equipment](#inventory-and-equipment)
+    - [GetItemStats](#getitemstatsitemid-copy)
+    - [GetItemStatsField](#getitemstatsfielditemid-fieldname-copy)
+    - [GetItemLevel](#getitemlevelitemid)
+    - [GetItemIconTexture](#getitemicontexturedisplayinfoid)
+    - [FindPlayerItemSlot](#findplayeritemslotitemid-or-itemname)
+    - [UseItemIdOrName](#useitemidornameitemidorname-target)
+    - [GetEquippedItems](#getequippeditemsunittoken)
+    - [GetEquippedItem](#getequippeditemunittoken-slot)
+    - [GetBagItems](#getbagitemsbagindex)
+    - [GetBagItem](#getbagitembagindex-slot)
+    - [GetAmmo](#getammo)
+  - [Auras](#auras)
+    - [GetPlayerAuraDuration](#getplayerauradurationauraslot)
+    - [CancelPlayerAuraSpellId](#cancelplayerauraspellidspellid-ignoremissing)
+    - [CancelPlayerAuraSlot](#cancelplayerauraslotauraslot)
+    - [IsAuraHidden](#isaurahiddenspellid)
+  - [Spell Information](#spell-information)
+    - [GetSpellRec](#getspellrecspellid-copy)
+    - [GetSpellRecField](#getspellrecfieldspellid-fieldname-copy)
+    - [GetSpellModifiers](#getspellmodifiersspellid-modifiertype)
+    - [GetSpellPower](#getspellpowermode)
+    - [GetSpellDuration](#getspelldurationspellid-ignoremodifiers)
+    - [GetSpellRangeData](#getspellrangedatarangeindex)
+    - [GetSpellIdForName](#getspellidfornamespellname)
+    - [GetSpellNameAndRankForId](#getspellnameandrankforidid)
+    - [GetSpellSlotTypeIdForName](#getspellslottypeidfornamespellname)
+    - [GetSpellIconTexture](#getspellicontexturespelliconid)
+  - [Unit Data and Lookup](#unit-data-and-lookup)
+    - [GetUnitData](#getunitdataunittoken-copy)
+    - [GetUnitField](#getunitfieldunittoken-fieldname-copy)
+    - [GetUnitGUID](#getunitguidunittoken)
+    - [SetMouseoverUnit](#setmouseoverunitunittoken)
+    - [GetRaidTargets](#getraidtargets)
+    - [SetLocalRaidTargetIndex](#setlocalraidtargetindexunittoken-raidtargetindex)
+  - [Spell Casting and Queuing](#spell-casting-and-queuing)
+    - [QueueSpellByName](#queuespellbynamespellname)
+    - [CastSpellByNameNoQueue](#castspellbynamenoqueuespellname-onselforunit)
+    - [CastSpellNoQueue](#castspellnoqueuespellid-spellbook--unit)
+    - [QueueScript](#queuescriptscript-priority)
+    - [IsSpellInRange](#isspellinrangespellname-target-or-isspellinrangespellid-target)
+    - [IsSpellUsable](#isspellusablespellname-or-isspellusablespellid)
+    - [ChannelStopCastingNextTick](#channelstopcastingnexttick)
+  - [Cast Information](#cast-information)
+    - [GetCurrentCastingInfo](#getcurrentcastinginfo)
+    - [GetCastInfo](#getcastinfo)
+  - [Cooldown Information](#cooldown-information)
+    - [GetSpellIdCooldown](#getspellidcooldownspellid)
+    - [GetItemIdCooldown](#getitemidcooldownitemid)
+    - [Trinkets](#trinkets)
+      - [GetTrinkets](#gettrinketscopy)
+      - [GetTrinketCooldown](#gettrinketcooldownslotitemidorname)
+      - [UseTrinket](#usetrinketslotitemidorname-target)
+  - [Player State](#player-state)
+    - [PlayerIsMoving](#playerismoving)
+    - [PlayerIsRooted](#playerisrooted)
+    - [PlayerIsSwimming](#playerisswimming)
+  - [Utility Functions](#utility-functions)
+    - [GetNampowerVersion](#getnampowerversion)
+    - [LearnTalentRank](#learntalentranktalentpage-talentindex-rank)
+    - [WriteCustomFile(filename, content, [mode])](#writecustomfilefilename-content-mode)
+    - [ReadCustomFile(filename)](#readcustomfilefilename)
+    - [CustomFileExists(filename)](#customfileexistsfilename)
+    - [ImportFile(filename)](#importfilefilename)
+    - [ExportFile(filename, text)](#exportfilefilename-text)
+    - [ExecuteCustomLuaFile(filename)](#executecustomluafilefilename)
+    - [EncryptPassword(password)](#encryptpasswordpassword)
+    - [EncryptedServerLogin(username, encryptedPasswordBase64String)](#encryptedserverloginusername-encryptedpasswordbase64string)
+    - [CombatLogFlush()](#combatlogflush)
+    - [DisenchantAll](#disenchantallitemidorname-includesoulbound-or-disenchantallquality-includesoulbound)
+    - [GetQuestLogQuestIds()](#getquestlogquestids)
+    - [GetQuestDialogQuestId()](#getquestdialogquestid)
+---
+
+## Performance Optimization - Table References
+
+Nampower functions that return tables use **reusable table references** to reduce memory allocations and improve performance. This means the same table object is reused across multiple function calls, with its contents updated each time.
+
+### Functions Using Reusable Table References
+
+The following functions use reusable table references:
+
+- **`GetCastInfo()`** - Returns cast information table
+- **`GetEquippedItems([unitToken])`** - Returns equipped items table
+- **`GetBagItems([bagIndex])`** - Returns bag items table
+- **`GetBagItem(bagIndex, slot)`** - Returns item info table
+- **`GetEquippedItem(unitToken, slot)`** - Returns item info table
+- **`GetSpellIdCooldown(spellId)`** - Returns cooldown detail table
+- **`GetItemIdCooldown(itemId)`** - Returns cooldown detail table
+-
+- **`GetItemStats(itemId, [copy])`** - Returns item stats table
+- **`GetUnitData(unitToken, [copy])`** - Returns unit data table
+- **`GetSpellRec(spellId, [copy])`** - Returns spell record table
+- **`GetItemStatsField(itemId, fieldName, [copy])`** - Returns individual item field value
+- **`GetUnitField(unitToken, fieldName, [copy])`** - Returns individual unit field value
+- **`GetSpellRecField(spellId, fieldName, [copy])`** - Returns individual spell field value
+- **`GetTrinkets([copy])`** - Returns trinket list table
+
+**Important:** When using these functions without the `copy` parameter, **immediately copy or extract** any values you need to store for later use. Do not store references to the returned tables themselves. Alternatively, pass `1` as the `copy` parameter to get an independent table that is safe to store.
+
+**Note:** Functions like `GetItemStats`, `GetUnitData`, and `GetSpellRec` also use reusable references for their nested array fields (e.g., `bonusStat`, `auras`, `EffectImplicitTargetA`). Each nested array field name has its own dedicated reference that is reused across calls.
+
+```lua
+-- ✓ SAFE - Extract values immediately
+local castInfo = GetCastInfo()
+if castInfo then
+    local spellId = castInfo.spellId
+    local castEnd = castInfo.castEndS
+    -- Use spellId and castEnd later
+end
+
+-- ✓ SAFE - Extract nested array values immediately
+local itemStats = GetItemStats(19019)
+if itemStats then
+    local bonusStats = {}
+    for i = 1, #itemStats.bonusStat do
+        bonusStats[i] = itemStats.bonusStat[i]
+    end
+    -- Now bonusStats is a safe independent copy
+end
+
+-- ✗ UNSAFE - Storing table references from the same function
+local cast1 = GetCastInfo()  -- Gets table reference
+-- ... later ...
+local cast2 = GetCastInfo()  -- Gets SAME table reference with new data
+-- cast1 and cast2 both point to the same table with cast2's data!
+
+-- ✗ UNSAFE - Storing nested array references
+local item1 = GetItemStats(19019)
+local item1BonusStats = item1.bonusStat  -- Stores reference to nested array
+local item2 = GetItemStats(22589)
+-- item1BonusStats was overwritten! The "bonusStat" nested array reference is reused
+
+-- ✓ SAFE - Using copy parameter for nested arrays
+local item1 = GetItemStats(19019, 1)  -- Pass 1 to get independent copy
+local item1BonusStats = item1.bonusStat  -- Safe to store, it's an independent copy
+local item2 = GetItemStats(22589, 1)  -- Another independent copy
+-- Both item1BonusStats and item2.bonusStat are independent tables
+```
+
+**Important for array field functions:** Each field name gets its own dedicated table reference, but the table is still reused across calls with the same field name. **Always extract values immediately - never store the table reference itself.** Alternatively, pass `1` as the `copy` parameter to get an independent table copy:
+
+```lua
+-- ✓ SAFE - Extract array values immediately
+local bonusStats = {}
+local tempTable = GetItemStatsField(itemId, "bonusStat")
+for i = 1, #tempTable do
+    bonusStats[i] = tempTable[i]
+end
+-- Now bonusStats is a safe independent copy
+
+-- ✓ EASIER - Use copy parameter to get independent table
+local bonusStats = GetItemStatsField(itemId, "bonusStat", 1)
+-- Safe to store, no manual copying needed!
+
+-- ✗ UNSAFE - Storing table references (even with different field names)
+local bonusStats = GetItemStatsField(itemId, "bonusStat")
+local bonusAmounts = GetItemStatsField(itemId, "bonusAmount")
+-- Later...
+local newBonusStats = GetItemStatsField(otherItemId, "bonusStat")
+-- bonusStats was overwritten! The "bonusStat" reference is reused across calls
+
+-- ✗ ALSO UNSAFE - Same field name, multiple calls
+local item1Stats = GetItemStatsField(19019, "bonusStat")
+local item2Stats = GetItemStatsField(22589, "bonusStat")
+-- item1Stats was immediately overwritten by the second call!
+```
+
+---
+
+### Custom Lua Functions
+
+### Spell/Item/Unit Information
+
+#### Item Records and Metadata
+
+##### GetItemStats(itemId, [copy])
+Returns a Lua table reference containing all fields for the item's `ItemStats` record (including localized `displayName` and `description`). Returns nil if the item cannot be found or loaded.
+
+**Optional parameter:** Pass `1` for `copy` to get an independent table copy instead of a reusable reference.
+
+Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
+
+##### GetItemStatsField(itemId, fieldName, [copy])
+Fast lookup for a single field on an item. Returns the requested field value; returns nil if the item is not found; raises a Lua error if the field name is invalid.
+
+**Optional parameter:** Pass `1` for `copy` to get an independent table copy (for array fields only).
+
+Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
+
+**Examples:**
+```lua
+-- Get item name
+local name = GetItemStatsField(19019, "displayName")
+print(name) -- "Thunderfury, Blessed Blade of the Windseeker"
+
+-- Get item level
+local ilvl = GetItemStatsField(22589, "itemLevel")
+print("Atiesh item level: " .. ilvl) -- 90
+
+-- Get item quality (0=Poor, 1=Common, 2=Uncommon, 3=Rare, 4=Epic, 5=Legendary)
+local quality = GetItemStatsField(19019, "quality")
+print("Quality: " .. quality) -- 5 (Legendary)
+
+-- Get item delay (weapon speed in milliseconds)
+local delay = GetItemStatsField(19019, "delay")
+print("Weapon speed: " .. (delay / 1000) .. " seconds") -- 1.9 seconds
+```
+
+##### GetItemLevel(itemId)
+Returns the item level of an item.  Returns an error if the item id is invalid.
+
+Examples:
+```
+/run local itemLevel=GetItemLevel(22589);print(itemLevel)
+should print 90 for atiesh
+```
+
+##### GetItemIconTexture(displayInfoId)
+Returns the texture path for an item given its display info ID. Returns nil if the texture is not found or is the question mark placeholder texture.
+
+**Parameters:**
+- `displayInfoId` (number): The item's display info ID (can be obtained from `GetItemStatsField(itemId, "displayInfoID")`)
+
+**Returns:**
+- The texture path string (e.g., "Interface\\Icons\\INV_Sword_04"), or nil if not found
+
+**Examples:**
+```lua
+-- Get texture for an item
+local displayInfoId = GetItemStatsField(19019, "displayInfoID")
+local texture = GetItemIconTexture(displayInfoId)
+if texture then
+    print("Texture: " .. texture)
+else
+    print("No texture found")
+end
+```
+
+#### Inventory and Equipment
+
+##### FindPlayerItemSlot(itemId or itemName)
+Searches the player's inventory for an item by ID or name and returns its location.
+
+**Parameters:**
+- `itemId` (number): The item ID to search for, OR
+- `itemName` (string): The item name to search for (case-insensitive)
+
+**Returns:**
+- 1st param (number or nil): Bag index where the item was found
+  - `nil` = Equipped item (check 2nd param for equipment slot 0-18)
+  - `0` = Inventory pack
+  - `1-4` = Regular bags
+  - `-1` = Bank item slots
+  - `5-10` = Bank bags
+  - `-2` = Keyring
+- 2nd param (number): Slot number within the bag (or equipment slot if 1st param is nil)
+  - For equipped items: 0-18 (equipment slots are 0-indexed)
+  - For bag 0, -1, -2: Returns **relative slot position** (1-indexed, 0-based within bag + 1)
+    - Bag 0: slots 1-16 (corresponding to absolute slots 23-38)
+    - Bag -1: slots 1-24 (corresponding to absolute bank slots 39-62)
+    - Bag -2: slots 1-16 (corresponding to absolute keyring slots 81-96)
+  - For regular bags (1-4) and bank bags (5-10): Returns 1-indexed slot within the bag
+- Returns `nil,nil` if the item is not found
+
+**Examples:**
+```lua
+-- Find Thunderfury in player inventory
+local bag, slot = FindPlayerItemSlot(19019)
+if bag then
+    print("Found in bag " .. bag .. " slot " .. slot)
+    if bag == -1 or (bag >= 5 and bag <= 9) then
+        print("Item is in bank")
+    end
+elseif bag == nil and slot then
+    print("Item is equipped in slot " .. slot)
+else
+    print("Item not found")
+end
+
+-- Find item by name (uses cache for performance after first lookup)
+local bag, slot = FindPlayerItemSlot("Hearthstone")
+if slot then
+    if bag == nil then
+        print("Hearthstone is equipped in slot " .. slot)
+    elseif bag == 0 then
+        print("Hearthstone is in inventory pack slot " .. slot .. " (1-16)")
+    elseif bag == -1 then
+        print("Hearthstone is in bank slot " .. slot .. " (1-24)")
+    elseif bag == -2 then
+        print("Hearthstone is in keyring slot " .. slot .. " (1-16)")
+    else
+        print("Hearthstone is in bag " .. bag .. " slot " .. slot)
+    end
+end
+```
+
+##### UseItemIdOrName(itemIdOrName, [target])
+Uses the first matching item found in the player's inventory (including equipped items) by item ID or name.
+
+**Parameters:**
+- `itemIdOrName` (number|string): Item ID or item name (case-insensitive)
+- `target` (optional, string|number): Unit token (e.g. `"target"`, `"player"`) or GUID
+  - If omitted, uses `LockedTargetGuid` if set; otherwise falls back to the active player GUID.
+
+**Returns:**
+- `1` if the item was found and `CGItem_C::Use(...)` returned non-zero
+- `0` if the item was not found or use failed
+
+**Examples:**
+```lua
+-- Use Hearthstone
+UseItemIdOrName("Hearthstone")
+
+-- Use a healing potion on yourself (if the item requires a target)
+UseItemIdOrName(13446, "player")
+```
+
+##### GetEquippedItems(unitToken)
+Returns a table reference containing all equipped items for the specified unit.
+
+**Parameters:**
+- `unitToken` (string): Can be a standard unit token ("player", "target", "pet", etc.) or a GUID string
+
+**Returns:**
+- A Lua table reference with equipment slot indices as keys (1-19) and item info tables as values. Empty slots are nil.
+- Returns nil if the unit cannot be found or inspected
+- Player and non-player calls return separate table references, so results do not overwrite each other
+
+For the player, item info includes:
+- `itemId`: The item's ID
+- `stackCount`: Number of items in the stack
+- `duration`: Item duration in milliseconds
+- `spellChargesRemaining`: Remaining spell charges as a single number. It uses the largest absolute value found in the internal 5-slot spell-charge array.
+- `flags`: Item flags
+- `randomPropertiesId`: Random property ID (e.g. for randomly enchanted items)
+- `permanentEnchantId`: Permanent enchantment ID
+- `tempEnchantId`: Temporary enchantment ID
+- `tempEnchantmentTimeLeftMs`: Time remaining on temp enchant in milliseconds
+- `tempEnchantmentCharges`: Charges remaining on temp enchant
+- `durability`: Current durability
+- `maxDurability`: Maximum durability
+
+For other inspected units (limited data):
+- `itemId`: The item's ID
+- `randomPropertiesId`: Random property ID
+- `permanentEnchantId`: Permanent enchantment ID
+- `tempEnchantId`: Temporary enchantment ID
+
+**Examples:**
+```lua
+-- Get all equipped items for your target
+local items = GetEquippedItems("target")
+if items then
+    for slot, itemInfo in pairs(items) do
+        print("Slot " .. slot .. ": Item ID " .. itemInfo.itemId)
+        if itemInfo.permanentEnchantId and itemInfo.permanentEnchantId > 0 then
+            print("  Permanent enchant: " .. itemInfo.permanentEnchantId)
+        end
+    end
+end
+
+-- Check player's weapon durability
+local items = GetEquippedItems("player")
+if items and items[16] then -- slot 16 is main hand
+    local weapon = items[16]
+    print("Weapon durability: " .. weapon.durability .. "/" .. weapon.maxDurability)
+end
+```
+
+##### GetEquippedItem(unitToken, slot)
+Returns item info for a specific equipment slot on the specified unit.
+
+**Parameters:**
+- `unitToken` (string): Can be a standard unit token ("player", "target", "pet", etc.) or a GUID string
+- `slot` (number): Equipment slot number (1-19)
+  - 1 = Head, 2 = Neck, 3 = Shoulder, 4 = Shirt, 5 = Chest
+  - 6 = Waist, 7 = Legs, 8 = Feet, 9 = Wrist, 10 = Hands
+  - 11 = Finger 1, 12 = Finger 2, 13 = Trinket 1, 14 = Trinket 2
+  - 15 = Back, 16 = Main Hand, 17 = Off Hand, 18 = Ranged, 19 = Tabard
+
+**Returns:**
+- A Lua table reference containing the item info (same fields as GetEquippedItems for the respective unit type)
+- Returns nil if the slot is empty, unit cannot be found, or unit cannot be inspected
+
+**Examples:**
+```lua
+-- Check target's main hand weapon
+local weapon = GetEquippedItem("target", 16)
+if weapon then
+    print("Target has weapon: " .. weapon.itemId)
+else
+    print("Target has no main hand weapon")
+end
+
+-- Check your own helmet
+local helm = GetEquippedItem("player", 1)
+if helm and helm.durability then
+    local durabilityPercent = (helm.durability / helm.maxDurability) * 100
+    print("Helmet durability: " .. string.format("%.1f%%", durabilityPercent))
+end
+```
+
+##### GetBagItems([bagIndex])
+If no bagIndex is specified, the function returns a nested table reference containing all items in all bags (including bank if open). With specified index, it only returns the contents of that bag
+
+**Returns:**
+- A Lua table reference with bag indices as keys and bag contents as values
+- Each bag contains **1-indexed** slot numbers as keys and item info tables as values
+- Bag indices:
+  - 0 = Inventory pack (16 slots)
+  - 1-4 = Regular bags
+  - -1 = Bank item slots (24 slots, only if bank is open)
+  - 5-10 = Bank bags (only if bank is open)
+  - -2 = Keyring
+
+Item info table fields (same as GetEquippedItems for player):
+- `itemId`, `stackCount`, `duration`, `spellChargesRemaining`, `flags`
+- `permanentEnchantId`, `tempEnchantId`, `tempEnchantmentTimeLeftMs`, `tempEnchantmentCharges`
+- `durability`, `maxDurability`
+
+**Examples:**
+```lua
+-- Get all items in all bags
+local allItems = GetBagItems()
+for bagIndex, bagContents in pairs(allItems) do
+    print("Bag " .. bagIndex .. ":")
+    for slot, itemInfo in pairs(bagContents) do
+        print("  Slot " .. slot .. ": " .. itemInfo.itemId .. " (x" .. itemInfo.stackCount .. ")")
+    end
+end
+
+-- Get all items in backbag
+local bagContents = GetBagItems(0)
+for slot, itemInfo in pairs(bagContents) do
+    print("  Slot " .. slot .. ": " .. itemInfo.itemId .. " (x" .. itemInfo.stackCount .. ")")
+end
+
+-- Count total number of a specific item
+local function CountItem(itemId)
+    local total = 0
+    local allItems = GetBagItems()
+    for bagIndex, bagContents in pairs(allItems) do
+        for slot, itemInfo in pairs(bagContents) do
+            if itemInfo.itemId == itemId then
+                total = total + itemInfo.stackCount
+            end
+        end
+    end
+    return total
+end
+
+local soulShardCount = CountItem(6265)
+print("Soul Shards: " .. soulShardCount)
+```
+
+##### GetBagItem(bagIndex, slot)
+Returns item info for a specific slot in a specific bag.
+
+**Parameters:**
+- `bagIndex` (number): The bag to check
+  - 0 = Inventory pack
+  - 1-4 = Regular bags
+  - -1 = Bank item slots or buyback slots
+  - 5-10 = Bank bags (requires bank to be open)
+  - -2 = Keyring
+- `slot` (number): **1-indexed** slot number within the bag
+
+**Returns:**
+- A Lua table reference containing the item info (same fields as GetBagItems)
+- Returns nil if the slot is empty or invalid
+
+**Examples:**
+```lua
+-- Get item in first slot of first bag
+local item = GetBagItem(1, 1)
+if item then
+    print("Item ID: " .. item.itemId)
+    print("Stack count: " .. item.stackCount)
+else
+    print("Slot is empty")
+end
+
+-- Check durability of an item in inventory pack
+local item = GetBagItem(0, 1)
+if item and item.durability then
+    print("Durability: " .. item.durability .. "/" .. item.maxDurability)
+end
+
+-- Check if a specific bank slot has an item (bank must be open)
+local bankItem = GetBagItem(-1, 1)
+if bankItem then
+    print("Bank slot 1 contains: " .. bankItem.itemId)
+end
+```
+
+##### GetAmmo()
+Returns the player's currently equipped ammo item ID and the total quantity remaining across all bags.
+
+**Parameters:**
+- None
+
+**Returns:**
+- If no ammo is equipped: returns `nil`
+- Otherwise returns two values:
+  - 1st param (number): The ammo item ID
+  - 2nd param (number): Total ammo count across backpack and bags 1-4
+
+**Examples:**
+```lua
+-- Check current ammo
+local ammoId, count = GetAmmo()
+if ammoId then
+    print("Ammo ID: " .. ammoId .. " Count: " .. count)
+else
+    print("No ammo equipped")
+end
+
+-- Low ammo warning
+local ammoId, count = GetAmmo()
+if ammoId and count < 200 then
+    print("Low ammo! Only " .. count .. " remaining")
+end
+```
+
+#### Auras
+
+##### GetPlayerAuraDuration(auraSlot)
+Returns the spell ID, remaining duration, and expiration time for a given aura slot on the active player.
+
+**Parameters:**
+- `auraSlot` (number): The 0-based aura slot index (0-31 for buffs, 32-47 for debuffs).  This is not the slot used by GetPlayerBuff which has its own sorting, this is the raw aura slot index which is consistent with the unit data fields and the internal aura storage.
+
+**Returns:**
+- If the slot is out of range or the player unit is unavailable: returns `nil`
+- Otherwise returns three values:
+  - `spellId` (number): The spell ID occupying the aura slot
+  - `remainingDurationMs` (number): Remaining duration in milliseconds (0 if expired or no duration)
+  - `expirationTimeMs` (number): The expiration timestamp from GetWowTimeMs() (0 if no duration)
+
+**Examples:**
+```lua
+-- Check remaining duration on buff slot 0
+local spellId, remainingDurationMs, expirationTimeMs = GetPlayerAuraDuration(0)
+if spellId and spellId > 0 then
+    print("Spell: " .. spellId .. " remaining: " .. remainingDurationMs .. "ms")
+end
+
+-- Check all debuff slots (32-47)
+for slot = 32, 47 do
+    local spellId, remainingDurationMs, expirationTimeMs = GetPlayerAuraDuration(slot)
+    if spellId and spellId > 0 then
+        print("Debuff slot " .. slot .. ": spell=" .. spellId .. " duration=" .. remainingDurationMs .. "ms")
+    end
+end
+```
+
+##### CancelPlayerAuraSpellId(spellId, [ignoreMissing])
+Cancels a player aura by spell ID.
+
+**Parameters:**
+- `spellId` (number): Aura spell ID to cancel
+- `ignoreMissing` (number, optional): Pass `1` to skip the aura-slot presence check (useful for buff-capped cases). Pass `0` or omit to keep the default check.
+
+**Returns:**
+- `1` if cancel was attempted
+- `0` if `spellId` is invalid or (when `ignoreMissing` is `0`/omitted) no matching aura is present
+
+##### CancelPlayerAuraSlot(auraSlot)
+Cancels a player aura by raw aura slot index.
+
+**Parameters:**
+- `auraSlot` (number): Aura slot index to cancel
+
+**Returns:**
+- `1` if the slot contains an aura and cancel was attempted
+- `0` if the slot is invalid/out of range or no aura is present in that slot
+
+##### IsAuraHidden(spellId)
+Returns whether a spell's aura would be hidden from Lua aura APIs (e.g. `GetPlayerBuff`).
+
+An aura is considered hidden if it has the `SPELL_ATTR_HIDDEN_CLIENTSIDE` attribute, the `SPELL_ATTR_EX_NO_AURA_ICON` attribute, or is a tracking aura (track creatures, resources, or stealthed).
+
+**Parameters:**
+- `spellId` (number): The spell ID to check.
+
+**Returns:**
+- `1` if the aura is hidden from Lua
+- `nil` if the aura is visible to Lua
+
+**Examples:**
+```lua
+if IsAuraHidden(2458) then
+    print("Aura is hidden")
+end
+```
+
+#### Spell Information
+
+##### GetSpellRec(spellId, [copy])
+Returns a Lua table reference containing all fields for the spell's `SpellRec` record (including localized `name` and `rank`). Returns nil if the spell cannot be found.
+
+**Optional parameter:** Pass `1` for `copy` to get an independent table copy instead of a reusable reference.
+
+Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
+
+##### GetSpellRecField(spellId, fieldName, [copy])
+Fast lookup for a single field on a spell. Returns the requested field value; returns nil if the spell is not found; raises a Lua error if the field name is invalid.
+
+**Optional parameter:** Pass `1` for `copy` to get an independent table copy (for array fields only).
+
+Full field name lists are in [`DBC_FIELDS.md`](DBC_FIELDS.md).
+
+**Examples:**
+```lua
+-- Get spell name
+local name = GetSpellRecField(116, "name")
+print(name) -- "Frostbolt"
+
+-- Get spell rank
+local rank = GetSpellRecField(116, "rank")
+print(rank) -- "Rank 1"
+
+-- Get spell cast time in milliseconds
+local castTime = GetSpellRecField(133, "castTime")
+print("Fireball cast time: " .. (castTime / 1000) .. " seconds") -- 3.5 seconds
+
+-- Get spell range (max range in yards * 10, so divide by 10)
+local maxRange = GetSpellRecField(116, "rangeMax")
+print("Frostbolt max range: " .. (maxRange / 10) .. " yards") -- 30 yards
+
+-- Get spell mana cost
+local manaCost = GetSpellRecField(116, "manaCost")
+print("Mana cost: " .. manaCost)
+
+-- Get spell school (0=Physical, 1=Holy, 2=Fire, 3=Nature, 4=Frost, 5=Shadow, 6=Arcane)
+local school = GetSpellRecField(116, "school")
+print("School: " .. school) -- 4 (Frost)
+
+-- Get spell icon ID
+local spellIconID = GetSpellRecField(116, "spellIconID")
+print("Icon ID: " .. spellIconID)
+```
+
+##### GetSpellModifiers(spellId, modifierType)
+Returns the current spell modifiers applied to a spell for the player. This includes buffs, talents, and other effects that modify spell behavior.
+
+**Parameters:**
+- `spellId` (number): The spell ID to check
+- `modifierType` (number): The type of modifier to check (see list below)
+
+**Returns:**
+- 1st param (number): Flat modification value (e.g., +50 damage)
+- 2nd param (number): Percent modification value (e.g., 10 for +10%)
+- 3rd param (number): Return value from the function (whether there was any percent or flat modifier)
+
+**Modifier Types:**
+- 0 = DAMAGE
+- 1 = DURATION
+- 2 = THREAT
+- 3 = ATTACK_POWER
+- 4 = CHARGES
+- 5 = RANGE
+- 6 = RADIUS
+- 7 = CRITICAL_CHANCE
+- 8 = ALL_EFFECTS
+- 9 = NOT_LOSE_CASTING_TIME
+- 10 = CASTING_TIME
+- 11 = COOLDOWN
+- 12 = SPEED
+- 14 = COST
+- 15 = CRIT_DAMAGE_BONUS
+- 16 = RESIST_MISS_CHANCE
+- 17 = JUMP_TARGETS
+- 18 = CHANCE_OF_SUCCESS
+- 19 = ACTIVATION_TIME
+- 20 = EFFECT_PAST_FIRST
+- 21 = CASTING_TIME_OLD
+- 22 = DOT
+- 23 = HASTE
+- 24 = SPELL_BONUS_DAMAGE
+- 27 = MULTIPLE_VALUE
+- 28 = RESIST_DISPEL_CHANCE
+
+**Example:**
+```lua
+-- Check damage modifiers on Frostbolt (spell ID 116)
+local flatMod, percentMod, ret = GetSpellModifiers(116, 0)
+print("Flat damage bonus: " .. flatMod)
+print("Percent damage bonus: " .. percentMod .. "%")
+```
+
+##### GetSpellPower([mode])
+Returns the player's mod damage done values for all 7 spell schools from the player unit fields (`PLAYER_FIELD_MOD_DAMAGE_DONE_POS` / `PLAYER_FIELD_MOD_DAMAGE_DONE_NEG`).
+
+**Parameters:**
+- `mode` (string, optional): Which values to return. Defaults to `"net"`.
+  - `"net"` (default) - Returns positive minus negative for each school
+  - `"positive"` - Returns only the positive mod damage done values
+  - `"negative"` - Returns only the negative mod damage done values
+
+**Returns:**
+7 values in order: Physical, Holy, Fire, Nature, Frost, Shadow, Arcane
+
+Returns `nil` if the player unit or player fields cannot be accessed.
+
+**Examples:**
+```lua
+-- Get net spell power (default)
+local physical, holy, fire, nature, frost, shadow, arcane = GetSpellPower()
+print("Shadow spell power: " .. shadow)
+print("Fire spell power: " .. fire)
+
+-- Get only positive values
+local physical, holy, fire, nature, frost, shadow, arcane = GetSpellPower("positive")
+
+-- Get only negative values
+local physical, holy, fire, nature, frost, shadow, arcane = GetSpellPower("negative")
+```
+
+##### GetSpellDuration(spellId, [ignoreModifiers])
+Returns the duration of a spell in milliseconds. For channeling spells this is the channel duration, and for non-channeling spells I think this is always the duration of the first aura effect. By default, the active player's spell modifiers (e.g. talents that extend duration) are applied.
+
+**Parameters:**
+- `spellId` (number): The spell ID to look up.
+- `ignoreModifiers` (number, optional): Pass `1` to ignore your spell modifiers (talents, etc.) and return the base duration. Defaults to `0` (apply modifiers).
+
+**Returns:**
+- `number` - Duration in milliseconds, or `0` if the spell has no duration.
+- `nil` - If the spell ID is invalid.
+
+**Examples:**
+```lua
+-- Get modified duration of a spell
+local duration = GetSpellDuration(spellId)
+
+-- Get base duration ignoring talent modifiers
+local baseDuration = GetSpellDuration(spellId, 1)
+```
+
+##### GetSpellRangeData(rangeIndex)
+Returns range data for a SpellRange DBC entry by its index (the `rangeIndex` field from SpellRec).
+
+**Parameters:**
+- `rangeIndex` (number): The SpellRange DBC index to look up.
+
+**Returns:**
+- `minRange` (number) - Base minimum range in yards (before combat reach is applied).
+- `maxRange` (number) - Base maximum range in yards (before combat reach is applied).
+- `flags` (number) - Either `0` (ranged) or `1` (melee). `1` is only currently used by `Combat Range` spells.
+- `name` (string) - Localized name of the range entry (e.g. `"Combat Range"`, `"Self Only"`).
+- `nil` - If the rangeIndex is out of bounds or the entry is missing.
+
+**Notes on flags and combat reach:**
+
+The returned `minRange`/`maxRange` are the raw DBC values.  The game adds additional range based on the combat reach of the caster and target as well as 2.667 range for leeway if either the player or target is moving or pvp flagged.  `Combat Range` spells also depend on the scale of the target and add an additional 1.333333 range.
+
+**Examples:**
+```lua
+local rangeIndex = GetSpellRecField(spellId, "rangeIndex")
+local minRange, maxRange, flags, name = GetSpellRangeData(rangeIndex)
+local isMelee = flags == 1
+```
+
+##### GetSpellIdForName(spellName)
+Returns:
+
+1st param: the max rank spell id for a spell name if it exists in your spellbook.  Returns 0 if the spell is not in your spellbook.
+
+Examples:
+```
+/run local spellId=GetSpellIdForName("Frostbolt");print(spellId)
+/run local spellId=GetSpellIdForName("Frostbolt(Rank 1)");print(spellId)
+```
+
+##### GetSpellNameAndRankForId(id)
+Returns:
+
+1st param: the spell name for a spell id
+2nd param: the spell rank for a spell id as a string such as "Rank 1"
+
+Examples:
+```
+/run local spellName,spellRank=GetSpellNameAndRankForId(116);print(spellName);print(spellRank)
+prints "Frostbolt" and "Rank 1"
+```
+
+##### GetSpellSlotTypeIdForName(spellName)
+Returns:
+
+1st param: the 1 indexed (lua calls expect this) spell slot number for a spell name if it exists in your spellbook.  Returns 0 if the spell is not in your spellbook.
+2nd param: the book type of the spell, either "spell", "pet" or "unknown".
+3rd param: the spell id of the spell.  Returns 0 if the spell is not in your spellbook.
+
+Examples:
+```
+/run local slot, bookType, spellId=GetSpellSlotTypeIdForName("Frostbolt");print(slot);print(bookType);print(spellId)
+```
+
+##### GetSpellIconTexture(spellIconId)
+Returns the texture path for a spell given its spell icon ID. Returns nil if the texture is not found or is the question mark placeholder texture.
+
+**Parameters:**
+- `spellIconId` (number): The spell's icon ID (can be obtained from `GetSpellRecField(spellId, "spellIconID")`)
+
+**Returns:**
+- The texture path string with `Interface\Icons\` prefix (e.g., "Interface\\Icons\\Spell_Frost_FrostBolt02"), or nil if not found
+
+**Examples:**
+```lua
+-- Get texture for Frostbolt
+local spellIconId = GetSpellRecField(116, "spellIconID")
+local texture = GetSpellIconTexture(spellIconId)
+if texture then
+    print("Texture: " .. texture)
+else
+    print("No texture found")
+end
+```
+
+#### Unit Data and Lookup
+
+##### GetUnitData(unitToken, [copy])
+Returns a Lua table reference containing all unit fields for the specified unit. This provides access to low-level unit data like health, mana, stats, auras, resistances, and more.
+
+**Parameters:**
+- `unitToken` (string): Can be a standard unit token ("player", "target", "pet", "mouseover", etc.) or a GUID string (e.g., "0xF5300000000000A5")
+- `copy` (number, optional): Pass `1` to get an independent table copy instead of a reusable reference
+
+**Returns:**
+- A Lua table reference containing all unit fields, or nil if the unit cannot be found
+- Object-reference GUID fields are returned as hex GUID strings (not numbers) to avoid Lua 64-bit precision issues. This includes fields such as `charm`, `summon`, `charmedBy`, `summonedBy`, `createdBy`, `target`, `persuaded`, and `channelObject`.
+
+**Note:** `GetUnitData` does not use the `party_member_fields` fallback. If the unit object is not loaded in the object manager, this function returns `nil`.
+
+Full field name lists are in [`UNIT_FIELDS.md`](UNIT_FIELDS.md).
+
+**Example:**
+```lua
+-- Get all unit data for your current target
+local data = GetUnitData("target")
+if data then
+    print("Target health: " .. data.health .. "/" .. data.maxHealth)
+    print("Target level: " .. data.level)
+    print("Target display ID: " .. data.displayId)
+end
+
+-- Using a GUID
+local data = GetUnitData("0xF5300000000000A5")
+```
+
+##### GetUnitField(unitToken, fieldName, [copy])
+Fast lookup for a single field on a unit. More efficient than GetUnitData when you only need one specific field.
+
+**Parameters:**
+- `unitToken` (string): Can be a standard unit token ("player", "target", "pet", "mouseover", etc.) or a GUID string
+- `fieldName` (string): The name of the field to retrieve
+- `copy` (number, optional): Pass `1` to get an independent table copy (for array fields only)
+
+**Returns:**
+- The requested field value; returns nil if the unit is not found; raises a Lua error if the field name is invalid
+- For array fields (like "aura", "resistances"), returns a Lua table with numeric indices
+- Object-reference GUID fields are returned as hex GUID strings (not numbers) to avoid Lua 64-bit precision issues. This includes fields such as `charm`, `summon`, `charmedBy`, `summonedBy`, `createdBy`, `target`, `persuaded`, and `channelObject`.
+
+**Note:** `GetUnitField` falls back to using `party_member_fields` data if available when the unit object is not loaded (invisible or out of range). The overlapping `UnitFields` names available through this fallback are `health`, `maxHealth`, `level`, and `aura` for party/raid members, plus `displayId`, `health`, `maxHealth`, and `aura` for party/raid pets.
+
+Full field name lists are in [`UNIT_FIELDS.md`](UNIT_FIELDS.md).
+
+**Examples:**
+```lua
+-- Get target's current health
+local health = GetUnitField("target", "health")
+print("Target health: " .. health)
+
+-- Get player's current mana (power1)
+local mana = GetUnitField("player", "power1")
+print("Player mana: " .. mana)
+
+-- Get all auras on target (returns a table)
+local auras = GetUnitField("target", "aura")
+for i, auraId in ipairs(auras) do
+    print("Aura " .. i .. ": " .. auraId)
+end
+
+-- Get all resistances (returns a table)
+local resistances = GetUnitField("player", "resistances")
+-- resistances[1] = armor, [2] = holy, [3] = fire, [4] = nature, [5] = frost, [6] = shadow, [7] = arcane
+```
+
+##### GetUnitGUID(unitToken)
+Returns the GUID of the unit identified by the given unit token.
+
+Supports Nampower's extended unit-token formats (see [Unit Token Extensions](README.md#unit-token-extensions-getunitguid--all-unittokentarget-string-params)).
+
+**Parameters:**
+- `unitToken` (string): A unit token or extended unit token string.
+
+**Returns:**
+- `guid` (string): The unit's GUID as a hex string (e.g. `"0xF5300000000000A5"`), or `nil` if the unit cannot be resolved.
+
+**Supported token formats:**
+- Standard tokens: `"player"`, `"target"`, `"pet"`, `"mouseover"`, `"party1"`–`"party4"`, `"partypet1"`–`"partypet4"`, `"raid1"`–`"raid40"`, `"raidpet1"`–`"raidpet40"`
+- Raid target marks: `"mark1"`–`"mark8"`
+- Suffix forms: any token with `"owner"`, `"target"`, or `"pet"` appended (e.g. `"targetowner"`, `"mark1target"`, `"party1pet"`)
+- Raw hex GUIDs with optional suffix: `"0x[16 hex digits]"`, `"0x[16 hex digits]target"`, etc.
+
+**Examples:**
+```lua
+-- Standard tokens
+print(GetUnitGUID("player"))
+print(GetUnitGUID("target"))
+print(GetUnitGUID("party1"))
+
+-- Raid target marks
+print(GetUnitGUID("mark1"))
+
+-- Suffix forms
+print(GetUnitGUID("mark1target"))     -- target of the unit marked with mark 1
+print(GetUnitGUID("targetowner"))     -- owner of the current target
+print(GetUnitGUID("party1pet"))       -- pet of party member 1
+
+-- Raw hex GUID with suffix
+print(GetUnitGUID("0xF5300000000000A5target"))
+```
+
+##### SetMouseoverUnit(unitToken)
+Sets the client's current mouseover unit from a unit token string.
+
+This uses the same client object-tracking path as normal UI mouseover updates. If `unitToken` resolves to a GUID, the mouseover is updated to that unit. If it does not resolve, the mouseover is cleared.
+
+**Parameters:**
+- `unitToken` (string): A standard unit token string such as `"target"`, `"party1"`, or `"mouseover"`
+
+**Returns:**
+- `1` if the client has a non-empty mouseover GUID after the update
+- `nil` if the mouseover GUID is empty after the update
+
+**Examples:**
+```lua
+SetMouseoverUnit("target")
+SetMouseoverUnit("party1")
+SetMouseoverUnit("mouseover")
+```
+
+##### GetRaidTargets()
+Returns the current local raid-target assignments as a table of GUID strings.
+
+**Returns:**
+- A table indexed `1..8`
+- Each value is a GUID string for the unit currently assigned to that local raid marker slot
+- Empty slots return `nil`
+
+**Examples:**
+```lua
+local marks = GetRaidTargets()
+print(marks[1]) -- GUID for local mark 1, or nil
+print(marks[8]) -- GUID for local mark 8, or nil
+```
+
+##### SetLocalRaidTargetIndex(unitToken, raidTargetIndex)
+Assigns a unit to a local raid-target slot.
+
+This uses the same extended unit-token parsing as `GetUnitGUID`, so standard unit tokens, `markN` tokens, suffix forms, and raw GUID strings are all supported.
+
+If the selected slot already has a unit assigned, that slot is cleared first and the previous unit's nameplate raid-target state is refreshed before the new unit is assigned.
+
+**Parameters:**
+- `unitToken` (string): The unit to assign
+- `raidTargetIndex` (number): Local raid-target slot index in the `0..8` range
+
+**Returns:**
+- `1` on success
+- `0` if the unit cannot be resolved or the underlying objects are unavailable
+- Raises a Lua error if the parameters are invalid
+
+**Examples:**
+```lua
+SetLocalRaidTargetIndex("target", 0)
+SetLocalRaidTargetIndex("mouseover", 3)
+SetLocalRaidTargetIndex("mark1target", 7)
+SetLocalRaidTargetIndex("0xF5300000000000A5", 1)
+```
+
+### Spell Casting and Queuing
+
+#### QueueSpellByName(spellName)
+Will force queue a spell regardless of the appropriate queue window.  If no spell is currently being cast it will be cast immediately.
+For example can make a macro with
+```
+/run QueueSpellByName("Frostbolt");QueueSpellByName("Frostbolt")
+```
+to cast 2 frostbolts in a row.  Currently, can only queue 1 GCD spell at a time and 5 non gcd spells.  This means you can't do 3 frostbolts in a row with one macro.
+
+#### CastSpellByName(spellName, [onSelfOrUnit])
+The vanilla `CastSpellByName` is enhanced to accept a unit token string (e.g. "mouseover", "party1", "focus", etc.) or a GUID string as the second parameter to cast on that unit.  The original behavior of passing `1` to cast on self is preserved.
+
+#### CastSpellByNameNoQueue(spellName, [onSelfOrUnit])
+Will force a spell cast to never queue even if your settings would normally queue.  Can be used to fix addons that don't work with queued spells.  Supports the same unit string parameter as `CastSpellByName`.
+
+#### CastSpellNoQueue(spellId, spellBook [, unit])
+Same as `CastSpellByNameNoQueue` but takes a numeric spell ID and spellbook type instead of a spell name.  `spellBook` is `spell` for player spells and `pet` for pet spells.  Accepts the same spell slot formats as the enhanced `CastSpell` (numeric slot, spell name string, or `"spellId:123"` prefix).
+
+The optional `unit` parameter accepts any unit token (e.g. `"target"`, `"mouseover"`, `"focus"`, a GUID string) to cast on a specific unit.  The original CastSpell doesn't support this as it is registered with only 2 arguments currently.
+
+```lua
+-- Cast spell ID 133 (Fireball) on mouseover without queuing
+CastSpellNoQueue(133, 0, "mouseover")
+
+-- Cast by slot without a unit token (uses current target)
+CastSpellNoQueue(5, 0)
+```
+
+#### QueueScript(script, [priority])
+Queues any arbitrary script using the same logic as a regular spell using NP_SpellQueueWindowMs as the window.  If no spell is being cast and you are not on the gcd the script will be run immediately.
+
+Priority is optional and defaults to 1.  
+Priority 1 means the script will run before any other queued spells.
+Priority 2 means the script will run after any queued non gcd spells but before any queued normal spells.
+Priority 3 means the script will run after any type of queued spells.
+
+Convert slash commands from other addons like `/equip` to their function form `SlashCmdList.EQUIP` to use them inside QueueScript.
+
+For example, you can equip a libram before casting a queued heal using
+```
+/run QueueScript('SlashCmdList.EQUIP("Libram of +heal")')
+```
+
+#### IsSpellInRange(spellName, [target]) or IsSpellInRange(spellId, [target])
+Takes a spell name or spell id and an optional target.  Target can the usual UNIT tokens like "player", "target", "mouseover", etc or a unit guid.
+
+If using spell name it must be a spell you have in your spellbook.  If using spell id it can be any spell id.
+
+Returns 1 if the spell is in range, 0 if not in range, and -1 if the spell is not valid for this check (must be TARGET_UNIT_PET, TARGET_UNIT_TARGET_ENEMY, TARGET_UNIT_TARGET_ALLY, TARGET_UNIT_TARGET_ANY).
+This is because this uses the same underlying function as `IsActionInRange` which returns 1 for spells that are not single target which can be misleading.
+
+Examples:
+```
+/run local result=IsSpellInRange("Frostbolt"); if result == 1 then print("In range") else if result == 0 then print("Out of range") else print("Not single target") end
+```
+
+#### IsSpellUsable(spellName) or IsSpellUsable(spellId)
+Takes a spell name or spell id.
+
+Usable does not equal castable.  This is most often used to check if a reactive spell is usable.
+
+If using spell name it must be a spell you have in your spellbook.  If using spell id it can be any spell id.
+
+Returns:
+
+1st param: 1 if the spell is usable, 0 if not usable.
+2nd param: Always 0 if spell is not usable for a different reason other than mana.  1 if out of mana, 0 if not out of mana.
+
+Examples:
+```
+/run local result=IsSpellUsable("Frostbolt"); if result == 1 then print("Frostbolt usable") else print("Frostbolt not usable") end
+```
+
+### Cast Information
+
+#### GetCurrentCastingInfo()
+Returns:
+
+1st param: Casting spell id or 0
+2nd param: Visual spell id or 0.  This won't always get cleared after a spell finishes.
+3rd param: Auto repeating spell id or 0.
+4th param: 1 if casting spell with a cast time, 0 if not.
+5th param: 1 if channeling, 0 if not.
+6th param: 1 if on swing spell is pending, 0 if not.
+7th param: 1 if auto attacking, 0 if not.
+
+For normal spells these will be the same.  For some spells like auto-repeating and channeling spells only the visual spell id will be set.
+
+Examples:
+```
+/run local castId,visId,autoId,casting,channeling,onswing,autoattack=GetCurrentCastingInfo();print(castId);print(visId);print(autoId);print(casting);print(channeling);print(onswing);print(autoattack);
+```
+
+#### GetCastInfo()
+Returns detailed information about the currently active cast or channel. Returns nil if there is no active cast or channel.
+GetCurrentCastingInfo was made very early on and doesn't provide enough information for many use cases, but still has some uses and is available for backwards compatibility.
+
+**Returns:**
+A Lua table reference with the following fields, or nil if no cast is active:
+
+- `castId` (number): Unique identifier for this cast
+- `spellId` (number): The spell ID being cast
+- `guid` (string): Target GUID as a hex string e.g. "0x0000000000000000" ("0x0000000000000000" if no explicit target)
+- `castType` (number): Type of cast - 0=NORMAL, 3=CHANNEL, 4=TARGETING
+- `castStartS` (number): When the cast started in WoW time (seconds with decimals, e.g., 1234567.890)
+- `castEndS` (number): When the cast will end in WoW time (seconds with decimals)
+- `castRemainingMs` (number): Milliseconds remaining until cast ends
+- `castDurationMs` (number): Total cast duration in milliseconds
+- `gcdEndS` (number): When the GCD will end in WoW time (seconds with decimals)
+- `gcdRemainingMs` (number): Milliseconds remaining until GCD expires
+
+**Notes:**
+- Time fields ending in `S` (castStartS, castEndS, gcdEndS) are absolute timestamps in **seconds** with decimal precision to match GetTime() in Lua
+- Duration and remaining fields ending in `Ms` (castRemainingMs, castDurationMs, gcdRemainingMs) are in **milliseconds** for precision
+- Returns nil if there is no active cast (castSpellId is 0) and no active channel (channelSpellId is 0)
+
+**Examples:**
+```lua
+-- Check current cast information
+local info = GetCastInfo()
+if info then
+    print("Casting spell: " .. info.spellId)
+    print("Cast ends at: " .. info.castEndS)
+    print("Time remaining: " .. info.castRemainingMs .. "ms")
+    print("GCD ends at: " .. info.gcdEndS)
+    print("GCD remaining: " .. info.gcdRemainingMs .. "ms")
+else
+    print("No active cast")
+end
+
+-- Check if you can cast another spell (GCD check)
+local info = GetCastInfo()
+if not info or info.gcdRemainingMs == 0 then
+    print("Ready to cast!")
+else
+    print("On GCD for " .. info.gcdRemainingMs .. "ms more")
+end
+
+-- Monitor cast progress
+local info = GetCastInfo()
+if info and info.castDurationMs > 0 then
+    local progress = ((info.castDurationMs - info.castRemainingMs) / info.castDurationMs) * 100
+    print("Cast progress: " .. string.format("%.1f%%", progress))
+end
+```
+
+### Cooldown Information
+
+#### GetSpellIdCooldown(spellId)
+Returns detailed cooldown information for a spell from the spell history. This provides precise timing data for individual spell cooldowns, category cooldowns, and GCD.
+
+**Parameters:**
+- `spellId` (number): The spell ID to check
+
+**Returns:**
+A Lua table reference with the following fields:
+
+- `isOnCooldown` (number): 1 if any cooldown is active, 0 otherwise
+- `cooldownRemainingMs` (number): Maximum remaining time across all cooldown types in milliseconds
+- `itemId` (number): Item ID tied to the cooldown (0 if none)
+- `itemHasActiveSpell` (number): 1 if the item has an on-use spell, 0 otherwise
+- `itemActiveSpellId` (number): Spell ID of the active item spell (0 if none)
+
+**Individual Spell Cooldown:**
+- `individualStartS` (number): When the individual spell cooldown started (seconds, WoW time)
+- `individualDurationMs` (number): Total duration of the individual spell cooldown in milliseconds
+- `individualRemainingMs` (number): Milliseconds remaining on the individual spell cooldown
+- `isOnIndividualCooldown` (number): 1 if the spell-specific cooldown is active, 0 otherwise
+
+**Category Cooldown:**
+- `categoryId` (number): The cooldown category ID (0 if no category cooldown)
+- `categoryStartS` (number): When the category cooldown started (seconds, WoW time)
+- `categoryDurationMs` (number): Total duration of the category cooldown in milliseconds
+- `categoryRemainingMs` (number): Milliseconds remaining on the category cooldown
+- `isOnCategoryCooldown` (number): 1 if the category cooldown is active, 0 otherwise
+
+**GCD (Global Cooldown):**
+- `gcdCategoryId` (number): The GCD category ID (typically 133 for most spells)
+- `gcdCategoryStartS` (number): When the GCD started (seconds, WoW time)
+- `gcdCategoryDurationMs` (number): Total GCD duration in milliseconds (typically 1500ms)
+- `gcdCategoryRemainingMs` (number): Milliseconds remaining on the GCD
+- `isOnGcdCategoryCooldown` (number): 1 if the GCD is active, 0 otherwise
+
+**Notes:**
+- Time fields ending in `S` are absolute timestamps in **seconds** to match GetTime() in Lua
+- Fields ending in `Ms` are in **milliseconds** for precision
+- The spell must have been cast at least once for accurate data to be available
+- `cooldownRemainingMs` is the maximum of all three cooldown types
+
+**Example:**
+```lua
+-- Check if Frostbolt is ready to cast
+local cd = GetSpellIdCooldown(116) -- Frostbolt
+if cd.isOnCooldown == 0 then
+    print("Frostbolt is ready!")
+else
+    print("Frostbolt on cooldown for " .. cd.cooldownRemainingMs .. "ms")
+    if cd.isOnGcdCategoryCooldown == 1 then
+        print("  GCD: " .. cd.gcdCategoryRemainingMs .. "ms remaining")
+    end
+    if cd.isOnIndividualCooldown == 1 then
+        print("  Spell CD: " .. cd.individualRemainingMs .. "ms remaining")
+    end
+    if cd.isOnCategoryCooldown == 1 then
+        print("  Category CD: " .. cd.categoryRemainingMs .. "ms remaining")
+    end
+end
+```
+
+#### GetItemIdCooldown(itemId)
+Returns detailed cooldown information for an item from the spell history. Works similarly to GetSpellIdCooldown but for items.
+
+**Parameters:**
+- `itemId` (number): The item ID to check
+
+**Returns:**
+A Lua table reference with the same structure as GetSpellIdCooldown (see above).
+
+**Notes:**
+- Returns the longest cooldown among all spells associated with the item
+- If the item has multiple on-use effects, returns information for the one with the longest remaining cooldown
+- Item cooldowns are tracked through their associated spell entries in the spell history
+
+**Example:**
+```lua
+-- Check if a trinket is ready
+local cd = GetItemIdCooldown(12345) -- Replace with your trinket ID
+if cd.isOnCooldown == 0 then
+    print("Trinket is ready to use!")
+else
+    print("Trinket on cooldown for " .. cd.cooldownRemainingMs .. "ms")
+end
+```
+
+#### Trinkets
+
+##### GetTrinkets([copy])
+Returns a table of trinkets from equipped trinket slots and carried bags.
+
+**Parameters:**
+- `[copy]` (number|boolean, optional): Pass `1` (or any truthy value) to force creation of a fresh Lua table. By default the function reuses an internal table and entry tables for performance.
+
+**Returns:**
+A Lua table where each entry contains:
+- `itemId` (number)
+- `trinketName` (string, `"Unknown"` if no name available)
+- `texture` (string): Texture name for the item icon
+- `itemLevel` (number): Item level
+- `bagIndex` (number|nil): `nil` when equipped; `0` for backpack; `1-4` for equipped bags
+- `slotIndex` (number): Lua 1-based slot within the container (or 1/2 for equipped trinket slots)
+
+**Notes:**
+- Scans only equipped trinket slots and bags 0-4 (backpack + equipped bags). Does not scan bank or keyring.
+- Reuses cached Lua tables unless `copyTable` is truthy; prefer copies if you will mutate the returned tables.
+-
+##### GetTrinketCooldown(slot|itemIdOrName)
+Returns cooldown information for the equipped trinket(s) in slots 13 or 14. Accepts slot shortcuts or item identifiers.
+
+**Parameters:**
+- `slot|itemIdOrName` (number|string):
+  - `1` or `13` => first trinket slot
+  - `2` or `14` => second trinket slot
+  - Any other number => treat as item ID to match against trinket slots
+  - String => item name (case-insensitive) to match against trinket slots
+
+**Returns:**
+- If no matching trinket is equipped in slots 13/14: returns `-1`
+- Otherwise: a cooldown detail table with the same structure as `GetSpellIdCooldown` / `GetItemIdCooldown`
+
+**Example:**
+```lua
+-- Get cooldown for first trinket slot
+local cd = GetTrinketCooldown(1)
+if cd ~= -1 and cd.isOnCooldown == 0 then
+    print("Trinket ready")
+end
+
+-- Check by name
+local cd = GetTrinketCooldown("Royal Seal of Eldre'Thalas")
+if cd ~= -1 then
+    print("Remaining: " .. cd.cooldownRemainingMs .. "ms")
+end
+```
+
+##### UseTrinket(slot|itemIdOrName, [target])
+Uses a trinket from the equipped trinket slots (13 and 14 only).
+
+**Parameters:**
+- `slot|itemIdOrName` (number|string):
+  - `1` or `13` => use first trinket slot
+  - `2` or `14` => use second trinket slot
+  - Any other number => treat as item ID to find in trinket slots
+  - String => item name (case-insensitive) to find in trinket slots
+- `target` (optional, string|number): Unit token or GUID. If omitted, uses `LockedTargetGuid` if set; otherwise falls back to active player GUID.
+
+**Returns:**
+- `1` if the trinket was found and `CGItem_C::Use(...)` returned non-zero
+- `0` if the trinket was found but use returned zero
+- `-1` if no matching trinket was found in slots 13/14
+
+**Examples:**
+```lua
+-- Use first trinket slot
+UseTrinket(1)
+-- Use second trinket slot on current target
+UseTrinket(2, "target")
+-- Use by item id if present in either trinket slot
+UseTrinket(18406)
+-- Use by name
+UseTrinket("Royal Seal of Eldre'Thalas")
+```
+
+#### ChannelStopCastingNextTick()
+Will stop channeling early on the next tick if you have queue channeling spells enabled and try to cast a spell before the next tick (didn't know how to cancel channels without casting another spell).  Uses your ChannelLatencyReductionPercentage to determine when to stop the channel.
+
+---
+
+### Player State
+
+#### PlayerIsMoving()
+Returns whether the active player is currently moving.
+
+**Returns:**
+- `1` if the player is moving (forward, backward, strafing, jumping, falling, pitching, or on spline elevation)
+- `nil` if the player is stationary
+
+**Examples:**
+```lua
+-- Check if player is moving
+if PlayerIsMoving() == 1 then
+    print("Player is moving")
+else
+    print("Player is stationary")
+end
+```
+
+#### PlayerIsRooted()
+Returns whether the active player is currently rooted (unable to move).
+
+**Returns:**
+- `1` if the player is rooted
+- `nil` if the player is not rooted
+
+**Examples:**
+```lua
+-- Check if player is rooted
+if PlayerIsRooted() == 1 then
+    print("Player is rooted!")
+end
+```
+
+#### PlayerIsSwimming()
+Returns whether the active player is currently swimming.
+
+**Returns:**
+- `1` if the player is swimming
+- `nil` if the player is not swimming
+
+**Examples:**
+```lua
+-- Check if player is swimming
+if PlayerIsSwimming() == 1 then
+    print("Player is swimming")
+end
+```
+
+---
+
+### Utility Functions
+
+#### GetNampowerVersion()
+Returns the current version of Nampower split into major, minor and patch numbers.
+
+So if version was v2.8.6 it would return 2, 8, 6 as integers.
+
+Examples:
+```
+/run local major, minor, patch=GetNampowerVersion();print(major);print(minor);print(patch)
+```
+
+The previous version of this `GetSpellSlotAndTypeForName` was removed as it was returning a 0 indexed slot number which was confusing to use in lua.
+
+---
+
+#### LearnTalentRank(talentPage, talentIndex, rank)
+Learns a specific talent rank directly by tab/index.
+
+**Parameters:**
+- `talentPage` (number): Valid range `1-3`
+- `talentIndex` (number): Valid range `1-32`
+- `rank` (number): Valid range `1-5`
+
+**Returns:**
+- `1` on success
+- Raises a Lua error on invalid parameters or if the talent entry cannot be resolved
+
+---
+
+#### WriteCustomFile(filename, content, [mode])
+Writes text to a file in the `CustomData` directory.
+
+**Availability:**
+- In-game Lua and GlueXML.
+
+**Parameters:**
+- `filename` (string): File name only (must not contain path separators or invalid filename characters).
+- `content` (string): Content to write.
+- `mode` (string, optional): One-character mode:
+  - `"w"` = truncate/overwrite (default)
+  - `"b"` = write in binary mode
+  - `"a"` = append
+
+**Returns:**
+- No return value.
+- Raises a Lua error on invalid filename, invalid mode, or write failure.
+
+**Behavior:**
+- Paths are constrained to the `CustomData` directory.
+- If `mode` is omitted, `"w"` is used.
+
+**Examples:**
+```lua
+WriteCustomFile("notes.txt", "hello")
+WriteCustomFile("notes.txt", "more text\n", "a")
+WriteCustomFile("blob.bin", "raw-bytes", "b")
+```
+
+---
+
+#### ReadCustomFile(filename)
+Reads text from a file in the `CustomData` directory.
+
+**Availability:**
+- In-game Lua and GlueXML.
+
+**Parameters:**
+- `filename` (string): File name only (must not contain path separators or invalid filename characters).
+
+**Returns:**
+- File contents as a string.
+- `nil` if the file does not exist.
+- Raises a Lua error on invalid filename/path or other read failures.
+
+**Behavior:**
+- Paths are constrained to the `CustomData` directory.
+
+**Examples:**
+```lua
+local text = ReadCustomFile("notes.txt")
+```
+
+---
+
+#### CustomFileExists(filename)
+Returns whether a file exists in the `CustomData` directory.
+
+**Availability:**
+- In-game Lua and GlueXML.
+
+**Parameters:**
+- `filename` (string): File name only (must not contain path separators or invalid filename characters).
+
+**Returns:**
+- `true` if the file exists and is a regular file.
+- `false` if it does not exist.
+- Raises a Lua error on invalid filename/path or stat failures.
+
+**Behavior:**
+- Paths are constrained to the `CustomData` directory.
+
+**Examples:**
+```lua
+if CustomFileExists("notes.txt") then
+    print("notes.txt exists")
+end
+```
+
+---
+
+#### ImportFile(filename)
+Reads a `.txt` file from the `Imports` directory.  This is provided for backwards compatibility with SuperWoW and to patch some security issues with the original implementation.
+
+**Availability:**
+- In-game Lua and GlueXML.
+
+**Parameters:**
+- `filename` (string): Base filename; `.txt` is always appended automatically.
+
+**Returns:**
+- File contents as a string.
+- `nil` if the file does not exist.
+- Raises a Lua error if the filename/path is invalid or other read failures occur.
+
+**Behavior:**
+- Path is constrained to `Imports`.
+- `.txt` is always appended to the provided filename.
+
+**Examples:**
+```lua
+local data = ImportFile("data")  -- will read from Imports/data.txt
+```
+
+---
+
+#### ExportFile(filename, text)
+Writes text to a `.txt` file in the `Imports` directory.  This is provided for backwards compatibility with SuperWoW and to patch some security issues with the original implementation.
+
+**Availability:**
+- In-game Lua and GlueXML.
+
+**Parameters:**
+- `filename` (string): Base filename; `.txt` is always appended automatically.
+- `text` (string): Content to write.
+
+**Returns:**
+- No return value.
+- Raises a Lua error on invalid parameters, invalid filename/path, or write failure.
+
+**Behavior:**
+- Path is constrained to `Imports`.
+- `.txt` is always appended to the provided filename.
+- Exactly 2 parameters are accepted (no mode argument).
+- Writes in overwrite mode.
+
+**Examples:**
+```lua
+ExportFile("profile", "value=1")
+```
+
+---
+
+#### ExecuteCustomLuaFile(filename)
+Executes a `.lua` file from the `CustomData` directory using the same function used to load WTF files.
+
+**Availability:**
+- In-game Lua and GlueXML.
+
+**Parameters:**
+- `filename` (string): Must end with `.lua`.
+
+**Returns:**
+- No return value.
+- Raises a Lua error on invalid filename/path or execution setup failure.
+
+**Behavior:**
+- Path is constrained to `CustomData`.
+- Only `.lua` files are accepted.
+
+**Examples:**
+```lua
+ExecuteCustomLuaFile("bootstrap.lua")
+```
+
+---
+
+#### EncryptPassword(password)
+Encrypts a plaintext password using Windows DPAPI and returns a tagged ciphertext string.  
+Requires the user to have set an environment variable WOW_ENCRYPTION_KEY.
+This exists to support autologin workflows without storing passwords in plain text.
+
+**Availability:**
+- GlueXML only (not available to in-game Lua).
+
+**Parameters:**
+- `password` (string): Plaintext password, or an already encrypted tagged value.
+
+**Returns:**
+- Encrypted value as `":encrypted:" .. base64Ciphertext`.
+- If input already starts with `:encrypted:`, it is returned unchanged to avoid double encrypting.
+- Raises a Lua error if `WOW_ENCRYPTION_KEY` is not set or encryption fails.
+
+**Behavior:**
+- Uses `WOW_ENCRYPTION_KEY` as DPAPI entropy.
+- Output is idempotently tagged with `:encrypted:`.
+
+**Examples:**
+```lua
+local p = EncryptPassword("hunter2")
+-- p starts with ":encrypted:"
+```
+
+---
+
+#### EncryptedServerLogin(username, encryptedPasswordBase64String)
+Logs in using an encrypted password generated by `EncryptPassword`.
+Requires the user to have set an environment variable WOW_ENCRYPTION_KEY.
+This exists to support autologin workflows without storing passwords in plain text.
+
+**Availability:**
+- GlueXML only (not available to in-game Lua).
+
+**Parameters:**
+- `username` (string): Account username.
+- `encryptedPasswordBase64String` (string): Must start with `:encrypted:`.
+
+**Returns:**
+- No return value.
+- Raises a Lua error if parameters are invalid, the prefix is missing, `WOW_ENCRYPTION_KEY` is not set, or decryption fails.
+
+**Behavior:**
+- Looks for the `:encrypted:` prefix added by EncryptPassword.
+- Removes the prefix before base64+DPAPI decryption.
+- Uses `WOW_ENCRYPTION_KEY` as DPAPI entropy before calling the game login function.
+
+**Examples:**
+```lua
+local enc = EncryptPassword("hunter2")
+EncryptedServerLogin("my_user", enc)
+```
+
+---
+
+#### CombatLogFlush()
+Forces the current combat log file buffer to flush to disk immediately.
+
+**Availability:**
+- In-game Lua and GlueXML.
+
+**Parameters:**
+- None.
+
+**Returns:**
+- No return value.
+
+**Behavior:**
+- Calls the client `SLogFlush` routine with the current combat-log file handle.
+- Useful if you need log lines persisted to disk right away.
+
+**Examples:**
+```lua
+CombatLogFlush()
+```
+
+#### DisenchantAll(itemIdOrName, [includeSoulbound]) or DisenchantAll(quality, [includeSoulbound])
+Automatically disenchants items in your inventory. Can disenchant a specific item by ID/name, or all weapons and armor of a specified quality.
+
+**⚠️ WARNING ⚠️**
+**THIS FUNCTION WILL AUTOMATICALLY DISENCHANT ITEMS WITHOUT CONFIRMATION!**
+- **Use at your own risk** - there is no undo for disenchanting
+- Only disenchants items from **player inventory bags (backpack and bags 1-4)**
+- **Equipped items, bank items, and keyring are PROTECTED** - will not be touched
+- **Quest items are ALWAYS protected** regardless of settings
+- **Soulbound items are protected by default** (can be overridden with optional parameter)
+- Make sure you have the Disenchant spell and the items are disenchantable before using
+- **Always double-check your bags** before running this command
+
+**Parameters:**
+
+**Mode 1: Disenchant by Item ID or Name**
+- `itemIdOrName` (number|string): Item ID (number) or item name (string)
+  - Disenchants all copies of the specified item found in your bags
+  - Works on any disenchantable item type (weapons, armor, etc.)
+- `includeSoulbound` (number, optional): Pass any non-zero value (e.g., `1`) to include soulbound items (defaults to `0`)
+
+**Mode 2: Disenchant by Quality** *(weapons and armor only)*
+- `quality` (string): Can be a single quality or combination (pipe-separated):
+  - `"greens"` - Disenchants all uncommon (green) quality weapons and armor
+  - `"blues"` - Disenchants all rare (blue) quality weapons and armor
+  - `"purples"` - Disenchants all epic (purple) quality weapons and armor
+  - `"greens|blues"` - Disenchants both greens and blues
+  - `"blues|purples"` - Disenchants both blues and purples
+  - `"greens|blues|purples"` - Disenchants greens, blues, and purples
+  - Only affects **weapons** (class 2) and **armor** (class 4)
+- `includeSoulbound` (number, optional): Pass any non-zero value (e.g., `1`) to include soulbound items (defaults to `0`)
+
+**Returns:**
+- `1` if the first disenchant succeeded
+- `0` if no matching items were found or the disenchant failed
+
+**Behavior:**
+- Searches player inventory bags (backpack and bags 1-4) only - **equipped items, bank, and keyring are protected**
+- Finds the first matching item in your inventory
+- Displays a chat message showing which item is being disenchanted
+- Casts Disenchant spell on that item
+- Automatically continues disenchanting matching items every 5 seconds
+- Stops when no more matching items are found or an error occurs
+- Displays completion or error messages in chat
+
+**Examples:**
+```lua
+-- Disenchant all green weapons and armor in your bags (excluding soulbound)
+DisenchantAll("greens")
+
+-- Disenchant all blue weapons and armor including soulbound items
+DisenchantAll("blues", 1)
+
+-- Disenchant all purple (epic) weapons and armor
+DisenchantAll("purples")
+
+-- Disenchant both greens and blues
+DisenchantAll("greens|blues")
+
+-- Disenchant blues and purples including soulbound items
+DisenchantAll("blues|purples", 1)
+
+-- Disenchant all greens, blues, and purples
+DisenchantAll("greens|blues|purples")
+
+-- Disenchant a specific item by ID (excluding soulbound)
+DisenchantAll(12345)
+
+-- Disenchant a specific item by name including soulbound items
+DisenchantAll("Glowing Brightwood Staff", 1)
+```
+
+**Important Notes:**
+- The function runs continuously until all matching items are disenchanted
+- **Only searches inventory bags (backpack and bags 1-4)** - equipped items, bank, and keyring are protected
+- When using quality mode ("greens"/"blues"/"purples" or combinations), only weapons and armor are affected
+- When using item ID/name mode, any disenchantable item can be targeted
+- Make sure you have enough bag space for the disenchanting materials
+- The function will stop if you run out of matching items or if the disenchant spell fails
+- Displays chat messages: "Disenchanting [Item Link] move during cast to cancel.", "No more items to disenchant.", and "Disenchant interrupted or failed."
+- **REVIEW YOUR BAGS CAREFULLY BEFORE USE** - disenchanting cannot be undone!
+
+#### GetQuestLogQuestIds([useCopy])
+Returns a table of real quest IDs from the current quest log, skipping category headers and invalid entries.
+
+**Parameters:**
+- `useCopy` (number, optional): If non-zero, returns a fresh table each call. If omitted or 0, returns a reusable table reference that is updated in place (stale entries from removed quests are set to nil automatically).
+
+**Returns:**
+- A Lua table indexed `1..N` containing quest IDs as numbers, with no gaps. Header rows and entries with an invalid quest ID are excluded.
+- Returns an empty table if the quest log is empty or contains more than 256 entries.
+
+**Examples:**
+```lua
+-- Print all current quest IDs (reusable ref)
+local t = GetQuestLogQuestIds()
+for i = 1, table.getn(t) do
+    print(t[i])
+end
+
+-- Get a snapshot copy (safe to store across calls)
+local snapshot = GetQuestLogQuestIds(1)
+```
+
+---
+
+#### GetQuestDialogQuestId()
+Returns the real quest ID for the currently open quest dialog.
+
+This is mainly useful while handling:
+- `QUEST_DETAIL`
+- `QUEST_PROGRESS`
+- `QUEST_COMPLETE`
+
+**Returns:**
+- The current dialog quest ID as a number.
+- `nil` when no valid quest dialog is active.
+
+**Examples:**
+```
+/run print(GetQuestDialogQuestId())
+```

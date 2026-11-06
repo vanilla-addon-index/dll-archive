@@ -1,0 +1,9 @@
+{
+  "id": "224",
+  "tag": "0.7.3",
+  "name": "WeirdUtils 0.7.3",
+  "body": "WeirdUtils 0.7.3\r\n\r\n- Standard module DLLs are compiled from  with Zig 0.16.0 in ReleaseSmall mode.\r\n",
+  "published": "2026-08-02T01:12:59Z",
+  "prerelease": false,
+  "url": "https://octowow.st/git/Dusk/WeirdUtils/releases/tag/0.7.3"
+}

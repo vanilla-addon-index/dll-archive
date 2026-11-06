@@ -1,0 +1,814 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": 232,
+      "name": "LockPort",
+      "folder": "LockPort",
+      "components": [
+        {
+          "originalUrl": "https://octowow.st/git/OEVG/LockPort",
+          "folder": "LockPort",
+          "source": {
+            "kind": "repository",
+            "host": "octowow.st",
+            "owner": "OEVG",
+            "repo": "LockPort",
+            "name": "LockPort",
+            "url": "https://octowow.st/git/OEVG/LockPort",
+            "api": "https://octowow.st/git/api/v1/repos/OEVG/LockPort"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unspecified upstream license (private personal backup)"
+        },
+        {
+          "originalUrl": "https://github.com/randall05/LockPort_Plus",
+          "folder": "LockPort_Plus",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "randall05",
+            "repo": "LockPort_Plus",
+            "name": "LockPort_Plus",
+            "url": "https://github.com/randall05/LockPort_Plus",
+            "api": "https://api.github.com/repos/randall05/LockPort_Plus"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unspecified upstream license (private personal backup)"
+        },
+        {
+          "originalUrl": "https://github.com/seacrabsam/LockPort",
+          "folder": "LockPort--seacrabsam",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "seacrabsam",
+            "repo": "LockPort",
+            "name": "LockPort",
+            "url": "https://github.com/seacrabsam/LockPort",
+            "api": "https://api.github.com/repos/seacrabsam/LockPort"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unspecified upstream license (private personal backup)"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/lockport"
+    },
+    {
+      "id": 668,
+      "name": "WoW-Translate",
+      "folder": "WoW-Translate",
+      "components": [
+        {
+          "originalUrl": "https://github.com/jhinzuo2/wow-translate",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "jhinzuo2",
+            "repo": "wow-translate",
+            "name": "wow-translate",
+            "url": "https://github.com/jhinzuo2/wow-translate",
+            "api": "https://api.github.com/repos/jhinzuo2/wow-translate"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "MIT"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/wow-translate"
+    },
+    {
+      "id": 1007,
+      "name": "ClassicAPI",
+      "folder": "ClassicAPI",
+      "components": [
+        {
+          "originalUrl": "https://github.com/brues-code/ClassicAPI",
+          "folder": "ClassicAPI",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "brues-code",
+            "repo": "ClassicAPI",
+            "name": "ClassicAPI",
+            "url": "https://github.com/brues-code/ClassicAPI",
+            "api": "https://api.github.com/repos/brues-code/ClassicAPI"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "GPL-3.0"
+        },
+        {
+          "originalUrl": "https://octowow.st/git/lightblade/ClassicAPI",
+          "folder": "ClassicAPI--lightblade",
+          "source": {
+            "kind": "repository",
+            "host": "octowow.st",
+            "owner": "lightblade",
+            "repo": "ClassicAPI",
+            "name": "ClassicAPI",
+            "url": "https://octowow.st/git/lightblade/ClassicAPI",
+            "api": "https://octowow.st/git/api/v1/repos/lightblade/ClassicAPI"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "LGPL"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/classicapi"
+    },
+    {
+      "id": 1011,
+      "name": "HearthDB",
+      "folder": "HearthDB",
+      "components": [
+        {
+          "originalUrl": "https://octowow.st/git/lightblade/HearthDB",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "octowow.st",
+            "owner": "lightblade",
+            "repo": "HearthDB",
+            "name": "HearthDB",
+            "url": "https://octowow.st/git/lightblade/HearthDB",
+            "api": "https://octowow.st/git/api/v1/repos/lightblade/HearthDB"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "LGPL"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/hearthdb"
+    },
+    {
+      "id": 1032,
+      "name": "DmorphOcto",
+      "folder": "DmorphOcto",
+      "components": [
+        {
+          "originalUrl": "https://octowow.st/git/bdot1/DmorphOcto",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "octowow.st",
+            "owner": "bdot1",
+            "repo": "DmorphOcto",
+            "name": "DmorphOcto",
+            "url": "https://octowow.st/git/bdot1/DmorphOcto",
+            "api": "https://octowow.st/git/api/v1/repos/bdot1/DmorphOcto"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unspecified upstream license (private personal backup)"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/dmorphocto"
+    },
+    {
+      "id": 1063,
+      "name": "OctoBus",
+      "folder": "OctoBus",
+      "components": [
+        {
+          "originalUrl": "https://github.com/Phridgey/OctoBus",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "Phridgey",
+            "repo": "OctoBus",
+            "name": "OctoBus",
+            "url": "https://github.com/Phridgey/OctoBus",
+            "api": "https://api.github.com/repos/Phridgey/OctoBus"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unspecified upstream license (private personal backup)"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/octobus"
+    },
+    {
+      "id": 1065,
+      "name": "PandaConquest",
+      "folder": "PandaConquest",
+      "components": [
+        {
+          "originalUrl": "https://github.com/Tom75VN/PandaConquest",
+          "folder": "PandaConquest",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "Tom75VN",
+            "repo": "PandaConquest",
+            "name": "PandaConquest",
+            "url": "https://github.com/Tom75VN/PandaConquest",
+            "api": "https://api.github.com/repos/Tom75VN/PandaConquest"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unspecified upstream license (private personal backup)"
+        },
+        {
+          "originalUrl": "https://github.com/Tom75VN/PandaConquest-Companion",
+          "folder": "PandaConquest-Companion",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "Tom75VN",
+            "repo": "PandaConquest-Companion",
+            "name": "PandaConquest-Companion",
+            "url": "https://github.com/Tom75VN/PandaConquest-Companion",
+            "api": "https://api.github.com/repos/Tom75VN/PandaConquest-Companion"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unspecified upstream license (private personal backup)"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/pandaconquest"
+    },
+    {
+      "id": 1074,
+      "name": "Octo-TotemCircles",
+      "folder": "Octo-TotemCircles",
+      "components": [
+        {
+          "originalUrl": "https://octowow.st/git/veber01/Octo-TotemCircles",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "octowow.st",
+            "owner": "veber01",
+            "repo": "Octo-TotemCircles",
+            "name": "Octo-TotemCircles",
+            "url": "https://octowow.st/git/veber01/Octo-TotemCircles",
+            "api": "https://octowow.st/git/api/v1/repos/veber01/Octo-TotemCircles"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "LGPL"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/octo-totemcircles"
+    },
+    {
+      "id": 1088,
+      "name": "VanillaFixes",
+      "folder": "VanillaFixes",
+      "components": [
+        {
+          "originalUrl": "https://github.com/hannesmann/vanillafixes",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "hannesmann",
+            "repo": "vanillafixes",
+            "name": "vanillafixes",
+            "url": "https://github.com/hannesmann/vanillafixes",
+            "api": "https://api.github.com/repos/hannesmann/vanillafixes"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "MIT"
+        }
+      ],
+      "active": true,
+      "kind": "Util",
+      "site": "https://vanilla-addon-index.github.io/dll/vanillafixes"
+    },
+    {
+      "id": 1089,
+      "name": "DXVK",
+      "folder": "DXVK",
+      "components": [
+        {
+          "originalUrl": "https://github.com/doitsujin/dxvk",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "doitsujin",
+            "repo": "dxvk",
+            "name": "dxvk",
+            "url": "https://github.com/doitsujin/dxvk",
+            "api": "https://api.github.com/repos/doitsujin/dxvk"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Zlib"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/dxvk"
+    },
+    {
+      "id": 1090,
+      "name": "Vanilla Tweaks",
+      "folder": "Vanilla Tweaks",
+      "components": [
+        {
+          "originalUrl": "https://github.com/tubtubs/vanilla-tweaks",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "tubtubs",
+            "repo": "vanilla-tweaks",
+            "name": "vanilla-tweaks",
+            "url": "https://github.com/tubtubs/vanilla-tweaks",
+            "api": "https://api.github.com/repos/tubtubs/vanilla-tweaks"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "MIT"
+        }
+      ],
+      "active": true,
+      "kind": "Util",
+      "site": "https://vanilla-addon-index.github.io/dll/vanilla-tweaks"
+    },
+    {
+      "id": 1091,
+      "name": "VanillaHelpers",
+      "folder": "VanillaHelpers",
+      "components": [
+        {
+          "originalUrl": "https://github.com/isfir/VanillaHelpers",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "isfir",
+            "repo": "VanillaHelpers",
+            "name": "VanillaHelpers",
+            "url": "https://github.com/isfir/VanillaHelpers",
+            "api": "https://api.github.com/repos/isfir/VanillaHelpers"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "LGPL-3.0"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/vanillahelpers"
+    },
+    {
+      "id": 1092,
+      "name": "PerfBoost",
+      "folder": "PerfBoost",
+      "components": [
+        {
+          "originalUrl": "https://github.com/RetroCro/TurtleWoW-Mods/blob/main/Archive/DLL%20BACKUP/perf_boost.dll",
+          "folder": "dll",
+          "source": {
+            "kind": "file",
+            "url": "https://raw.githubusercontent.com/RetroCro/TurtleWoW-Mods/main/Archive/DLL%20BACKUP/perf_boost.dll",
+            "filename": "perf_boost.dll",
+            "name": "perf_boost.dll"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true
+        },
+        {
+          "originalUrl": "https://github.com/RetroCro/TurtleWoW-Mods/blob/main/Archive/DLL%20BACKUP/perfboostsettings.zip",
+          "folder": "PerfBoostSettings",
+          "source": {
+            "kind": "file",
+            "url": "https://raw.githubusercontent.com/RetroCro/TurtleWoW-Mods/main/Archive/DLL%20BACKUP/perfboostsettings.zip",
+            "filename": "perfboostsettings.zip",
+            "name": "perfboostsettings.zip"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/perfboost"
+    },
+    {
+      "id": 1093,
+      "name": "UnitXP_SP3",
+      "folder": "UnitXP_SP3",
+      "components": [
+        {
+          "originalUrl": "https://github.com/brues-code/UnitXP_SP3",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "brues-code",
+            "repo": "UnitXP_SP3",
+            "name": "UnitXP_SP3",
+            "url": "https://github.com/brues-code/UnitXP_SP3",
+            "api": "https://api.github.com/repos/brues-code/UnitXP_SP3"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unspecified upstream license (private personal backup)"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/unitxp-sp3"
+    },
+    {
+      "id": 1094,
+      "name": "SuperWoW",
+      "folder": "SuperWoW",
+      "components": [
+        {
+          "originalUrl": "https://github.com/balakethelock/SuperWoW",
+          "folder": "SuperWoW",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "balakethelock",
+            "repo": "SuperWoW",
+            "name": "SuperWoW",
+            "url": "https://github.com/balakethelock/SuperWoW",
+            "api": "https://api.github.com/repos/balakethelock/SuperWoW"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unspecified upstream license (private personal backup)"
+        },
+        {
+          "originalUrl": "https://github.com/balakethelock/SuperAPI",
+          "folder": "SuperAPI",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "balakethelock",
+            "repo": "SuperAPI",
+            "name": "SuperAPI",
+            "url": "https://github.com/balakethelock/SuperAPI",
+            "api": "https://api.github.com/repos/balakethelock/SuperAPI"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unspecified upstream license (private personal backup)"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/superwow"
+    },
+    {
+      "id": 1095,
+      "name": "AuctionQueryThrottle",
+      "folder": "AuctionQueryThrottle",
+      "components": [
+        {
+          "originalUrl": "https://github.com/brues-code/AuctionQueryThrottle",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "brues-code",
+            "repo": "AuctionQueryThrottle",
+            "name": "AuctionQueryThrottle",
+            "url": "https://github.com/brues-code/AuctionQueryThrottle",
+            "api": "https://api.github.com/repos/brues-code/AuctionQueryThrottle"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "GPL-3.0"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/auctionquerythrottle"
+    },
+    {
+      "id": 1096,
+      "name": "Nampower",
+      "folder": "Nampower",
+      "components": [
+        {
+          "originalUrl": "https://github.com/brues-code/nampower",
+          "folder": "nampower",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "brues-code",
+            "repo": "nampower",
+            "name": "nampower",
+            "url": "https://github.com/brues-code/nampower",
+            "api": "https://api.github.com/repos/brues-code/nampower"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "BSD"
+        },
+        {
+          "originalUrl": "https://github.com/brues-code/NampowerSettings",
+          "folder": "NampowerSettings",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "brues-code",
+            "repo": "NampowerSettings",
+            "name": "NampowerSettings",
+            "url": "https://github.com/brues-code/NampowerSettings",
+            "api": "https://api.github.com/repos/brues-code/NampowerSettings"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unspecified upstream license (private personal backup)"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/nampower"
+    },
+    {
+      "id": 1097,
+      "name": "No1600x1200",
+      "folder": "No1600x1200",
+      "components": [
+        {
+          "originalUrl": "https://github.com/RetroCro/TurtleWoW-Mods#no1600x1200",
+          "folder": "",
+          "source": {
+            "kind": "file",
+            "url": "https://raw.githubusercontent.com/RetroCro/TurtleWoW-Mods/main/Archive/DLL%20BACKUP/no1600x1200.dll",
+            "filename": "no1600x1200.dll",
+            "name": "no1600x1200.dll"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/no1600x1200"
+    },
+    {
+      "id": 1098,
+      "name": "VanillaMultiMonitorFix",
+      "folder": "VanillaMultiMonitorFix",
+      "components": [
+        {
+          "originalUrl": "https://github.com/Mates1500/VanillaMultiMonitorFix",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "Mates1500",
+            "repo": "VanillaMultiMonitorFix",
+            "name": "VanillaMultiMonitorFix",
+            "url": "https://github.com/Mates1500/VanillaMultiMonitorFix",
+            "api": "https://api.github.com/repos/Mates1500/VanillaMultiMonitorFix"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "MIT"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/vanillamultimonitorfix"
+    },
+    {
+      "id": 1099,
+      "name": "Interact",
+      "folder": "Interact",
+      "components": [
+        {
+          "originalUrl": "https://github.com/lookino/Interact",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "lookino",
+            "repo": "Interact",
+            "name": "Interact",
+            "url": "https://github.com/lookino/Interact",
+            "api": "https://api.github.com/repos/lookino/Interact"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unspecified upstream license (private personal backup)"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/interact"
+    },
+    {
+      "id": 1100,
+      "name": "LeviFix",
+      "folder": "LeviFix",
+      "components": [
+        {
+          "originalUrl": "https://octowow.st/git/octoadmin/LeviFix",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "octowow.st",
+            "owner": "octoadmin",
+            "repo": "LeviFix",
+            "name": "LeviFix",
+            "url": "https://octowow.st/git/octoadmin/LeviFix",
+            "api": "https://octowow.st/git/api/v1/repos/octoadmin/LeviFix"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "MIT"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/levifix"
+    },
+    {
+      "id": 1101,
+      "name": "WeirdUtils",
+      "folder": "WeirdUtils",
+      "components": [
+        {
+          "originalUrl": "https://octowow.st/git/Dusk/WeirdUtils",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "octowow.st",
+            "owner": "Dusk",
+            "repo": "WeirdUtils",
+            "name": "WeirdUtils",
+            "url": "https://octowow.st/git/Dusk/WeirdUtils",
+            "api": "https://octowow.st/git/api/v1/repos/Dusk/WeirdUtils"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unlicense"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/weirdutils"
+    },
+    {
+      "id": 1102,
+      "name": "WowPresence",
+      "folder": "WowPresence",
+      "components": [
+        {
+          "originalUrl": "https://octowow.st/git/Dusk/WowPresence",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "octowow.st",
+            "owner": "Dusk",
+            "repo": "WowPresence",
+            "name": "WowPresence",
+            "url": "https://octowow.st/git/Dusk/WowPresence",
+            "api": "https://octowow.st/git/api/v1/repos/Dusk/WowPresence"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unspecified upstream license (private personal backup)"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/wowpresence"
+    },
+    {
+      "id": 1103,
+      "name": "Modernization-Tool",
+      "folder": "Modernization-Tool",
+      "components": [
+        {
+          "originalUrl": "https://octowow.st/git/Dusk/Modernization-Tool",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "octowow.st",
+            "owner": "Dusk",
+            "repo": "Modernization-Tool",
+            "name": "Modernization-Tool",
+            "url": "https://octowow.st/git/Dusk/Modernization-Tool",
+            "api": "https://octowow.st/git/api/v1/repos/Dusk/Modernization-Tool"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unspecified upstream license (private personal backup)"
+        }
+      ],
+      "active": true,
+      "kind": "Util",
+      "site": "https://vanilla-addon-index.github.io/dll/modernization-tool"
+    },
+    {
+      "id": 1104,
+      "name": "GlueXML",
+      "folder": "GlueXML",
+      "components": [
+        {
+          "originalUrl": "https://octowow.st/git/paste/GlueXML",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "octowow.st",
+            "owner": "paste",
+            "repo": "GlueXML",
+            "name": "GlueXML",
+            "url": "https://octowow.st/git/paste/GlueXML",
+            "api": "https://octowow.st/git/api/v1/repos/paste/GlueXML"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unspecified upstream license (private personal backup)"
+        }
+      ],
+      "active": true,
+      "kind": "MPQ",
+      "site": "https://vanilla-addon-index.github.io/dll/gluexml"
+    },
+    {
+      "id": 1105,
+      "name": "RaidVisuals-OctoWoW",
+      "folder": "RaidVisuals-OctoWoW",
+      "components": [
+        {
+          "originalUrl": "https://octowow.st/git/Rook/RaidVisuals-OctoWoW",
+          "folder": "",
+          "source": {
+            "kind": "repository",
+            "host": "octowow.st",
+            "owner": "Rook",
+            "repo": "RaidVisuals-OctoWoW",
+            "name": "RaidVisuals-OctoWoW",
+            "url": "https://octowow.st/git/Rook/RaidVisuals-OctoWoW",
+            "api": "https://octowow.st/git/api/v1/repos/Rook/RaidVisuals-OctoWoW"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unspecified upstream license (private personal backup)"
+        }
+      ],
+      "active": true,
+      "kind": "MPQ",
+      "site": "https://vanilla-addon-index.github.io/dll/raidvisuals-octowow"
+    }
+  ]
+}

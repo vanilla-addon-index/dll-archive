@@ -1,0 +1,9 @@
+{
+  "id": "429409109",
+  "tag": "v0.1.1",
+  "name": "PandaConquest Companion 0.1.1",
+  "body": "### Fixed\r\n\r\n- After an addon update, the first game session now receives your server data (captured POIs, tickets) instead of starting with an empty map until the next launch.\r\n\r\nSelf-contained Windows 64-bit archive (nothing to install, no .NET needed): extract it into your World of Warcraft folder (the one with `WoW.exe`); it adds the `PandaConquest-Companion` folder and `PandaConquestLauncher.dll`. Then either tick `PandaConquestLauncher.dll` in the Octo launcher's mods, or run `PandaConquest-Companion\\PandaConquest.Companion.exe` once: from then on the game starts the companion. To update, extract the new archive over the old one: your settings and key are kept elsewhere. Unsigned: Windows SmartScreen may ask for confirmation on first launch.\r\n\r\nSHA-256 of `PandaConquest-Companion-0.1.1-win-x64.zip`:\r\n\r\n```text\r\n8c59010ce65d51b727b0f7bc25aee0829c271eeda2577995266eae7774cb038b\r\n```\r\n",
+  "published": "2026-10-30T19:25:07Z",
+  "prerelease": false,
+  "url": "https://github.com/Tom75VN/PandaConquest-Companion/releases/tag/v0.1.1"
+}

@@ -1,0 +1,14 @@
+{
+  "fallbacks": {
+    "wowpresence": {
+      "filename": "WowPresence.zip",
+      "kind": "wowpresence_zip",
+      "revision": "v1.3",
+      "sha256": "9b2dca9c69b5ab3b6dae3ef3b3efc9671779a227802ebb6ac98cb22bc6ea448a",
+      "size": 141423,
+      "source": "https://octowow.st/git/Dusk/WowPresence/releases/download/v1.3/WowPresence.zip"
+    }
+  },
+  "generated_for": "Modernization Tool release build",
+  "schema": 1
+}

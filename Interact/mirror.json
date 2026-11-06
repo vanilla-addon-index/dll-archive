@@ -1,0 +1,42 @@
+{
+  "upstream": "https://github.com/lookino/Interact",
+  "source": {
+    "kind": "repository",
+    "host": "github.com",
+    "owner": "lookino",
+    "repo": "Interact",
+    "name": "Interact",
+    "url": "https://github.com/lookino/Interact",
+    "api": "https://api.github.com/repos/lookino/Interact"
+  },
+  "commit": "2db6e51d978bca5db7cb5374b3e304a08fa4a0a0",
+  "sourceFiles": {
+    "README.md": {
+      "sha256": "c71f5111703878b847628306938021df48bcdf26ebefd104806b5aaf2264ec91",
+      "bytes": 707
+    }
+  },
+  "symlinks": {},
+  "releases": {
+    "275711745": {
+      "tag": "v1.0.4",
+      "folder": "v1.0.4--275711745",
+      "assets": {
+        "338742008": {
+          "sha256": "f7104564f324f6a5486e80cb2c5133a6ebb462eed7877c2ad3429e88afb4ed37",
+          "bytes": 55617,
+          "id": "338742008",
+          "name": "Interact.zip",
+          "url": "https://github.com/lookino/Interact/releases/download/v1.0.4/Interact.zip",
+          "path": "releases/v1.0.4--275711745/assets/Interact.zip"
+        }
+      },
+      "source": {
+        "sha256": "7b1ddf760ae7f373f3ba350a8a48885e3f32a33634f332b305cc0c3b11a0ccaf",
+        "bytes": 670,
+        "path": "releases/v1.0.4--275711745/upstream-source.tar.gz",
+        "url": "https://api.github.com/repos/lookino/Interact/tarball/v1.0.4"
+      }
+    }
+  }
+}

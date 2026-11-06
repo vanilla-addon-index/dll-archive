@@ -1,0 +1,1739 @@
+// This file is part of ClassicAPI.
+//
+// ClassicAPI is free software: you can redistribute it and/or modify it under the terms
+// of the GNU General Public License as published by the Free Software Foundation, either
+// version 3 of the License, or (at your option) any later version.
+//
+// ClassicAPI is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+// PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with
+// ClassicAPI. If not, see <https://www.gnu.org/licenses/>.
+
+// Lua 5.1 syntax backport (source-level transpile).
+//
+// Vanilla's Lua is 5.0. It lacks the 5.1 operators `#` (length) and `%`
+// (modulo), `...` used as an expression, `0x` hexadecimal number literals, AND
+// leveled long brackets (`[=[`…`]=]`), so modern addon ports that use them fail
+// to COMPILE. We don't touch the 5.0 parser/VM (there is no OP_LEN / OP_MOD and
+// no free opcode); instead we rewrite the SOURCE before it reaches the parser:
+// co-hook `luaL_loadbuffer` (the one function every compile funnels through —
+// file scripts, `loadstring`, XML `<OnLoad>`) and rewrite:
+//     #operand      ->  __len(operand)
+//     a % b         ->  __mod(a, b)
+//     ...           ->  unpack(arg)      (the `...` EXPRESSION, not the decl)
+//     0xHH...       ->  <decimal>        (5.0's lexer rejects hex literals)
+//     [=[ … ]=]     ->  [[ … ]] or "…"   (5.0 has no leveled long brackets)
+// `__len` / `__mod` are C globals we register (see below); `unpack` and the
+// 5.0 `arg` table are already present. RunPasses lexes the chunk once WITHOUT
+// building tokens to learn whether any trigger (`[=[`, `0x`, `...`, `#`, `%`)
+// occurs outside a string or comment, and only then tokenizes and runs the
+// passes — hex first, then vararg, then the # / % precedence parser — over one
+// shared token stream (RewriteChunk and LoadBuffer_h both go through it).
+//
+// Why a real parser (not regex / one-term-each-side): `#` is prefix but `%`
+// is binary infix, so its operands must be delimited by PRECEDENCE —
+// `a * b % c` is `__mod(a*b, c)`, `a + b % c` is `a + __mod(b,c)`, and
+// `a % b % c` chains left-associatively as `__mod(__mod(a,b), c)`. A
+// precedence-climbing parse gets all of these right and composes `#` and `%`
+// in a single pass (`#a % b` -> `__mod(__len(a), b)`).
+//
+// Why __mod is not math.mod: the engine's `math.mod` is C fmod (truncated
+// toward zero), which disagrees with Lua `%` for negative operands
+// (`-1 % 3` == 2, but fmod(-1,3) == -1). __mod computes the real 5.1
+// definition `a - floor(a/b)*b`.
+//
+// Safety: the rewrite runs only when a chunk contains `#` or `%` as a TOKEN,
+// and either as an OPERATOR already fails to compile on 5.0 — so we cannot
+// regress working code UNLESS we misread one inside a string/comment (`"%d"`,
+// `"%a+"`, `--[[ # ]]`). The lexer's string/comment skipping is therefore
+// the one safety-critical part, and it is exact. One lexer body (`Lex`)
+// serves both the trigger scan and tokenization, so the two cannot disagree
+// about where a string ends. No newlines are inserted, so error line numbers
+// are preserved.
+//
+// Cost: a chunk whose only `%` / `...` sit inside strings — every format
+// string, every "Loading...", and every SavedVariables file — costs one
+// allocation-free lex and nothing else. That is most chunks: whole-buffer byte
+// gates (the previous design) fired on those and tokenized 100+ MB of them per
+// login on a 160 MB addon corpus, for a token stream RewriteAll then found
+// empty of operators and threw away.
+//
+// Prototype scope / limits (documented):
+//   * Nested long strings/comments (`[[ a [[ b ]] c ]]`) are depth-matched to
+//     mirror the 5.0 engine lexer (which nests), so string/comment boundaries
+//     are exact.
+//   * Leveled long brackets (`[=[`…`]=]`, `[==[`…`]==]`) — a 5.1 form this 5.0
+//     engine has no lexer support for — are rewritten to a `[[…]]` or quoted
+//     literal (long comments blanked to spaces), line-count-preserving. See the
+//     RewriteLongBrackets pass below.
+//   * `__len` on a table returns a border (bisection) = 5.1 `#`; it ignores
+//     any `table.setn` count (5.1 has no setn — correct `#` semantics).
+//   * Hex literals: only INTEGER `0x…` (up to 16 hex digits) are converted,
+//     to the exact decimal the value represents — the same double 5.1 would
+//     produce. Hex FLOATS (`0x1.8p3`) and > 64-bit literals are left as-is
+//     (vanishingly rare in addons; they fail to compile exactly as today, so
+//     no regression). The value is unsigned (`0xFFFFFFFF` -> 4294967295).
+//   * Diagnostic `_classicapi_Transpile(src)` returns the full rewrite;
+//     `_classicapi_TranspileStats()` returns the load hook's cumulative chunk
+//     count, bytes, tokenized chunks, tokenized bytes and milliseconds.
+//   * Toggles via `_classicapi_SetTranspileOption(name, bool)` /
+//     `_classicapi_GetTranspileOption(name)` (name = "Length" / "Modulo" /
+//     "VarargExpansion" / "HexLiterals" / "LongBrackets").
+//   * `...` expands to `unpack(arg)`, which is faithful in every position and
+//     preserves embedded nils via `arg.n` (this build's `unpack` honors it).
+//     Only the `...` in a function's parameter list is left intact.
+//   * Addon-args: vanilla never passed `(addonName, addonTable)` to addon
+//     chunks (1.12's main chunk has no `arg`), so the modern file-scope
+//     `local name, ns = ...` idiom would resolve to `unpack(nil)`. 4.3.4 passes
+//     them as real call arguments (FrameScript_ExecuteBuffer's `wrapper`:
+//     LoadAddOn puts one table on the stack and every file of the addon is
+//     pcalled with the name and that table). Here an addon file (chunkname
+//     `@Interface\AddOns\<Name>\...`) that uses `...` compiles as a vararg
+//     function, and the loader gets a C closure that calls it with the name
+//     and the addon's table (`Script_RunAddonFile`) — the same table for
+//     every file of the addon (registry-backed, see PushAddonNamespace).
+//   * Non-addon vararg chunks (RunScript `/run`, XML handler bodies,
+//     `loadstring`) compile as a REAL 5.0 vararg closure: the body is wrapped
+//     `return function(...) … end` and the main is called once at load, so
+//     the caller receives the inner function whose own `arg` carries real
+//     call args — `loadstring("return ...")(a, b)` yields a, b, matching 5.1
+//     called-chunk semantics (the old `local arg={n=0}` fallback lost them).
+//     Only the engine's file loader gets an addon's table: the closure is
+//     built only when luaL_loadbuffer was called from the immediate-run file
+//     funnel (`RET_LUA_FILE_COMPILE`), never for `loadstring`, whose
+//     chunkname a caller can forge. Cross-addon access is the separate,
+//     TOC-opt-in `C_AddOns.GetAddOnLocalTable`.
+
+#include "Game.h"
+#include "Offsets.h"
+#include "luasyntax/AddonNamespace.h"
+#include "table/Border.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <cstring>
+#include <intrin.h> // _ReturnAddress
+#include <string>
+#include <vector>
+#include <windows.h> // QueryPerformanceCounter
+
+namespace LuaSyntax {
+
+namespace {
+
+constexpr size_t NPOS = static_cast<size_t>(-1);
+
+// Runtime switches, default ON — a `#`/`%`/`...`/`0x`/`[=[`-bearing chunk does
+// not compile on 5.0 today, so enabling by default cannot regress working addons.
+bool g_lenEnabled = true;
+bool g_modEnabled = true;
+bool g_varargEnabled = true;
+bool g_hexEnabled = true;
+bool g_longBracketEnabled = true;
+bool g_xmlHandlerArgsEnabled = true;
+
+// Cumulative cost of the load hook since DLL load, read back by
+// `_classicapi_TranspileStats` — answers "what does the transpiler cost this
+// install" without a profiler.
+struct Stats {
+    unsigned chunks = 0;                // chunks LoadBuffer_h saw
+    unsigned long long bytes = 0;       // their source bytes
+    unsigned tokenizedChunks = 0;       // chunks that needed a token stream
+    unsigned long long tokenizedBytes = 0;
+    long long ticks = 0;                // QueryPerformanceCounter ticks inside RunPasses
+    unsigned xmlHandlersWrapped = 0;    // XML handler bodies given modern parameters
+};
+Stats g_stats;
+
+// ============================================================================
+// Lexer — enough of Lua 5.0 to skip strings/comments and delimit expressions.
+// ============================================================================
+
+enum TokKind { TK_NAME, TK_NUMBER, TK_STRING, TK_PUNCT };
+
+struct Token {
+    TokKind kind;
+    size_t start;
+    size_t end; // one past last byte
+};
+
+inline bool IsNameStart(unsigned char c) {
+    return c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+inline bool IsNameCont(unsigned char c) {
+    return IsNameStart(c) || (c >= '0' && c <= '9');
+}
+inline bool IsDigit(unsigned char c) { return c >= '0' && c <= '9'; }
+
+// If `src[pos]` opens a long bracket (`[`, N `=`, `[`), return N (>= 0), else -1.
+int LongBracketLevel(const char *src, size_t len, size_t pos) {
+    if (pos >= len || src[pos] != '[')
+        return -1;
+    size_t j = pos + 1;
+    while (j < len && src[j] == '=')
+        j++;
+    if (j < len && src[j] == '[')
+        return static_cast<int>(j - pos - 1);
+    return -1;
+}
+
+// Skip a long string/comment from the opening `[` (`pos`). Returns offset past
+// the close, or len if unterminated.
+//
+// Lua 5.0 (this client) NESTS level-0 `[[ ]]`: an inner `[[` raises the depth,
+// a `]]` lowers it, and the string closes only at depth 0 — verified against
+// the engine's own long-string reader FUN_00700010, which keeps exactly this
+// counter. We must mirror it or we mis-identify where a nested long string ends
+// and could rewrite `#`/`%` bytes the parser actually treats as string content.
+// `[=[`-style levels are a 5.1 form this 5.0 client does not accept (its reader
+// has no `=` handling), so they never nest — first matching close wins.
+size_t SkipLongBracket(const char *src, size_t len, size_t pos, int level) {
+    size_t i = pos + 2 + static_cast<size_t>(level);
+    int depth = 0;
+    while (i < len) {
+        if (level == 0 && src[i] == '[' && i + 1 < len && src[i + 1] == '[') {
+            depth++;
+            i += 2;
+            continue;
+        }
+        if (src[i] == ']') {
+            size_t j = i + 1;
+            int eq = 0;
+            while (j < len && src[j] == '=') {
+                j++;
+                eq++;
+            }
+            if (eq == level && j < len && src[j] == ']') {
+                if (depth == 0)
+                    return j + 1;
+                depth--;
+                i = j + 1;
+                continue;
+            }
+        }
+        i++;
+    }
+    return len;
+}
+
+// Skip a short string from the opening quote. Returns offset past the close,
+// or an unterminating newline / EOF offset.
+size_t SkipShortString(const char *src, size_t len, size_t pos) {
+    char q = src[pos];
+    size_t i = pos + 1;
+    while (i < len) {
+        char c = src[i];
+        if (c == '\\') {
+            i += 2;
+            continue;
+        }
+        if (c == q)
+            return i + 1;
+        if (c == '\n')
+            return i;
+        i++;
+    }
+    return len;
+}
+
+// Skip a numeric literal. Consumes one decimal point at most (so `1..2` is not
+// merged) plus hex/exponent chars.
+size_t SkipNumber(const char *src, size_t len, size_t pos) {
+    size_t i = pos;
+    const bool isHex = pos + 1 < len && src[pos] == '0' &&
+                       (src[pos + 1] == 'x' || src[pos + 1] == 'X');
+    bool seenDot = false;
+    while (i < len) {
+        char c = src[i];
+        if (c == '.') {
+            // A second dot, or the `..` concat operator, ends the number so
+            // `0xFF.."x"` / `1..2` split cleanly (the concat is not consumed).
+            if (seenDot || (i + 1 < len && src[i + 1] == '.'))
+                break;
+            seenDot = true;
+            i++;
+            continue;
+        }
+        if (IsNameCont(static_cast<unsigned char>(c))) {
+            i++;
+            continue;
+        }
+        if ((c == '+' || c == '-') && i > pos) {
+            // Exponent sign continues the number. The marker is e/E for a
+            // decimal literal but p/P for a hex float — in a hex literal e/E
+            // are DIGITS, so `0xE-1` must break at `-` (not swallow it, which
+            // would make `0xE-1 % 2` parse as `__mod(0xE-1,2)`, a wrong result).
+            char p = src[i - 1];
+            const bool expMarker =
+                isHex ? (p == 'p' || p == 'P') : (p == 'e' || p == 'E');
+            if (expMarker) {
+                i++;
+                continue;
+            }
+        }
+        break;
+    }
+    return i;
+}
+
+// The lexer body. `sink.OnToken(kind, start, end)` receives every token and
+// `sink.OnLeveled()` a note for each `[=[`-style long bracket (string or
+// comment), the 5.1 form RewriteLongBrackets has to convert. Templated on the
+// sink so ONE body serves both callers — `Tokenize` (materialize the token
+// vector) and RunPasses' trigger scan (`FlagSink`, no allocation). The
+// string/comment skipping is the safety-critical part; two copies could drift.
+template <typename Sink>
+void Lex(const char *src, size_t len, Sink &sink) {
+    size_t i = 0;
+    while (i < len) {
+        unsigned char c = static_cast<unsigned char>(src[i]);
+        if (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f' || c == '\v') {
+            i++;
+            continue;
+        }
+        if (c == '-' && i + 1 < len && src[i + 1] == '-') { // comment
+            size_t j = i + 2;
+            if (j < len && src[j] == '[') {
+                int lvl = LongBracketLevel(src, len, j);
+                if (lvl >= 0) {
+                    if (lvl > 0)
+                        sink.OnLeveled();
+                    i = SkipLongBracket(src, len, j, lvl);
+                    continue;
+                }
+            }
+            while (i < len && src[i] != '\n')
+                i++;
+            continue;
+        }
+        if (c == '[') { // long string?
+            int lvl = LongBracketLevel(src, len, i);
+            if (lvl >= 0) {
+                if (lvl > 0)
+                    sink.OnLeveled();
+                size_t s = i;
+                i = SkipLongBracket(src, len, i, lvl);
+                sink.OnToken(TK_STRING, s, i);
+                continue;
+            }
+        }
+        if (c == '"' || c == '\'') {
+            size_t s = i;
+            i = SkipShortString(src, len, i);
+            sink.OnToken(TK_STRING, s, i);
+            continue;
+        }
+        if (IsNameStart(c)) {
+            size_t s = i;
+            i++;
+            while (i < len && IsNameCont(static_cast<unsigned char>(src[i])))
+                i++;
+            sink.OnToken(TK_NAME, s, i);
+            continue;
+        }
+        if (IsDigit(c) || (c == '.' && i + 1 < len && IsDigit(static_cast<unsigned char>(src[i + 1])))) {
+            size_t s = i;
+            i = SkipNumber(src, len, i);
+            sink.OnToken(TK_NUMBER, s, i);
+            continue;
+        }
+        if (c == '.') {
+            // Dots tokenize greedily like Lua's own lexer: '.', '..', or '...'
+            // (at most 3). A '.<digit>' was already taken as a number above, so
+            // a '.' reaching here is punctuation. Emitting '...' as ONE token is
+            // what lets the vararg pass tell it apart from an adjacent '..'
+            // concat: `x .. ...` is `..` then `...`, never a five-dot run.
+            size_t d = 1;
+            while (d < 3 && i + d < len && src[i + d] == '.')
+                d++;
+            sink.OnToken(TK_PUNCT, i, i + d);
+            i += d;
+            continue;
+        }
+        sink.OnToken(TK_PUNCT, i, i + 1); // single punctuation byte
+        i++;
+    }
+}
+
+// Sink that materializes the token vector.
+struct TokenSink {
+    std::vector<Token> &out;
+    void OnLeveled() {}
+    void OnToken(TokKind kind, size_t start, size_t end) { out.push_back({kind, start, end}); }
+};
+
+// Sink that records only whether each pass has any work. A trigger counts
+// only as a TOKEN: a `%` inside "%d", a `...` inside "Loading...", or a `#`
+// inside a comment sets nothing — those are exactly the bytes whole-buffer
+// gates fired on, tokenizing the chunk for nothing.
+struct FlagSink {
+    const char *src;
+    bool hash = false;    // `#` punct
+    bool mod = false;     // `%` punct
+    bool vararg = false;  // `...` punct (param-list ones included; the pass sorts them out)
+    bool hex = false;     // `0x…` number
+    bool leveled = false; // `[=[`-style long bracket, string or comment
+    void OnLeveled() { leveled = true; }
+    void OnToken(TokKind kind, size_t start, size_t end) {
+        const size_t n = end - start;
+        if (kind == TK_PUNCT) {
+            if (n == 3)
+                vararg = true;
+            else if (n == 1) {
+                if (src[start] == '#')
+                    hash = true;
+                else if (src[start] == '%')
+                    mod = true;
+            }
+        } else if (kind == TK_NUMBER && n >= 3 && src[start] == '0' &&
+                   (src[start + 1] == 'x' || src[start + 1] == 'X')) {
+            hex = true;
+        }
+    }
+};
+
+void Tokenize(const char *src, size_t len, std::vector<Token> &out) {
+    // Clear first — RunPasses re-tokenizes into the SAME vector after a pass
+    // rewrites the buffer. Without this, the re-lex APPENDED the new tokens
+    // after the stale ones, and the next pass walked a mixed stream: stale
+    // positions from the old buffer, then new tokens starting back at 0,
+    // whose `t.start` sits BEHIND the splice cursor — the `t.start - p`
+    // size_t underflow then threw std::length_error("string too long")
+    // through the loadbuffer hook into the engine = fatal ERROR #132.
+    // Field-reproduced with WeakAuras' Chomp Internal.lua (hex pass fires,
+    // then the vararg pass walks the doubled stream).
+    out.clear();
+    TokenSink sink{out};
+    Lex(src, len, sink);
+}
+
+// ============================================================================
+// Parser — precedence climbing that records `#` and `%` rewrites.
+// ============================================================================
+
+struct Open {
+    size_t off;
+    const char *text;
+    size_t span; // off..closeOff — larger span = outer (emitted first)
+};
+struct Close {
+    size_t off;
+    size_t span; // smaller span = inner (emitted first)
+};
+struct CharOp {
+    size_t off;
+    char repl; // 0 => delete the byte, else replace it
+};
+
+struct Ctx {
+    const char *src;
+    const std::vector<Token> *toks;
+    std::vector<Open> opens;
+    std::vector<Close> closes;
+    std::vector<CharOp> charOps;
+    bool lenOn;
+    bool modOn;
+    int depth = 0; // current parse-recursion depth (see DepthGuard)
+};
+
+// The `#`/`%` parser recurses per nested bracket / chained operator. Cap the
+// depth so a pathological chunk (`{{{{…}}}}` thousands deep) can't overflow the
+// C stack inside the hook — Lua's own parser rejects that with a clean "too
+// many syntax levels" error at ~200 (LUAI_MAXCCALLS); we mirror the bound and
+// simply stop rewriting the over-deep region (it then fails to compile on 5.0
+// exactly as it would have without us — no crash, no regression).
+constexpr int kMaxParseDepth = 200;
+struct DepthGuard {
+    int &d;
+    explicit DepthGuard(int &dd) : d(dd) { ++d; }
+    ~DepthGuard() { --d; }
+};
+
+inline const Token &Tk(const Ctx &c, size_t i) { return (*c.toks)[i]; }
+inline size_t NT(const Ctx &c) { return c.toks->size(); }
+
+inline bool SpanEq(const char *src, const Token &t, const char *w) {
+    size_t n = t.end - t.start;
+    return std::strlen(w) == n && std::memcmp(src + t.start, w, n) == 0;
+}
+inline bool PunctIs(const Ctx &c, size_t k, char ch) {
+    return k < NT(c) && Tk(c, k).kind == TK_PUNCT && c.src[Tk(c, k).start] == ch;
+}
+inline bool NameIs(const Ctx &c, size_t k, const char *w) {
+    return k < NT(c) && Tk(c, k).kind == TK_NAME && SpanEq(c.src, Tk(c, k), w);
+}
+
+bool IsKeyword(const char *src, const Token &t) {
+    static const char *const kw[] = {
+        "and",  "break",  "do",   "else",   "elseif", "end",    "false",
+        "for",  "function", "if", "in",     "local",  "nil",    "not",
+        "or",   "repeat", "return", "then",  "true",   "until",  "while"};
+    for (const char *w : kw)
+        if (SpanEq(src, t, w))
+            return true;
+    return false;
+}
+inline bool IsNameNonKw(const Ctx &c, size_t k) {
+    return k < NT(c) && Tk(c, k).kind == TK_NAME && !IsKeyword(c.src, Tk(c, k));
+}
+
+// From an opening-bracket token at `k`, return the index just past the matching
+// close, or NPOS if unbalanced.
+size_t MatchBracket(const Ctx &c, size_t k, char open, char close) {
+    int depth = 0;
+    for (size_t j = k; j < NT(c); j++) {
+        if (Tk(c, j).kind != TK_PUNCT)
+            continue;
+        char ch = c.src[Tk(c, j).start];
+        if (ch == open)
+            depth++;
+        else if (ch == close) {
+            depth--;
+            if (depth == 0)
+                return j + 1;
+        }
+    }
+    return NPOS;
+}
+
+size_t ParseExpr(Ctx &c, size_t k, int minPrec);
+void ScanRange(Ctx &c, size_t lo, size_t hi);
+
+// Match a bracket at `k` AND scan its interior for nested `#`/`%`. Returns the
+// index past the close, or NPOS if unbalanced.
+size_t ScanBracket(Ctx &c, size_t k, char open, char close) {
+    size_t e = MatchBracket(c, k, open, close);
+    if (e == NPOS)
+        return NPOS;
+    ScanRange(c, k + 1, e - 1); // interior tokens (between the brackets)
+    return e;
+}
+
+// Parse a primary expression at `k`; return index just past it, or NPOS.
+size_t ParsePrimary(Ctx &c, size_t k) {
+    if (k >= NT(c))
+        return NPOS;
+    const Token &tk = Tk(c, k);
+    if (tk.kind == TK_PUNCT) {
+        char ch = c.src[tk.start];
+        if (ch == '(')
+            return ScanBracket(c, k, '(', ')');
+        if (ch == '{')
+            return ScanBracket(c, k, '{', '}');
+        return NPOS;
+    }
+    if (tk.kind == TK_STRING || tk.kind == TK_NUMBER)
+        return k + 1;
+    if (tk.kind == TK_NAME) {
+        if (IsKeyword(c.src, tk)) {
+            if (SpanEq(c.src, tk, "nil") || SpanEq(c.src, tk, "true") || SpanEq(c.src, tk, "false"))
+                return k + 1;
+            return NPOS; // function/if/... are not primaries we delimit
+        }
+        return k + 1;
+    }
+    return NPOS;
+}
+
+// Consume `.name` / `[expr]` / `(args)` / `:name args` / string-call /
+// table-call suffixes after a primary. Scans bracketed interiors. Never fails.
+size_t ParseSuffixes(Ctx &c, size_t k) {
+    while (k < NT(c)) {
+        const Token &tk = Tk(c, k);
+        if (tk.kind == TK_STRING) { // f"str"
+            k++;
+            continue;
+        }
+        if (tk.kind != TK_PUNCT)
+            break;
+        char ch = c.src[tk.start];
+        if (ch == '.' && (tk.end - tk.start) == 1) { // field access `.name` — not `..`/`...`
+            if (IsNameNonKw(c, k + 1)) {
+                k += 2;
+                continue;
+            }
+            break;
+        }
+        if (ch == '[') {
+            size_t e = ScanBracket(c, k, '[', ']');
+            if (e == NPOS)
+                break;
+            k = e;
+            continue;
+        }
+        if (ch == '(') {
+            size_t e = ScanBracket(c, k, '(', ')');
+            if (e == NPOS)
+                break;
+            k = e;
+            continue;
+        }
+        if (ch == '{') { // f{table}
+            size_t e = ScanBracket(c, k, '{', '}');
+            if (e == NPOS)
+                break;
+            k = e;
+            continue;
+        }
+        if (ch == ':') {
+            if (!IsNameNonKw(c, k + 1))
+                break;
+            size_t m = k + 2;
+            if (PunctIs(c, m, '(')) {
+                size_t e = ScanBracket(c, m, '(', ')');
+                if (e == NPOS)
+                    break;
+                k = e;
+                continue;
+            }
+            if (m < NT(c) && Tk(c, m).kind == TK_STRING) {
+                k = m + 1;
+                continue;
+            }
+            if (PunctIs(c, m, '{')) {
+                size_t e = ScanBracket(c, m, '{', '}');
+                if (e == NPOS)
+                    break;
+                k = e;
+                continue;
+            }
+            break;
+        }
+        break;
+    }
+    return k;
+}
+
+// Binary operator precedence (higher binds tighter). 0 = not a binary op we
+// climb; the ScanRange driver reaches its operands anyway. `..` and `^` are
+// right-associative. Comparisons written with `=`/`~` (`<=`,`==`,`~=`) tokenize
+// as separate bytes and fall through — the driver still reaches their operands.
+int BinPrec(const char *src, const Token &t, bool &rightAssoc) {
+    rightAssoc = false;
+    if (t.kind == TK_NAME) {
+        if (SpanEq(src, t, "or"))
+            return 1;
+        if (SpanEq(src, t, "and"))
+            return 2;
+        return 0;
+    }
+    if (t.kind != TK_PUNCT)
+        return 0;
+    switch (src[t.start]) {
+    case '<':
+    case '>':
+        return 3;
+    case '+':
+    case '-':
+        return 5;
+    case '*':
+    case '/':
+    case '%':
+        return 6;
+    case '^':
+        rightAssoc = true;
+        return 8;
+    default:
+        return 0;
+    }
+}
+
+// Parse a full expression at `k` (precedence >= minPrec). Returns the index
+// past the expression, or `k` if there is no primary (nothing parsed).
+size_t ParseExpr(Ctx &c, size_t k, int minPrec) {
+    const size_t start = k;
+    DepthGuard guard(c.depth);
+    if (c.depth > kMaxParseDepth)
+        return start; // too deep — leave this region un-rewritten (see kMaxParseDepth)
+    size_t cur;
+
+    if (k < NT(c) && (PunctIs(c, k, '-') || PunctIs(c, k, '#') || NameIs(c, k, "not"))) {
+        bool isHash = PunctIs(c, k, '#');
+        size_t opTok = k;
+        size_t operandEnd = ParseExpr(c, k + 1, 7); // unary binds at 7 (below ^)
+        if (operandEnd == k + 1)
+            return start; // no operand — leave as-is
+        if (isHash && c.lenOn) {
+            size_t openOff = Tk(c, opTok).start;
+            size_t closeOff = Tk(c, operandEnd - 1).end;
+            c.opens.push_back({openOff, "__len(", closeOff - openOff});
+            c.closes.push_back({closeOff, closeOff - openOff});
+            c.charOps.push_back({openOff, 0}); // drop the '#'
+        }
+        cur = operandEnd;
+    } else {
+        size_t p = ParsePrimary(c, k);
+        if (p == NPOS)
+            return start;
+        cur = ParseSuffixes(c, p);
+    }
+
+    while (cur < NT(c)) {
+        bool ra;
+        int prec = BinPrec(c.src, Tk(c, cur), ra);
+        if (prec == 0 || prec < minPrec)
+            break;
+        size_t opTok = cur;
+        size_t rstart = cur + 1;
+        size_t rend = ParseExpr(c, rstart, prec + (ra ? 0 : 1));
+        if (rend == rstart)
+            break; // right operand failed — stop (don't consume the op)
+        if (c.src[Tk(c, opTok).start] == '%' && c.modOn) {
+            size_t openOff = Tk(c, start).start; // left-assoc accumulated left operand
+            size_t closeOff = Tk(c, rend - 1).end;
+            c.opens.push_back({openOff, "__mod(", closeOff - openOff});
+            c.closes.push_back({closeOff, closeOff - openOff});
+            c.charOps.push_back({Tk(c, opTok).start, ','}); // '%' -> ','
+        }
+        cur = rend;
+    }
+    return cur;
+}
+
+// Drive ParseExpr across a token range: parse an expression, jump to its end;
+// skip one token when none parses (keywords, `=`, `,`, `;`, ...). Every `#`/`%`
+// lives inside some expression the driver reaches (top level or, recursively,
+// a bracket interior via ScanBracket).
+void ScanRange(Ctx &c, size_t lo, size_t hi) {
+    size_t k = lo;
+    while (k < hi) {
+        size_t e = ParseExpr(c, k, 0);
+        k = (e > k) ? e : k + 1;
+    }
+}
+
+void BuildOutput(Ctx &c, const char *src, size_t len, std::string &out) {
+    std::sort(c.opens.begin(), c.opens.end(), [](const Open &a, const Open &b) {
+        return a.off != b.off ? a.off < b.off : a.span > b.span; // outer first
+    });
+    std::sort(c.closes.begin(), c.closes.end(), [](const Close &a, const Close &b) {
+        return a.off != b.off ? a.off < b.off : a.span < b.span; // inner first
+    });
+    std::sort(c.charOps.begin(), c.charOps.end(),
+              [](const CharOp &a, const CharOp &b) { return a.off < b.off; });
+
+    out.clear();
+    out.reserve(len + c.opens.size() * 7 + c.closes.size());
+    size_t oi = 0, ci = 0, hi = 0;
+    for (size_t p = 0; p < len; p++) {
+        while (ci < c.closes.size() && c.closes[ci].off == p) {
+            out.push_back(')');
+            ci++;
+        }
+        while (oi < c.opens.size() && c.opens[oi].off == p) {
+            out.append(c.opens[oi].text);
+            oi++;
+        }
+        if (hi < c.charOps.size() && c.charOps[hi].off == p) {
+            if (c.charOps[hi].repl)
+                out.push_back(c.charOps[hi].repl);
+            hi++; // repl == 0 -> delete the byte
+        } else {
+            out.push_back(src[p]);
+        }
+    }
+    while (ci < c.closes.size() && c.closes[ci].off == len) {
+        out.push_back(')');
+        ci++;
+    }
+}
+
+// Rewrite `src` -> `out` using the pre-tokenized `toks`. `wantLen` / `wantMod`
+// come from the trigger scan (a `#` / `%` punct exists and its switch is on);
+// RunPasses only calls this when at least one is set. Returns true and fills
+// `out` if anything changed.
+bool RewriteAll(const char *src, size_t len, const std::vector<Token> &toks,
+                std::string &out, bool wantLen, bool wantMod) {
+    Ctx c;
+    c.src = src;
+    c.toks = &toks;
+    c.lenOn = wantLen;
+    c.modOn = wantMod;
+    ScanRange(c, 0, toks.size());
+    if (c.opens.empty())
+        return false;
+    BuildOutput(c, src, len, out);
+    return true;
+}
+
+// ============================================================================
+// Vararg pass: rewrite the `...` EXPRESSION into `unpack(arg)`.
+//
+// This build is pure Lua 5.0 varargs: `function(...)` works and populates the
+// `arg` table (with `arg.n`), but `...` as an expression is a parse error.
+// `unpack(arg)` is a faithful, position-independent substitute — it's itself a
+// multi-value expression, so it spreads in tail position and truncates to one
+// value elsewhere exactly as `...` does, and this build's `unpack(arg)`
+// preserves embedded nils via `arg.n` (verified in-game). The ONLY `...` we must
+// leave alone is the one in a function's PARAMETER LIST — that's the vararg
+// declaration that creates `arg`. Nested vararg functions work for free: each
+// `function(...)` makes its own `arg` and `unpack(arg)` binds to the nearest.
+//
+// Kept a separate pass (not folded into the # / % precedence parser) because it
+// needs no precedence — it's a token substitution once the param-list `...` is
+// excluded. Order vs RewriteAll is irrelevant (neither produces the other's
+// trigger); RunPasses runs this first.
+// ============================================================================
+
+// From a '(' token at `k`, return the index just past the matching ')', or the
+// token count if unbalanced. Parens are always single-char puncts.
+size_t MatchParenTok(const std::vector<Token> &t, const char *src, size_t k) {
+    int depth = 0;
+    for (size_t j = k; j < t.size(); j++) {
+        if (t[j].kind != TK_PUNCT || (t[j].end - t[j].start) != 1)
+            continue;
+        char ch = src[t[j].start];
+        if (ch == '(')
+            depth++;
+        else if (ch == ')') {
+            depth--;
+            if (depth == 0)
+                return j + 1;
+        }
+    }
+    return t.size();
+}
+
+bool RewriteVararg(const char *src, size_t len, const std::vector<Token> &toks,
+                   std::string &out) {
+    const size_t n = toks.size();
+
+    // A `...` is a single 3-char punct token — Tokenize now emits '.', '..',
+    // '...' greedily like Lua's lexer, so the vararg is trivially distinct from
+    // `.` field access and `..` concat, even written adjacent as `x .. ...`
+    // (which is `..` then `...`, not a five-dot run the old scan couldn't split).
+    auto isVararg = [&](size_t i) {
+        return i < n && toks[i].kind == TK_PUNCT && (toks[i].end - toks[i].start) == 3;
+    };
+    auto isPunct = [&](size_t i, char ch) {
+        return i < n && toks[i].kind == TK_PUNCT &&
+               (toks[i].end - toks[i].start) == 1 && src[toks[i].start] == ch;
+    };
+
+    // Mark the `...` inside each function's parameter list — the vararg
+    // declaration, which must be left intact.
+    std::vector<char> skip(n, 0);
+    for (size_t i = 0; i < n; i++) {
+        if (toks[i].kind != TK_NAME || !SpanEq(src, toks[i], "function"))
+            continue;
+        // Skip the name path (`foo`, `a.b`, `a.b:c`, or nothing) to the '('.
+        size_t j = i + 1;
+        while (j < n && !isPunct(j, '(') &&
+               (toks[j].kind == TK_NAME || isPunct(j, '.') || isPunct(j, ':')))
+            j++;
+        if (!isPunct(j, '('))
+            continue;
+        size_t e = MatchParenTok(toks, src, j);
+        for (size_t p = j; p < e; p++) {
+            if (isVararg(p)) {
+                skip[p] = 1; // a param list has at most one `...` (last param)
+                break;
+            }
+        }
+        i = e - 1; // resume at the function body
+    }
+
+    // Replace each remaining `...` with `unpack(arg)`.
+    std::string result;
+    result.reserve(len + 8);
+    size_t prev = 0;
+    bool any = false;
+    for (size_t i = 0; i < n; ++i) {
+        if (isVararg(i) && !skip[i]) {
+            result.append(src + prev, toks[i].start - prev);
+            result.append("unpack(arg)");
+            prev = toks[i].end;
+            any = true;
+        }
+    }
+    if (!any)
+        return false;
+    result.append(src + prev, len - prev);
+    out = std::move(result);
+    return true;
+}
+
+// ============================================================================
+// Hex-literal pass: rewrite 5.1 `0x…` integer literals to decimal.
+//
+// Lua 5.0's lexer reads only decimal digits + one `.` + `e` exponent, so a
+// `0x…` literal fails to compile (which is why addons resort to
+// `tonumber("0x…", 16)`). We convert each hex INTEGER token to the exact
+// decimal it denotes — Lua then reads it as the same double 5.1 would. The
+// value is unsigned. Hex floats and > 64-bit literals are left untouched (they
+// fail to compile as they do today — no regression). Runs before the other
+// passes; the tokenizer already skips strings/comments, so `"0xFF"` / `--0xFF`
+// are safe, and it never inserts a newline (line numbers preserved).
+// ============================================================================
+
+inline bool IsHexDigit(unsigned char c) {
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
+
+bool RewriteHex(const char *src, size_t len, const std::vector<Token> &toks,
+                std::string &out) {
+    out.clear();
+    out.reserve(len);
+    size_t p = 0;
+    bool any = false;
+    for (const Token &t : toks) {
+        if (t.kind != TK_NUMBER || t.end - t.start < 3)
+            continue; // need "0x" + >= 1 digit
+        if (src[t.start] != '0')
+            continue;
+        char x = src[t.start + 1];
+        if (x != 'x' && x != 'X')
+            continue;
+        const size_t nDigits = t.end - (t.start + 2);
+        if (nDigits == 0 || nDigits > 16)
+            continue; // no digits, or wider than uint64 — leave as-is
+
+        uint64_t val = 0;
+        bool pure = true;
+        for (size_t i = t.start + 2; i < t.end; i++) {
+            unsigned char c = static_cast<unsigned char>(src[i]);
+            if (!IsHexDigit(c)) { pure = false; break; } // hex float ('.'/'p') or junk
+            val = val * 16 + ((c <= '9') ? (c - '0') : ((c | 0x20) - 'a' + 10));
+        }
+        if (!pure)
+            continue;
+
+        out.append(src + p, t.start - p);
+        out.append(std::to_string(val));
+        p = t.end;
+        any = true;
+    }
+    if (!any)
+        return false;
+    out.append(src + p, len - p);
+    return true;
+}
+
+// ============================================================================
+// Long-bracket-level pass: rewrite 5.1 `[=[`…`]=]` / `[==[`…`]==]` (and their
+// `--[=[` long-comment forms) into a shape the 5.0 engine accepts.
+//
+// Lua 5.1 added LEVELED long brackets (a run of `=` between the two `[`, matched
+// by count on close). This 5.0 engine has NONE — its lexer reads one char after
+// `[`: if it's `[` it's a level-0 long string, otherwise a bare `[` token
+// (verified in the engine lexer FUN_006ff610; the `--[[` comment path is the
+// same). So `[=[…]=]` fails to compile, and a modern addon that uses a leveled
+// bracket (usually to hold text containing `]]`) can't load.
+//
+// We convert each leveled long bracket, PRESERVING LINE COUNT (no newline is
+// added or removed, so error line numbers stay exact):
+//   * Long STRING, body free of `[[`/`]]` and not ending in `]`  ->  `[[body]]`
+//     (level 0). Byte-exact value, including the engine's leading-newline strip.
+//     The `]`-ending / `[[`/`]]`-containing bodies would early-close or nest a
+//     level-0 bracket, so they take the quoted path instead.
+//   * Long STRING otherwise  ->  a quoted "…" literal: `"`->`\"`, `\`->`\\`,
+//     each newline -> `\`+newline (a Lua line continuation: embeds `\n` AND
+//     advances the physical line), `\r`->`\r`, NUL->`\0`, other bytes verbatim.
+//   * Long COMMENT  ->  blanked to spaces (newlines kept); a comment is
+//     whitespace, so this is semantically exact.
+//
+// Level 0 (`[[…]]`, `--[[…]]`) is left untouched — the engine handles it.
+//
+// Caveat: the quoted-string form does NOT reproduce 5.1's leading-newline strip
+// (a level-≥1 long string that begins with a newline keeps that `\n` in its
+// value). Only bodies that fall to the quoted path are affected (they contain
+// `[[`/`]]` or end in `]`); the common multi-line case takes the byte-exact
+// `[[body]]` path. Line numbers stay exact either way.
+//
+// Runs FIRST in RunPasses (it changes string/comment boundaries), before the
+// shared tokenization the hex / vararg / operator passes use, and only when the
+// trigger scan saw a leveled bracket open in code (`FlagSink::leveled`). The
+// walker copies non-bracket bytes verbatim and returns "unchanged" when it
+// finds no properly closed leveled bracket, so an unterminated one is left for
+// the engine to report.
+// ============================================================================
+
+// True iff [start,end) is a properly-closed level-`level` long bracket, i.e.
+// SkipLongBracket found a real `]`+`=`×level+`]` close (not end-of-buffer).
+bool LongBracketClosed(const char *src, size_t start, size_t end, int level) {
+    const size_t delim = 2 + static_cast<size_t>(level); // width of `[=…=[` == `]=…=]`
+    if (end < start + 2 * delim)
+        return false; // no room for both delimiters
+    const size_t p = end - delim;
+    if (src[p] != ']' || src[end - 1] != ']')
+        return false;
+    for (int k = 0; k < level; k++)
+        if (src[p + 1 + k] != '=')
+            return false;
+    return true;
+}
+
+// Emit the leveled long STRING [start,end) (verified closed) as a 5.0 literal.
+void EmitLeveledString(const char *src, size_t start, size_t end, int level,
+                       std::string &out) {
+    const size_t delim = 2 + static_cast<size_t>(level);
+    const size_t cs = start + delim; // content start (past `[=…=[`)
+    const size_t ce = end - delim;   // content end (before `]=…=]`)
+
+    // Tier 1: `[[body]]` when body can't early-close or nest a level-0 bracket.
+    bool hasDouble = false;
+    for (size_t p = cs; p + 1 < ce; p++)
+        if ((src[p] == '[' && src[p + 1] == '[') ||
+            (src[p] == ']' && src[p + 1] == ']')) {
+            hasDouble = true;
+            break;
+        }
+    const bool endsInBracket = (ce > cs) && src[ce - 1] == ']'; // would merge with `]]`
+    if (!hasDouble && !endsInBracket) {
+        out.append("[[");
+        out.append(src + cs, ce - cs);
+        out.append("]]");
+        return;
+    }
+
+    // Tier 2: quoted string — general, preserves line count and byte values.
+    out.push_back('"');
+    for (size_t p = cs; p < ce; p++) {
+        const unsigned char b = static_cast<unsigned char>(src[p]);
+        switch (b) {
+        case '"':  out.append("\\\""); break;
+        case '\\': out.append("\\\\"); break;
+        case '\n': out.push_back('\\'); out.push_back('\n'); break; // line continuation
+        case '\r': out.append("\\r"); break;
+        case '\0': out.append("\\0"); break;
+        default:   out.push_back(static_cast<char>(b)); break;
+        }
+    }
+    out.push_back('"');
+}
+
+bool RewriteLongBrackets(const char *src, size_t len, std::string &out) {
+    out.clear();
+    out.reserve(len + 16);
+    size_t i = 0;
+    bool any = false;
+    while (i < len) {
+        const char c = src[i];
+        if (c == '"' || c == '\'') { // short string — copy verbatim
+            const size_t e = SkipShortString(src, len, i);
+            out.append(src + i, e - i);
+            i = e;
+            continue;
+        }
+        if (c == '-' && i + 1 < len && src[i + 1] == '-') { // comment
+            const size_t j = i + 2;
+            const int lvl =
+                (j < len && src[j] == '[') ? LongBracketLevel(src, len, j) : -1;
+            if (lvl > 0) {
+                const size_t e = SkipLongBracket(src, len, j, lvl);
+                if (LongBracketClosed(src, j, e, lvl)) {
+                    for (size_t p = i; p < e; p++) // blank to spaces, keep newlines
+                        out.push_back((src[p] == '\n' || src[p] == '\r') ? src[p] : ' ');
+                    any = true;
+                } else {
+                    out.append(src + i, e - i); // unterminated — leave for the engine
+                }
+                i = e;
+                continue;
+            }
+            if (lvl == 0) { // level-0 long comment — engine handles it
+                const size_t e = SkipLongBracket(src, len, j, 0);
+                out.append(src + i, e - i);
+                i = e;
+                continue;
+            }
+            size_t e = j; // line comment — verbatim to end of line
+            while (e < len && src[e] != '\n')
+                e++;
+            out.append(src + i, e - i);
+            i = e;
+            continue;
+        }
+        if (c == '[') { // long string?
+            const int lvl = LongBracketLevel(src, len, i);
+            if (lvl > 0) {
+                const size_t e = SkipLongBracket(src, len, i, lvl);
+                if (LongBracketClosed(src, i, e, lvl)) {
+                    EmitLeveledString(src, i, e, lvl, out);
+                    any = true;
+                } else {
+                    out.append(src + i, e - i); // unterminated — leave for the engine
+                }
+                i = e;
+                continue;
+            }
+            if (lvl == 0) { // level-0 long string — engine handles it
+                const size_t e = SkipLongBracket(src, len, i, 0);
+                out.append(src + i, e - i);
+                i = e;
+                continue;
+            }
+            // else: a bare '[' — fall through to the byte copy
+        }
+        out.push_back(c);
+        i++;
+    }
+    return any;
+}
+
+// Run every syntax rewrite over a chunk. One allocation-free lex (`FlagSink`)
+// decides which passes have work — a trigger counts only outside strings and
+// comments — so a chunk with none, or with `%` / `...` only inside strings
+// (format strings, "Loading...", every SavedVariables file), is done after
+// that single pass. Otherwise: leveled brackets first (they move string
+// boundaries), then tokenize ONCE and run hex, vararg, # / % over the shared
+// stream, re-lexing only after a pass actually rewrites the buffer (rare).
+// Returns true and fills `out` if anything changed; `*outVararg` / `*outOps`
+// (optional) report whether the vararg / operator pass fired, for the load-time
+// preamble in LoadBuffer_h.
+bool RunPasses(const char *src, size_t len, std::string &out, bool *outVararg,
+               bool *outOps) {
+    if (outVararg) *outVararg = false;
+    if (outOps) *outOps = false;
+    if (src == nullptr || len == 0)
+        return false;
+
+    FlagSink flags{src};
+    Lex(src, len, flags);
+    const bool wantLong = g_longBracketEnabled && flags.leveled;
+    const bool wantHex = g_hexEnabled && flags.hex;
+    const bool wantVararg = g_varargEnabled && flags.vararg;
+    const bool wantLen = g_lenEnabled && flags.hash;
+    const bool wantMod = g_modEnabled && flags.mod;
+    const bool wantTokens = wantHex || wantVararg || wantLen || wantMod;
+    if (!wantLong && !wantTokens)
+        return false;
+
+    const char *cur = src;
+    size_t curLen = len;
+    std::string lb, hx, va, ops;
+    int last = 0; // owns the final buffer: 1 long-bracket, 2 hex, 3 vararg, 4 ops
+
+    // Leveled long brackets first — this rewrites string/comment boundaries, so
+    // it must run before the shared tokenization the other passes consume. The
+    // flags stay valid across it: it only rewrites string/comment bytes, which
+    // never produced one.
+    if (wantLong && RewriteLongBrackets(cur, curLen, lb)) {
+        cur = lb.data(); curLen = lb.size(); last = 1;
+    }
+    if (!wantTokens) {
+        if (last == 1) { out = std::move(lb); return true; }
+        return false;
+    }
+
+    std::vector<Token> toks;
+    Tokenize(cur, curLen, toks);
+    g_stats.tokenizedChunks++;
+    g_stats.tokenizedBytes += curLen;
+
+    if (wantHex && RewriteHex(cur, curLen, toks, hx)) {
+        cur = hx.data(); curLen = hx.size(); last = 2;
+        Tokenize(cur, curLen, toks); // buffer changed — re-lex for the next pass
+    }
+    if (wantVararg && RewriteVararg(cur, curLen, toks, va)) {
+        cur = va.data(); curLen = va.size(); last = 3;
+        if (outVararg) *outVararg = true;
+        Tokenize(cur, curLen, toks);
+    }
+    if ((wantLen || wantMod) && RewriteAll(cur, curLen, toks, ops, wantLen, wantMod)) {
+        last = 4;
+        if (outOps) *outOps = true;
+    }
+
+    switch (last) {
+    case 1: out = std::move(lb); return true;
+    case 2: out = std::move(hx); return true;
+    case 3: out = std::move(va); return true;
+    case 4: out = std::move(ops); return true;
+    default: return false;
+    }
+}
+
+// Length of the chunk's leading bytes the engine never parses: a UTF-8 BOM
+// (luaL_loadbuffer drops it), then a first line starting with `#`, which
+// luaX_setinput skips up to its `\n` (`CMP EAX,0x23` at 0x006FF5CD, then a
+// read loop until 0x0A or EOF). The span includes that `\n`, so a preamble
+// placed after it starts line 2 — inside the skipped line it would be
+// skipped too — and the transpiler never reads the line's `#` as `__len`.
+size_t SkippedHead(const char *src, size_t len) {
+    size_t i = (len >= 3 && static_cast<unsigned char>(src[0]) == 0xEF &&
+                static_cast<unsigned char>(src[1]) == 0xBB &&
+                static_cast<unsigned char>(src[2]) == 0xBF)
+                   ? 3
+                   : 0;
+    if (i < len && src[i] == '#') {
+        while (i < len && src[i] != '\n')
+            i++;
+        if (i < len)
+            i++; // the `\n`
+    }
+    return i;
+}
+
+// Diagnostic entry: the full operator/vararg/hex rewrite of a chunk, without the
+// load-time helper preamble and vararg wrap (that is LoadBuffer_h's concern).
+bool RewriteChunk(const char *src, size_t len, std::string &out) {
+    const size_t head = SkippedHead(src, len);
+    std::string rest;
+    if (!RunPasses(src + head, len - head, rest, nullptr, nullptr))
+        return false;
+    out.assign(src, head);
+    out += rest;
+    return true;
+}
+
+// ============================================================================
+// Runtime helpers: __len (string length / table border) and __mod (5.1 `%`).
+// ============================================================================
+
+int __fastcall Script_Len(void *L) {
+    int ty = Game::Lua::Type(L, 1);
+    if (ty == Game::Lua::TYPE_STRING) {
+        Game::Lua::PushNumber(L, static_cast<double>(Game::Lua::StrLen(L, 1)));
+        return 1;
+    }
+    if (ty == Game::Lua::TYPE_TABLE) {
+        // 5.1's `#` on a table: a border, by luaH_getn's search (table/Border.h).
+        Game::Lua::PushNumber(L, static_cast<double>(Table::Border::Find(Table::Border::TableAt(L, 1))));
+        return 1;
+    }
+    Game::Lua::Error(L, "attempt to get length of a non-table, non-string value");
+    return 0;
+}
+
+int __fastcall Script_Mod(void *L) {
+    // Lua 5.1 `%`: a - floor(a/b)*b (result takes the sign of b). Distinct from
+    // the engine's math.mod, which is C fmod (truncated toward zero).
+    if (!Game::Lua::IsNumber(L, 1) || !Game::Lua::IsNumber(L, 2)) {
+        Game::Lua::Error(L, "attempt to perform arithmetic (modulo) on a non-number value");
+        return 0;
+    }
+    double a = Game::Lua::ToNumber(L, 1);
+    double b = Game::Lua::ToNumber(L, 2);
+    Game::Lua::PushNumber(L, a - std::floor(a / b) * b);
+    return 1;
+}
+
+// What the file loader runs for an addon file: the file's body with 4.3.4's
+// file arguments, `(addonName, addonTable)`, as real call arguments
+// (FrameScript_ExecuteBuffer's `wrapper` path pcalls the chunk with those two).
+// Upvalues: 1 = the body, compiled as a vararg function; 2 = the name;
+// 3 = the addon's table. The loader calls this with no arguments. An error in
+// the body unwinds through this frame to the loader's pcall, so nothing here
+// may need destruction.
+int __fastcall Script_RunAddonFile(void *L) {
+    Game::Lua::PushValue(L, Game::Lua::UpvalueIndex(1));
+    Game::Lua::PushValue(L, Game::Lua::UpvalueIndex(2));
+    Game::Lua::PushValue(L, Game::Lua::UpvalueIndex(3));
+    Game::Lua::Call(L, 2, 0);
+    return 0;
+}
+
+// ============================================================================
+// luaL_loadbuffer co-hook — the universal compile chokepoint.
+// ============================================================================
+
+// Extract the addon folder name from a file chunkname like
+// "@Interface\AddOns\<Name>\<file>". Returns true + fills `out` (NUL-terminated)
+// only for an addon file with a name safe to embed in a "..." literal.
+bool AddonNameFromChunk(const char *chunk, char *out, size_t outSize) {
+    if (chunk == nullptr)
+        return false;
+    for (const char *p = chunk; *p; ++p) {
+        // "addons" then a path separator (either slash). _strnicmp stops at a
+        // NUL, so a short tail near end-of-string just mismatches.
+        if (_strnicmp(p, "addons", 6) != 0)
+            continue;
+        const char sep = p[6];
+        if (sep != '\\' && sep != '/') // match "addons\" OR "addons/"
+            continue;
+        const char *ns = p + 7;
+        size_t k = 0;
+        while (ns[k] != '\0' && ns[k] != '\\' && ns[k] != '/')
+            ++k;
+        if (k == 0 || k + 1 > outSize)
+            return false;
+        std::memcpy(out, ns, k);
+        out[k] = '\0';
+        return true;
+    }
+    return false;
+}
+
+using LoadBuffer_t = int(__fastcall *)(void *L, const char *buff, unsigned size,
+                                       const char *name);
+LoadBuffer_t g_origLoadBuffer = nullptr;
+
+// ============================================================================
+// XML handler implicit parameters.
+// ============================================================================
+//
+// Later clients compile an XML handler body (<OnLoad>...</OnLoad>) as a
+// function whose parameters name the script's arguments: `self` always, then
+// e.g. `elapsed` for OnUpdate, `button, down` for OnClick, `event, ...` for
+// OnEvent. Vanilla compiles the body as a zero-parameter chunk and publishes
+// the frame and arguments only through the `this` / `arg1..argN` globals, so a
+// ported body that says `self:Hide()` indexes a nil global.
+//
+// A chunk compiled by the XML script funnel (return address
+// RET_LUA_SCRIPT_COMPILE, engine-built chunkname "<Frame>:<Script>") whose body
+// reads `self`, uses a `...` expression (a Lua 5.0 compile error, so only a
+// body written for later clients has one), or reads one of its script's
+// parameter names and none of the vanilla `this` / `argN` globals, is wrapped
+// as `return function(self, <names>, ...) ... end`, the same
+// materialize-the-inner-function shape the vararg path uses. Frame::ScriptArgs
+// already pushes (self, arg1..argN) positionally (with `event` first for
+// OnEvent), which is exactly this parameter order. A vanilla body is left
+// alone: it keeps reading its globals and none of its names get shadowed.
+
+// Parameter names after `self`, per script, as later clients bind them:
+// 3.3.5's per-script wrappers (`data.m_wrapper = "return function(self,...)
+// %s end"` in each CSimple* GetScriptByName; OnEvent's is
+// "self,event,..."). Scripts not listed take only `self` there; here they get
+// `(self, ...)`.
+struct ScriptParams {
+    const char *script;
+    const char *params;
+};
+const ScriptParams kScriptParams[] = {
+    {"OnUpdate", "elapsed"},
+    {"OnEvent", "event"},
+    {"OnClick", "button,down"},
+    {"PreClick", "button,down"},
+    {"PostClick", "button,down"},
+    {"OnDoubleClick", "button"},
+    {"OnMouseDown", "button"},
+    {"OnMouseUp", "button"},
+    {"OnMouseWheel", "delta"},
+    {"OnEnter", "motion"},
+    {"OnLeave", "motion"},
+    {"OnDragStart", "button"},
+    {"OnSizeChanged", "w,h"},
+    {"OnValueChanged", "value"},
+    {"OnMinMaxChanged", "min,max"},
+    {"OnTextChanged", "userInput"},
+    {"OnChar", "text"},
+    {"OnKeyDown", "key"},
+    {"OnKeyUp", "key"},
+    {"OnHyperlinkClick", "link,text,button"},
+    {"OnHyperlinkEnter", "link,text"},
+    {"OnHyperlinkLeave", "link,text"},
+    {"OnVerticalScroll", "offset"},
+    {"OnHorizontalScroll", "offset"},
+    {"OnScrollRangeChanged", "xrange,yrange"},
+    {"OnCursorChanged", "x,y,w,h"},
+    {"OnAttributeChanged", "name,value"},
+    {"OnColorSelect", "r,g,b"},
+    {"OnInputLanguageChanged", "language"},
+    // Animation groups and animations (4.3.4's GetScriptByName wrappers).
+    {"OnStop", "requested"},
+    {"OnFinished", "requested"},
+    {"OnLoop", "loopState"},
+};
+
+// The parameter list for an engine-built "<Frame>:<Script>" handler chunkname
+// ("" when the script takes only `self`), or nullptr when the chunkname does
+// not name a script.
+const char *HandlerParamsFor(const char *chunkname) {
+    if (chunkname == nullptr)
+        return nullptr;
+    const char *colon = std::strrchr(chunkname, ':');
+    if (colon == nullptr || colon == chunkname)
+        return nullptr;
+    const char *script = colon + 1;
+    if (std::strncmp(script, "On", 2) != 0 && std::strcmp(script, "PreClick") != 0 &&
+        std::strcmp(script, "PostClick") != 0)
+        return nullptr;
+    for (const char *c = script; *c != '\0'; ++c)
+        if (!IsNameCont(static_cast<unsigned char>(*c)))
+            return nullptr;
+    for (const auto &p : kScriptParams)
+        if (std::strcmp(script, p.script) == 0)
+            return p.params;
+    return "";
+}
+
+bool NameInList(const char *w, size_t n, const char *list) {
+    while (*list != '\0') {
+        const char *comma = std::strchr(list, ',');
+        const size_t len = comma ? static_cast<size_t>(comma - list) : std::strlen(list);
+        if (len == n && std::memcmp(w, list, n) == 0)
+            return true;
+        if (comma == nullptr)
+            break;
+        list = comma + 1;
+    }
+    return false;
+}
+
+// Does the body read `self` (or one of `params`) as a free name, and does it
+// read the vanilla `this` / `argN` globals? A name right after a single `.` or
+// `:` is a field or method (`obj.self`, `f:this`), not a variable. `event` is
+// never a signal: vanilla publishes it as a global too, so FrameXML's own
+// `<OnEvent>Foo_OnEvent(event)</OnEvent>` bodies stay unwrapped.
+struct HandlerNames {
+    bool self = false;
+    bool param = false;
+    bool vanilla = false;
+};
+HandlerNames ScanHandlerNames(const char *src, size_t len, const char *params) {
+    HandlerNames r;
+    std::vector<Token> toks;
+    Tokenize(src, len, toks);
+    for (size_t i = 0; i < toks.size(); ++i) {
+        const Token &t = toks[i];
+        if (t.kind != TK_NAME)
+            continue;
+        if (i > 0 && toks[i - 1].kind == TK_PUNCT && toks[i - 1].end - toks[i - 1].start == 1) {
+            const char prev = src[toks[i - 1].start];
+            if (prev == '.' || prev == ':')
+                continue;
+        }
+        const char *w = src + t.start;
+        const size_t n = t.end - t.start;
+        if (n == 4 && std::memcmp(w, "self", 4) == 0) {
+            r.self = true;
+        } else if (n == 4 && std::memcmp(w, "this", 4) == 0) {
+            r.vanilla = true;
+        } else if (n >= 4 && std::memcmp(w, "arg", 3) == 0) {
+            bool digits = true;
+            for (size_t k = 3; k < n; ++k)
+                digits = digits && IsDigit(static_cast<unsigned char>(w[k]));
+            if (digits)
+                r.vanilla = true;
+        } else if (n == 5 && std::memcmp(w, "event", 5) == 0) {
+            // Vanilla sets a global `event` during OnEvent dispatch, so a body
+            // that reads it works as-is: neither a modern nor a vanilla signal.
+        } else if (NameInList(w, n, params)) {
+            r.param = true;
+        }
+    }
+    return r;
+}
+
+int __fastcall LoadBuffer_h(void *L, const char *buff, unsigned size, const char *name) {
+    // Who called luaL_loadbuffer? Only the immediate-run file funnel
+    // (FUN_00704AE0 pcalls right after compiling) may receive an addon's
+    // (name, table): `loadstring` takes a caller-forgeable chunkname, and its
+    // call has a different return address, so it never gets them (even nested
+    // inside a RunScript that itself runs through the file funnel).
+    const bool fromFileFunnel =
+        reinterpret_cast<uintptr_t>(_ReturnAddress()) == Offsets::RET_LUA_FILE_COMPILE;
+
+    if (buff == nullptr || size == 0)
+        return g_origLoadBuffer(L, buff, size, name);
+
+    // Everything below works on the bytes after the BOM and a skipped `#`
+    // first line (SkippedHead); they are put back verbatim ahead of the
+    // preamble.
+    const size_t head = SkippedHead(buff, size);
+    const char *src = buff + head;
+    const size_t srcLen = size - head;
+
+    // Syntax transpile: hex literals first, then vararg, then # / % — one shared
+    // tokenization (see RunPasses). `didVararg` / `didOps` drive the preamble.
+    //
+    // GUARDED: a C++ exception from the rewrite machinery (std::length_error
+    // from an underflowed splice length, bad_alloc, anything) must NEVER cross
+    // into the engine — the engine has no handler, so it surfaces as a fatal
+    // ERROR #132 at RaiseException (seen in the field: a WeakAuras Chomp
+    // chunk killed the client from inside this hook). On any exception the
+    // chunk falls through to the ORIGINAL buffer untouched: worst case it
+    // fails to compile exactly as stock 1.12 would — never a crash.
+    std::string transpiled;
+    bool didVararg = false, didOps = false;
+    bool changed = false;
+    LARGE_INTEGER t0, t1;
+    QueryPerformanceCounter(&t0);
+    try {
+        changed = RunPasses(src, srcLen, transpiled, &didVararg, &didOps);
+    } catch (...) {
+        return g_origLoadBuffer(L, buff, size, name);
+    }
+    QueryPerformanceCounter(&t1);
+    g_stats.ticks += t1.QuadPart - t0.QuadPart;
+    g_stats.chunks++;
+    g_stats.bytes += size;
+    const char *body = changed ? transpiled.data() : src;
+    size_t bodyLen = changed ? transpiled.size() : srcLen;
+
+    // XML handler body written for later clients (see ScanHandlerNames)?
+    const char *handlerParams = nullptr;
+    if (g_xmlHandlerArgsEnabled &&
+        reinterpret_cast<uintptr_t>(_ReturnAddress()) == Offsets::RET_LUA_SCRIPT_COMPILE) {
+        const char *params = HandlerParamsFor(name);
+        if (params != nullptr) {
+            try {
+                const HandlerNames hn = ScanHandlerNames(body, bodyLen, params);
+                // `...` counts: left to the plain vararg wrap below, an
+                // OnEvent body's `...` would hold (self, event, args) rather
+                // than the arguments after `event`.
+                if (hn.self || didVararg || (hn.param && !hn.vanilla))
+                    handlerParams = params;
+            } catch (...) {
+                handlerParams = nullptr; // leave the body as vanilla compiles it
+            }
+        }
+    }
+
+    // Assemble a newline-free preamble (line numbers preserved). Two parts:
+    //  * Helper capture. `#`/`%`/`...` lower to `__len`/`__mod`/`unpack` CALLS;
+    //    as bare globals those resolve nil under a `setfenv` sandbox with no
+    //    `_G` fall-through, whereas real 5.1 operators are environment-
+    //    independent. Capturing them at chunk top — default env, before any
+    //    setfenv the chunk runs — into chunk-locals restores that: nested
+    //    functions bind them as upvalues, unaffected by their own environment.
+    //  * The vararg wrap. For an addon FILE chunk it is what lets the loader
+    //    pass the modern (addonName, addonTable) as real arguments, so
+    //    file-scope `local name, ns = ...` (now `unpack(arg)` of the wrap's own
+    //    `arg`) resolves. Only when a real `...` is present (didVararg), the
+    //    compile is the file funnel's own (fromFileFunnel — NOT loadstring,
+    //    whose chunkname is caller-forgeable), and the chunkname is an addon
+    //    path.
+    std::string pre;
+    if (didOps)
+        pre += "local __len,__mod=__len,__mod;";
+    if (didVararg)
+        pre += "local unpack=unpack;";
+
+    bool addonFile = false;
+    bool wrapped = false;
+    char addon[128];
+    if (didVararg) {
+        if (fromFileFunnel && AddonNameFromChunk(name, addon, sizeof addon)) {
+            // An addon file: compile the body as a vararg function, and below
+            // hand the loader a closure that calls it with (name, table).
+            pre += "return function(...) ";
+            wrapped = true;
+            addonFile = true;
+        } else {
+            // Top-level `...` OUTSIDE the addon file funnel — RunScript (`/run`),
+            // XML handler bodies, or loadstring. Vanilla's main chunk is NOT
+            // vararg (verified in-game): `arg` is nil there, and no rewrite can
+            // read call args the VM never captured. So compile the chunk as a
+            // REAL 5.0 vararg closure instead: wrap the body in
+            // `return function(...) … end` and, after a successful compile,
+            // call the main once so the caller receives the inner function.
+            // The inner's own 5.0 `arg` then carries whatever the caller
+            // passes — `loadstring("return ...")(a, b)` yields a, b — matching
+            // 5.1 called-chunk semantics. Chunks the engine calls with zero
+            // args (RunScript, OnLoad) see an empty `arg` exactly as the old
+            // `local arg={n=0}` fallback gave them; XML handlers invoked
+            // through Frame::ScriptArgs' positional push now receive those
+            // args through `...` as well — the modern handler shape. The
+            // helper captures stay in the OUTER main, which runs once at load
+            // in the default environment, so the sandbox rationale above is
+            // preserved (the inner binds them as upvalues). The prefix is
+            // newline-free and the synthetic `end` rides on its own appended
+            // final line, so existing line numbers are preserved.
+            if (handlerParams == nullptr) {
+                pre += "return function(...) ";
+                wrapped = true;
+            }
+        }
+    }
+    // Modern XML handler: bind the script's named parameters. Takes over from
+    // the plain vararg wrap above; the trailing `...` keeps any `...` in the
+    // body meaning the remaining arguments, as it does on later clients.
+    if (handlerParams != nullptr) {
+        pre += "return function(self";
+        if (*handlerParams != '\0') {
+            pre += ",";
+            pre += handlerParams;
+        }
+        pre += ",...) ";
+        wrapped = true;
+        g_stats.xmlHandlersWrapped++;
+    }
+
+    if (!changed && pre.empty())
+        return g_origLoadBuffer(L, buff, size, name);
+
+    std::string full;
+    full.reserve(head + pre.size() + bodyLen + 8);
+    full.append(buff, head); // BOM and skipped `#` line stay ahead of the preamble
+    full += pre;
+    full.append(body, bodyLen);
+    // Close the vararg wrap on its OWN line: a body ending in a line comment
+    // (`-- foo` with no trailing newline) would otherwise swallow the `end`.
+    // Appending a final line shifts no existing line numbers.
+    if (wrapped)
+        full += "\nend";
+
+    const int rc =
+        g_origLoadBuffer(L, full.data(), static_cast<unsigned>(full.size()), name);
+    // Materialize the wrapped chunk's inner function. The main is helper-local
+    // binds plus `return function(...) … end` — closure creation only, it
+    // cannot raise — so a plain lua_call is safe, and it leaves the inner
+    // function exactly where the engine expects the compiled chunk.
+    if (wrapped && rc == 0) {
+        Game::Lua::Call(L, 0, 1);
+        // An addon file: bind its (name, table) and hand the loader the
+        // closure in the inner function's place (see Script_RunAddonFile).
+        if (addonFile) {
+            Game::Lua::PushString(L, addon);
+            PushAddonNamespace(L, addon); // LuaSyntax::PushAddonNamespace (defined below)
+            Game::Lua::PushCClosure(L, &Script_RunAddonFile, 3);
+        }
+    }
+    return rc;
+}
+
+// ============================================================================
+// Diagnostics / toggles.
+// ============================================================================
+
+int __fastcall Script_Transpile(void *L) {
+    const char *s = Game::Lua::ToString(L, 1);
+    if (s == nullptr) {
+        Game::Lua::PushNil(L);
+        return 1;
+    }
+    unsigned n = Game::Lua::StrLen(L, 1);
+    std::string out;
+    bool rewrote = false;
+    try {
+        rewrote = RewriteChunk(s, n, out);
+    } catch (...) {
+        rewrote = false; // same guard as LoadBuffer_h — never throw into the VM
+    }
+    if (rewrote)
+        Game::Lua::PushLString(L, out.data(), static_cast<unsigned>(out.size()));
+    else
+        Game::Lua::PushLString(L, s, n);
+    return 1;
+}
+
+// _classicapi_TranspileStats() -> chunks, bytes, tokenizedChunks,
+// tokenizedBytes, milliseconds — cumulative since DLL load, over every chunk
+// the load hook saw (addon files, SavedVariables, RunScript, XML handlers,
+// loadstring). `milliseconds` is time inside RunPasses only.
+int __fastcall Script_TranspileStats(void *L) {
+    LARGE_INTEGER freq;
+    QueryPerformanceFrequency(&freq);
+    const double ms = freq.QuadPart != 0
+                          ? static_cast<double>(g_stats.ticks) * 1000.0 / static_cast<double>(freq.QuadPart)
+                          : 0.0;
+    Game::Lua::PushNumber(L, static_cast<double>(g_stats.chunks));
+    Game::Lua::PushNumber(L, static_cast<double>(g_stats.bytes));
+    Game::Lua::PushNumber(L, static_cast<double>(g_stats.tokenizedChunks));
+    Game::Lua::PushNumber(L, static_cast<double>(g_stats.tokenizedBytes));
+    Game::Lua::PushNumber(L, ms);
+    Game::Lua::PushNumber(L, static_cast<double>(g_stats.xmlHandlersWrapped));
+    return 6;
+}
+
+// The transpiler's runtime switches, table-driven. These are diagnostics /
+// kill-switches: a `#`/`%`/`...`-bearing chunk can't compile on 5.0 unless
+// rewritten, so disabling a switch only reverts affected chunks to the broken
+// (un-transpiled) state — useful to answer "is ClassicAPI's rewrite breaking
+// this addon?" without shipping a config surface. Lua sees one Set + one Get
+// keyed by name (case-insensitive), instead of a Set/Get pair per switch.
+struct Toggle { const char *name; bool *flag; };
+const Toggle kToggles[] = {
+    {"Length", &g_lenEnabled},
+    {"Modulo", &g_modEnabled},
+    {"VarargExpansion", &g_varargEnabled},
+    {"HexLiterals", &g_hexEnabled},
+    {"LongBrackets", &g_longBracketEnabled},
+    {"XmlHandlerArgs", &g_xmlHandlerArgsEnabled},
+};
+bool *FindToggle(const char *name) {
+    if (name)
+        for (const auto &t : kToggles)
+            if (_stricmp(name, t.name) == 0)
+                return t.flag;
+    return nullptr;
+}
+
+// _classicapi_SetTranspileOption(name, bool) -> the new value, or nil if the
+// name is unknown.
+int __fastcall Script_SetTranspileOption(void *L) {
+    bool *flag = FindToggle(Game::Lua::ToString(L, 1));
+    if (flag == nullptr) {
+        Game::Lua::PushNil(L);
+        return 1;
+    }
+    *flag = Game::Lua::ToBoolean(L, 2) != 0;
+    Game::Lua::PushBool(L, *flag);
+    return 1;
+}
+// _classicapi_GetTranspileOption(name) -> bool, or nil if the name is unknown.
+int __fastcall Script_GetTranspileOption(void *L) {
+    bool *flag = FindToggle(Game::Lua::ToString(L, 1));
+    if (flag == nullptr) {
+        Game::Lua::PushNil(L);
+        return 1;
+    }
+    Game::Lua::PushBool(L, *flag);
+    return 1;
+}
+
+void RegisterLuaFunctions() {
+    Game::Lua::RegisterGlobalFunction("__len", &Script_Len);
+    Game::Lua::RegisterGlobalFunction("__mod", &Script_Mod);
+    Game::Lua::RegisterGlobalFunction("_classicapi_Transpile", &Script_Transpile);
+    Game::Lua::RegisterGlobalFunction("_classicapi_TranspileStats", &Script_TranspileStats);
+    Game::Lua::RegisterGlobalFunction("_classicapi_SetTranspileOption", &Script_SetTranspileOption);
+    Game::Lua::RegisterGlobalFunction("_classicapi_GetTranspileOption", &Script_GetTranspileOption);
+}
+
+// `__len` / `__mod` also on the glue state — the load hook is state-agnostic,
+// so a glue chunk with `#`/`%` (none ship today) still resolves the helpers.
+void RegisterGlueFunctions() {
+    Game::Lua::RegisterGlueFunction("__len", &Script_Len);
+    Game::Lua::RegisterGlueFunction("__mod", &Script_Mod);
+}
+
+const Game::ModuleAutoRegister _autoreg{&RegisterLuaFunctions};
+const Game::GlueModuleAutoRegister _glueAutoreg{&RegisterGlueFunctions};
+const Game::HookAutoRegister _loadHook{
+    Offsets::FUN_LUAL_LOADBUFFER, reinterpret_cast<void *>(&LoadBuffer_h),
+    reinterpret_cast<void **>(&g_origLoadBuffer)};
+
+} // namespace
+
+// The one place the per-addon namespace map is read/created (see
+// AddonNamespace.h). Registry key is local — nothing else may touch this map,
+// so both callers (the addon-file closure in LoadBuffer_h and the gated
+// `C_AddOns.GetAddOnLocalTable`) resolve to the same table per addon.
+void PushAddonNamespace(void *L, const char *name) {
+    static constexpr const char *kAddonNsRegKey = "__classicapi_addon_ns";
+
+    // Case-fold the map key. Addon folder names are case-insensitive on
+    // Windows, but the load-time producer keys by the folder's exact case
+    // (from the chunkname) while `C_AddOns.GetAddOnLocalTable` passes the
+    // caller's arbitrary case — its gates (by-name IsLoaded, TOC read) are both
+    // case-insensitive too. Without folding, a case-mismatched request would
+    // miss the real table and silently mint a fresh empty one. Fold both here,
+    // the single choke point, so every caller lands on the same table.
+    char key[128];
+    size_t ki = 0;
+    for (; name[ki] != '\0' && ki + 1 < sizeof key; ++ki)
+        key[ki] = (name[ki] >= 'A' && name[ki] <= 'Z') ? static_cast<char>(name[ki] + 32)
+                                                        : name[ki];
+    key[ki] = '\0';
+
+    // registry[kAddonNsRegKey] — the name->ns map, created on first use.
+    Game::Lua::PushString(L, kAddonNsRegKey);
+    Game::Lua::RawGet(L, Game::Lua::REGISTRY_INDEX);
+    if (Game::Lua::Type(L, -1) != Game::Lua::TYPE_TABLE) {
+        Game::Lua::SetTop(L, -2); // pop the non-table
+        Game::Lua::NewTable(L);
+        Game::Lua::PushString(L, kAddonNsRegKey);
+        Game::Lua::PushValue(L, -2); // dup map
+        Game::Lua::RawSet(L, Game::Lua::REGISTRY_INDEX);
+    }
+    // map on top; fetch map[key], creating a fresh ns if missing.
+    Game::Lua::PushString(L, key);
+    Game::Lua::RawGet(L, -2);
+    if (Game::Lua::Type(L, -1) != Game::Lua::TYPE_TABLE) {
+        Game::Lua::SetTop(L, -2); // pop nil
+        Game::Lua::NewTable(L);
+        Game::Lua::PushString(L, key);
+        Game::Lua::PushValue(L, -2); // dup ns
+        Game::Lua::RawSet(L, -4);    // map[key] = ns
+    }
+    // Drop the map beneath the ns so the net effect is +1 (ns on top).
+    Game::Lua::Remove(L, -2);
+}
+
+} // namespace LuaSyntax

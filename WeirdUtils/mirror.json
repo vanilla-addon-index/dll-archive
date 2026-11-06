@@ -1,0 +1,2326 @@
+{
+  "upstream": "https://octowow.st/git/Dusk/WeirdUtils",
+  "source": {
+    "kind": "repository",
+    "host": "octowow.st",
+    "owner": "Dusk",
+    "repo": "WeirdUtils",
+    "name": "WeirdUtils",
+    "url": "https://octowow.st/git/Dusk/WeirdUtils",
+    "api": "https://octowow.st/git/api/v1/repos/Dusk/WeirdUtils"
+  },
+  "commit": "dde316a18427aa2b1e180b0aaf095f4a47260df6",
+  "sourceFiles": {
+    ".gitea/issue_template/bug_report.yml": {
+      "sha256": "edf99b8cab9ccee7dd873b128626f3c3342c2aa663d2e6fde7396d9fa2fe2664",
+      "bytes": 903
+    },
+    ".gitea/issue_template/config.yml": {
+      "sha256": "8b09e7df09fc7534371988062769ee427af2954a02c04c763e8a8005be0f2be4",
+      "bytes": 46
+    },
+    ".gitea/issue_template/other.yml": {
+      "sha256": "5e7a313f78b8bd7e887a1b0f156f85552d91406c33de2bf918b3f0c80cfe37e9",
+      "bytes": 277
+    },
+    ".github/workflows/release.yml": {
+      "sha256": "ce05d6e331b99a1e43afd41e5d76ca28a435085fb54cba726281a0773460afdf",
+      "bytes": 5459
+    },
+    ".gitignore.upstream": {
+      "sha256": "f975cdb1934b6d29a30d17f96e11dc409797dc0280a2ae1f7f4e0d7ccced0583",
+      "bytes": 766
+    },
+    "build.zig": {
+      "sha256": "e50bd851ef17c14e6fea43c5a4fc29e1e403025492e86c83d9336bb1c40c9477",
+      "bytes": 23278
+    },
+    "build.zig.zon": {
+      "sha256": "e306feb5caf64460f5008d0a8757480bc738d9e5b136f3242453cc243abea7b9",
+      "bytes": 435
+    },
+    "Docs/ASSET_PROVENANCE.md": {
+      "sha256": "b77af08953c66b19acee6af53c7ad084c701dfaab8e01f0ff42cd4059ae32a0a",
+      "bytes": 3131
+    },
+    "Docs/BINARY_PROVENANCE.md": {
+      "sha256": "8e5f7a0066cc4d068b6726e21234078bbae3fd6f341a9b8462445eb709115925",
+      "bytes": 2466
+    },
+    "Docs/calling-conventions.md": {
+      "sha256": "9c8ca882147e4e612e99bcedd858656b2f85a5bd74c34c37d04796fac625fb15",
+      "bytes": 7510
+    },
+    "Docs/DATA_FLOW_MAP.md": {
+      "sha256": "59859f7707fb39d07e4156e1890d992022f07c7639702e554c27e4d5a88cc9c3",
+      "bytes": 14102
+    },
+    "Docs/DATA_STRUCTURES.md": {
+      "sha256": "e271f7e44e9a3793435d3fa0844b2479a82ba6d6454d99b65e260984b5d069db",
+      "bytes": 22335
+    },
+    "Docs/HOOK_ADDRESS_FIXES.md": {
+      "sha256": "0ae1ae1d0dce8e75ee8f1b32eea2eaf1c5f9a08468b4188cb7bbeda59f12b489",
+      "bytes": 4212
+    },
+    "Docs/HOOK_SPECIFICATIONS.md": {
+      "sha256": "7048eb7d27be077969f5870dc9453af0eac5c57012f5a2f3d5d89a4b9a789df6",
+      "bytes": 19755
+    },
+    "Docs/HOOKING_QUICK_REFERENCE.md": {
+      "sha256": "f215766ff87a1a5674e313e1520b7336056252aa71db8393b73e187ce789649f",
+      "bytes": 6970
+    },
+    "Docs/jfa-banding-investigation.md": {
+      "sha256": "280c045b5125ad0af3b6f9bd7ba38f4e43fe6be7cbe645512232f94450895565",
+      "bytes": 4084
+    },
+    "Docs/M2_MODEL_SYSTEM.md": {
+      "sha256": "0918b37ac973dbdc690f8ee2c8109cfe69d5411c43d7c410a5ee2c506a0e9d4a",
+      "bytes": 17893
+    },
+    "Docs/MASK_OUTLINE_DESIGN.md": {
+      "sha256": "dc4d472a9d88d305dba016619b370e56604536fff5f9b23da8e98c2ae3cae6a3",
+      "bytes": 7803
+    },
+    "Docs/outline-port-notes.md": {
+      "sha256": "1cd1c8740fb12effbbd374c0a0bd1864b1f571ba6355c7afcca2e572ca777f3f",
+      "bytes": 4792
+    },
+    "Docs/outline-rendering-research.md": {
+      "sha256": "efddd521af072468e13557dcfcaab287f5eeaa862e96341f1816efd1881085db",
+      "bytes": 20824
+    },
+    "Docs/outline-validation.md": {
+      "sha256": "c328629b1a48034dd78209bc14135fe3be083a4e675fc3b61af48dd67a7ae01a",
+      "bytes": 3930
+    },
+    "Docs/RENDER_ARCHITECTURE.md": {
+      "sha256": "3fceda17ee40a92c05c5baae752300eee5527820f569088fa51dd92488f4f07f",
+      "bytes": 32124
+    },
+    "Docs/RENDER_PIPELINE_ANALYSIS.md": {
+      "sha256": "b6b3596687be61e80f646aeef620f78aee248e4957fa6f7fbdb9761bbf1de46c",
+      "bytes": 29075
+    },
+    "Docs/RESEARCH_LOG.md": {
+      "sha256": "0149423353ec8f021631c19afdb6738f30e8809643d5e67eeb9e343d9fbaf7c6",
+      "bytes": 85695
+    },
+    "Docs/SHADER_DESIGN.md": {
+      "sha256": "20d4a7b6749c078c123d5d0cb7d15c74b439ff74c17e60d6c3967aed9660df49",
+      "bytes": 20221
+    },
+    "Docs/SHADER_OUTLINE_RESEARCH.md": {
+      "sha256": "f1e2fb0709168e3b91ca60e479afdb5ad365194a3288511db47ead4be4eb189f",
+      "bytes": 34895
+    },
+    "Docs/SOURCE_PROVENANCE.md": {
+      "sha256": "044bcb612a814cccff26d9a4430d71b54c48dc1eb9877fe2f12c9b2445e85ac4",
+      "bytes": 2132
+    },
+    "IDEAS.md": {
+      "sha256": "098848d55b3cd3821daa8d6c358d0f929b9c6883627d29eed7f58abd39c7aab2",
+      "bytes": 3418
+    },
+    "include/weirdutils_api.h": {
+      "sha256": "eeb6700d6d5adb9d53f31c09bac398e0bcbc902d8ae9fb85acabe33658613dc1",
+      "bytes": 2276
+    },
+    "LICENSE": {
+      "sha256": "3d8e2fb9a2973faf5ab9ceebc858c8fdb1f01f34094cd7cceaab0985781df988",
+      "bytes": 3629
+    },
+    "LICENSES/libdeflate-MIT.txt": {
+      "sha256": "4ad69099cb4374836fd27583d9991e2838cd86b6e4666ab26b2d32582c91e73a",
+      "bytes": 1078
+    },
+    "LICENSES/README.md": {
+      "sha256": "d8722b8bb078672b5904370beeba8d660cf829777e8a7c76246640bfc6d762d0",
+      "bytes": 1116
+    },
+    "LICENSES/VanillaFixes-MIT.txt": {
+      "sha256": "30e3e10a3c1231c099578d2a19d88513eef966e907840bfd7656d272806b4cc1",
+      "bytes": 1068
+    },
+    "PROJECT_IDENTITY.md": {
+      "sha256": "947cd0e2e982886285a3e03da52c2a168c88df6de06557d6e6e2028a051680ec",
+      "bytes": 1896
+    },
+    "README.md": {
+      "sha256": "3b5254ff523f150b926eef64a3dfa0dc38d7d3f510df2d29598e8c466926da05",
+      "bytes": 18191
+    },
+    "src/addonperf/addonperf.zig": {
+      "sha256": "1c97ab1f5776082dd2a093d03b8a21fb99eedebeec1fee803d7de5f7ce0de684",
+      "bytes": 3192
+    },
+    "src/addons.zig": {
+      "sha256": "332809502f9b412018e252fcb7969fef64141dabdc6fa8369967e4718f555de3",
+      "bytes": 15108
+    },
+    "src/bench/main.zig": {
+      "sha256": "d40fe7642784f8bf2c3f8ba0d7e5789b55da22185877d606ff6b039300b13afb",
+      "bytes": 165270
+    },
+    "src/bench/originals.zig": {
+      "sha256": "6869adb883c7e7f811dffa4d858c399fccb80531294246f1fcf8c69da8fb956a",
+      "bytes": 35651
+    },
+    "src/bench/wow_rdata.bin": {
+      "sha256": "618bcede0559126174db1c9b5702e6e894920c8ea5e5f22f113175ace47c7842",
+      "bytes": 163840
+    },
+    "src/bench/wow_text.bin": {
+      "sha256": "8b5825f5c3b84141e6f1d44a8fa65b280f5759f6923b5f5af44f9d1163f4d9c3",
+      "bytes": 4186112
+    },
+    "src/bigcursor/bigcursor.zig": {
+      "sha256": "35cf627198d046abe20b5add358272ea122e5c39ee2af6e067f926f9606b865f",
+      "bytes": 24810
+    },
+    "src/clickthrough/ALLOWLIST.md": {
+      "sha256": "0cddf0a8edea70d3d4a13df6362e00c490759836ba3965ff4968c730e213fa85",
+      "bytes": 2397
+    },
+    "src/clickthrough/BG_OBJECTS.md": {
+      "sha256": "2955761f37dcb6c4ad80244739715af88296ac762323c30d864c5c805bda7e54",
+      "bytes": 2063
+    },
+    "src/clickthrough/clickthrough.zig": {
+      "sha256": "1a547919803a14aef21c89aeda9a1b0be9e10ddb28d32e047a829093429ce21a",
+      "bytes": 8935
+    },
+    "src/clickthrough/portal_filter.zig": {
+      "sha256": "dc52b42969df2ab6d41fe748f32d27d3513e8aa11f67ade84a2ccb761563772e",
+      "bytes": 1138
+    },
+    "src/clickthrough/portal_visual.zig": {
+      "sha256": "a72477b8390577d34332bf2a0a069bef3c9e35efbd9fdb14235bbdd34c555805",
+      "bytes": 12191
+    },
+    "src/clickthrough/RESEARCH.md": {
+      "sha256": "babaab3db2099a56f1420d45cf05f8501e034e4e4dfd65087500c5b4435ba78e",
+      "bytes": 19622
+    },
+    "src/clickthrough/SUPERWOW_CRASH.md": {
+      "sha256": "41b6c3d097cb1c6ac8f0b8c4986505e89bac95a65375cc3f4ed4a31c255cda77",
+      "bytes": 3786
+    },
+    "src/clickthrough/SUPERWOW_TIMBER_CONFLICT.md": {
+      "sha256": "edae87263b0867ae4f6c8d0e3d12bee5e15be2de47f6080d56df88df381ae17b",
+      "bytes": 11238
+    },
+    "src/customassets/customassets.zig": {
+      "sha256": "8d6e164a9f9ba2b5cd5527784e7056bd90f22579f4d33fce5178dfaac25c06f6",
+      "bytes": 9216
+    },
+    "src/d3d9.zig": {
+      "sha256": "b326073f099ac553e898440b2d2facbab3de84a42089b8a230fbf6350afc2ee6",
+      "bytes": 4904
+    },
+    "src/dpslog/dpslog.zig": {
+      "sha256": "e08854382df785df96cd2a2833d373266663d263a2b638823481d0d6509fd926",
+      "bytes": 140395
+    },
+    "src/dpslog/HANDOFF_CLEU_FILTERS.md": {
+      "sha256": "539299a320df43739bbdb370606de975d537414cdefaf8651d7201c80cf74d66",
+      "bytes": 6047
+    },
+    "src/dpslog/RESEARCH.md": {
+      "sha256": "f0c6b4067f2ad6225d5971b299bd5b255b2481f34c49def5277164753bab5a0d",
+      "bytes": 55954
+    },
+    "src/dpslog/SUPERWOW_EVENTS.md": {
+      "sha256": "f42e279ae5137eab310f6b1d259b6d14147fec5f14ab362a6a5f175edab03eb7",
+      "bytes": 3230
+    },
+    "src/dpslog/WARDEN_CONCERNS.md": {
+      "sha256": "a5b5541b9a7c392238f20e424df8cd71cf041815d5ee8ba6e0f70cbeb1aab35b",
+      "bytes": 6781
+    },
+    "src/dpslog/WeirdDPSMate/Bindings.xml": {
+      "sha256": "6b6ea413e17a6bc56dffc21f770e49ee5fcdbaedcea6c06cae15ff02f3a5586b",
+      "bytes": 313
+    },
+    "src/dpslog/WeirdDPSMate/Damage/DPSMate_Damage.lua": {
+      "sha256": "b8137f800695041c0873ada1a68ccb17eca535462f94be5648246a83e8e3a91c",
+      "bytes": 9659
+    },
+    "src/dpslog/WeirdDPSMate/Damage/DPSMate_Details_Damage.lua": {
+      "sha256": "eee185068ce51714a44474ebfeb0bbb0a0f4e6dad863a842c6b9c0a032614e23",
+      "bytes": 38626
+    },
+    "src/dpslog/WeirdDPSMate/Damage/DPSMate_Details_Damage.xml": {
+      "sha256": "135b69821198983a8f961dbb8b106dbc67401de2d32a8d1d4a9e36d381aa743f",
+      "bytes": 66685
+    },
+    "src/dpslog/WeirdDPSMate/Damage/DPSMate_Details_DamageTotal.lua": {
+      "sha256": "222bbfa98213dcae432b3cfec1decc83902058b1539a64bf553cb024afa41bbf",
+      "bytes": 14093
+    },
+    "src/dpslog/WeirdDPSMate/Damage/DPSMate_Details_DamageTotal.xml": {
+      "sha256": "949c75f18fe1d474d64460ecebe6bf6e004f122f62b5fbc3416e9a8c5ac6e2cb",
+      "bytes": 27571
+    },
+    "src/dpslog/WeirdDPSMate/Damage/DPSMate_DPS.lua": {
+      "sha256": "4e6141535c95b0d985f012bca11fb64a73c6cc049d7860cd6d1ae56a2eeb520c",
+      "bytes": 9880
+    },
+    "src/dpslog/WeirdDPSMate/DPSMate_CLEUAdapter.lua": {
+      "sha256": "0561f7c335ab0146e9f86c030c97b1029a4a19193e91cfc1f766364796dccbea",
+      "bytes": 23473
+    },
+    "src/dpslog/WeirdDPSMate/DPSMate_CombatPatterns.lua": {
+      "sha256": "50f7f1f367ba426769cb7589f4cd650979e08dd6c896ca5e9c5376f7959845f7",
+      "bytes": 14652
+    },
+    "src/dpslog/WeirdDPSMate/DPSMate_DataBuilder.lua": {
+      "sha256": "36c271534299b17766a1d08bb8be4c553065ae418e9ce25e06dab497b805c535",
+      "bytes": 77035
+    },
+    "src/dpslog/WeirdDPSMate/DPSMate_Frame.xml": {
+      "sha256": "8c178f4c1ff1898de54cd43cb91283da011be525b190f32ac78c0d900e6397ee",
+      "bytes": 15110
+    },
+    "src/dpslog/WeirdDPSMate/DPSMate_Options.lua": {
+      "sha256": "5fb6255b588ed0ca3c0f710d376e7203e8b200d6c7c4d46dc2b2a35f86fea5d9",
+      "bytes": 86263
+    },
+    "src/dpslog/WeirdDPSMate/DPSMate_Options.xml": {
+      "sha256": "7a095f750be0c6d5993eecf6588630594bb0fc6d34c6c2dfadc2d5f832cc9a3d",
+      "bytes": 233456
+    },
+    "src/dpslog/WeirdDPSMate/DPSMate_Parser.lua": {
+      "sha256": "00429ca7cf91719ec6655019ed5627c95bcad89d5aa1da439f990d6867f5a615",
+      "bytes": 22443
+    },
+    "src/dpslog/WeirdDPSMate/DPSMate_Sync.lua": {
+      "sha256": "6485d389ff026f3ffdda542be8cb2b1998fa70caa20fedd6abda027768f313de",
+      "bytes": 56102
+    },
+    "src/dpslog/WeirdDPSMate/DPSMate.lua": {
+      "sha256": "82d80948b4a03defefb4a3499a65998916f6afee342e061ac9d10234bbe7cadd",
+      "bytes": 30977
+    },
+    "src/dpslog/WeirdDPSMate/DPSMate.toc": {
+      "sha256": "ec25d5a51968c806f20c0df55503b24b8bdf485a5d3d27da06afbc7ad7fc8e7b",
+      "bytes": 8114
+    },
+    "src/dpslog/WeirdDPSMate/enUS/Babble-Boss-2.3.lua": {
+      "sha256": "adb90334b99c50c242ff1dc4f0504a26a2c749f63dd42a112b297c685a24c23e",
+      "bytes": 13034
+    },
+    "src/dpslog/WeirdDPSMate/enUS/Babble-Spell-2.3.lua": {
+      "sha256": "206902a74d2820d467a30e944789c1d9e9fb587619d52838f20ef813aadcebf0",
+      "bytes": 97587
+    },
+    "src/dpslog/WeirdDPSMate/enUS/DPSMate_ParserENUS.lua": {
+      "sha256": "df7983e4347bb6599792e05538b562ef630b1e4b3477c1171780111a1203a1cb",
+      "bytes": 97655
+    },
+    "src/dpslog/WeirdDPSMate/enUS/enUS.lua": {
+      "sha256": "98d5c353a5923dc9878bbe7b7e11f2a96196d9b89da6092f095b9f5f1fb143dc",
+      "bytes": 26899
+    },
+    "src/dpslog/WeirdDPSMate/enUS/NPCDB-1.0.lua": {
+      "sha256": "9cebf68f55f047ba0aa70acad8dbad70a40f9767e7d478a3cc51ca5f6a16d873",
+      "bytes": 98648
+    },
+    "src/dpslog/WeirdDPSMate/fonts/Accidental Presidency.ttf": {
+      "sha256": "91980438519aff2fd182b77d316be9549cbf6cf0daadab8e8f5638367f1d9242",
+      "bytes": 41556
+    },
+    "src/dpslog/WeirdDPSMate/fonts/AlteHaas.ttf": {
+      "sha256": "41d867ef23989482db849e3c420d66925d71e5e75d5e1cdfb1a274b56cb777a0",
+      "bytes": 143896
+    },
+    "src/dpslog/WeirdDPSMate/fonts/CaviarDreams.ttf": {
+      "sha256": "e0e9896c72eaf72dec960bd405ec8d1cfff6629cb5309a44333d96fa2af3bcc5",
+      "bytes": 59284
+    },
+    "src/dpslog/WeirdDPSMate/fonts/Enigma__2.ttf": {
+      "sha256": "eba6927102e658c4e8a237e0d3cf12bc4791841c9be1188d18ea5b89a06b1925",
+      "bytes": 17992
+    },
+    "src/dpslog/WeirdDPSMate/fonts/Expressway.ttf": {
+      "sha256": "94110de3c2ae4d21e27afe706e64ef3142e97d2611d3b51d6c9078051193cc33",
+      "bytes": 156244
+    },
+    "src/dpslog/WeirdDPSMate/fonts/ExpresswayBold.ttf": {
+      "sha256": "06a2106170c2b5b736955cc749ed755f3757d103230645158f0bd5b5b91c386b",
+      "bytes": 99820
+    },
+    "src/dpslog/WeirdDPSMate/fonts/Mandarin1.ttf": {
+      "sha256": "e4370c49c27838a019ea71c7b227c7443d0f21165d364fda3e87d128d2343abd",
+      "bytes": 8644640
+    },
+    "src/dpslog/WeirdDPSMate/fonts/Mandarin2.ttf": {
+      "sha256": "864d20a8f80b913f5a4cd26768e6d0c1ac43b6080930ea7a229f050914a92b2f",
+      "bytes": 6580908
+    },
+    "src/dpslog/WeirdDPSMate/fonts/Roboto.ttf": {
+      "sha256": "94df4e4976db8ddaec27f8e8c33eef912e744fb200ca09051794b38e5a502fc0",
+      "bytes": 162636
+    },
+    "src/dpslog/WeirdDPSMate/fonts/The Bad Times.ttf": {
+      "sha256": "ae60db2d76e0e06169e2fd13b0890a2b47ff201db7b46108d29c69ab51bff5eb",
+      "bytes": 46060
+    },
+    "src/dpslog/WeirdDPSMate/fonts/Vegur.otf": {
+      "sha256": "b0d25ce0ea5fb6c6fe8da1c04680e2319a877ffe76f47dd57e19e81e48f3752d",
+      "bytes": 15300
+    },
+    "src/dpslog/WeirdDPSMate/fonts/VeraSe.ttf": {
+      "sha256": "6afd927937d84fc00831441cbe0165b2d926b5bb9c18ac9018e5df6e4b0c006a",
+      "bytes": 60280
+    },
+    "src/dpslog/WeirdDPSMate/fonts/visitor2.ttf": {
+      "sha256": "48ccd009dfe6a07223cc3571dc906acea1a255e67c72a121ced1b5071fbb06bb",
+      "bytes": 37388
+    },
+    "src/dpslog/WeirdDPSMate/images/class/druid.tga": {
+      "sha256": "8d3858efbaccfe6f6ad5fbe8798053fb6c2eb55cb55f76ce38ffc1b188b69ab8",
+      "bytes": 11857
+    },
+    "src/dpslog/WeirdDPSMate/images/class/hunter.tga": {
+      "sha256": "a67e804381815edbdc90468dabf9a8dd0a332f5d28e7ad03074e1c6c798ab5c7",
+      "bytes": 8397
+    },
+    "src/dpslog/WeirdDPSMate/images/class/mage.tga": {
+      "sha256": "e5ebce412a2ba6d4f1aee185f4efe8e6f1ee90327b4f4b5072bb5efbb1a96911",
+      "bytes": 11855
+    },
+    "src/dpslog/WeirdDPSMate/images/class/None.tga": {
+      "sha256": "02929d21f8463c6896e12c68198548b1a6982f013d0813c493b61574b68a6be9",
+      "bytes": 16428
+    },
+    "src/dpslog/WeirdDPSMate/images/class/paladin.tga": {
+      "sha256": "47f531da8ebff0a14c0d50585f7334d1ff53ba029bc8fe13ea63cac0640d46b0",
+      "bytes": 11413
+    },
+    "src/dpslog/WeirdDPSMate/images/class/priest.tga": {
+      "sha256": "c8ff53d0560521603ce849ed8ce3916c6de1a150f992aafdcc5166a36d94aa17",
+      "bytes": 9091
+    },
+    "src/dpslog/WeirdDPSMate/images/class/rogue.tga": {
+      "sha256": "2f2273c38c7d62ffa3137aeeb2d295063f28c0a335a84c1adde60513c5d7a646",
+      "bytes": 10399
+    },
+    "src/dpslog/WeirdDPSMate/images/class/shaman.tga": {
+      "sha256": "016dfbe6525c8d98c0e873e029e63bb57f224593743c5ea00a4aa227de85f83f",
+      "bytes": 11401
+    },
+    "src/dpslog/WeirdDPSMate/images/class/warlock.tga": {
+      "sha256": "247cfc073e553defbad670b5be2a5a124f8f8a95dc910e1f0b07f991b35c2960",
+      "bytes": 11210
+    },
+    "src/dpslog/WeirdDPSMate/images/class/warrior.tga": {
+      "sha256": "089b2fbc0abc7832930c290a8726308fd65c6925c974fcfbfcdab67d2d23fa9a",
+      "bytes": 11747
+    },
+    "src/dpslog/WeirdDPSMate/images/dummy.tga": {
+      "sha256": "02929d21f8463c6896e12c68198548b1a6982f013d0813c493b61574b68a6be9",
+      "bytes": 16428
+    },
+    "src/dpslog/WeirdDPSMate/images/icon-config.tga": {
+      "sha256": "d88685bc72aafc546868a69a6c2c782a376bfb0ca7292087a2d04ea78caab47e",
+      "bytes": 4140
+    },
+    "src/dpslog/WeirdDPSMate/images/icon-reset.tga": {
+      "sha256": "02841e10d258c6fb874ab1cdf7fc157b96ca7e07172cee5a9634d4b907e32aab",
+      "bytes": 1068
+    },
+    "src/dpslog/WeirdDPSMate/images/npc.tga": {
+      "sha256": "eb0e578b8fa3420086d9e962ebb68c0525bd82474cd4b97eb22e96c6a7dcf3d6",
+      "bytes": 4140
+    },
+    "src/dpslog/WeirdDPSMate/images/ResizeGripRight.tga": {
+      "sha256": "f17e6620869ab39c230f860d13e5e9cda42b03938b27b922c99a6e4109bcf5cf",
+      "bytes": 2085
+    },
+    "src/dpslog/WeirdDPSMate/images/ResizeGripRightTop.tga": {
+      "sha256": "4f14b5ca977898f01090faabc837a9ea6802e2a527291d0bb999f0871ee95052",
+      "bytes": 320
+    },
+    "src/dpslog/WeirdDPSMate/images/statusbar/Aluminium.tga": {
+      "sha256": "679e0dbbb1e1f26871a2a84610d327289db1faf2743590692e57c22f6d52358d",
+      "bytes": 32812
+    },
+    "src/dpslog/WeirdDPSMate/images/statusbar/Armory.tga": {
+      "sha256": "7f5d7718082fc4f2bfda40f264d550eb6cc141922acfc7e1554aebad4744015e",
+      "bytes": 812
+    },
+    "src/dpslog/WeirdDPSMate/images/statusbar/BantoBar.tga": {
+      "sha256": "5a5deac548c4639de44db55ed79a6784bba95fc8286e7a4e7235ea7da24e19c3",
+      "bytes": 32812
+    },
+    "src/dpslog/WeirdDPSMate/images/statusbar/Glaze2.tga": {
+      "sha256": "805cc920b241fe6d09f7907c99c16a09c15e9bb5ebb7c736486854b5c13122cb",
+      "bytes": 32812
+    },
+    "src/dpslog/WeirdDPSMate/images/statusbar/Gloss.tga": {
+      "sha256": "20f70840ccfd8c7a94ccdc57a95810a56d495e1de62ac90e4f051e44c8215205",
+      "bytes": 32812
+    },
+    "src/dpslog/WeirdDPSMate/images/statusbar/Graphite.tga": {
+      "sha256": "4fafd7e34444a05f1d261a76156fadc3130c6f7d1538779b559ed6b8e4825856",
+      "bytes": 65580
+    },
+    "src/dpslog/WeirdDPSMate/images/statusbar/Grid.tga": {
+      "sha256": "9caee4d0382316aa64ec4891eb8b05ffba0df5e421bef9274f8533e639637d74",
+      "bytes": 24594
+    },
+    "src/dpslog/WeirdDPSMate/images/statusbar/Healbot.tga": {
+      "sha256": "9b3cdfeba85c0fed3e9089dc4f8c21ac0e079eeac018b1e2c518af4295f832a6",
+      "bytes": 24594
+    },
+    "src/dpslog/WeirdDPSMate/images/statusbar/LiteStep.tga": {
+      "sha256": "9bd025e9217a88cda7ef3bd185976ded94a647468c6126d42c55df4a88f3a7c2",
+      "bytes": 32812
+    },
+    "src/dpslog/WeirdDPSMate/images/statusbar/Minimalist.tga": {
+      "sha256": "97976977031766d707a34121ac13c5ab6b7e9d204be2efaa395c717aeb1dc7ab",
+      "bytes": 1304
+    },
+    "src/dpslog/WeirdDPSMate/images/statusbar/normTex.tga": {
+      "sha256": "500b74637f1d0fa7a75b965152de3e9c1814cad3706526938ea251f683da8e7e",
+      "bytes": 14690
+    },
+    "src/dpslog/WeirdDPSMate/images/statusbar/Otravi.tga": {
+      "sha256": "e300a87224e7c1a044574ec915a1f9c0de49c3e26f854ecd3e1ea8ed920aaba9",
+      "bytes": 32812
+    },
+    "src/dpslog/WeirdDPSMate/images/statusbar/Outline.tga": {
+      "sha256": "f1f5c8e7032b24c0e08f42fc5ad3ab14d20005bb7a31921bd982d5883b4cad28",
+      "bytes": 664
+    },
+    "src/dpslog/WeirdDPSMate/images/statusbar/Perl.tga": {
+      "sha256": "e0fd78c10c65cc4ef4cd455ecf97e0b1f0d0e8808d0822eb94f4f2f9dae98596",
+      "bytes": 2037
+    },
+    "src/dpslog/WeirdDPSMate/images/statusbar/Round.tga": {
+      "sha256": "8da9acf03ae2629228635fe039ffcf1a8776567168e28d5a74113599002bedcf",
+      "bytes": 4980
+    },
+    "src/dpslog/WeirdDPSMate/images/statusbar/Smooth.tga": {
+      "sha256": "00e8084e83bf25b941464e2619b59e993b6ac7ae0bd8a6f37b12872e686ded6d",
+      "bytes": 32812
+    },
+    "src/dpslog/WeirdDPSMate/images/sync.tga": {
+      "sha256": "f645d6b5d02057291a0314c28b4d28c94e02f8ec302c595bd09adf7a6dfb92d4",
+      "bytes": 1068
+    },
+    "src/dpslog/WeirdDPSMate/images/UI-ChatIM-SizeGrabber-Down.tga": {
+      "sha256": "099102522b5f45ba28df0abf2f54ec5574a29b258c25330360780fdc2553159b",
+      "bytes": 824
+    },
+    "src/dpslog/WeirdDPSMate/images/UI-ChatIM-SizeGrabber-Highlight.tga": {
+      "sha256": "5829b57218b92b8c979e9e54d1daab948a096f987e0f536f175f7b102f6c24ac",
+      "bytes": 862
+    },
+    "src/dpslog/WeirdDPSMate/images/UI-ChatIM-SizeGrabber-Up.tga": {
+      "sha256": "9b35b6497bc801b7bcaf4e4313ed58e06022e7908f1805c9d14a1ed140aa42c3",
+      "bytes": 795
+    },
+    "src/dpslog/WeirdDPSMate/images/UI-GuildButton-MOTD-Up.tga": {
+      "sha256": "b8070218d4419a9f20c710a63d0a642f20dd9f92b42a4dd7468f474c29c547dd",
+      "bytes": 408
+    },
+    "src/dpslog/WeirdDPSMate/images/UI-GuildButton-PublicNote-Up.tga": {
+      "sha256": "fb87dd21a686910b3ce3542879106b60f0172acfdbeb12722ef7ce718ef71614",
+      "bytes": 538
+    },
+    "src/dpslog/WeirdDPSMate/images/UI-Listbox-Highlight2.tga": {
+      "sha256": "902fb4d014ca9269c3f2a0d75d2ee13427f694be1318a1604d90cfe53534d7e0",
+      "bytes": 3477
+    },
+    "src/dpslog/WeirdDPSMate/images/UI-Panel-CollapseButton-Down.tga": {
+      "sha256": "5e77f7f59e6c495589d47b86557fb9599277ea6e276ccc20c9f772c3e80f0495",
+      "bytes": 906
+    },
+    "src/dpslog/WeirdDPSMate/images/UI-Panel-CollapseButton-Up.tga": {
+      "sha256": "08c527d404c1d7cbe5958adbc65c70cf2c332ff88c9dd1009cfc068c0036f3c7",
+      "bytes": 1055
+    },
+    "src/dpslog/WeirdDPSMate/images/UI-Panel-ExpandButton-Down.tga": {
+      "sha256": "aae022a84094abd83a376a45e4ccab18a02597c7722de324cf03f2acabf73605",
+      "bytes": 895
+    },
+    "src/dpslog/WeirdDPSMate/images/UI-Panel-ExpandButton-Up.tga": {
+      "sha256": "7a8abf4675709ec1cfd3a4b9529566a91a8b8b76752e62090532e1f30e58eace",
+      "bytes": 1025
+    },
+    "src/dpslog/WeirdDPSMate/libs/AceLibrary/AceLibrary.lua": {
+      "sha256": "81e208a05586b840786d12eb238636b33cdd3350c33aa0a12ca803b4da0b533a",
+      "bytes": 25356
+    },
+    "src/dpslog/WeirdDPSMate/libs/ChatThrottleLib.lua": {
+      "sha256": "fdb69eafc691158f1f623515c8bfe7d3f4837e09305c08f67174f43fb0d82404",
+      "bytes": 13038
+    },
+    "src/dpslog/WeirdDPSMate/libs/Dewdrop-2.0/Dewdrop-2.0.lua": {
+      "sha256": "4a6de23725ce0e377abacec22a6a4c9a46670a6257a0abf104aa386c69332c46",
+      "bytes": 76637
+    },
+    "src/dpslog/WeirdDPSMate/libs/GraphLib/Graph-1.0/Graph-1.0.lua": {
+      "sha256": "48059ed038dbcace00bd64a10e3688e7563f90e670c44a7c8aa0bacc84151c53",
+      "bytes": 64424
+    },
+    "src/dpslog/WeirdDPSMate/libs/GraphLib/GraphLib.toc": {
+      "sha256": "f650f6562106dca614827c3c086436134aa08d319eb8e97705b8941432c98e89",
+      "bytes": 301
+    },
+    "src/dpslog/WeirdDPSMate/libs/GraphLib/GraphTextures/line.tga": {
+      "sha256": "ca58e58ac890f6d27cf542b9a5158467d7680739cd2ea36dd098528d125584a0",
+      "bytes": 764
+    },
+    "src/dpslog/WeirdDPSMate/libs/GraphLib/GraphTextures/party.tga": {
+      "sha256": "76143ac142b803c1bb5adfa8408116598c7669c9c75ffba64793045615d003cf",
+      "bytes": 4140
+    },
+    "src/dpslog/WeirdDPSMate/libs/GraphLib/GraphTextures/Pie/1-1.tga": {
+      "sha256": "0f1ab7c4a7d2337dbf52602c8e5a01509f15bf135e8d796840578b91479e956c",
+      "bytes": 21663
+    },
+    "src/dpslog/WeirdDPSMate/libs/GraphLib/GraphTextures/Pie/1-128.tga": {
+      "sha256": "8cd3e2565d0e839fa2f0fac76450153e730eb76861b62b06ef48bf9477d5d552",
+      "bytes": 13781
+    },
+    "src/dpslog/WeirdDPSMate/libs/GraphLib/GraphTextures/Pie/1-16.tga": {
+      "sha256": "57269af377bd61b22c76fd1fa2114e613872a58062c863e910f11045e865a0c8",
+      "bytes": 14332
+    },
+    "src/dpslog/WeirdDPSMate/libs/GraphLib/GraphTextures/Pie/1-2.tga": {
+      "sha256": "1efa63a6e8ac9fe88df9476e81601a5b6586862af23e967ff069601c0f12c214",
+      "bytes": 18611
+    },
+    "src/dpslog/WeirdDPSMate/libs/GraphLib/GraphTextures/Pie/1-32.tga": {
+      "sha256": "6775aedca8c18c1769b57916e66df79621f0a5395794b7fece797b4ecdaf7525",
+      "bytes": 13995
+    },
+    "src/dpslog/WeirdDPSMate/libs/GraphLib/GraphTextures/Pie/1-4.tga": {
+      "sha256": "073452f9500b4ff226b96d1152ccb4bf8fcd658ffd015c6b8eae22e401929664",
+      "bytes": 14824
+    },
+    "src/dpslog/WeirdDPSMate/libs/GraphLib/GraphTextures/Pie/1-64.tga": {
+      "sha256": "41eaa9379e2b0cfea0c84618a002a4ddd7fb4a384e04b4633d7cf225b535e93d",
+      "bytes": 13859
+    },
+    "src/dpslog/WeirdDPSMate/libs/GraphLib/GraphTextures/Pie/1-8.tga": {
+      "sha256": "324a86838b6d085c409c444f117559655a05e91cfc9f69d6efea402dc36b009e",
+      "bytes": 14863
+    },
+    "src/dpslog/WeirdDPSMate/libs/GraphLib/GraphTextures/sline.tga": {
+      "sha256": "2e29c147eb68e6678c0cbada07b4b5de2499d571074cfe4a313fbe2b0c93e06b",
+      "bytes": 684
+    },
+    "src/dpslog/WeirdDPSMate/libs/GraphLib/GraphTextures/triangle.tga": {
+      "sha256": "56267df8302725ec28b5bc7ea3da132d5eb787f137d7be73db6f23fa7a153918",
+      "bytes": 6152
+    },
+    "src/dpslog/WeirdDPSMate/LICENSE": {
+      "sha256": "589ed823e9a84c56feb95ac58e7cf384626b9cbf4fda2a907bc36e103de1bad2",
+      "bytes": 35141
+    },
+    "src/dpslog/WeirdDPSMate/locales/Babble-Boss-2.3_deDE.lua": {
+      "sha256": "f1ab6183624043361928d3625a07207a1f96898f83533b3be01a35bf82b71e96",
+      "bytes": 12400
+    },
+    "src/dpslog/WeirdDPSMate/locales/Babble-Boss-2.3_frFR.lua": {
+      "sha256": "9102e8840c5ffedc6375777a1efc19c40a35671f71b9892f4f514941f6814edb",
+      "bytes": 12657
+    },
+    "src/dpslog/WeirdDPSMate/locales/Babble-Boss-2.3_koKR.lua": {
+      "sha256": "91fbb844abd51bc5140322a2dc69079e657e2c34ef589c9031d8be3ba199bbaf",
+      "bytes": 17843
+    },
+    "src/dpslog/WeirdDPSMate/locales/Babble-Boss-2.3_ruRU.lua": {
+      "sha256": "2be6a80acef77ffebe7b4e32ea850fc051e6a70e6f19abb5cbaf5f509f459db9",
+      "bytes": 14664
+    },
+    "src/dpslog/WeirdDPSMate/locales/Babble-Boss-2.3_zhCN.lua": {
+      "sha256": "da47b457170d4c2b2bda9a57990db657bf00bcf3a91df3819f03e16a9bf830ec",
+      "bytes": 12566
+    },
+    "src/dpslog/WeirdDPSMate/locales/Babble-Spell-2.3_deDE.lua": {
+      "sha256": "0fced67c9788efbabacabc58bcb29f4d979df9ba31c17d1479c1b9d2c5da244d",
+      "bytes": 127783
+    },
+    "src/dpslog/WeirdDPSMate/locales/Babble-Spell-2.3_frFR.lua": {
+      "sha256": "a60a9ae7d557b7a3231ddaea017510e12ffa929502c1a22277af6ae38c13f01d",
+      "bytes": 124922
+    },
+    "src/dpslog/WeirdDPSMate/locales/Babble-Spell-2.3_koKR.lua": {
+      "sha256": "a58503f5f763d159747e2e829cff116015fa09ddf1e3e884940a055c178fde6b",
+      "bytes": 79802
+    },
+    "src/dpslog/WeirdDPSMate/locales/Babble-Spell-2.3_ruRU.lua": {
+      "sha256": "ea6a6727120ceaeb52e5d4f9f1b75b0b4c416eee134ad860c3e3b8bd09c03eb3",
+      "bytes": 170980
+    },
+    "src/dpslog/WeirdDPSMate/locales/Babble-Spell-2.3_zhCN.lua": {
+      "sha256": "130ccdcd3f1b31e195d7d3e68e8d521a399e85c6f18805543c14bfb112a9c212",
+      "bytes": 108561
+    },
+    "src/dpslog/WeirdDPSMate/locales/deDE.lua": {
+      "sha256": "850189a7b29bd472ad9631f9c4fb20f737bcc22ce350fe959d80e604d6ae0658",
+      "bytes": 53320
+    },
+    "src/dpslog/WeirdDPSMate/locales/DPSMate_ParserDEDE.lua": {
+      "sha256": "3aae3e55f5ca98c4869f28538c46035a38cf6e2d810e2f2397bfacc05edda812",
+      "bytes": 54395
+    },
+    "src/dpslog/WeirdDPSMate/locales/DPSMate_ParserFRFR.lua": {
+      "sha256": "b1fd0a049c0760914e8a0717b915c9090b94b29e4dd54258923d0eb53a04ed64",
+      "bytes": 66582
+    },
+    "src/dpslog/WeirdDPSMate/locales/DPSMate_ParserKRKR.lua": {
+      "sha256": "58fdea0781ce559226b3af0423532bb6910022850f7f10a16c5e509eabfc7181",
+      "bytes": 54647
+    },
+    "src/dpslog/WeirdDPSMate/locales/DPSMate_ParserRURU.lua": {
+      "sha256": "89e47aea4b4b21582c144d2a29313728358f21689c8eda5963ab49536487e9a5",
+      "bytes": 52458
+    },
+    "src/dpslog/WeirdDPSMate/locales/DPSMate_ParserZHCN.lua": {
+      "sha256": "56243ccdd14b2060a70bea0c3227fee6c927244a5332b643c72690e5428e7ec1",
+      "bytes": 57246
+    },
+    "src/dpslog/WeirdDPSMate/locales/frFR.lua": {
+      "sha256": "56fab47775f8011b644b359d6206922042477d96b5165459cd80049ca9363e17",
+      "bytes": 53349
+    },
+    "src/dpslog/WeirdDPSMate/locales/koKR.lua": {
+      "sha256": "57ee426b8f9c6f1e806682a472be61393c174c35628928691cb8111dacea66ca",
+      "bytes": 55710
+    },
+    "src/dpslog/WeirdDPSMate/locales/NPCDB-1.0_deDE.lua": {
+      "sha256": "8114b2f801d3f901fc150542065ec4b6903e21f929a70fe9aeea5d2d8f0c8937",
+      "bytes": 205996
+    },
+    "src/dpslog/WeirdDPSMate/locales/NPCDB-1.0_frFR.lua": {
+      "sha256": "cb70504c0daead1006fea09092647509d3dbaa55c2169030d15decc8ac4d3313",
+      "bytes": 203529
+    },
+    "src/dpslog/WeirdDPSMate/locales/NPCDB-1.0_koKR.lua": {
+      "sha256": "ed977122b2e74eb1e769e19755904455a9e23517fccd2a7318ecf73caad8b857",
+      "bytes": 213939
+    },
+    "src/dpslog/WeirdDPSMate/locales/NPCDB-1.0_ruRU.lua": {
+      "sha256": "8804f856c149c0109e0b1d87407b67c669dfc36518c05889702b0a17c6a86e7e",
+      "bytes": 434402
+    },
+    "src/dpslog/WeirdDPSMate/locales/NPCDB-1.0_zhCN.lua": {
+      "sha256": "b0dacb6aad2808f5e20b769234dec6c1aed7bcdbd1c050b478fab146978e345d",
+      "bytes": 195365
+    },
+    "src/dpslog/WeirdDPSMate/locales/ruRU.lua": {
+      "sha256": "5a6fec9284d006ded559ef93856e653906810ff91b7432a54212efd991cec746",
+      "bytes": 62366
+    },
+    "src/dpslog/WeirdDPSMate/locales/zhCN.lua": {
+      "sha256": "65c73dc4eb026577f874511e35edcea0116d259219ef266d57c3fca1a82b2305",
+      "bytes": 50112
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Absorbs.lua": {
+      "sha256": "6a470bb3e472b388bb0445146468415da763eedbba9ea3172fc79145ed2aa2c3",
+      "bytes": 11089
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_AbsorbsTaken.lua": {
+      "sha256": "eea388a4a3d73ce276be7bc1b703f67e4eb53f56d8bc5584adb97a08263ca412",
+      "bytes": 11387
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Activity.lua": {
+      "sha256": "799238aac31580dab009cad315421ba14c3c56e416675ea5b056cbd6bd8cf253",
+      "bytes": 2553
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_AurasGained.lua": {
+      "sha256": "57e8831f372a7976d1ea53129b7c0dcd4fe6d798c83c7b88203b9cfdfc75c7f3",
+      "bytes": 4452
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_AurasLost.lua": {
+      "sha256": "68fb73bffb8f3fd29628a92dcc9b30d99d18a8540ca5f0eb57f078e7ead04112",
+      "bytes": 4409
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_AuraUptimers.lua": {
+      "sha256": "4d2251149b9a8bbe950d23c8796d81ce99477f748a240e460a03ae321bc3a784",
+      "bytes": 4692
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Casts.lua": {
+      "sha256": "d5975ed29c06c6ed755cc0fde763c232186a2954bf729f19661756c9f121d90c",
+      "bytes": 5084
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_CCBreaker.lua": {
+      "sha256": "60b77466dda025ca2d27fd10e6884bf1580cec234b017cf6f9771ddebe026d75",
+      "bytes": 4900
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_CureDisease.lua": {
+      "sha256": "ad317d0155dc3aba39bc26b41c2a74a959cba3924b9b1346a203997eced50223",
+      "bytes": 7123
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_CureDiseaseReceived.lua": {
+      "sha256": "ac7b76e23f1fd70a06e53e7de6fdb26ba2ce0e0104dd2a53781101b44600d57f",
+      "bytes": 6068
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_CurePoison.lua": {
+      "sha256": "9eede82954162d59e62655922187c5523432f4363b033eb5814365dd4cd6a29a",
+      "bytes": 7044
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_CurePoisonReceived.lua": {
+      "sha256": "e447d9610f1c84fbcb1801cb69c9418d938070172bd6f32fd243a44fda961b6c",
+      "bytes": 6042
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_DamageTaken.lua": {
+      "sha256": "cb50a74b91801ab6f62b5401be1485ab19857411d4e76fc662c9c228889161fa",
+      "bytes": 5992
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Deaths.lua": {
+      "sha256": "9e4b8bcf6e9a96b8deec32e0a0c1efecdd8f33a51f799519e46a879151667518",
+      "bytes": 5913
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Debug.lua": {
+      "sha256": "98ee3463f440f31c3b702b018905ac62a292ef0dbfd2c987547c2a202cf4a6f1",
+      "bytes": 4729
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Decurses.lua": {
+      "sha256": "45160ee2da8a8bfec107364ec0ac5efc523bbb02e912b84b5987b2c40efa8b29",
+      "bytes": 7088
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_DecursesReceived.lua": {
+      "sha256": "572e6a29e58a0f1e46975e1140f0c35a74cebcec48f10bfc0633ee90c33f1c9b",
+      "bytes": 6076
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Absorbs.lua": {
+      "sha256": "5a8e6fa53c8ec9cfc15fb7c1026796babd081ca8a76f1da8f2ddd787e517c08c",
+      "bytes": 22263
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Absorbs.xml": {
+      "sha256": "2db1914438d7e89829e6b0555ae1bfcef552d0e1ff24aae0404dc999aacefd86",
+      "bytes": 41592
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_AbsorbsTaken.lua": {
+      "sha256": "6bfaac72e4b342e7373f701f86ae7ce66f1feba497fdb713868d7a7ed8c2585f",
+      "bytes": 23024
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_AbsorbsTaken.xml": {
+      "sha256": "372fb0fde826424c8078df887437d7a491bffe264f07aaf825a1f372fa02fa9e",
+      "bytes": 42205
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_AbsorbsTakenTotal.lua": {
+      "sha256": "6b7d25a5df5258fcecb9d7e1e0bb5507afeb94ba9b002db136f5d1e57b22bbab",
+      "bytes": 19159
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_AbsorbsTakenTotal.xml": {
+      "sha256": "b16949f566866e52ba914a6949256f760e1a0b0c6ed593dc44c92c90bedafcb7",
+      "bytes": 29345
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_AbsorbsTotal.lua": {
+      "sha256": "b0984c717d748f049ce17a4de96dd0362fe6e4acc2c3accd0a934a873071d580",
+      "bytes": 18733
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_AbsorbsTotal.xml": {
+      "sha256": "52e22c0ddbc18aae4940c2e90bb786ce445d8a378d7b6812efe08e1677d571c0",
+      "bytes": 28990
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Auras.lua": {
+      "sha256": "d7b4b99db2649bac28186600527f8a69414e5b490b336423219aa306547bc15c",
+      "bytes": 15089
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Auras.xml": {
+      "sha256": "a53340e298e6a35ff42f20bd05b7d2989e6369ede3f7f67653a259d40d9585f1",
+      "bytes": 15094
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_AurasTotal.lua": {
+      "sha256": "f76ea58406f7dad0d5de913fc1ef5c440d364d7209e35a9e3f1ab6f6cd275f09",
+      "bytes": 13411
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_AurasTotal.xml": {
+      "sha256": "654b501cbb553ff50e64503f047b60308e3e64270f7191ee7c866a9e77e57833",
+      "bytes": 9905
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Casts.lua": {
+      "sha256": "4b3fd6c983ce2cf2727bafdd91c82d99c1db901398bd327c89a4163658de6c01",
+      "bytes": 3085
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Casts.xml": {
+      "sha256": "3338c46f9f7c470ae8ca56e14f9b1e8c6d94ea2a18ed02c3970eb55f81081dd1",
+      "bytes": 8915
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CastsTotal.lua": {
+      "sha256": "de9b421bd11f23d68e6bc17987a6bd8453fe292fdeb8192c5284aaa12e1e80aa",
+      "bytes": 2635
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CastsTotal.xml": {
+      "sha256": "7c8c402f667ab70b7a18726511b00d849c76108b24474cec2160d05b7309ce9e",
+      "bytes": 6288
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CCBreaker.lua": {
+      "sha256": "d15f30115c4bad1022efeddf340b90ba1ca633054036c195f93626d2803839c9",
+      "bytes": 3685
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CCBreaker.xml": {
+      "sha256": "718355f7e0f95ac7885cd07871e1a73634a49e64b69cdd93bad3dcbcc5b06c93",
+      "bytes": 10467
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CCBreakerTotal.lua": {
+      "sha256": "b676fcbd6649650038be36750728e209fae018f8af758a108a3d96ced7d53f8b",
+      "bytes": 3589
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CCBreakerTotal.xml": {
+      "sha256": "481cf676a4a5cf64865fa98d51a0b37eca99c64fe54ae13d0f6f2f8b0632b638",
+      "bytes": 8246
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CureDisease.lua": {
+      "sha256": "af93d68b4a4dc9190055b45f88c5998f479458ea443d48566c7c0b09cd76c472",
+      "bytes": 7730
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CureDisease.xml": {
+      "sha256": "ec24932af6a9d4a9f695481457a6dd0e81d55636d228b434c7ac0b055c8b4f14",
+      "bytes": 37088
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CureDiseaseReceived.lua": {
+      "sha256": "fdc58dda6d968a7823b90939b43498709c95c5c9aa01f29f8a78f12a2aaa30ad",
+      "bytes": 8475
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CureDiseaseReceived.xml": {
+      "sha256": "8a332bdc5fe6a6bb6eb6fb195598b1275019e5de7787ec37da6af86206598d3f",
+      "bytes": 38008
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CureDiseaseTotal.lua": {
+      "sha256": "4f2b3bab5c7f5a347e3f4a5cec176857ca414bd83e7834ff9a7326537a5e350c",
+      "bytes": 4559
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CureDiseaseTotal.xml": {
+      "sha256": "4d8b6b324bc4b64c005d351e16df0b823adfdd6d625279a9fa5e76d9644a651d",
+      "bytes": 9401
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CurePoison.lua": {
+      "sha256": "6e604ea878ab2ffb0b8aff2539db56d0a6a9686cb181f328c4be2012e6574a15",
+      "bytes": 7697
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CurePoison.xml": {
+      "sha256": "314725c07ed18b8b65f6ee7f782f2aa2d62a63cb27b3c34612275c7ade9f69bb",
+      "bytes": 36973
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CurePoisonReceived.lua": {
+      "sha256": "09d2d78a20bbacf81cde9a41a825e61fb695a2877192fb3ba1166cf30508270d",
+      "bytes": 8444
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CurePoisonReceived.xml": {
+      "sha256": "0d26b33514e74cc11c788f6475bdbae9fc298e491aef0e8ba013a596cfbf7693",
+      "bytes": 37893
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CurePoisonTotal.lua": {
+      "sha256": "6689852da4d6d3e99d20b3638c9da8966528853d0ec3b3157a90a6ec8587f1a8",
+      "bytes": 4536
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_CurePoisonTotal.xml": {
+      "sha256": "60915911780ae36699ea3a7cd9e49cfd4748fa0b56e35881570235e46c5c6912",
+      "bytes": 9371
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_DamageTaken.lua": {
+      "sha256": "63fc3ad602d294e14cdd13351857f4c130f5b82fc925f2013ad528d93cd44018",
+      "bytes": 28902
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_DamageTaken.xml": {
+      "sha256": "c545c0df6afe3de39ebf066bc959d131d811e13c9434827606ef555e5ff1b937",
+      "bytes": 56133
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_DamageTakenTotal.lua": {
+      "sha256": "523c3c8b6cf5d5044d77fcb8da4d6fbff0b625cf51b14bf7cdabbfa47d40db1c",
+      "bytes": 14474
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_DamageTakenTotal.xml": {
+      "sha256": "05fbde0493023ee51dce18407bf85e0defd72b3a38a039305453f15de81989b1",
+      "bytes": 28474
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Deaths.lua": {
+      "sha256": "9fc4b68f604d3f2026c13b9a66d346b990f20d4e43b0c69ba2b9048b6d543c06",
+      "bytes": 7149
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Deaths.xml": {
+      "sha256": "cd68b5c51854fcce33e8934ccaed14b581bfc690147283750e675d3369e5ea37",
+      "bytes": 33257
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_DeathsTotal.lua": {
+      "sha256": "644286933903d48ac195628c55fcef3504000806ee8090adb0b3d1f882dec910",
+      "bytes": 6352
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_DeathsTotal.xml": {
+      "sha256": "f75fc9e23288c97dc164149d3d2b0b59896f456f8b9b19cba3fd1810619e1bfe",
+      "bytes": 11282
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Decurses.lua": {
+      "sha256": "f9ac0bfc12f00a3e0969216f2ce21ad154007a59b25ed099ae11c33616489b1e",
+      "bytes": 7638
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Decurses.xml": {
+      "sha256": "ecc3aef334c29beeda09f8a840d1958346168cba5dff5c3f86e84f88b7e66999",
+      "bytes": 36743
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_DecursesReceived.lua": {
+      "sha256": "7e8e5b83b5de7fe868ea776481c03bed2bc7b5996916c13a8302b05741c3baba",
+      "bytes": 8432
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_DecursesReceived.xml": {
+      "sha256": "30500f1425df7c1ad77362777729fb43452ac8c7155d48b7e7b0dd6e5bb9a77f",
+      "bytes": 37663
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_DecursesTotal.lua": {
+      "sha256": "415d7843990d3201e59ffe9a9f0126e1843573eb0fc549cf14829e071be07a1b",
+      "bytes": 4515
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_DecursesTotal.xml": {
+      "sha256": "c73b0bdb69a5c546c3f65a093c7ec636299e957566fd050e7aaab13be515f881",
+      "bytes": 9350
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Dispels.lua": {
+      "sha256": "3e4a9c326c3c37531d71e5b73352e04c8b6eadbe86a828814d4e3a99d8b228e1",
+      "bytes": 7459
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Dispels.xml": {
+      "sha256": "4adf83e4f9f4a97fc585ffa1e65d04f8bbec75e8ce530508d36f62bece3d3052",
+      "bytes": 36628
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_DispelsReceived.lua": {
+      "sha256": "6e84c5f1efc3291341afc37654035d3cdf2c276200579d43d10855c8786898a1",
+      "bytes": 8232
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_DispelsReceived.xml": {
+      "sha256": "4cce8c524c02dbeca5230df0d926906d5b46a44ffe1ba854bad246535784d531",
+      "bytes": 37548
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_DispelsTotal.lua": {
+      "sha256": "1598e487679234ec52ea6686780f9986765b114b83f94b65957467e901c26d7f",
+      "bytes": 4399
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_DispelsTotal.xml": {
+      "sha256": "c3c521fbe514fc1f24d823fee6a4360d893355e9266a98156783f5dc299f1898",
+      "bytes": 9333
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_EDD.lua": {
+      "sha256": "8770586def5a777acde24d7efdf28f0279466b966b523154b6507ed9d6981836",
+      "bytes": 22846
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_EDD.xml": {
+      "sha256": "7d979dbe2152f8d870b59c8a2fb7cbbef357237302319edbbf789a01cf71ff35",
+      "bytes": 53875
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_EDDTotal.lua": {
+      "sha256": "7aea281a76760b0ec89d950369b4344e6f3c0b9c78c8408036f8ceacee850aad",
+      "bytes": 13775
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_EDDTotal.xml": {
+      "sha256": "c037072da30a5aafe888d1705fd9c876b2bf7872f0afd93f44e18fb59f5c06d8",
+      "bytes": 27915
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_EDT.lua": {
+      "sha256": "f6941433ca9cd66091330447839637b6fa99978552cec90e73f5b54588332eb8",
+      "bytes": 22874
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_EDT.xml": {
+      "sha256": "c1acfd81ffb94a7f10c5c5413fca059084fec5e733015696bd0b84220d8f4841",
+      "bytes": 54141
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_EDTTotal.lua": {
+      "sha256": "e723061234b35c9545fcc48a01fff603f0c2243bdbff01101f3333375f266174",
+      "bytes": 13776
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_EDTTotal.xml": {
+      "sha256": "92a442e78e24b0037df5fd20b0bdd426365eaad4da7cc9a06d69dd2075de8140",
+      "bytes": 27915
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_EHealing.lua": {
+      "sha256": "1d1e238402524fb9b2f6e36e7d676edd49f794f6a19b0eff3c52a6adc9483958",
+      "bytes": 30920
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_EHealing.xml": {
+      "sha256": "0d646e7dc29de84b29cc1960fccb71c80674c3dc7c403a532ec82b709429b2a3",
+      "bytes": 49340
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_EHealingTaken.lua": {
+      "sha256": "fd52a9d0c30affd6bc7e71e61985e5a3e29f597febde9704a726380a13d64c96",
+      "bytes": 19331
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_EHealingTaken.xml": {
+      "sha256": "a8c25ff92cbc4b6114ea0777a3440bf4b4e87d55ec394fb26ade30c8b5f9b5cf",
+      "bytes": 37502
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_EHealingTakenTotal.lua": {
+      "sha256": "dc4f6560437495cf6004871c4fe3227aacaaea4100f4357f3c0e4e353efcf489",
+      "bytes": 14392
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_EHealingTakenTotal.xml": {
+      "sha256": "bf4e6a525f9e40610e6db2c6c8b439547f93ee9fda2a660b28b88d5eabb385fe",
+      "bytes": 28067
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_EHealingTotal.lua": {
+      "sha256": "bc9a21ad507f4da3fdddaffe2ae32774c0d84692c63439b42cdbccc82828bbf7",
+      "bytes": 13371
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_EHealingTotal.xml": {
+      "sha256": "87d0b348d43e0e2268ea4972803fe02bc1045e97f62bd6182f93fb12d31c1ba2",
+      "bytes": 27711
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Fails.lua": {
+      "sha256": "9bbbb7407da474063e460961909d9278331579e709769e1f7b5f05dd20e91143",
+      "bytes": 3773
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Fails.xml": {
+      "sha256": "2539f5307aaecefed111149aa42822cb44c785e1963a7f7e4f6dc0badb6a3918",
+      "bytes": 10470
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_FailsTotal.lua": {
+      "sha256": "bcb4ed6dfa8d09c7b40d7369d2d18b960ecc62bdf0fb734f345d1f02aabdb713",
+      "bytes": 3778
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_FailsTotal.xml": {
+      "sha256": "3c5d2edeb0b26731bdfbe6a0205e2a02a89dcf8556e4cef29ab3fb2f3e61681d",
+      "bytes": 7680
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_FriendlyFire.lua": {
+      "sha256": "44e8905f7d2083c4a1cadea75f96296d605a54573d2aa578f1adfa2c558b742e",
+      "bytes": 21594
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_FriendlyFire.xml": {
+      "sha256": "70cf3aafd3229194464b9d7ac9623bfeeaedc1bf5620cbab37b2383637a69fac",
+      "bytes": 48334
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_FriendlyFireTaken.lua": {
+      "sha256": "0f465c0581e87aca4f1c52becbd95876290f803cb9136300ed94290396da5802",
+      "bytes": 21382
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_FriendlyFireTaken.xml": {
+      "sha256": "2f12d01ce818b939f69df8a8a5e79ba0eab086ba614179a36ab23fdef6938d17",
+      "bytes": 48448
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_FriendlyFireTakenTotal.lua": {
+      "sha256": "b0ccb85e7f8c4e8ae03009b41ed5b3f3336d903d758ba3d3f1be47407db01c92",
+      "bytes": 14889
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_FriendlyFireTakenTotal.xml": {
+      "sha256": "cdb19792b04afb7f399b5f110ed85b88442e9d8b45d9297bd670364cb1de5b06",
+      "bytes": 27357
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_FriendlyFireTotal.lua": {
+      "sha256": "d045a45180ef1b330df9b2228fcb3915711814464b672131ab8784cb1456d09d",
+      "bytes": 14776
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_FriendlyFireTotal.xml": {
+      "sha256": "31bff5d0ac9c743190eb45efe21e89560c5de73cb4d246a2d1cefcd7c0f12509",
+      "bytes": 27287
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Healing.lua": {
+      "sha256": "86e83dcd680a3f0c986b1765c715bb06c1a754c8415722f5689c14d2c905c9fe",
+      "bytes": 30531
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Healing.xml": {
+      "sha256": "6af850b5851811377c47e2f4cc332ba5d4bcd41a8bfbdd3929ea3221f372191c",
+      "bytes": 49244
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_HealingAndAbsorbs.lua": {
+      "sha256": "cc21ddeaee0331000b7edfcb91eee6a0b681db6c6c765c96c030beabb8ac225f",
+      "bytes": 43778
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_HealingAndAbsorbs.xml": {
+      "sha256": "57a5cea1274b9e70e44af135f3b5fa5c64a037c4c514e742032691f06b892ab1",
+      "bytes": 50204
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_HealingAndAbsorbsTotal.lua": {
+      "sha256": "952e6cc25dbcd1e2e95cd59d867ea87cd14263b42cdc8af35061341b6f577067",
+      "bytes": 19453
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_HealingAndAbsorbsTotal.xml": {
+      "sha256": "201ac013b81aac5ccf1e05cdcc202c625ffd00e8be21b0454eba838ae6f6c4a3",
+      "bytes": 27356
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_HealingTaken.lua": {
+      "sha256": "ca008575780bb8bfd711472b6fa701f7fdc42add6dc8194bf12f1a5c54b0e4d8",
+      "bytes": 19266
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_HealingTaken.xml": {
+      "sha256": "7871bf5e81d63fce747b79ec5f046e032e4cbd664748c75e5e6235483f07c3eb",
+      "bytes": 37433
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_HealingTakenTotal.lua": {
+      "sha256": "8e0cf751437dccd0580867746afda76086d7e0287309e0b21680113a71f5aa27",
+      "bytes": 14313
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_HealingTakenTotal.xml": {
+      "sha256": "4bca45e69cd739331f49a4bd6dc8d680fe83c051d97a23cfcfae4e7c8ab59c83",
+      "bytes": 27995
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_HealingTotal.lua": {
+      "sha256": "e27570949a7cd1dc8d66e589e725fcd36621bd31587a18d5b29e85ca3d78cd10",
+      "bytes": 13292
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_HealingTotal.xml": {
+      "sha256": "abca52dd2a42e02578c73057b66f172ed1957436b4aee13f5be512d8f8c787c9",
+      "bytes": 27639
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Interrupts.lua": {
+      "sha256": "5dc3e5ad8dfcea73c0dbd2a8a98a771194a392d6fb8433b8fcbc4fd53bc4bdee",
+      "bytes": 8057
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Interrupts.xml": {
+      "sha256": "d2962f4be974460825f168503154cc44ad01baf4b146951a91d48a862a6ba916",
+      "bytes": 36977
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_InterruptsTotal.lua": {
+      "sha256": "90ed7409c0d74834bb5acf2f9905c8192ad2e8f06540991ddbed304b38675b67",
+      "bytes": 4512
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_InterruptsTotal.xml": {
+      "sha256": "a6c23ec89dc42c660038296ffb32155ca10044d5c79584d7ce3f66766756d926",
+      "bytes": 9366
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_LiftMagic.lua": {
+      "sha256": "abc83f2c27da25c68a1ecd0d9fdc0e07b583fb6d762d7c4862afd1cd5f42d919",
+      "bytes": 7664
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_LiftMagic.xml": {
+      "sha256": "f5f533bf3cc7dee6970d5934ae325baaa9e8b5c481237fbbf3fe3b5c318d192e",
+      "bytes": 36858
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_LiftMagicReceived.lua": {
+      "sha256": "2a3490ef6806bf5154e2108bd9b47c22fdbbe474570fd8535b604346dc7c7087",
+      "bytes": 8411
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_LiftMagicReceived.xml": {
+      "sha256": "93f0b935447ce974b64c2ef8c4bb5fe39c4405b20e8676548f940cdf50e23b76",
+      "bytes": 37778
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_LiftMagicTotal.lua": {
+      "sha256": "7d9277a2a4e0fe5a3a54ca2215dddc7959c905991b1a173e2ee0597b766efb94",
+      "bytes": 4513
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_LiftMagicTotal.xml": {
+      "sha256": "405f12d92d72f9325134e8121d31876f03547a9e154911f04e87b373d80b29ff",
+      "bytes": 9372
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_OHealingTaken.lua": {
+      "sha256": "08fa2e46d420ff149f4e869bf6b15f7a19793a9f885d13abd64ecba36bd26a51",
+      "bytes": 19327
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_OHealingTaken.xml": {
+      "sha256": "23fb8203047c9ac1c912ac5fc711ed3b3343682968e050df381e0ad27f98c272",
+      "bytes": 37502
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Overhealing.lua": {
+      "sha256": "78ad4b3cf7c0463e46b8a7450bbb7326b7031acd926af5ee849fcbc0fac1da86",
+      "bytes": 31428
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Overhealing.xml": {
+      "sha256": "17d2e8ee514a47755b9bdb1b7cea09301f896c4e77041b2ec06b0c54864136c9",
+      "bytes": 49628
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_OverhealingTakenTotal.lua": {
+      "sha256": "d77a79eeb3d12a59639bf3b607b7b7117196876f68803d2259de11afb081dcc1",
+      "bytes": 14577
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_OverhealingTakenTotal.xml": {
+      "sha256": "3d67b2083040b4069ef30d45f5995148564a4abbadb95a080869117e3c2bfd70",
+      "bytes": 28280
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_OverhealingTotal.lua": {
+      "sha256": "e0c1b2338888fd69a6f108b20486796e4706dc24943d870896a8cfd1cae13d53",
+      "bytes": 13559
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_OverhealingTotal.xml": {
+      "sha256": "ddbe79372e1c9185171364f17505992eb68cd5603d68d1c89d7d26351d09da31",
+      "bytes": 27924
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Procs.lua": {
+      "sha256": "c226968461d968aadb0f5b32a94d120b13c431e6cbe2e2d886022319ef3570d8",
+      "bytes": 10022
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Procs.xml": {
+      "sha256": "33536d5981c5b28696ee0013bee006b57c2041b538e8d2eef526a66be337e410",
+      "bytes": 9748
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_ProcsTotal.lua": {
+      "sha256": "ce3d14086012238107af537222afbe2b49bf076c9d675ea9908b4cd1f0d2fe73",
+      "bytes": 8830
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_ProcsTotal.xml": {
+      "sha256": "5306b9b5c2fd3a1f36bd102e36ee900293dd644081fe1a616f431fa497dcce4e",
+      "bytes": 7047
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Threat.lua": {
+      "sha256": "e4f6815e1a64d90b218f28fa48a7cc88e86dce64372b765c8e9d2b2617454e22",
+      "bytes": 23695
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_Threat.xml": {
+      "sha256": "23296b970e7aa0876233c7628515f3f58aa355d28372f1e11dd354ce1580e02e",
+      "bytes": 36916
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_ThreatTotal.lua": {
+      "sha256": "7792e47aefd85e6aa12fadc8ab5cf75b868ba68dba363f53db0d9d8f11885b52",
+      "bytes": 13576
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Details_ThreatTotal.xml": {
+      "sha256": "8fa3b5818ff1f3e7be57bed32cf0872103c03fedf8f2dd2079ac553983e24e10",
+      "bytes": 27569
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Dispels.lua": {
+      "sha256": "5184049dfe261e6a77ac75792dd4244a84365f9313189b92ab19226db3349c8d",
+      "bytes": 6177
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_DispelsReceived.lua": {
+      "sha256": "c2ef6f058abec54ec89731e14cd386ce69e6ea86443e147e185f3c7813a91f1b",
+      "bytes": 5555
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_DTPS.lua": {
+      "sha256": "8a414366dd6393dac2c60008bc87028adc4954235fc073976a7551d8782fcbcd",
+      "bytes": 5974
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_EDD.lua": {
+      "sha256": "b973f550440770a37f166b5bc8d5741e8aa0ca1fbdf0801c7ac0c640376aa7ca",
+      "bytes": 6065
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_EDT.lua": {
+      "sha256": "2982ba8d4af71a38189843a4bd23eef1f2c9a4252793a495de924003853dd702",
+      "bytes": 6189
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_EffectiveHealing.lua": {
+      "sha256": "141154be737e0944cb14b6af901c7b58a195c9fbe6f7830d52f7e7cb8607f675",
+      "bytes": 5423
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_EffectiveHealingTaken.lua": {
+      "sha256": "7f9b293f01ec658b3a8c31fa65f3dc0c664e032d64785bdd9b1982405ddd02a4",
+      "bytes": 5983
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_EffectiveHPS.lua": {
+      "sha256": "a838fb7e121aaa904ed75e1e2ace05124e52a6456f98b2505ee7bc434fd990f8",
+      "bytes": 5087
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Fails.lua": {
+      "sha256": "cf10eb4a6c913f62a28ccc3e5455ba7a474c2e619f3d6a265b8f9447f0e93071",
+      "bytes": 4833
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_FriendlyFire.lua": {
+      "sha256": "f95944138e7b3ca4427aa787bfa57a7696f1457b846058894f4cdf81dbc8266e",
+      "bytes": 7016
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_FriendlyFireTaken.lua": {
+      "sha256": "426ada9fa6f7166268a235e5a2654d78d69a18d34c56e9e8ea1ab888a4eaef39",
+      "bytes": 5946
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Healing.lua": {
+      "sha256": "74ad2e2df1024860129e9a63867b65f067883239c5b1cb7109b5f3d1398cd378",
+      "bytes": 5247
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_HealingAndAbsorbs.lua": {
+      "sha256": "4a2affd16137c703e978b57e185bea15dd6aaa5a1a1b95b2ea9ddbb45fd74230",
+      "bytes": 11397
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_HealingTaken.lua": {
+      "sha256": "95b0ded9d2aca504ba7b525e557e8001fbb638d4c3014860cf5c51929ab1e958",
+      "bytes": 5805
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_HPS.lua": {
+      "sha256": "165cd50c4dd7a1f334a14f753eb7adfb9424ada09b6aa344ea47eebd8d542419",
+      "bytes": 4916
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Interrupts.lua": {
+      "sha256": "be5a15e083cb361ddc425345f1948c2b1dc858a4918a4c2cd2b987f122fa75e3",
+      "bytes": 9186
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_LiftMagic.lua": {
+      "sha256": "06304f6a033577b4efa866ca47b93151a64ab8a053abb75e7e6e49d8e0b8f159",
+      "bytes": 7036
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_LiftMagicReceived.lua": {
+      "sha256": "d553c594fdc524dda014fbad1d1c043a431af073e4ead3f55cfb0461fed7a538",
+      "bytes": 6039
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_OHealingTaken.lua": {
+      "sha256": "2b150efc1f95c5bdfd43b4e2472d658a13ce03f56ecb7e92672484e3e619e59e",
+      "bytes": 5809
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_OHPS.lua": {
+      "sha256": "df656be2121b85fbfb955ef21350ad14582346a69311b57acc3110ef23450242",
+      "bytes": 4938
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Overhealing.lua": {
+      "sha256": "555d838570494457693aa2bfdc63a98d2c3c54c63bd3e8eb8ae6d49127c41916",
+      "bytes": 5353
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Procs.lua": {
+      "sha256": "ff9c8a25e95e4a6bbe2888eb6a1527774348218a8038a6cb4f302fd79c5344d7",
+      "bytes": 5474
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_Threat.lua": {
+      "sha256": "8df2c24af54f19f562bfee3d1cbcad6507be4704fcb29bcdf4512e9a39885c1c",
+      "bytes": 5098
+    },
+    "src/dpslog/WeirdDPSMate/modules/DPSMate_TPS.lua": {
+      "sha256": "12af7ffbd83bc106d9fa379367035b1c6503b6249b5999da3c9d62bcd88a21fd",
+      "bytes": 5216
+    },
+    "src/dpslog/WeirdDPSMate/README.md": {
+      "sha256": "25b183ed54066f7cc0aa31eb9b83e766bbe2260beab090cfad36b3725e7e3fc7",
+      "bytes": 3410
+    },
+    "src/dpslog/WeirdUtils_DPSLog/DPSLog.lua": {
+      "sha256": "e97c201c402ecfe9872de529c51ddf4458dc96791e718c7abe61809b91ed1006",
+      "bytes": 30524
+    },
+    "src/dpslog/WeirdUtils_DPSLog/WeirdUtils_DPSLog.toc": {
+      "sha256": "257b32cf8602794c7bc1e0721e6003495d6995c2cd3ecb56212ad5d87af065ec",
+      "bytes": 137
+    },
+    "src/dpslog/WOTLK_CLEU_SPEC.md": {
+      "sha256": "7408b51945d52521b07861daf9f7e6bbef3bad8db8ef9691c63673324a812042",
+      "bytes": 6053
+    },
+    "src/dpslog/WSBT/localization.lua": {
+      "sha256": "cd6ba0f0301f01df8c0424516003593937caae1e030cc5d68ca78f39dc46300e",
+      "bytes": 39359
+    },
+    "src/dpslog/WSBT/MikCombatEventHelper.lua": {
+      "sha256": "e63dd558d51a57cdb75c38f24b33ce7ffa5ba67d45b371049ae5f321dd0c95aa",
+      "bytes": 143288
+    },
+    "src/dpslog/WSBT/MikScrollingBattleText-deDE.lua": {
+      "sha256": "d70703f25b8996ac12e2a272fb206f95bd3b10633f24ae2e2cb7d6d859eb9f69",
+      "bytes": 991
+    },
+    "src/dpslog/WSBT/MikScrollingBattleText-enUS.lua": {
+      "sha256": "f8321f04a5ead90d7549adb48969e8d23417bd92dbf5ad746216ebac04e9775c",
+      "bytes": 714
+    },
+    "src/dpslog/WSBT/MikScrollingBattleText-frFR.lua": {
+      "sha256": "b5b96f3e9c2622178b431ca7f835c7efdbd35d96d75e77d24d6661f6d415f9b5",
+      "bytes": 991
+    },
+    "src/dpslog/WSBT/WSBT_CLEUAdapter.lua": {
+      "sha256": "3bd64e810875a2c406a81e215bffcda5ded9a2fe61181bf22f6a51372341990f",
+      "bytes": 20619
+    },
+    "src/dpslog/WSBT/WSBT.toc": {
+      "sha256": "72723c4da0910f8481fd23767896814d537c0ff48d320ead96df9f83f6c518f5",
+      "bytes": 615
+    },
+    "src/framecrash/framecrash.zig": {
+      "sha256": "19ebbc5aec0dea018f72bef156fa48f144a366571b40328398f0fdbcfad526a2",
+      "bytes": 30860
+    },
+    "src/framecrash/RESEARCH.md": {
+      "sha256": "6f167451e5c4492ba0bcd73678b79645c1737490c3e62f7782697ed4911af260",
+      "bytes": 34346
+    },
+    "src/healtextfix/healtextfix.zig": {
+      "sha256": "dc16bdea42af8703863be7cfdf1a4e72e230721e513ffc4c60879e70d8e90adf",
+      "bytes": 9578
+    },
+    "src/interact/addon/Bindings.xml": {
+      "sha256": "40f3aabe8a1fd95c2c41d28b29730c565eff06d42b48bbe57e5471f99543c956",
+      "bytes": 349
+    },
+    "src/interact/addon/Interact.lua": {
+      "sha256": "f5cd3a3b16ea0ba56208464958c1fa4c783ff70ac5d8e840e83fea44c5a71840",
+      "bytes": 94
+    },
+    "src/interact/addon/WeirdUtils_Interact.toc": {
+      "sha256": "d90d04dd4d1320e4db32d611e19a4d6900a7ea0f4dabafc8187b8ffd324cc97e",
+      "bytes": 140
+    },
+    "src/interact/interact.zig": {
+      "sha256": "bf4c94db7c86d26672d80b41681da6a1c99d4b1c0dc938ae79cb9e543d3c074c",
+      "bytes": 12822
+    },
+    "src/logging.zig": {
+      "sha256": "9e26ef433a55709e0588687a6e629869e21f4c07f938c4a73d0c91feaa40d9c4",
+      "bytes": 10160
+    },
+    "src/logsessions/addon/LogSessions.lua": {
+      "sha256": "4a2f1c6a0c84aadc1d99f8ba3bc9aa452f57b00ffcd55aa512cb4f3507ff86e9",
+      "bytes": 548
+    },
+    "src/logsessions/addon/WeirdUtils_LogSessions.toc": {
+      "sha256": "8575504990e45218e18b0988be6bc2cbfc36e3e3b337a725e10631a5df60a589",
+      "bytes": 144
+    },
+    "src/logsessions/logsessions.zig": {
+      "sha256": "687bfd81c081cc362ed1f5c695c27d5a0877e1c7349e7f2db86c9b9f127ccb62",
+      "bytes": 19007
+    },
+    "src/logsessions/offsets.zig": {
+      "sha256": "6aa891e0daa77af86b6d261f87ebc6ec3ea13fa96ee6c8d2f75f2911a2a943a6",
+      "bytes": 3231
+    },
+    "src/logsessions/RESEARCH.md": {
+      "sha256": "8455041a9af8f0091e97b1e610c5922831a8b791f3b11d872865e3eb06c2e5fd",
+      "bytes": 16570
+    },
+    "src/lua.zig": {
+      "sha256": "43c276303cc0d31fe6f9fae07db89d6233b82e5f512c071ba1952d6926d91dbf",
+      "bytes": 5242
+    },
+    "src/luagc/lua_offsets.zig": {
+      "sha256": "b651e21cc4a9ee95311bcbc13058b36e0cc0b969ced2483a6052f5b74a1484c2",
+      "bytes": 17958
+    },
+    "src/luagc/luaalloc.zig": {
+      "sha256": "ed7e8381cd61ea7ce0b8822be1faa4eac374fe5e64ed436dd245e25a8cd106d0",
+      "bytes": 9591
+    },
+    "src/luagc/luagc.zig": {
+      "sha256": "ff8ed528dfc3ca356139ce1a5c22653547b5df1716f6005ccd06a8810f3c964f",
+      "bytes": 85812
+    },
+    "src/main.zig": {
+      "sha256": "3a4ff62bad79062a22cfd3a5e2b86e4f8d3ba42c0d7f6c560e8ecc15debb8305",
+      "bytes": 41905
+    },
+    "src/minimapicons/addon/MinimapIcons.lua": {
+      "sha256": "ef1ccb43787fd91ab9e011d6c2415f86f42d20385692d240395155154d43d4c7",
+      "bytes": 26426
+    },
+    "src/minimapicons/addon/WeirdUtils_MinimapIcons.toc": {
+      "sha256": "5ba0702db4aca39e3754a058a5d10da5246b2c5b4e92796978f9485f60a57a34",
+      "bytes": 195
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/Ammunition.blp": {
+      "sha256": "7d7236f6633ffeb7792021ce88243b7738c5f63b65016c13dbbb6454b15a459b",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/Auctioneer.blp": {
+      "sha256": "396023976e83c946bcd31f0d001d70166564d54aae583f842827f2390cbf8072",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/Banker.blp": {
+      "sha256": "b19c60099972a3c37c277a2b52ce31df22d1ce55566e9f8d439d23a74e06adcf",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/BattleMaster.blp": {
+      "sha256": "014fc2b8a357c0ae49154dedeb42116dc41d3aa25609e9f1628c95d0a66e9a40",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/Brainwasher.blp": {
+      "sha256": "7c99a2c766b95b740020ea51a4a2f19e25380d5d283680c3ea860e9d1c5b4666",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/City.blp": {
+      "sha256": "e49cbd771593dfaa645b199c3d7d3ebd270c1f4cd97486464002f7f396588f19",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/Class.blp": {
+      "sha256": "03fb9a9cbc8fd0248dcc595f1b5dfb78ebc814b31eb6946485ca96d4b408365b",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/FlightMaster.blp": {
+      "sha256": "4d68e9715b0c613ee38cbc85c4cbd63477501e2fa2c31383ef43a8f75c22bf72",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/Food.blp": {
+      "sha256": "f2137ed581d526d7935795bbec8ab1baee60948649f278554ce5a7d565d70eab",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/Innkeeper.blp": {
+      "sha256": "26bd48cd920156632bb6c94ffde260301bc890bc7e834570f1a8636ef8845ec6",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/Mailbox.blp": {
+      "sha256": "7bfbc702615bcc1d22c48e31d0ffd1218208b84bea245ae015f4689a0c74ce1d",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/None.blp": {
+      "sha256": "116f6e333b01275ecc0f39fefad4031150f9f38c25bf8d3c3b14ef166e20b61e",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/ObjectIcons.blp": {
+      "sha256": "fe64115464a764e3fa682ea1d27354361247d1ce7514aabaf742b731b9c8242c",
+      "bytes": 23060
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/Orange.blp": {
+      "sha256": "bd62143bf2849e3b3a3b50259d21cd14bf47cbf0e0ea34f4df3ef74ccdcdd4bf",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/Poison.blp": {
+      "sha256": "ac975874d7674f234a5d229e1d44b24f0372adef5ef959cb25aa6e48f323d9b6",
+      "bytes": 5268
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/Profession.blp": {
+      "sha256": "9bdd22812e670b746de786a7315d4f0a31456426a5e7db2c3dfef2930551f340",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/QuestAvailable.blp": {
+      "sha256": "958a96a7b8b5f551473bfdb367fe82006b81271845a36fc0a8615a3821934e0e",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/Reagents.blp": {
+      "sha256": "53993e9777a2ddb91f563e868ddb39f8e6562c5fd389e137333666ff1a8b23c6",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/Repair.blp": {
+      "sha256": "70152cf8e8a49b1b345b8d5b99b844b85c8578fb249d4643afb8b8f8214ae5fc",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/StableMaster.blp": {
+      "sha256": "1366337f1638ce1b2ace1c03c5b73398315abe408b35a0fc85c629f6bca8a2c8",
+      "bytes": 2564
+    },
+    "src/minimapicons/assets/Interface/Minimap/Tracking/Trade.blp": {
+      "sha256": "950475d5828d4ee7d1502d36086d56b2ce6ba478ef64f13bdfcef4eb3222f86c",
+      "bytes": 2564
+    },
+    "src/minimapicons/minimapicons.zig": {
+      "sha256": "2d7c5388373c12b4c76ec44277e2cabf684e8ca57dbce3e1238a75b5846a19ef",
+      "bytes": 45995
+    },
+    "src/minimapicons/png2blp.py": {
+      "sha256": "a8d030bdf1fd527a6075930d1e8a5c146daad42cfe3f4e6cbd93ea8e08abaff9",
+      "bytes": 5788
+    },
+    "src/minimapicons/RESEARCH.md": {
+      "sha256": "ec2bf4e4830f1600d80a72111dc0a69c15ea5e2f5cc15818c9ff5564bb29f1be",
+      "bytes": 12185
+    },
+    "src/module_active.zig": {
+      "sha256": "3cd2a549cdec882a0df12bec3c99cd13e80ec8a7d33f41ba66f0b5b7cd55007e",
+      "bytes": 846
+    },
+    "src/mutex.zig": {
+      "sha256": "a45f80665b6076e87e19d64a1cb5ef668eafa16e8e7021dbd6b3575ea7a4f8aa",
+      "bytes": 2342
+    },
+    "src/offsets.zig": {
+      "sha256": "4e98502d6f97daa76e8c6d324817d90832aacf973b856f91bb60e3facbcb435e",
+      "bytes": 7418
+    },
+    "src/outline/addon/Bindings.xml": {
+      "sha256": "7fc1d136e467a17249bd6b1a45074ced765e4b98d0fbf1e3447b3d5ef156a384",
+      "bytes": 166
+    },
+    "src/outline/addon/Outline.lua": {
+      "sha256": "4ecbe398b7db019ca56623f334ace8d8a382efb6c5a5d641a821e0bf3a626e59",
+      "bytes": 1378
+    },
+    "src/outline/addon/WeirdUtils_Outline.toc": {
+      "sha256": "7bc810bd60b8cf33c821c44d22182b121e30a4bdf8ea267969d35dbe13f299db",
+      "bytes": 159
+    },
+    "src/outline/d3d9_hook.zig": {
+      "sha256": "f1806eedb2179c21f64d247380fe1facdc54e4d4d6ea411fc235809facd9eaad",
+      "bytes": 55816
+    },
+    "src/outline/IDRIS_RESEARCH.md": {
+      "sha256": "cf323075d5218b5d15a66772a92e419b44e76399983cdc4aa05324ca00ae6e3f",
+      "bytes": 4613
+    },
+    "src/outline/model_hook.zig": {
+      "sha256": "3e3d71be00cdfe70f6bf78fac8fd6edfd995b4eeb055bf9a06b0ec37d41aefb1",
+      "bytes": 8808
+    },
+    "src/outline/offsets.zig": {
+      "sha256": "8135e09be0fb8dab922caed14cebccd6663ac2dddc70d4a2b98a508bfb7f7a9a",
+      "bytes": 1704
+    },
+    "src/outline/outline.zig": {
+      "sha256": "dad6750e1dfb1b0a986fee8b2909c044b104eb35b63be9609f9a8a486bb4b0c5",
+      "bytes": 3529
+    },
+    "src/outline/README.md": {
+      "sha256": "a563ab6abc53de5957f642d153cac849b5f6f032ef6545965d00e67c38cbd3c2",
+      "bytes": 11556
+    },
+    "src/outline/tracker.zig": {
+      "sha256": "6dfff887b921b3394a45e2199157c1374be1e2345ae3e758f40ef7bdda606931",
+      "bytes": 12899
+    },
+    "src/outline/types.zig": {
+      "sha256": "ff4856a1869fc279c0817877fb063f0f374488b05866bfa6c2b15bb70d832e72",
+      "bytes": 10717
+    },
+    "src/screenshot/png.zig": {
+      "sha256": "9bf3479126572aaaa50e3645c52f7664412dbbe882c6187bd72e320efa7f1139",
+      "bytes": 16894
+    },
+    "src/screenshot/screenshot.zig": {
+      "sha256": "6c7843fab96e18351eadea26127494686bcfbeb0812007d0fb28c16722adf13d",
+      "bytes": 11368
+    },
+    "src/silicon/silicon_sse.zig": {
+      "sha256": "067d03b58ee85c27ff4adf168fe367855e7968933e566304fbf223dea1078e55",
+      "bytes": 30111
+    },
+    "src/silicon/silicon.zig": {
+      "sha256": "f88fd47a063c4b9c2a8152b5be142be0322279b8f801b784894a108dee61f049",
+      "bytes": 112368
+    },
+    "src/ssemaths/math_sse.zig": {
+      "sha256": "b67ec2c348a8c5bf17e8c728c316e8b1f70b7e575ebef190ebcd20c21a1aff65",
+      "bytes": 17982
+    },
+    "src/ssemaths/ssemaths.zig": {
+      "sha256": "6be838d7475302c5423ab92f640c02b524028cdf5494c82f4ddad74e1bef2d87",
+      "bytes": 14297
+    },
+    "src/superweirdo/superweirdo.zig": {
+      "sha256": "adcb24b4e0a67db2d8731b3cb448da72b7fe5446652c9492a0a435ba4c85e0ec",
+      "bytes": 6213
+    },
+    "src/transform44/ASM_DIVERGENCES.md": {
+      "sha256": "852b55edcbc99ec86358c79673c3960578cfa4474af485d98bf667f4367b7b0f",
+      "bytes": 8821
+    },
+    "src/transform44/bone_sse_baseline.zig": {
+      "sha256": "c4ad2dd1cfa99ed8fd5afe3b20b26323ed7bfda9a5a07f24161fa0d82e42a381",
+      "bytes": 110769
+    },
+    "src/transform44/BONE_SSE_PROGRESS.md": {
+      "sha256": "5f20376eef6e042414443ec9a6f2c3658e2d1d5da4d451f67e162048d1cce0a4",
+      "bytes": 7937
+    },
+    "src/transform44/bone_sse_reference.zig": {
+      "sha256": "6312781b0109c51f0a9043e65579e8388286072a19c5abc89c0af05e6c8749d3",
+      "bytes": 111073
+    },
+    "src/transform44/bone_sse.zig": {
+      "sha256": "d71a8eaef0bba9e0d210350d51879c08138cb7708c48e1300848a809f9a9b156",
+      "bytes": 114920
+    },
+    "src/transform44/clip_sse.zig": {
+      "sha256": "d80ae489b5987356fbfac1c136b0413fbb0edd753d0ad04c478c9534111a70fa",
+      "bytes": 13367
+    },
+    "src/transform44/decompiled/asm_calculateColorValues.txt": {
+      "sha256": "80cdb220e6f9466c8498b7af9e7c8fc6914575834c1f669c245aabea0459bbb3",
+      "bytes": 5601
+    },
+    "src/transform44/decompiled/asm_ProcessActiveParticles.txt": {
+      "sha256": "0d2c8dcfe60a0b5e559a9e4838823e90bfda43335cec610e3b58c57cc8a85ee2",
+      "bytes": 23239
+    },
+    "src/transform44/decompiled/asm_RenderParticleSprites.txt": {
+      "sha256": "3fc14286d5946732f5f8dce901b92af726603cef56177cc7558a2987cc25955a",
+      "bytes": 24536
+    },
+    "src/transform44/decompiled/asm_RenderSpriteQuads.txt": {
+      "sha256": "116e229b598e6d67253c56748ea6dcac8003a7074701407430125d56cec14e63",
+      "bytes": 3183
+    },
+    "src/transform44/decompiled/asm_SetupParticleRendering.txt": {
+      "sha256": "da3dc4ed524d70039ecba500a96eb7befcc53b284dd77dad568fd4290af611c8",
+      "bytes": 7998
+    },
+    "src/transform44/decompiled/decomp_ApplyTranslationMatrix.c": {
+      "sha256": "a2c92614a57cfcb501f4c9847612099c7aaeaa27d63a1f60228202d645c8a3ec",
+      "bytes": 755
+    },
+    "src/transform44/decompiled/decomp_calculateScaledInverseMatrix.c": {
+      "sha256": "8276077032238e56a89bc687219109583b12833ae1fea6d6546d4e2985abcf7d",
+      "bytes": 2839
+    },
+    "src/transform44/decompiled/decomp_CMovement_ProcessUnitMovementUpdate.c": {
+      "sha256": "f869d34bcfee2b9ef6590d926d340fddf10f04775e6cfeb7448ff333331f2fcc",
+      "bytes": 4078
+    },
+    "src/transform44/decompiled/decomp_executeSceneRenderPass.c": {
+      "sha256": "2c25691fc3c9241e1ed909a3d465e88f2f83b7fa67ad03153b268fa89f23e5be",
+      "bytes": 1255
+    },
+    "src/transform44/decompiled/decomp_findInterpolationIndices.c": {
+      "sha256": "8a4db72064767a2897cabccfec99cd5364f402325b264d700b72dadef8bfd247",
+      "bytes": 3198
+    },
+    "src/transform44/decompiled/decomp_getIndexOffset.c": {
+      "sha256": "c2277addda2215bac121a8a97bee1118ce61de27feeb2b0140ef57f74fca539d",
+      "bytes": 109
+    },
+    "src/transform44/decompiled/decomp_getInterpolatedFloat.c": {
+      "sha256": "c7e86beda72e8391f9b11301d1e88b9b96aacde9843044c3b3c9576cebe9b0dd",
+      "bytes": 1240
+    },
+    "src/transform44/decompiled/decomp_GetOrCreateCharacterGlyph.c": {
+      "sha256": "d1185ed08d482c03e542d97105c410dc18a3c10a7dd71225cb58b7cd383f2cea",
+      "bytes": 24386
+    },
+    "src/transform44/decompiled/decomp_initParticlePixelShaderGeneration.c": {
+      "sha256": "906df0349b103fbcf1719d95451bdc278242b19886bb906d6cc90f9ede39f3fd",
+      "bytes": 332
+    },
+    "src/transform44/decompiled/decomp_interpolateAnimationKeyframes.c": {
+      "sha256": "b5035ba3399d6db415a9e42567f8afa09b616c6a090c80d8fa479ca0b2cc9808",
+      "bytes": 3730
+    },
+    "src/transform44/decompiled/decomp_particle_helpers.c": {
+      "sha256": "1fa935d3bbe53e77975511d07a8d72b3e3f8dcd53bce02f6e53a66db1c80476b",
+      "bytes": 7969
+    },
+    "src/transform44/decompiled/decomp_processLinkedListCollision.c": {
+      "sha256": "35dc5f75304ea8be73dccf881c474d3317ec9af80a0a3e7ce78ebeeb45d938f6",
+      "bytes": 12499
+    },
+    "src/transform44/decompiled/decomp_RenderComplexGeometry.c": {
+      "sha256": "5942fb31fdb3c1318bfa179cd23ea2af3f1db00bb2d5e58f0dd79d991f432f03",
+      "bytes": 7437
+    },
+    "src/transform44/decompiled/decomp_renderFrame.c": {
+      "sha256": "5cd405b2320a996b1b2fff10ee18efbbd7edc26efe51639748dd0950928253ad",
+      "bytes": 38515
+    },
+    "src/transform44/decompiled/decomp_RenderParticleSprites.c": {
+      "sha256": "aea09e1bf9a9059df2d6d780b009788c45ada459be63a2f69fd0e4ed276d5eba",
+      "bytes": 21306
+    },
+    "src/transform44/decompiled/decomp_RenderSpriteQuads.c": {
+      "sha256": "f644cb202aeb36229e35a95106bd972a3f8335ed2185bb44e0caf9dbf74c868b",
+      "bytes": 2882
+    },
+    "src/transform44/decompiled/decomp_renderTextToBuffer.c": {
+      "sha256": "487adc8c304580182ccfb090575aec8b0fe2305bf1fa85e8f6534202790a9fe9",
+      "bytes": 26423
+    },
+    "src/transform44/decompiled/decomp_RenderTextToVertexBuffer.c": {
+      "sha256": "c2b3f2d387e6b84daf2c87ff1d49a5538ecc9abac98553aa227066537d57689e",
+      "bytes": 54160
+    },
+    "src/transform44/decompiled/decomp_RenderTextureQuads.c": {
+      "sha256": "bac15e0965cde4d4affe5e28e73b06fc949c25a59125bf843e54ad8905f27a85",
+      "bytes": 2307
+    },
+    "src/transform44/decompiled/decomp_rotateMatrixByQuaternion.c": {
+      "sha256": "c984f12144588a9db06d8d9e9bf5ffe07fa013ca9ec1f0633ad8679ac12c3bed",
+      "bytes": 2662
+    },
+    "src/transform44/decompiled/decomp_RTQ_pipeline.c": {
+      "sha256": "14ede93f24af8b5268488d846abd94f1d702e0e419b5bad4c4acdbf272edce01",
+      "bytes": 7776
+    },
+    "src/transform44/decompiled/decomp_scaleMatrix3x3ByVector.c": {
+      "sha256": "2018daa639e08cd7ca5fb44ff150ef0675fe62957c2fb50e419cfdd537daa3f9",
+      "bytes": 814
+    },
+    "src/transform44/decompiled/decomp_setShortValue.c": {
+      "sha256": "7585f8f775062f9d76dca19673be96371ef28748ed491f3fe38bf80c17fcb16b",
+      "bytes": 113
+    },
+    "src/transform44/decompiled/decomp_SetupParticleRendering.c": {
+      "sha256": "02c2ad3f965d9fbabf2717cc6eafe985ced5fac0c50f884a549e8ef6d67e96f5",
+      "bytes": 12418
+    },
+    "src/transform44/decompiled/decomp_updateAnimationTransform.c": {
+      "sha256": "c5db2cc447d828c6f84344e1e855633aac66558c23fb2f89e36e4714fb8dd126",
+      "bytes": 4333
+    },
+    "src/transform44/decompiled/decomp_UpdateEntityAndChunksPositions.c": {
+      "sha256": "2ab89dbe6be9676afcda20d21035268eb0b812c2ad5a5496beb4bbed8029ce0b",
+      "bytes": 4746
+    },
+    "src/transform44/decompiled/t44_full_asm.txt": {
+      "sha256": "c832278aa3227c1e2e502161df4cd2b4d51b75860a39ca7e40e2ba62cdcf82a8",
+      "bytes": 191513
+    },
+    "src/transform44/decompiled/t44_helpers_asm.txt": {
+      "sha256": "bd482ada6c1794bfb3fb98051aa1ecbc313fcdce3263fcb6d81882d5f33676ac",
+      "bytes": 28004
+    },
+    "src/transform44/decompiled/transform44_decompiled.c": {
+      "sha256": "1bc2bd9dac9bc53a05e86ca1762ca0c2525981796c47a7cc78a6383ec2c0a1b0",
+      "bytes": 112557
+    },
+    "src/transform44/OPTIMIZATION_RESEARCH.md": {
+      "sha256": "1c69dda1800d5c0155c91b002eacb760c0003b6c683b04126c8147208a25db80",
+      "bytes": 29428
+    },
+    "src/transform44/PARTICLE_RESEARCH.md": {
+      "sha256": "101014f39cf7d4f3c3af28951bdf1f9491c8664ffaa486d98836f05db31aff36",
+      "bytes": 5925
+    },
+    "src/transform44/particle_sse_reference.zig": {
+      "sha256": "9b878ef19bf6a1f201034bf758016f12d4ff2d06d9ba7db71d14fa8648988a7b",
+      "bytes": 27334
+    },
+    "src/transform44/particle_sse.zig": {
+      "sha256": "755812912909277e96204aac03e060896f2aa58ff83ec844aed44ed3b759990b",
+      "bytes": 57685
+    },
+    "src/transform44/PERF_ANALYSIS.md": {
+      "sha256": "65afa5dd2781826b367baa89cdce6a338072cfa46a712b8b976bfb9b8c5cb862",
+      "bytes": 5188
+    },
+    "src/transform44/RESEARCH.md": {
+      "sha256": "3da206ba593fd9b4655ee1d44ba6698f7ebb077d2c47986abb2cc8bc3c753f62",
+      "bytes": 17276
+    },
+    "src/transform44/SCENEOBJECT_OFFSETS.md": {
+      "sha256": "897d7944354c617111aa769c5499b957410e799cc64fc700dee5e2a87b6b17d6",
+      "bytes": 5684
+    },
+    "src/transform44/transform44.zig": {
+      "sha256": "9ff0448d2928a2ad26c95459a7dac1e2e8cf798fb00d7f82aad7fbba7ea8056d",
+      "bytes": 73187
+    },
+    "src/transmogfix/transmogfix.zig": {
+      "sha256": "a0c3f39fab758ecc73a8cf53e842b8a477a445a84890be9d2756dac86bfc4920",
+      "bytes": 31961
+    },
+    "src/weirdperformance/AGENTS.md": {
+      "sha256": "e28dbd82b565aed192fd75829105cd61250627f6c92c0ecbf36786afadad928d",
+      "bytes": 1583
+    },
+    "src/weirdperformance/AllocBench/AllocBench.lua": {
+      "sha256": "92cce9abb6eb0508a55f150946a73333bbefc10d4d6e6a7a6b746e89cf6ec5d0",
+      "bytes": 35705
+    },
+    "src/weirdperformance/AllocBench/AllocBench.toc": {
+      "sha256": "74eec65cf630643e714b0495a5453146bc7748e063e7cf1a3ab11f4ee56410bf",
+      "bytes": 112
+    },
+    "src/weirdperformance/bone_sse.zig": {
+      "sha256": "f69d18a931644db0e289bbf73b46fc9b47a9465a47b6117f22e6ce568b9ec437",
+      "bytes": 115991
+    },
+    "src/weirdperformance/bone_sse64.zig": {
+      "sha256": "df60e67446c0d36c1f9982325cf8ab49f15bc9a58fc06835ecd1c3ff5c9f1ded",
+      "bytes": 45098
+    },
+    "src/weirdperformance/clip_sse.zig": {
+      "sha256": "bdb17a42fa8580cdf37e86bed2b1b8e99b7981253888da4e22ec217978c93663",
+      "bytes": 13387
+    },
+    "src/weirdperformance/cull_sse.zig": {
+      "sha256": "f1fbd517da7fb4b12df37fdde011b40a7282761e2b283dfc9670cfd6b17eaaab",
+      "bytes": 20193
+    },
+    "src/weirdperformance/entity_sse.zig": {
+      "sha256": "3f260b5822029f0c0786a67aa4dd753183e1e0b707d5e41833800ccff63cbc98",
+      "bytes": 10151
+    },
+    "src/weirdperformance/filecache.zig": {
+      "sha256": "13193216f2ec9cf192f548552fc489e6be327fe726541cf820636ba6804ecaba",
+      "bytes": 12195
+    },
+    "src/weirdperformance/GC_NOTES.md": {
+      "sha256": "ba35d60141dd90180c9f15ffbb85becb7fbf31458907017191319a77dcc0e0fa",
+      "bytes": 25351
+    },
+    "src/weirdperformance/GC_WRITE_BARRIER.md": {
+      "sha256": "47f24886396bd901251b43ebbd01cacdf5aba20838753ef661a2724b3a17fa91",
+      "bytes": 2373
+    },
+    "src/weirdperformance/inflate_hook.zig": {
+      "sha256": "7a1aaae52d3ff6e811659fc9888385238c018927ac1de2165feadf3db7c8ed63",
+      "bytes": 3879
+    },
+    "src/weirdperformance/INFLATE_RESEARCH.md": {
+      "sha256": "1f03539eabc1eeb72ed2395979362a0715a0d1dee2476cbbff97c13015ad35c8",
+      "bytes": 3466
+    },
+    "src/weirdperformance/libdeflate/common_defs.h": {
+      "sha256": "eda3d8ff829e4ccbee5b27d5a0ccd84101db3c9d7881db927540fbe6b332677a",
+      "bytes": 21867
+    },
+    "src/weirdperformance/libdeflate/lib/adler32.c": {
+      "sha256": "63099826db3ddf84c15bfba30940f9689917185df8c30ff27a2bc2b7cb6a19f2",
+      "bytes": 5133
+    },
+    "src/weirdperformance/libdeflate/lib/cpu_features_common.h": {
+      "sha256": "f4eb0800558e9116dd14446ccfb9b1896f970aec6de42c18366a29bde73fd0da",
+      "bytes": 2788
+    },
+    "src/weirdperformance/libdeflate/lib/decompress_template.h": {
+      "sha256": "ade3034c1d5c840cb31bd9738a015be804862a8dfce03c14ac2f5b3a826792b8",
+      "bytes": 25048
+    },
+    "src/weirdperformance/libdeflate/lib/deflate_constants.h": {
+      "sha256": "72ea6e5f0abe53e781203e3f383603a765a768b860a09b3356be36bfd87c8af3",
+      "bytes": 1747
+    },
+    "src/weirdperformance/libdeflate/lib/deflate_decompress.c": {
+      "sha256": "bc16ab65325ce4ac14af830b2cf6c805770beab01fd2f09226dca3dfa3f8bb47",
+      "bytes": 49297
+    },
+    "src/weirdperformance/libdeflate/lib/lib_common.h": {
+      "sha256": "e7aa1f2750434e1019ffabda577dab0fdf5b95f010f6f20aa7e21323b3bcceea",
+      "bytes": 3624
+    },
+    "src/weirdperformance/libdeflate/lib/utils.c": {
+      "sha256": "3d4c9f6d488610d4d9ff314b2dc783e24079325b78af13d3ee37b18fcc0b0d8a",
+      "bytes": 3425
+    },
+    "src/weirdperformance/libdeflate/lib/x86/adler32_impl.h": {
+      "sha256": "03a7c3f7632d9a641dc0ccd2850688fe14513e28505c233da480cfd6e4a3ad07",
+      "bytes": 4908
+    },
+    "src/weirdperformance/libdeflate/lib/x86/adler32_template.h": {
+      "sha256": "8e5d14f8e596bd54bea188b6ff5c96649329beeebd9acdd59307a5202206d11e",
+      "bytes": 17524
+    },
+    "src/weirdperformance/libdeflate/lib/x86/cpu_features.c": {
+      "sha256": "9ed976e4c66478e8b6a8856424816147a971f75894c66f03274ab8119074dde0",
+      "bytes": 6371
+    },
+    "src/weirdperformance/libdeflate/lib/x86/cpu_features.h": {
+      "sha256": "1fa71a4fdf117120a08f3f46990b2cee5d3cbef0610d77fb40d19a0e5387807b",
+      "bytes": 5396
+    },
+    "src/weirdperformance/libdeflate/lib/x86/crc32_impl.h": {
+      "sha256": "a5efe68783a3fc07b9f37f81cfc56741219074447689041c8bbdfb5ffcbdd8b4",
+      "bytes": 6038
+    },
+    "src/weirdperformance/libdeflate/lib/x86/crc32_pclmul_template.h": {
+      "sha256": "f0aa09cf49fd77e1f95c360f8edddd3a17725b8ea92f92c70efe50a182f51d72",
+      "bytes": 14493
+    },
+    "src/weirdperformance/libdeflate/lib/x86/decompress_impl.h": {
+      "sha256": "81ab9fd7d4723fdc7ae81dca82f817bcecb7baf5bdfffde0ccfbba70569ac2f1",
+      "bytes": 2190
+    },
+    "src/weirdperformance/libdeflate/lib/x86/matchfinder_impl.h": {
+      "sha256": "3322b5195e11dc08575ea26431d8d16514cb53bf25e6a9b6935b6cec7a678a27",
+      "bytes": 3726
+    },
+    "src/weirdperformance/libdeflate/lib/zlib_constants.h": {
+      "sha256": "562e16b83ac33ac6d351cdfdf1962750576080d65c22ab66cad0aaa33695bebb",
+      "bytes": 488
+    },
+    "src/weirdperformance/libdeflate/lib/zlib_decompress.c": {
+      "sha256": "704a57fb91c36c1c88b04a3482694de08c794ca0cb3904ac247a206802aa6ee0",
+      "bytes": 3138
+    },
+    "src/weirdperformance/libdeflate/libdeflate.h": {
+      "sha256": "f263f3c5c86d1a939757a2ca74c521b389ef9aa2860e423eefe0272df169e765",
+      "bytes": 17098
+    },
+    "src/weirdperformance/libdeflate/safe_decompress.c": {
+      "sha256": "311ac26d15490dbb601b69bf13ca8c04d8fdbfc2f196268d8d9dfff79ba337d6",
+      "bytes": 771
+    },
+    "src/weirdperformance/libdeflate/stubs/game_alloc.c": {
+      "sha256": "af0de3cf732cabb2f4d967cd5ec672c7394caa25edd0ee43a32c5e5bf0a254a9",
+      "bytes": 506
+    },
+    "src/weirdperformance/libdeflate/stubs/malloc.h": {
+      "sha256": "d570fc4cd07670a6dfed4625f69aac650b08d1426c9204ff01bbe9efea763d3d",
+      "bytes": 96
+    },
+    "src/weirdperformance/libdeflate/stubs/setjmp.h": {
+      "sha256": "ebe94811ebb7c5bcb92da5a7b0e4f411ca3ce0eaf58a58ade2dc27f5d60ad3ae",
+      "bytes": 111
+    },
+    "src/weirdperformance/libdeflate/stubs/stdio.h": {
+      "sha256": "03fae557ddac76cb76a27673090619777ecde92b8719baa0ac1d25193f027105",
+      "bytes": 79
+    },
+    "src/weirdperformance/libdeflate/stubs/stdlib.h": {
+      "sha256": "d570fc4cd07670a6dfed4625f69aac650b08d1426c9204ff01bbe9efea763d3d",
+      "bytes": 96
+    },
+    "src/weirdperformance/libdeflate/stubs/string.h": {
+      "sha256": "8b9da856cc65683817ad67e547557c3d9cde047f7736325660151a3fac450571",
+      "bytes": 234
+    },
+    "src/weirdperformance/luaalloc.zig": {
+      "sha256": "bde19e7fb5c0d845fb51e80e32dbe4afbdedcaed396a31e249f997f97ecc739e",
+      "bytes": 16108
+    },
+    "src/weirdperformance/luagc.zig": {
+      "sha256": "9f9f96f44e5165089fddb6d2fd53e6bdbb4187f3e9238611b91602219a9a370b",
+      "bytes": 17562
+    },
+    "src/weirdperformance/luastr.zig": {
+      "sha256": "072498faf81e24916aa40dee83a9001382a08a49bb49a86ad9625e5da21036a6",
+      "bytes": 15617
+    },
+    "src/weirdperformance/luavm.zig": {
+      "sha256": "d850f77d0906eb8e719059aeae748698824b788c9a955344306cfe3c9c038aa7",
+      "bytes": 3265
+    },
+    "src/weirdperformance/particle_sse.zig": {
+      "sha256": "de49a04aadfd7c4b34e49fce4ae46ba02c95837e12628da86bf0cad7096e82cb",
+      "bytes": 56620
+    },
+    "src/weirdperformance/silicon_sse.zig": {
+      "sha256": "5cda39f7b22e4ced6606c16911705d1f3289ca3b220479d5438e33bc338078a2",
+      "bytes": 36192
+    },
+    "src/weirdperformance/timer_fix.zig": {
+      "sha256": "5352e023e274daf0a996a2621ada4e14ba66e40eb9ba0f7837b07f3ac911ae2a",
+      "bytes": 9300
+    },
+    "src/weirdperformance/transform_capture.zig": {
+      "sha256": "d7d5279e9cd6bcbb900e0aa9bedacd5732ba63135f3056b3d72420d0d01fa5f9",
+      "bytes": 21639
+    },
+    "src/weirdperformance/weirdperformance.zig": {
+      "sha256": "05f11bf35e8407663565aa3ac2836e06e9f3c23759338ac204a429176e0d0430",
+      "bytes": 18785
+    },
+    "src/weirdperformance/zconf.h": {
+      "sha256": "236a52d86db34729c5c721df28b6c00241cdd2765d00bd8f5209533f83edbf43",
+      "bytes": 5463
+    },
+    "src/weirdperformance/zlib.h": {
+      "sha256": "dcc706e75ecda108be6a9fc9550571eb604c9bdb68c152a32ac5ecb2156f2f8a",
+      "bytes": 94789
+    },
+    "src/worldmarkers/addon/Bindings.xml": {
+      "sha256": "dacdb7c6a99d3645199c4ed7be380661912fc6ed3350b858f1e7d6f6a52dbcd5",
+      "bytes": 721
+    },
+    "src/worldmarkers/addon/WeirdUtils_WorldMarkers.toc": {
+      "sha256": "46a37215b3019ebf5af671d444982ac3eb528069148a30df4712104e0839bed5",
+      "bytes": 127
+    },
+    "src/worldmarkers/addon/WorldMarkers.lua": {
+      "sha256": "1e311fd75d8c5625791280855ed2cf94c69b910e7781c65eea2a539d86b20f28",
+      "bytes": 12932
+    },
+    "src/worldmarkers/assets/Spells/GRAD2C2.BLP": {
+      "sha256": "ce95e280d53f973dcccac7c2a88577d7da8d86585f376dc7b82927b8f5893735",
+      "bytes": 12132
+    },
+    "src/worldmarkers/assets/Spells/GRAD2D.BLP": {
+      "sha256": "37b37436550528645366a4ecd12da9f1b0f3984dfa3bfc2bf6da237db65455c6",
+      "bytes": 12132
+    },
+    "src/worldmarkers/assets/Spells/NEXUS_FIREBEAM_FAINT_SQUARE_ORA.BLP": {
+      "sha256": "b7d55b9819af65b0cc17d33c84fe07fe578c32ea2a374d519b52437b56eba185",
+      "bytes": 3916
+    },
+    "src/worldmarkers/assets/Spells/Raid_UI_FX_Cyan.m2": {
+      "sha256": "cb587a56d76a521c214704094f80e358e129b49853b8523a8f31e5163b2a9734",
+      "bytes": 43308
+    },
+    "src/worldmarkers/assets/Spells/Raid_UI_FX_Green.m2": {
+      "sha256": "b52e9fabe8f630cdd2a4f1cbd90d33f6a3be9e0cfdcc07c22570d35cdf18b8b3",
+      "bytes": 43311
+    },
+    "src/worldmarkers/assets/Spells/Raid_UI_FX_Purple.m2": {
+      "sha256": "1a45efa992ed110638531076179ba7403f3a6f3258c30a067f50464ab8850ff1",
+      "bytes": 43177
+    },
+    "src/worldmarkers/assets/Spells/Raid_UI_FX_Red.m2": {
+      "sha256": "5c12e43e9c03e8aed4384a95e253c0c5983fe1736e71d03b76d1b865c62ccf41",
+      "bytes": 43168
+    },
+    "src/worldmarkers/assets/Spells/Raid_UI_FX_Yellow.m2": {
+      "sha256": "3c58dba1bd57cd4b2f9a8238cc84b5d28a1bd9a846a4aedd90f0de42124e00bc",
+      "bytes": 43308
+    },
+    "src/worldmarkers/assets/Spells/RaidTarget_Diamond.blp": {
+      "sha256": "005b2fecbb9d07eb174b66a321499c5f5c8c00da19d2a56f6c84afc6074db10d",
+      "bytes": 6660
+    },
+    "src/worldmarkers/assets/Spells/RaidTarget_Square.blp": {
+      "sha256": "8a34f1d0bf04ba239e1bd3dffb1f530ff6df92e32b419b8205d54d5f67072989",
+      "bytes": 6660
+    },
+    "src/worldmarkers/assets/Spells/RaidTarget_Star.blp": {
+      "sha256": "de4fb60a5556edbdc5e2947cf66d2e7f7561d37b3a97bcdfb56f585f71b827d2",
+      "bytes": 6660
+    },
+    "src/worldmarkers/assets/Spells/RaidTarget_Triangle.blp": {
+      "sha256": "14665fe22708f45bea9e6a63070094bc4ae205280baae594579fd45f4e7af056",
+      "bytes": 6660
+    },
+    "src/worldmarkers/assets/Spells/RaidTarget_X.blp": {
+      "sha256": "f5b542bc0a0b2ec1695b4282ce48e97287615caa43615a814b9c41b2690fe860",
+      "bytes": 6660
+    },
+    "src/worldmarkers/assets/Spells/T_VFX_FLARE05_32ALPHA.BLP": {
+      "sha256": "01ed772f5daed85f9ad283aba68a267a44eeb5e4bfdb90277c9ced08acd5ab98",
+      "bytes": 2564
+    },
+    "src/worldmarkers/assets/World/Expansion01/Doodads/Zulaman/Doors/T_VFX_BORDER6.BLP": {
+      "sha256": "960e70e7ac8247a2f063d8a72b6bfe5a7d1aee439d9210cba37131b337057393",
+      "bytes": 88580
+    },
+    "src/worldmarkers/assets/World/Expansion01/Doodads/Zulaman/Doors/T_VFX_FIRE03_A.BLP": {
+      "sha256": "094eb5d1a382cc672c9caed6002073251bfcba8a858f4f1f40642efa64f662b3",
+      "bytes": 88580
+    },
+    "src/worldmarkers/demo/MarkerPresets.lua": {
+      "sha256": "9e02d5e725594af7bb0cc26386d368f775559af30796baf63aa31e6216603184",
+      "bytes": 3895
+    },
+    "src/worldmarkers/demo/MarkerPresets.toc": {
+      "sha256": "3c8c40bb4cbf72caacb19c04bc71716f2b9b8c774cfa33036a08c98e87894c4b",
+      "bytes": 225
+    },
+    "src/worldmarkers/MPQ_FILESYSTEM_RESEARCH.md": {
+      "sha256": "ba1874445628264574626b20633e740de6016ed83f03aa590d3c993f9b7632d6",
+      "bytes": 32773
+    },
+    "src/worldmarkers/MPQ_LOAD_ORDER.md": {
+      "sha256": "805819e81a54959d94b14e23e3c6b6d4f5f5cb2dc5960b689c662b93cd386455",
+      "bytes": 1144
+    },
+    "src/worldmarkers/offsets.zig": {
+      "sha256": "30d0486f22464ca2d4da40fc42cbc2328af9cd4248439ef69cc548ab17e3bd16",
+      "bytes": 4851
+    },
+    "src/worldmarkers/RESEARCH.md": {
+      "sha256": "8113abcd3f26a669d971ad2fc8d6d2e0ebc2423125295bc10e0477e85ab74cc3",
+      "bytes": 64735
+    },
+    "src/worldmarkers/worldmarkers.zig": {
+      "sha256": "cec3a9c63ff9994fa4ba43c13f17cffef405dfb89194be07002531054c33189a",
+      "bytes": 32214
+    },
+    "src/wow.zig": {
+      "sha256": "2bf48735b3495a9a9fe55c9ad8f3aee7a0ffbf90fb371e657fcd8ab0f57f962a",
+      "bytes": 13449
+    },
+    "THIRD_PARTY_NOTICES.md": {
+      "sha256": "cb924d093293ca05dde5f721fa8e0d4548afefba91d3310741540aa0640f3229",
+      "bytes": 5306
+    },
+    "tools/png2blp.py": {
+      "sha256": "a8d030bdf1fd527a6075930d1e8a5c146daad42cfe3f4e6cbd93ea8e08abaff9",
+      "bytes": 5788
+    },
+    "tools/stormlib.py": {
+      "sha256": "f842cf5159fe62870883a9ecb99c53c4221834620c822613fe2cb7c918971e42",
+      "bytes": 12530
+    }
+  },
+  "symlinks": {},
+  "releases": {
+    "224": {
+      "tag": "0.7.3",
+      "folder": "0.7.3--224",
+      "assets": {
+        "39": {
+          "sha256": "07d30e33945673a5f0efaf3cde68396974ed3490ec94ec86230f7da39fb6fe32",
+          "bytes": 76288,
+          "id": "39",
+          "name": "bigcursor.dll",
+          "url": "https://octowow.st/git/Dusk/WeirdUtils/releases/download/0.7.3/bigcursor.dll",
+          "path": "releases/0.7.3--224/assets/bigcursor.dll"
+        },
+        "40": {
+          "sha256": "3584f554cacba984705f6ee4531b4e5c37c819632357c1a25eef0cf0e5832374",
+          "bytes": 72704,
+          "id": "40",
+          "name": "clickthrough.dll",
+          "url": "https://octowow.st/git/Dusk/WeirdUtils/releases/download/0.7.3/clickthrough.dll",
+          "path": "releases/0.7.3--224/assets/clickthrough.dll"
+        },
+        "41": {
+          "sha256": "7649c3ca41e17912e54f2cc14dccccb2b7f04def28c5a8d1a081ed95927b913d",
+          "bytes": 77824,
+          "id": "41",
+          "name": "customassets.dll",
+          "url": "https://octowow.st/git/Dusk/WeirdUtils/releases/download/0.7.3/customassets.dll",
+          "path": "releases/0.7.3--224/assets/customassets.dll"
+        },
+        "42": {
+          "sha256": "a49317eae5c777051704ca28176a5bc3ea7acd6124e46185631b1e131631cd5c",
+          "bytes": 94208,
+          "id": "42",
+          "name": "dpslog.dll",
+          "url": "https://octowow.st/git/Dusk/WeirdUtils/releases/download/0.7.3/dpslog.dll",
+          "path": "releases/0.7.3--224/assets/dpslog.dll"
+        },
+        "43": {
+          "sha256": "d8b11eaf7bd90578048872ea0d9d48bd72848c179880fb00a7f0efaed8bc394e",
+          "bytes": 73216,
+          "id": "43",
+          "name": "framecrash.dll",
+          "url": "https://octowow.st/git/Dusk/WeirdUtils/releases/download/0.7.3/framecrash.dll",
+          "path": "releases/0.7.3--224/assets/framecrash.dll"
+        },
+        "44": {
+          "sha256": "8c9aabff1e4dbdf855c236e6901b314d9037dd25c34658362606dcb63e1a46af",
+          "bytes": 73728,
+          "id": "44",
+          "name": "healtextfix.dll",
+          "url": "https://octowow.st/git/Dusk/WeirdUtils/releases/download/0.7.3/healtextfix.dll",
+          "path": "releases/0.7.3--224/assets/healtextfix.dll"
+        },
+        "45": {
+          "sha256": "1aec6c089cfd336c83a5f20f6fc9437b33b1d8edb94dd09aa70c76956501d2f5",
+          "bytes": 75264,
+          "id": "45",
+          "name": "interact.dll",
+          "url": "https://octowow.st/git/Dusk/WeirdUtils/releases/download/0.7.3/interact.dll",
+          "path": "releases/0.7.3--224/assets/interact.dll"
+        },
+        "46": {
+          "sha256": "095410fa1622fa0286c164b82f1f926e5ba1e05ed1935eedb0c329c8f09c6044",
+          "bytes": 77824,
+          "id": "46",
+          "name": "logsessions.dll",
+          "url": "https://octowow.st/git/Dusk/WeirdUtils/releases/download/0.7.3/logsessions.dll",
+          "path": "releases/0.7.3--224/assets/logsessions.dll"
+        },
+        "47": {
+          "sha256": "b7a603f531be211da8002b89d1a1cb9a83ad787cee9c30e8c9e53a77385d9281",
+          "bytes": 204288,
+          "id": "47",
+          "name": "minimapicons.dll",
+          "url": "https://octowow.st/git/Dusk/WeirdUtils/releases/download/0.7.3/minimapicons.dll",
+          "path": "releases/0.7.3--224/assets/minimapicons.dll"
+        },
+        "48": {
+          "sha256": "e67145a1a02b55625ae736f98ebce3524ebd5bdd04ee1ad835b747c033d0c726",
+          "bytes": 86016,
+          "id": "48",
+          "name": "outline.dll",
+          "url": "https://octowow.st/git/Dusk/WeirdUtils/releases/download/0.7.3/outline.dll",
+          "path": "releases/0.7.3--224/assets/outline.dll"
+        },
+        "49": {
+          "sha256": "f628e96a20f309edcf2e0d65e24f0da34739677d856a4d6ffbeaed7db1e72ab0",
+          "bytes": 79872,
+          "id": "49",
+          "name": "pngscreenshots.dll",
+          "url": "https://octowow.st/git/Dusk/WeirdUtils/releases/download/0.7.3/pngscreenshots.dll",
+          "path": "releases/0.7.3--224/assets/pngscreenshots.dll"
+        },
+        "50": {
+          "sha256": "9519a45101efdf5f5cda6ee36948f5f674983fd0446f4bd61d8f15e99ce5fba9",
+          "bytes": 1145,
+          "id": "50",
+          "name": "SHA256SUMS.txt",
+          "url": "https://octowow.st/git/Dusk/WeirdUtils/releases/download/0.7.3/SHA256SUMS.txt",
+          "path": "releases/0.7.3--224/assets/SHA256SUMS.txt"
+        },
+        "51": {
+          "sha256": "4586c98b5460a1efbbe6a448ce111601ae82ba1e17d5cfb3d4fc0d678a0c5ec0",
+          "bytes": 74752,
+          "id": "51",
+          "name": "transmogfix.dll",
+          "url": "https://octowow.st/git/Dusk/WeirdUtils/releases/download/0.7.3/transmogfix.dll",
+          "path": "releases/0.7.3--224/assets/transmogfix.dll"
+        },
+        "52": {
+          "sha256": "872b73e9074b8fd95f968b099adf4139591c10ab6cd916c96082ed4a7b7b8c69",
+          "bytes": 204288,
+          "id": "52",
+          "name": "weirdperformance.dll",
+          "url": "https://octowow.st/git/Dusk/WeirdUtils/releases/download/0.7.3/weirdperformance.dll",
+          "path": "releases/0.7.3--224/assets/weirdperformance.dll"
+        },
+        "53": {
+          "sha256": "1e7d5a0c1ea6d15053d0f66e02f07f071d863b05afe21b7f1bc5a71eb2c0ec2a",
+          "bytes": 938868,
+          "id": "53",
+          "name": "WeirdUtils-0.7.3.zip",
+          "url": "https://octowow.st/git/Dusk/WeirdUtils/releases/download/0.7.3/WeirdUtils-0.7.3.zip",
+          "path": "releases/0.7.3--224/assets/WeirdUtils-0.7.3.zip"
+        },
+        "54": {
+          "sha256": "61a763fe01dd3fd018f0f6f3f7fe3a72ea9470de119f03025a7bd3f6b28bb64c",
+          "bytes": 550400,
+          "id": "54",
+          "name": "worldmarkers.dll",
+          "url": "https://octowow.st/git/Dusk/WeirdUtils/releases/download/0.7.3/worldmarkers.dll",
+          "path": "releases/0.7.3--224/assets/worldmarkers.dll"
+        }
+      },
+      "source": {
+        "sha256": "c84902d78474bccd8c277207bc21436737557ae759c723888f42aa4ffc172a64",
+        "bytes": 13275198,
+        "path": "releases/0.7.3--224/upstream-source.tar.gz",
+        "url": "https://octowow.st/git/api/v1/repos/Dusk/WeirdUtils/archive/0.7.3.tar.gz"
+      }
+    }
+  }
+}

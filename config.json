@@ -1,0 +1,30 @@
+{
+  "personalBackup": true,
+  "repository": "vanilla-addon-index/dll-archive",
+  "catalogue": "https://raw.githubusercontent.com/vanilla-addon-index/vanilla-addon-index.github.io/snapshot/addons.json",
+  "maxArchiveBytes": 8589934592,
+  "maxFileBytes": 2147483648,
+  "overrides": {
+    "https://github.com/RetroCro/TurtleWoW-Mods#no1600x1200": {
+      "kind": "file",
+      "url": "https://raw.githubusercontent.com/RetroCro/TurtleWoW-Mods/main/Archive/DLL%20BACKUP/no1600x1200.dll",
+      "filename": "no1600x1200.dll"
+    },
+    "https://github.com/RetroCro/TurtleWoW-Mods/blob/main/Archive/DLL%20BACKUP/perf_boost.dll": {
+      "folder": "dll"
+    },
+    "https://github.com/RetroCro/TurtleWoW-Mods/blob/main/Archive/DLL%20BACKUP/perfboostsettings.zip": {
+      "folder": "PerfBoostSettings"
+    }
+  },
+  "extraSources": {
+    "1094": [
+      "https://github.com/balakethelock/SuperAPI"
+    ],
+    "1065": [
+      "https://github.com/Tom75VN/PandaConquest-Companion"
+    ]
+  },
+  "permissions": {},
+  "releaseScope": "latest"
+}

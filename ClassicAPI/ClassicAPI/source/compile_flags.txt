@@ -1,0 +1,7 @@
+-xc++
+-std=c++17
+-Isrc
+-Iexternal/minhook/include
+-DCLASSICAPI_VERSION_VALUE=1
+-D_CRT_SECURE_NO_WARNINGS
+--target=i686-pc-windows-msvc

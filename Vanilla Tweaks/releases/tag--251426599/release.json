@@ -1,0 +1,9 @@
+{
+  "id": "251426599",
+  "tag": "tag",
+  "name": "V2",
+  "body": "Made bluemoon patch, and custom glues patch run by default\r\nDisabled the following features by default, as they're covered by SuperWoW:\r\n- Quickloot by default patch (hold shift for manual loot) \r\n- Widescreen FoV fix \r\n- Sound in background patch\r\n- Sound channel count increase",
+  "published": "2025-10-01T13:40:48Z",
+  "prerelease": false,
+  "url": "https://github.com/tubtubs/vanilla-tweaks/releases/tag/tag"
+}

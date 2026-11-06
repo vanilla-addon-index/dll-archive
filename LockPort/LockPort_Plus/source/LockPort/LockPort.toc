@@ -1,0 +1,13 @@
+## Title: |CFFB700B7L|CFFFF00FFo|CFFFF50FFc|CFFFF99FFk|CFFFFC4FFP|cffffffffort|r
+## Notes: Warlock Raid Summon Assistant
+## Title-zhCN:|CFFFFFF00[职业]|R|CFF9482C9术士|RLockPort拉人助手123
+## Notes-zhCN:|CFFFFFF00LockPort|R|N团队拉人助手|N命令：/lockport|N点击鼠标左键拉人，右键移除
+## Version: 2.0.3
+## Author: |cff02bf02Bennylava|r
+## Interface: 11200
+## SavedVariables: LockPortOptions lpupdateavailable
+locale\localization.en.lua
+locale\localization.cn.lua
+
+LockPort.xml
+LockPort_Settings.xml

@@ -1,0 +1,235 @@
+#foo 8900 base
+
+### baron geddon ##################
+# infero #
+SpellVisualKit.dbc:
+  - type: insert
+    key: 8900
+    values:
+      KitType: 2
+      ChestEffect: 1562
+      BaseEffect: 4903
+
+SpellVisual.dbc:
+  - type: copy
+    key: 781
+    values:
+      ID: 8900
+      StateKit: 8900
+
+Spell.dbc:
+  - type: update
+    key: 19695 #baron Inferno 19695
+    values:
+      SpellVisualID_1: 8900
+
+# living bomb #
+SpellVisualKit.dbc:
+  - type: copy
+    key: 3351
+    values:
+      ID: 8901
+      HeadEffect: 2963
+      ChestEffect: 1015
+      BaseEffect: 4707
+
+      CharProc_1: 1
+      CharParamZero_1: 1199505408 #green
+      CharParamOne_1: 2.0
+      CharParamTwo_1: 2.0
+
+SpellVisual.dbc:
+  - type: copy
+    key: 4486
+    values:
+      ID: 8901
+      StateKit: 8901
+
+Spell.dbc:
+  - type: update
+    key: 20475 #baron living bomb 20475
+    values:
+      SpellVisualID_1: 8901
+###################################
+
+### incindis ##################
+# has probably 6x scaling on model
+
+# fire nova precast indication
+SpellVisualKit.dbc:
+  - type: copy
+    key: 60
+    values:
+      ID: 8910
+      BaseEffect: 4904 #flame ring, 7y before scaling
+      # red coloring to self-desruct
+      CharProc_1: 13
+      CharParamZero_1: 16716055.0
+      CharParamOne_1: 3.5 # hold time
+      CharParamTwo_1: 0.5 # fade out time
+      # todo, fix texture edge bleed
+
+SpellVisual.dbc:
+  - type: copy
+    key: 963
+    values:
+      ID: 8910
+      PrecastKit: 8910
+
+Spell.dbc:
+  - type: update
+    key: 42037 #fire nova
+    values:
+      SpellVisualID_1: 8910
+###################################
+
+### golem twins ###################
+# indicate bulwark
+SpellVisualKit.dbc:
+  - type: insert
+    values:
+      ID: 8912
+      BaseEffect: 2942 #fap effect
+      CharProc_1: 1
+      CharParamZero_1: 16716055.0
+
+SpellVisual.dbc:
+  - type: copy
+    key: 290
+    values:
+      ID: 8912
+      StateKit: 8912
+
+Spell.dbc:
+  - type: update
+    key: 47375 #molten bulwark
+    values:
+      SpellVisualID_1: 8912
+###################################
+
+### thaurrisan ##################
+# essentially just doom'rel, 2x scaling
+
+# rune of power resizing
+SpellVisualEffectName.dbc:
+  #new circles
+  - type: copy
+    key: 4454
+    values:
+      ID: 8915
+      Name: Danger Zone 15y
+      FileName: Spells\DangerZone_W25_S13_Arcane.m2
+      SpecialAttachPoint: 0.0
+      Scale: 1.0
+
+SpellVisual.dbc:
+  - type: copy
+    key: 7970 #must copy, anomalus uses this as well and as far as I know that one is accurate
+    values:
+      ID: 8915
+      AreaModel: 8915
+      HasMissile: 1 #disable secondary ground effect renderings
+
+# thaurrisan casts two zones with different id's at once for some reason
+# they do not both need to be shown!
+Spell.dbc:
+  - type: update
+    key: 52724 #zone1
+    values:
+      SpellVisualID_1: 0
+      SpellIconID: 2381 #icons are MUCH too similar
+  - type: update
+    key: 52729 #zone2
+    values:
+      SpellVisualID_1: 8915
+      SpellIconID: 2381 #icons are MUCH too similar
+      # Speed: 255.0
+
+# rune of combusion, in
+SpellVisualKit.dbc:
+  - type: copy
+    key: 235 #melt armor state
+    values:
+      ID: 8916
+      # HeadEffect: 297 #flame
+      HeadEffect: 212 #flame
+      BaseEffect: 1015 #flamewalk
+      CharProc_1: 13
+      CharParamZero_1: 16716055.0 # red
+      CharParamOne_1: 5.5 # hold time
+      CharParamTwo_1: 0.5 # fade out time
+
+SpellVisual.dbc:
+  - type: copy
+    key: 46 #melt armor
+    values:
+      ID: 8916
+      StateKit: 8916
+
+Spell.dbc:
+  - type: update
+    key: 52726 # rune of combusion, in
+    values:
+      SpellVisualID_1: 8916
+
+# rune of detonation, out
+SpellVisualKit.dbc:
+  - type: insert
+    # key: 695 #flamestrike
+    values:
+      ID: 8917
+      # WorldEffect: 4702 # 10y X
+      HeadEffect: 1544 #orb
+      # BaseEffect: 297 #flame
+
+      # HeadEffect: 401 #arcane hit
+      ChestEffect: 734 #flamewalk
+      # HeadEffect: 735 #flamewalk
+      BreathEffect: 735 #flamewalk
+      # BaseEffect: 1016 #flamewalk
+      BaseEffect: 168 #flamewalk
+      # CharProc_1: 13
+      # CharParamZero_1: 4066815.0
+      # CharParamZero_1: 3947775.0
+      # CharParamOne_1: 5.5 # hold time
+      # CharParamTwo_1: 0.5 # fade out time
+
+SpellVisual.dbc:
+  - type: copy
+    key: 2756
+    values:
+      ID: 8917
+      StateKit: 8917
+      # ImpactKit: 8920
+
+Spell.dbc:
+  - type: update
+    key: 52725 # rune of detonation, out
+    values:
+      SpellVisualID_1: 8917
+
+###################################
+
+
+### Broodcommander Axelus ################################
+# Burning Chains - replace generic icons with fiery chain links
+SpellIcon.dbc:
+  - type: insert
+    key: 3000
+    values:
+      ID: 3000
+      TextureFilename: Interface\Icons\Spell_BurningChains
+Spell.dbc:
+  - type: update
+    key: 47406 # searing chains (belt icon)
+    values:
+      SpellIconID: 3000
+###########################################
+
+### blackwing warlock #####################
+# rof provided in rain_of_fire.yaml
+###########################################
+
+### blackwing spellbinder #################
+# flamestrike provided in flamestrike.yaml
+###########################################

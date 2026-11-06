@@ -1,0 +1,9 @@
+{
+  "id": "197923926",
+  "tag": "Release",
+  "name": "SuperWoW 2.2",
+  "body": "### 16/07/2026: 2.2\r\n- More Improvements to NameplateMotion Smart Spread mode, added Compact Spread mode.\r\n- Refactored Quest ID & link functions to three distinct functions with more descriptive & less generic names, should solve most addon compatibility:\r\nGetQuestIDForLogIndex(questIndex); GetQuestLinkForLogIndex(questIndex); GetQuestLinkForID(questID)\r\n\r\n[Remember to update SuperAPI as well!](https://github.com/balakethelock/SuperAPI)\r\n\r\nFor more info:\r\nhttps://github.com/balakethelock/SuperWoW/wiki/Changelog\r\nhttps://github.com/balakethelock/SuperWoW/wiki/Features\r\n\r\nComing Soon: HD Text rendering! Support the project for exclusive access to behind the scenes news, sneak-peeks, and beta testing.\r\n<img width=\"467\" height=\"163\" alt=\"image\" src=\"https://github.com/user-attachments/assets/4e3194da-6081-4319-807d-f7076ce6bd68\" />\r\n\r\n[<img width=\"1200\" height=\"600\" alt=\"image\" src=\"https://github.com/user-attachments/assets/ad7d10f1-7bf7-437c-b7f8-84a8b89980d1\" />](https://ko-fi.com/balakesuperwow)\r\n",
+  "published": "2025-02-01T13:49:06Z",
+  "prerelease": false,
+  "url": "https://github.com/balakethelock/SuperWoW/releases/tag/Release"
+}

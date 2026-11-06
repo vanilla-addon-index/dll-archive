@@ -1,0 +1,33 @@
+{
+  "upstream": "https://octowow.st/git/octoadmin/LeviFix",
+  "source": {
+    "kind": "repository",
+    "host": "octowow.st",
+    "owner": "octoadmin",
+    "repo": "LeviFix",
+    "name": "LeviFix",
+    "url": "https://octowow.st/git/octoadmin/LeviFix",
+    "api": "https://octowow.st/git/api/v1/repos/octoadmin/LeviFix"
+  },
+  "commit": "72434e985715470aa01dcf2d0759da66d7844af3",
+  "sourceFiles": {
+    "levifix.dll": {
+      "sha256": "4059caa60e92536efaa988612565b64389a5497dd0505728d7e0414215d3f3ef",
+      "bytes": 48519
+    },
+    "LICENSE": {
+      "sha256": "2ce76ac7b12f4a551e724d3579192be2d2867b6ab1c10cdcee6fcea7d98fc0a4",
+      "bytes": 1077
+    },
+    "README.md": {
+      "sha256": "1d98ec2de68495b490ec664392c32b831c938465a042f7f3371ef150d5262d14",
+      "bytes": 6278
+    },
+    "SHA256SUMS": {
+      "sha256": "909ce8b080517c4870f36627c0b4a64c556a9418ed5156072ee2e67e2ccf785e",
+      "bytes": 78
+    }
+  },
+  "symlinks": {},
+  "releases": {}
+}

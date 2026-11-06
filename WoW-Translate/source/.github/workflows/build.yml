@@ -1,0 +1,144 @@
+name: Build WoWTranslate DLL
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'dll/**'
+      - '.github/workflows/build.yml'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  build:
+    # Pinned instead of windows-latest: the newer windows-latest image has
+    # had intermittent CMake/vswhere VS-detection failures
+    # ("could not find any instance of Visual Studio") on several repos.
+    # windows-2022 is the known-good image with a stable VS2022 install.
+    runs-on: windows-2022
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup CMake
+      uses: lukka/get-cmake@latest
+
+    # get-cmake only installs cmake.exe — it does NOT set up the MSVC
+    # environment, so CMake's VS generator can fail to auto-detect the
+    # installed Visual Studio. This explicitly runs vcvarsall.bat first.
+    - name: Setup MSVC environment
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x86  # 32-bit, matches the -A Win32 CMake config below
+
+    # libcurl (static, OpenSSL backend) is required by dll/CMakeLists.txt —
+    # see dll/include/curl_bridge.h for why (Schannel/WOW64 TLS fingerprint
+    # issue with the previous WinINet-based approach).
+    #
+    # Cloning vcpkg directly here (rather than lukka/run-vcpkg) since that
+    # action's manifest-mode requires a vcpkg.json baseline or an explicit
+    # vcpkgGitCommitId, neither of which this repo has. This clones vcpkg's
+    # master branch fresh each run - once you've confirmed a working build,
+    # consider pinning to a specific commit (git checkout <sha> below) for
+    # reproducibility, so a future upstream vcpkg change can't silently break
+    # this build.
+    - name: Setup vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
+        C:\vcpkg\bootstrap-vcpkg.bat
+      shell: cmd
+
+    # vcpkg builds OpenSSL/curl from source, which is the slow part of this
+    # workflow (5-10+ min uncached). Caching the installed packages here means
+    # only the first run (or a cache-key change) pays that cost.
+    - name: Cache vcpkg packages
+      uses: actions/cache@v4
+      with:
+        path: C:\vcpkg\installed
+        key: vcpkg-x86-windows-static-curl-openssl-${{ runner.os }}
+
+    - name: Install curl[openssl] (x86-windows-static)
+      run: C:\vcpkg\vcpkg install curl[openssl]:x86-windows-static
+      shell: cmd
+
+    - name: Configure CMake (32-bit)
+      working-directory: dll
+      run: |
+        mkdir build
+        cd build
+        cmake .. -G "Visual Studio 17 2022" -A Win32 `
+          -DCMAKE_TOOLCHAIN_FILE="C:\vcpkg\scripts\buildsystems\vcpkg.cmake" `
+          -DVCPKG_TARGET_TRIPLET=x86-windows-static
+
+    - name: Build Release
+      working-directory: dll/build
+      run: cmake --build . --config Release
+
+    # cacert.pem is required next to the DLL: the statically-linked OpenSSL
+    # backend (used to avoid the WOW64/Schannel TLS fingerprint issue - see
+    # dll/include/curl_bridge.h) has no access to the Windows certificate
+    # store, so it needs its own CA bundle or every HTTPS request fails cert
+    # verification. Fetched fresh each build so it stays current; this is the
+    # same file curl.se maintains for exactly this purpose (extracted from
+    # Mozilla's CA list).
+    - name: Fetch CA bundle for curl
+      run: Invoke-WebRequest -Uri "https://curl.se/ca/cacert.pem" -OutFile "dll/build/bin/Release/cacert.pem"
+
+    - name: List build output
+      working-directory: dll/build
+      run: |
+        echo "Build output:"
+        Get-ChildItem -Path bin/Release -Recurse
+
+    - name: Upload DLL artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: WoWTranslate-DLL
+        path: |
+          dll/build/bin/Release/WoWTranslate.dll
+          dll/build/bin/Release/cacert.pem
+        if-no-files-found: error
+
+    - name: Upload full addon package
+      uses: actions/upload-artifact@v4
+      with:
+        name: WoWTranslate-Full
+        path: |
+          dll/build/bin/Release/WoWTranslate.dll
+          dll/build/bin/Release/cacert.pem
+          Interface/AddOns/WoWTranslate/
+        if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Download DLL artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: WoWTranslate-DLL
+        path: release/
+
+    - name: Copy addon files
+      run: |
+        mkdir -p release/WoWTranslate
+        cp -r Interface/AddOns/WoWTranslate/* release/WoWTranslate/
+        ls -la release/
+
+    - name: Create release zip
+      working-directory: release
+      run: |
+        zip -r WoWTranslate-v0.1.zip WoWTranslate.dll cacert.pem WoWTranslate/
+
+    - name: Upload release zip
+      uses: actions/upload-artifact@v4
+      with:
+        name: WoWTranslate-Release
+        path: release/WoWTranslate-v0.1.zip
