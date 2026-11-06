@@ -110,23 +110,6 @@
           "error": null,
           "active": true,
           "license": "GPL-3.0"
-        },
-        {
-          "originalUrl": "https://octowow.st/git/lightblade/ClassicAPI",
-          "folder": "ClassicAPI--lightblade",
-          "source": {
-            "kind": "repository",
-            "host": "octowow.st",
-            "owner": "lightblade",
-            "repo": "ClassicAPI",
-            "name": "ClassicAPI",
-            "url": "https://octowow.st/git/lightblade/ClassicAPI",
-            "api": "https://octowow.st/git/api/v1/repos/lightblade/ClassicAPI"
-          },
-          "status": "mirrored",
-          "error": null,
-          "active": true,
-          "license": "LGPL"
         }
       ],
       "active": true,

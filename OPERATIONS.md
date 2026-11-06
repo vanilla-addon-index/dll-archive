@@ -32,7 +32,7 @@ GitHub Actions deliberately checks out LFS pointers rather than downloading all 
 
 ## Configuration
 
-`config.json` selects the catalogue, source overrides, extra companion repositories and private backup repository. `state/registry.json` maps stable site IDs and upstream URLs to persistent folders; renaming an entry does not move its backup. `state/objects.json` records unique content hashes and cumulative logical bytes. `mirror.json` and `SHA256SUMS` record component provenance and integrity.
+`config.json` selects the catalogue, source overrides, extra companion repositories, intentionally excluded sources and private backup repository. `excludedSources` is keyed by stable site ID; an excluded upstream is removed from the registry and skipped even while it remains in the published catalogue. Remove its existing folder when applying an exclusion. `state/registry.json` maps stable site IDs and upstream URLs to persistent folders; renaming an entry does not move its backup. `state/objects.json` records unique content hashes and cumulative logical bytes. `mirror.json` and `SHA256SUMS` record component provenance and integrity.
 
 PerfBoost's individually linked backup files are scoped file mirrors rather than copies of the entire unrelated backup repository. No1600x1200 is scoped to its DLL. SuperAPI and PandaConquest Companion are explicitly included with their parent entries. New source hosts or unusual URL formats produce an unsupported status until a provider or override is added.
 

@@ -23,7 +23,9 @@ export function reconcile(registry,rows,config){
   let e=entries.find(e=>e.id===entry.id);
   if(!e){e={id:entry.id,name:entry.name,folder:allocate(entry.name,folders,entry.id),components:[]};entries.push(e);}
   e.name=entry.name;e.active=true;e.kind=entry.category;e.site=`https://vanilla-addon-index.github.io/dll/${entry.slug}`;
-  const urls=[...new Set([...entry.versions.map(v=>v.url),...(config.extraSources?.[String(entry.id)]??[])])];
+  const excluded=new Set(config.excludedSources?.[String(entry.id)]??[]);
+  e.components=e.components.filter(c=>!excluded.has(c.originalUrl));
+  const urls=[...new Set([...entry.versions.map(v=>v.url),...(config.extraSources?.[String(entry.id)]??[])])].filter(url=>!excluded.has(url));
   const names=new Set(['source','releases','readme.md','mirror.json','sha256sums',...e.components.map(c=>c.folder.toLowerCase())]);
   for(const url of urls){
    let c=e.components.find(c=>c.originalUrl===url);

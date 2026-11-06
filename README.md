@@ -8,7 +8,7 @@ See [OPERATIONS.md](OPERATIONS.md) for backup, schedules, permissions and recove
 |---|---|---:|---|
 | [LockPort](LockPort/) | DLL | 3 | mirrored |
 | [WoW-Translate](WoW-Translate/) | DLL | 1 | mirrored |
-| [ClassicAPI](ClassicAPI/) | DLL | 2 | mirrored |
+| [ClassicAPI](ClassicAPI/) | DLL | 1 | mirrored |
 | [HearthDB](HearthDB/) | DLL | 1 | mirrored |
 | [DmorphOcto](DmorphOcto/) | DLL | 1 | mirrored |
 | [OctoBus](OctoBus/) | DLL | 1 | mirrored |

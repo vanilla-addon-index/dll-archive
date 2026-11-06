@@ -25,6 +25,11 @@
       "https://github.com/Tom75VN/PandaConquest-Companion"
     ]
   },
+  "excludedSources": {
+    "1007": [
+      "https://octowow.st/git/lightblade/ClassicAPI"
+    ]
+  },
   "permissions": {},
   "releaseScope": "latest"
 }
