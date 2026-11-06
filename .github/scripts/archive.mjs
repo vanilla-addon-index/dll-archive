@@ -94,18 +94,12 @@ export async function syncComponent(root,e,c,config,objects,provider=upstream){
  const originalObjects={...objects};let checkout,stage;
  const dest=componentDir(root,e,c);const previous=await readJson(path.join(dest,'mirror.json'),{});
  try{
-  const permission=config.permissions?.[c.originalUrl]??config.permissions?.[c.source?.url]??{};
   if(!c.source)throw new Error(c.error??'Unsupported source');
   let state={...previous,upstream:c.originalUrl,source:c.source};
   if(c.source.kind==='repository'){
    const info=await provider.sourceInfo(c.source);
    checkout=await provider.temporaryCheckout(c.source);
-   const docs=await rootDocs(checkout.root);const license=detectLicense(docs,info.license);
-   // A project-wide license must not override an explicit third-party exception.
-   const mixed=Object.entries(docs).some(([n,t])=>/third.party|project.identity/i.test(n)&&/does not override|not automatically|not covered|separate permission|no redistribution|restricted|retain their own/i.test(t));
-   const permitted=permission.source!==false && (config.personalBackup || permission.source===true || license&&!mixed);
-   if(!permitted){c.status='needs-permission';c.error=permission.reason??(mixed?'Third-party redistribution terms need review':'No clear redistribution license found');c.license=license;return;}
-   c.license=license??permission.license??'Unspecified upstream license (private personal backup)';
+   const docs=await rootDocs(checkout.root);c.license=detectLicense(docs,info.license)??'Unspecified';
    const list=selectReleases(await provider.releases(c.source),config.releaseScope);
    stage=await fs.mkdtemp(path.join(os.tmpdir(),'dll-mirror-stage-'));const work=path.join(stage,'component');
    if(await exists(dest))await fs.cp(dest,work,{recursive:true});else await fs.mkdir(work,{recursive:true});
@@ -114,44 +108,40 @@ export async function syncComponent(root,e,c,config,objects,provider=upstream){
     const snap=await copySource(checkout.root,path.join(work,'source'),config,objects);
     state={...state,commit:checkout.commit,sourceFiles:snap.files,symlinks:{...snap.symlinks,...checkout.symlinks}};
    }
-   const releasePermission=permission.releases!==false;
-   if(releasePermission){
-    state.releases??={};
-    if(config.releaseScope==='latest' && list.length){
-      const selected=new Set(list.map(r=>r.id));
-      for(const [id,old] of Object.entries(state.releases))if(!selected.has(id)){
-       await fs.rm(path.join(work,'releases',old.folder),{recursive:true,force:true});delete state.releases[id];
-      }
+   state.releases??={};
+   if(config.releaseScope==='latest' && list.length){
+     const selected=new Set(list.map(r=>r.id));
+     for(const [id,old] of Object.entries(state.releases))if(!selected.has(id)){
+      await fs.rm(path.join(work,'releases',old.folder),{recursive:true,force:true});delete state.releases[id];
      }
-     let releaseNumber=0;
-    for(const release of list){
-     if(list.length>10&&releaseNumber++%10===0)console.log(`  releases ${releaseNumber}/${list.length}: ${release.tag}`);
-     const folder=upstream.safeName(release.tag)+'--'+upstream.safeName(release.id);const dir=path.join(work,'releases',folder);
-     let saved=state.releases[release.id]??{tag:release.tag,folder,assets:{}};
-     const sourceTemp=path.join(stage,'release-source');const result=await download(release.sourceUrl,sourceTemp,config,objects,provider);
-     if(saved.source&&saved.source.sha256!==result.sha256){const revision=`releases/${folder}/revisions/${saved.source.sha256}/upstream-source.tar.gz`;await fs.mkdir(path.dirname(path.join(work,revision)),{recursive:true});await fs.copyFile(path.join(work,saved.source.path),path.join(work,revision));saved.revisions??=[];if(!saved.revisions.some(r=>r.path===revision))saved.revisions.push({...saved.source,path:revision});}
-     await fs.mkdir(dir,{recursive:true});await fs.copyFile(sourceTemp,path.join(dir,'upstream-source.tar.gz'));
-     saved.source={...result,path:`releases/${folder}/upstream-source.tar.gz`,url:release.sourceUrl};
-     for(const asset of release.assets){
-      const name=upstream.safeName(asset.name);if(name!==asset.name)throw new Error('Unsafe release asset filename');
-      const old=saved.assets[asset.id];
-      // Undigested assets are fetched weekly too: timestamps and sizes alone cannot detect replacement.
-      if(old&&asset.digest===`sha256:${old.sha256}`&&old.name===asset.name)continue;
-      const temp=path.join(stage,'asset');const record=await download(asset.url,temp,config,objects,provider);
-      if(asset.digest?.startsWith('sha256:')&&asset.digest!==`sha256:${record.sha256}`)throw new Error('Upstream release digest mismatch');
-      if(old&&(old.sha256!==record.sha256||old.name!==asset.name)){const oldFile=path.join(work,old.path);if(await exists(oldFile)){const revision=`releases/${folder}/revisions/${old.sha256}/${old.name}`;await fs.mkdir(path.dirname(path.join(work,revision)),{recursive:true});await fs.copyFile(oldFile,path.join(work,revision));await fs.rm(oldFile);saved.revisions??=[];if(!saved.revisions.some(r=>r.path===revision))saved.revisions.push({...old,path:revision});}}
-      const relative=`releases/${folder}/assets/${name}`;
-      if(Object.entries(saved.assets).some(([id,a])=>id!==asset.id&&a.path===relative&&a.sha256!==record.sha256))throw new Error('Release assets collide by filename');
-      await fs.mkdir(path.dirname(path.join(work,relative)),{recursive:true});await fs.copyFile(temp,path.join(work,relative));
-      saved.assets[asset.id]={...record,id:asset.id,name:asset.name,url:asset.url,path:relative};
-     }
-     const metadata={id:release.id,tag:release.tag,name:release.name,body:release.body,published:release.published,prerelease:release.prerelease,url:release.url};
-     await write(path.join(dir,'release.json'),json(metadata));state.releases[release.id]=saved;
-    }
    }
-   c.status=releasePermission?'mirrored':'source-only';c.error=releasePermission?null:permission.reason??'Release redistribution needs permission';
+   let releaseNumber=0;
+   for(const release of list){
+    if(list.length>10&&releaseNumber++%10===0)console.log(`  releases ${releaseNumber}/${list.length}: ${release.tag}`);
+    const folder=upstream.safeName(release.tag)+'--'+upstream.safeName(release.id);const dir=path.join(work,'releases',folder);
+    let saved=state.releases[release.id]??{tag:release.tag,folder,assets:{}};
+    const sourceTemp=path.join(stage,'release-source');const result=await download(release.sourceUrl,sourceTemp,config,objects,provider);
+    if(saved.source&&saved.source.sha256!==result.sha256){const revision=`releases/${folder}/revisions/${saved.source.sha256}/upstream-source.tar.gz`;await fs.mkdir(path.dirname(path.join(work,revision)),{recursive:true});await fs.copyFile(path.join(work,saved.source.path),path.join(work,revision));saved.revisions??=[];if(!saved.revisions.some(r=>r.path===revision))saved.revisions.push({...saved.source,path:revision});}
+    await fs.mkdir(dir,{recursive:true});await fs.copyFile(sourceTemp,path.join(dir,'upstream-source.tar.gz'));
+    saved.source={...result,path:`releases/${folder}/upstream-source.tar.gz`,url:release.sourceUrl};
+    for(const asset of release.assets){
+     const name=upstream.safeName(asset.name);if(name!==asset.name)throw new Error('Unsafe release asset filename');
+     const old=saved.assets[asset.id];
+     // Undigested assets are fetched weekly too: timestamps and sizes alone cannot detect replacement.
+     if(old&&asset.digest===`sha256:${old.sha256}`&&old.name===asset.name)continue;
+     const temp=path.join(stage,'asset');const record=await download(asset.url,temp,config,objects,provider);
+     if(asset.digest?.startsWith('sha256:')&&asset.digest!==`sha256:${record.sha256}`)throw new Error('Upstream release digest mismatch');
+     if(old&&(old.sha256!==record.sha256||old.name!==asset.name)){const oldFile=path.join(work,old.path);if(await exists(oldFile)){const revision=`releases/${folder}/revisions/${old.sha256}/${old.name}`;await fs.mkdir(path.dirname(path.join(work,revision)),{recursive:true});await fs.copyFile(oldFile,path.join(work,revision));await fs.rm(oldFile);saved.revisions??=[];if(!saved.revisions.some(r=>r.path===revision))saved.revisions.push({...old,path:revision});}}
+     const relative=`releases/${folder}/assets/${name}`;
+     if(Object.entries(saved.assets).some(([id,a])=>id!==asset.id&&a.path===relative&&a.sha256!==record.sha256))throw new Error('Release assets collide by filename');
+     await fs.mkdir(path.dirname(path.join(work,relative)),{recursive:true});await fs.copyFile(temp,path.join(work,relative));
+     saved.assets[asset.id]={...record,id:asset.id,name:asset.name,url:asset.url,path:relative};
+    }
+    const metadata={id:release.id,tag:release.tag,name:release.name,body:release.body,published:release.published,prerelease:release.prerelease,url:release.url};
+    await write(path.join(dir,'release.json'),json(metadata));state.releases[release.id]=saved;
+   }
+   c.status='mirrored';c.error=null;
   }else{
-   if(permission.source===false || !config.personalBackup && permission.source!==true){c.status='needs-permission';c.error=permission.reason??'Backup file redistribution permission needs review';return;}
    stage=await fs.mkdtemp(path.join(os.tmpdir(),'dll-mirror-stage-'));const work=path.join(stage,'component');
    if(await exists(dest))await fs.cp(dest,work,{recursive:true});else await fs.mkdir(work,{recursive:true});
    const temp=path.join(stage,'file');const record=await download(c.source.url,temp,config,objects,provider);const relative=`releases/files/${c.source.filename}`;
@@ -171,7 +161,7 @@ export async function syncComponent(root,e,c,config,objects,provider=upstream){
 }
 
 export async function render(root,registry){
- const index=['# DLL archive','','Backups of the Vanilla Addon Index client-mod collection. Current source snapshots and the latest published release for each project; upstream Git history is not imported.','','See [OPERATIONS.md](OPERATIONS.md) for backup, schedules, permissions and recovery.','','| Entry | Kind | Components | Status |','|---|---|---:|---|'];
+ const index=['# DLL archive','','Mirrored source snapshots and the latest published releases for projects in the Vanilla Addon Index client-mod collection. Upstream Git history is not imported.','','See [OPERATIONS.md](OPERATIONS.md) for backup, schedules and recovery.','','| Entry | Kind | Components | Status |','|---|---|---:|---|'];
  for(const e of registry.entries){
   const lines=[`# ${e.name}`,'',`[Original listing](${e.site}) · ${e.kind} · ${e.active?'Listed':'No longer listed; archive retained'}`,'','| Component | Upstream | Status |','|---|---|---|'];
   for(const c of e.components){const label=c.folder||e.name;lines.push(`| ${label} | ${c.originalUrl} | ${c.status}${c.error?' — '+c.error.replaceAll('|','/'):''} |`);}
@@ -179,7 +169,7 @@ export async function render(root,registry){
   await write(path.join(root,e.folder,'README.md'),lines.join('\n'));
   const statuses=[...new Set(e.components.map(c=>c.status))].join(', ');index.push(`| [${e.name}](${encodeURI(e.folder)}/) | ${e.kind} | ${e.components.length} | ${statuses} |`);
  }
- index.push('','This repository’s automation is MIT licensed. Upstream files keep their own licenses. Metadata-only folders need permission or provider support before content can be published.','');
+ index.push('','This repository’s automation is MIT licensed. Mirrored source and release files retain their upstream license notices when provided.','');
  await write(path.join(root,'README.md'),index.join('\n'));
 }
 
@@ -195,12 +185,6 @@ async function main(){
  const root=process.cwd(),mode=process.argv[2];if(!['discover','update','verify'].includes(mode))throw new Error('Use discover, update or verify');
  const config=await readJson(path.join(root,'config.json'));let registry=await readJson(path.join(root,'.github/state/registry.json'),{version:1,entries:[]});
  if(mode==='verify'){console.log(`Verified ${await verify(root,registry)} archived files.`);return;}
- if(config.personalBackup){
-  if(!/^[\w.-]+\/[\w.-]+$/.test(config.repository??''))throw new Error('Set the archive repository for the private backup guard');
-  if(process.env.GITHUB_REPOSITORY&&process.env.GITHUB_REPOSITORY!==config.repository)throw new Error('Personal backup workflows must run in the configured private repository');
-  const repo=await upstream.request(`https://api.github.com/repos/${config.repository}`,{json:true});
-  if(repo.private!==true)throw new Error('Personal backup import requires a PRIVATE repository');
- }
  const rows=await upstream.request(config.catalogue,{json:true,maxBytes:30*1024*1024});registry=reconcile(registry,rows,config);
  const objects=await readJson(path.join(root,'.github/state/objects.json'),{});let failures=0;
  for(const e of registry.entries)for(const c of e.components){
@@ -217,7 +201,7 @@ async function main(){
  if(process.env.ARCHIVE_TRACK_LARGE==='1'){
   for(const e of registry.entries){async function walk(dir){for(const ent of await fs.readdir(dir,{withFileTypes:true})){const p=path.join(dir,ent.name);if(ent.isDirectory())await walk(p);else if((await fs.stat(p)).size>=50*1024*1024)execFileSync('git',['lfs','track','--filename',path.relative(root,p).split(path.sep).join('/')],{cwd:root});}}await walk(path.join(root,e.folder));}
  }
- const summary=`Archive: ${registry.entries.length} entries; ${verified} verified files; ${registry.entries.flatMap(e=>e.components).filter(c=>c.status==='needs-permission').length} permission reviews; ${failures} fetch errors.\n`;
+ const summary=`Archive: ${registry.entries.length} entries; ${verified} verified files; ${failures} fetch errors.\n`;
  if(process.env.GITHUB_STEP_SUMMARY)await fs.appendFile(process.env.GITHUB_STEP_SUMMARY,summary);
  // Commit partial successes in the workflow, then report a failing run for actual fetch errors.
  if(failures)process.exitCode=2;

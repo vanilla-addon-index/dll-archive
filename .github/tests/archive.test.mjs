@@ -6,7 +6,7 @@ import path from 'node:path';
 import {safeName,parseSource,httpsUrl} from '../scripts/providers.mjs';
 import {selectReleases,reconcile,syncComponent,verify,hash,detectLicense} from '../scripts/archive.mjs';
 
-const config={personalBackup:true,maxArchiveBytes:10000000,maxFileBytes:1000000,overrides:{},extraSources:{}};
+const config={maxArchiveBytes:10000000,maxFileBytes:1000000,overrides:{},extraSources:{}};
 const rows=[{id:1,name:'PerfBoost',slug:'perfboost',category:'DLL',entry_type:'dll',versions:[{url:'https://github.com/example/perf_boost'},{url:'https://github.com/example/PerfBoostSettings'}]}];
 async function fixture(t){const root=await fs.mkdtemp(path.join(os.tmpdir(),'archive-test-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));return root;}
 function provider(){
@@ -54,9 +54,9 @@ test('checksums detect tampering; an LFS pointer can be verified without downloa
  process.env.ARCHIVE_ALLOW_LFS_POINTERS='1';try{assert.equal(await verify(root,{entries:[{...e,components:[c]}]}),3);}finally{delete process.env.ARCHIVE_ALLOW_LFS_POINTERS;}
 });
 
-test('unlicensed public mirrors are metadata-only; private backup mode is explicit',async t=>{
+test('unlicensed upstream repositories are mirrored with unspecified license metadata',async t=>{
  const root=await fixture(t),r=reconcile({entries:[]},rows,config),e=r.entries[0],c=e.components[0];const {api}=provider();api.sourceInfo=async()=>({license:null});
- await syncComponent(root,e,c,{...config,personalBackup:false},{},api);assert.equal(c.status,'needs-permission');
+ await syncComponent(root,e,c,config,{},api);assert.equal(c.status,'mirrored');assert.equal(c.license,'Unspecified');
  assert.equal(detectLicense({'LICENSE':'This program is licensed for personal use only.'},null),null);
  await syncComponent(root,e,c,config,{},api);assert.equal(c.status,'mirrored');
 });

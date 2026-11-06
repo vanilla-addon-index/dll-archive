@@ -1,8 +1,8 @@
 # Using this archive
 
-This is a **private personal backup**, organized by the entries in the site's DLL collection. Related DLLs, settings addons and alternative repositories have component subfolders. It contains current upstream source files and the latest published release for each project, not upstream Git history. Original READMEs, source files and license notices are kept under `source/`. Upstream `.gitattributes` and `.gitignore` files are preserved with an added `.upstream` suffix so their filter and ignore rules cannot alter or omit backup files. Rename them back when restoring an upstream working tree. Release assets keep their original filenames under `releases/<tag>--<release-id>/assets/`. Each release also has its notes and a source archive for that release tag.
+This archive is organized by entries in the site's DLL collection. Related DLLs, settings addons and alternative repositories have component subfolders. It contains current upstream source files and the latest published release for each project, not upstream Git history. Original READMEs, source files and license notices are kept under `source/`. Upstream `.gitattributes` and `.gitignore` files are preserved with an added `.upstream` suffix so their filter and ignore rules cannot alter or omit archive files. Rename them back when restoring an upstream working tree. Release assets keep their original filenames under `releases/<tag>--<release-id>/assets/`. Each release also has its notes and a source archive for that release tag.
 
-The archive automation is MIT licensed. That does not relicense the mirrored projects. Keep this repository and any personal-backup copies private. The importer checks repository visibility before copying anything in personal-backup mode. Do not change this repository to public without a separate redistribution review.
+The MIT license in this repository applies only to its automation; it does not relicense mirrored projects. Source files and releases remain attributed to their upstream projects, and upstream license notices are kept when present. If an upstream maintainer asks for a reasonable change or removal, respond promptly, stop mirroring the source, and remove its archived files. If requested, remove those files from Git history as well.
 
 The newest stable release is selected by publication date; projects with only prereleases use their newest prerelease. All assets of that release are retained. Older release folders are replaced after a successful update; previously committed versions remain recoverable from Git and LFS history. Failed updates preserve the last good copy.
 
@@ -21,7 +21,7 @@ Install Git and Git LFS first. Binary files and release archives use LFS; a norm
 git clone --mirror https://github.com/vanilla-addon-index/dll-archive.git
 cd dll-archive.git
 git lfs fetch --all
-git remote add local YOUR_PRIVATE_LOCAL_GIT_URL
+git remote add local YOUR_LOCAL_GIT_URL
 git push --mirror local
 git lfs push --all local
 ```
@@ -32,7 +32,7 @@ GitHub Actions deliberately checks out LFS pointers rather than downloading all 
 
 ## Configuration
 
-`config.json` selects the catalogue, source overrides, extra companion repositories, intentionally excluded sources and private backup repository. `excludedSources` is keyed by stable site ID; an excluded upstream is removed from the registry and skipped even while it remains in the published catalogue. Remove its existing folder when applying an exclusion. Automation code, tests and registry data live under `.github/`; `.github/state/registry.json` maps stable site IDs and upstream URLs to persistent folders, while `.github/state/objects.json` records unique content hashes and cumulative logical bytes. `mirror.json` and `SHA256SUMS` record component provenance and integrity.
+`config.json` selects the catalogue, source overrides, extra companion repositories and intentionally excluded sources. `excludedSources` is keyed by stable site ID; an excluded upstream is removed from the registry and skipped even while it remains in the published catalogue. Remove its existing folder when applying an exclusion. Automation code, tests and registry data live under `.github/`; `.github/state/registry.json` maps stable site IDs and upstream URLs to persistent folders, while `.github/state/objects.json` records unique content hashes and cumulative logical bytes. `mirror.json` and `SHA256SUMS` record component provenance and integrity.
 
 PerfBoost's individually linked backup files are scoped file mirrors rather than copies of the entire unrelated backup repository. No1600x1200 is scoped to its DLL. SuperAPI and PandaConquest Companion are explicitly included with their parent entries. New source hosts or unusual URL formats produce an unsupported status until a provider or override is added.
 
@@ -49,6 +49,6 @@ npm run update
 npm run verify
 ```
 
-The scripts download public upstream repositories anonymously through Git; the token is used only for GitHub API requests, including the archive privacy check. Upstream build scripts and workflows are never run. Submodule transports are restricted; source symlinks are stored as inert link-text files, with their original targets recorded in `mirror.json` for deliberate restoration. Missing source or assets are reported, never invented or rebuilt.
+The scripts download public upstream repositories anonymously through Git; GitHub tokens are used only for API requests and are not passed to upstream Git processes. Upstream build scripts and workflows are never run. Submodule transports are restricted; source symlinks are stored as inert link-text files, with their original targets recorded in `mirror.json` for deliberate restoration. Missing source or assets are reported, never invented or rebuilt.
 
-To retry a single failed mirror, use either workflow (discovery retries errors). To approve a public mirror outside personal-backup mode, record explicit source/release permissions and evidence under `permissions` in `config.json`. Do not use that as a substitute for upstream terms.
+To retry a single failed mirror, use either workflow (discovery retries errors). To stop mirroring a source, add it under `excludedSources` in `config.json`; the next archive run removes its current snapshot from the generated archive.

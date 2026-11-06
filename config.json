@@ -1,6 +1,4 @@
 {
-  "personalBackup": true,
-  "repository": "vanilla-addon-index/dll-archive",
   "catalogue": "https://raw.githubusercontent.com/vanilla-addon-index/vanilla-addon-index.github.io/snapshot/addons.json",
   "maxArchiveBytes": 8589934592,
   "maxFileBytes": 2147483648,
@@ -30,6 +28,5 @@
       "https://octowow.st/git/lightblade/ClassicAPI"
     ]
   },
-  "permissions": {},
   "releaseScope": "latest"
 }

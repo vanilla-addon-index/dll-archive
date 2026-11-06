@@ -1,8 +1,8 @@
 # DLL archive
 
-Backups of the Vanilla Addon Index client-mod collection. Current source snapshots and the latest published release for each project; upstream Git history is not imported.
+Mirrored source snapshots and the latest published releases for projects in the Vanilla Addon Index client-mod collection. Upstream Git history is not imported.
 
-See [OPERATIONS.md](OPERATIONS.md) for backup, schedules, permissions and recovery.
+See [OPERATIONS.md](OPERATIONS.md) for backup, schedules and recovery.
 
 | Entry | Kind | Components | Status |
 |---|---|---:|---|
@@ -33,4 +33,4 @@ See [OPERATIONS.md](OPERATIONS.md) for backup, schedules, permissions and recove
 | [GlueXML](GlueXML/) | MPQ | 1 | mirrored |
 | [RaidVisuals-OctoWoW](RaidVisuals-OctoWoW/) | MPQ | 1 | mirrored |
 
-This repository’s automation is MIT licensed. Upstream files keep their own licenses. Metadata-only folders need permission or provider support before content can be published.
+The MIT license in this repository applies to its automation only. Mirrored source and release files remain attributed to their upstream projects and retain their upstream license notices when provided.
