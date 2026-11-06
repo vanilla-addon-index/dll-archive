@@ -6,7 +6,7 @@ The MIT license in this repository applies only to its automation; it does not r
 
 ## Report a content concern
 
-Use the [content concern issue form](https://github.com/vanilla-addon-index/dll-archive/issues/new?template=content-concern.yml) to report a concern about mirrored files, attribution, or license information. The reporter only needs to identify the project, point to the affected archive location, and explain the concern; legal wording and proof are not required. Issues are public, so do not include private contact details. Review reports promptly and make reasonable corrections or removals quickly.
+Use the [issue template chooser](https://github.com/vanilla-addon-index/dll-archive/issues/new/choose) and select **Content or licensing concern** to report a concern about mirrored files, attribution, or license information. The reporter only needs to identify the project, point to the affected archive location, and explain the concern; legal wording and proof are not required. Issues are public, so do not include private contact details. Review reports promptly and make reasonable corrections or removals quickly.
 
 The newest stable release is selected by publication date; projects with only prereleases use their newest prerelease. All assets of that release are retained. Older release folders are replaced after a successful update; previously committed versions remain recoverable from Git and LFS history. Failed updates preserve the last good copy.
 

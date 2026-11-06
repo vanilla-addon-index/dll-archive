@@ -2,7 +2,7 @@
 
 Mirrored source snapshots and the latest published releases for projects in the Vanilla Addon Index client-mod collection. Upstream Git history is not imported.
 
-Have a concern about mirrored content or attribution? [Open a report](https://github.com/vanilla-addon-index/dll-archive/issues/new?template=content-concern.yml). No legal wording or proof is required.
+Have a concern about mirrored content or attribution? [Choose the content concern form](https://github.com/vanilla-addon-index/dll-archive/issues/new/choose).
 
 See [OPERATIONS.md](OPERATIONS.md) for backup, schedules and recovery.
 
