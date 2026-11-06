@@ -1,0 +1,45 @@
+name: Content or licensing concern
+description: Report mirrored content, attribution, or license information that needs attention.
+title: "[Content concern] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        You do not need legal wording or proof to report a concern. Tell us what looks wrong and what action you are requesting; we will review it promptly.
+
+        Issues are public. Please do not include private contact details or other sensitive information.
+  - type: input
+    id: project
+    attributes:
+      label: Project or upstream repository
+      description: Name the project and, if possible, link to its original repository.
+      placeholder: https://github.com/example/project
+    validations:
+      required: true
+  - type: input
+    id: archive_location
+    attributes:
+      label: Where is the affected content in this archive?
+      description: Paste an archive URL or give the folder and file path.
+      placeholder: https://github.com/vanilla-addon-index/dll-archive/tree/main/Project
+    validations:
+      required: true
+  - type: textarea
+    id: concern
+    attributes:
+      label: What should we know?
+      description: Explain what appears incorrect or what needs attention. Links or relevant context are helpful but optional.
+      placeholder: Describe the concern in your own words.
+    validations:
+      required: true
+  - type: dropdown
+    id: requested_action
+    attributes:
+      label: What would you like us to do?
+      options:
+        - Remove the archived content
+        - Correct attribution or license information
+        - Stop future updates of this project
+        - Something else; I will explain above
+    validations:
+      required: false

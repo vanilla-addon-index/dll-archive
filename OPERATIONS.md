@@ -4,6 +4,10 @@ This archive is organized by entries in the site's DLL collection. Related DLLs,
 
 The MIT license in this repository applies only to its automation; it does not relicense mirrored projects. Source files and releases remain attributed to their upstream projects, and upstream license notices are kept when present. If an upstream maintainer asks for a reasonable change or removal, respond promptly, stop mirroring the source, and remove its archived files. If requested, remove those files from Git history as well.
 
+## Report a content concern
+
+Use the [content concern issue form](https://github.com/vanilla-addon-index/dll-archive/issues/new?template=content-concern.yml) to report a concern about mirrored files, attribution, or license information. The reporter only needs to identify the project, point to the affected archive location, and explain the concern; legal wording and proof are not required. Issues are public, so do not include private contact details. Review reports promptly and make reasonable corrections or removals quickly.
+
 The newest stable release is selected by publication date; projects with only prereleases use their newest prerelease. All assets of that release are retained. Older release folders are replaced after a successful update; previously committed versions remain recoverable from Git and LFS history. Failed updates preserve the last good copy.
 
 ## Automatic checks

@@ -161,7 +161,7 @@ export async function syncComponent(root,e,c,config,objects,provider=upstream){
 }
 
 export async function render(root,registry){
- const index=['# DLL archive','','Mirrored source snapshots and the latest published releases for projects in the Vanilla Addon Index client-mod collection. Upstream Git history is not imported.','','See [OPERATIONS.md](OPERATIONS.md) for backup, schedules and recovery.','','| Entry | Kind | Components | Status |','|---|---|---:|---|'];
+ const index=['# DLL archive','','Mirrored source snapshots and the latest published releases for projects in the Vanilla Addon Index client-mod collection. Upstream Git history is not imported.','','Have a concern about mirrored content or attribution? [Open a report](https://github.com/vanilla-addon-index/dll-archive/issues/new?template=content-concern.yml). No legal wording or proof is required.','','See [OPERATIONS.md](OPERATIONS.md) for backup, schedules and recovery.','','| Entry | Kind | Components | Status |','|---|---|---:|---|'];
  for(const e of registry.entries){
   const lines=[`# ${e.name}`,'',`[Original listing](${e.site}) · ${e.kind} · ${e.active?'Listed':'No longer listed; archive retained'}`,'','| Component | Upstream | Status |','|---|---|---|'];
   for(const c of e.components){const label=c.folder||e.name;lines.push(`| ${label} | ${c.originalUrl} | ${c.status}${c.error?' — '+c.error.replaceAll('|','/'):''} |`);}
