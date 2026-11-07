@@ -35,4 +35,4 @@ See [OPERATIONS.md](OPERATIONS.md) for backup, schedules and recovery.
 | [GlueXML](GlueXML/) | MPQ | 1 | mirrored |
 | [RaidVisuals-OctoWoW](RaidVisuals-OctoWoW/) | MPQ | 1 | mirrored |
 
-The MIT license in this repository applies to its automation only. Mirrored source and release files remain attributed to their upstream projects and retain their upstream license notices when provided.
+This repository’s automation is MIT licensed. Mirrored source and release files retain their upstream license notices when provided.
