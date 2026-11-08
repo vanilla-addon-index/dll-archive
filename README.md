@@ -16,7 +16,7 @@ See [OPERATIONS.md](OPERATIONS.md) for backup, schedules and recovery.
 | [OctoBus](OctoBus/) | DLL | 1 | mirrored |
 | [PandaConquest](PandaConquest/) | DLL | 2 | mirrored |
 | [Octo-TotemCircles](Octo-TotemCircles/) | DLL | 1 | mirrored |
-| [VanillaFixes](VanillaFixes/) | Util | 1 | mirrored |
+| [VanillaFixes](VanillaFixes/) | Util | 1 | error |
 | [DXVK](DXVK/) | DLL | 1 | mirrored |
 | [Vanilla Tweaks](Vanilla%20Tweaks/) | Util | 1 | mirrored |
 | [VanillaHelpers](VanillaHelpers/) | DLL | 1 | mirrored |
@@ -26,7 +26,7 @@ See [OPERATIONS.md](OPERATIONS.md) for backup, schedules and recovery.
 | [AuctionQueryThrottle](AuctionQueryThrottle/) | DLL | 1 | mirrored |
 | [Nampower](Nampower/) | DLL | 2 | mirrored |
 | [No1600x1200](No1600x1200/) | DLL | 1 | mirrored |
-| [VanillaMultiMonitorFix](VanillaMultiMonitorFix/) | DLL | 1 | mirrored |
+| [VanillaMultiMonitorFix](VanillaMultiMonitorFix/) | DLL | 1 | error |
 | [Interact](Interact/) | DLL | 1 | mirrored |
 | [LeviFix](LeviFix/) | DLL | 1 | mirrored |
 | [WeirdUtils](WeirdUtils/) | DLL | 1 | mirrored |

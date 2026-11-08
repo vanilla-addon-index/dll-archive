@@ -9,7 +9,7 @@
     "url": "https://octowow.st/git/veber01/Octo-TotemCircles",
     "api": "https://octowow.st/git/api/v1/repos/veber01/Octo-TotemCircles"
   },
-  "commit": "fcce8c33c42ecc3409e6709932430d01a2dc5deb",
+  "commit": "0b68f6deea6388bc28aa4618e2698c6016e0452a",
   "sourceFiles": {
     ".gitattributes.upstream": {
       "sha256": "1a1dbe176bc233b499d35a57db7513f2941c99ab9759f177830c9149be99005b",
@@ -20,16 +20,20 @@
       "bytes": 498
     },
     "addon/TotemCircles/TotemCircles.lua": {
-      "sha256": "1fe4e3094856eee16f0bc67d86aaf73714aba82fa9a476cb4cb009dd41ddc400",
-      "bytes": 14939
+      "sha256": "b2734c41cdd7d3bc247e024ffee696e8d4673d4d4950ed82b7db8938c9d98b21",
+      "bytes": 16258
     },
     "addon/TotemCircles/TotemCircles.toc": {
-      "sha256": "f9fe627c9548d574cf358f079a9e5d5780e38dba0525d3302848ed228a966e6f",
-      "bytes": 226
+      "sha256": "42c4ff456af647a3bd0bff330f520b193df8f0992f7870b90a38ffd5f72dfaaf",
+      "bytes": 250
+    },
+    "addon/TotemCircles/TotemCirclesOptions.lua": {
+      "sha256": "53080a39ed8d84a36c0cf765c471aaa3f6688604c1123b30199956b0bdf753fb",
+      "bytes": 17088
     },
     "CHANGELOG.md": {
-      "sha256": "311bc54f18d0d94b24d2cdc96d991304c05ddf70fb38809d5d2ca4bcf61034ee",
-      "bytes": 1241
+      "sha256": "fa6a278c3796940cdf4235fae7251b0c934e803ee68aa7bf94cee0721a08c132",
+      "bytes": 1471
     },
     "CMakeLists.txt": {
       "sha256": "c75ce30d5a584989ca147946d13a16bcc9487ef1694006e7528429e43d86b754",
@@ -62,24 +66,24 @@
   },
   "symlinks": {},
   "releases": {
-    "752": {
-      "tag": "v0.4.9b",
-      "folder": "v0.4.9b--752",
+    "755": {
+      "tag": "v0.5",
+      "folder": "v0.5--755",
       "assets": {
-        "95": {
-          "sha256": "11346906c5e1a3fb677eebca46b250e712bc26247ddf479ffd28f4511d443113",
-          "bytes": 23225,
-          "id": "95",
-          "name": "TotemCircles-0.4.9b.zip",
-          "url": "https://octowow.st/git/veber01/Octo-TotemCircles/releases/download/v0.4.9b/TotemCircles-0.4.9b.zip",
-          "path": "releases/v0.4.9b--752/assets/TotemCircles-0.4.9b.zip"
+        "96": {
+          "sha256": "f2a3d3b7392572596267589fe0333b99e36aa7a39179da2f5208a8221d729233",
+          "bytes": 28750,
+          "id": "96",
+          "name": "TotemCircles-0.5.zip",
+          "url": "https://octowow.st/git/veber01/Octo-TotemCircles/releases/download/v0.5/TotemCircles-0.5.zip",
+          "path": "releases/v0.5--755/assets/TotemCircles-0.5.zip"
         }
       },
       "source": {
-        "sha256": "a38bd59bf1eab45234ea51850ee891115ade350e483f537be102d9b17e28c937",
-        "bytes": 3754540,
-        "path": "releases/v0.4.9b--752/upstream-source.tar.gz",
-        "url": "https://octowow.st/git/api/v1/repos/veber01/Octo-TotemCircles/archive/v0.4.9b.tar.gz"
+        "sha256": "92f96fd32e1cef8a868dd6ff38ac62ffe6b99f21ffb5b75809ed2e635cb60728",
+        "bytes": 3759111,
+        "path": "releases/v0.5--755/upstream-source.tar.gz",
+        "url": "https://octowow.st/git/api/v1/repos/veber01/Octo-TotemCircles/archive/v0.5.tar.gz"
       }
     }
   }

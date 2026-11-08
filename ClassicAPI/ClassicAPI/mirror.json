@@ -9,7 +9,7 @@
     "url": "https://github.com/brues-code/ClassicAPI",
     "api": "https://api.github.com/repos/brues-code/ClassicAPI"
   },
-  "commit": "24404b5a239da55cac0c69f492d651c51d9f5e73",
+  "commit": "de033896b1b34b54321e2d6b30446c973da825bf",
   "sourceFiles": {
     ".gitattributes.upstream": {
       "sha256": "b198d3faa1dd13bd1a26ab3b22a0a153f35ea532b0296274115234be16507028",
@@ -52,8 +52,8 @@
       "bytes": 135
     },
     "docs/API.md": {
-      "sha256": "d30a5193a9899acf14d550933d63805bc9996161839262af233f6873ac852fed",
-      "bytes": 1151857
+      "sha256": "f8fb7912d16536808b96583469d37933cfa33d7026c686e2065b129bf3260247",
+      "bytes": 1155427
     },
     "docs/BlizzardScriptAPI_3.3.5.md": {
       "sha256": "bba3899eb3f4c02b82e4890b24046cd6892a8785de4a059673f85f36c66dcdfc",
@@ -416,8 +416,8 @@
       "bytes": 11239
     },
     "external/tinycbor/.appveyor.yml": {
-      "sha256": "9ce5cefe9247b24cec37b9db739ca372d1ccaf50fa41e0f50d62ea23753a57cb",
-      "bytes": 898
+      "sha256": "24e0bc21058bc8fe81fde6b431e4fc429579e53efd05d59329bff4f3ac239440",
+      "bytes": 870
     },
     "external/tinycbor/.gitattributes.upstream": {
       "sha256": "92ae9520a1a29354bfa2c4b104800023dc0abd83fc7fac70fd328c58e5171dc0",
@@ -8948,8 +8948,8 @@
       "bytes": 35149
     },
     "README.md": {
-      "sha256": "40ad4c2a81bcfe4cba93ecf8b8ef29bbeffd32770f69a976bf32e1b2e62ab65e",
-      "bytes": 69612
+      "sha256": "ebb5d09c525442892e10da09d3eefb9822c786c846f3008458be1042c9aa55f9",
+      "bytes": 69660
     },
     "src/action/Bar.cpp": {
       "sha256": "e2a8f85684cf15d53986ba6944e1fddab68d59b69eda33b2d170454223e26994",
@@ -9180,8 +9180,8 @@
       "bytes": 3742
     },
     "src/aura/Source.cpp": {
-      "sha256": "67bb8aef22d61565ce3284dc47918d53c1b5d3d772a710c7012573d1a131bae8",
-      "bytes": 98710
+      "sha256": "1bd06b518a23c46ef7ef339047488bd05660fb0803dc98547031e568560d26f8",
+      "bytes": 98503
     },
     "src/aura/Source.h": {
       "sha256": "f75cfd5aa3d11c2b8c492a021db24c22728ff85ac084df3405d8d585faaaa86c",
@@ -9436,12 +9436,12 @@
       "bytes": 2787
     },
     "src/combatlog/Entry.cpp": {
-      "sha256": "f1c2c34f78faa13e292b28d6097c0e272fb413453c2fe4458156bdd00d08c0ff",
-      "bytes": 25475
+      "sha256": "c750d047dba746f44fc67973dfba0e3ad1516f6ad1fe61148e34f4b5c52c9b64",
+      "bytes": 25133
     },
     "src/combatlog/Entry.h": {
-      "sha256": "d8ef31148d52bed172c5941bf74b92d10962224ae28dfa0b98a0d08e0fc373ae",
-      "bytes": 7373
+      "sha256": "9f5953376034e2b84cdf939a73a9335a0a303b30be89e6e376e284e7e2e501ff",
+      "bytes": 7218
     },
     "src/combatlog/Execute.cpp": {
       "sha256": "661c7ac41d6199566a3775d144c05fef712cc37834f52e7847a61753c3592f3c",
@@ -9468,8 +9468,8 @@
       "bytes": 2796
     },
     "src/combatlog/Packets.cpp": {
-      "sha256": "aa6ff010d5f56b9f486b102a4598bd6505059bed1f3b3c0911ec4643adc5f8db",
-      "bytes": 24779
+      "sha256": "73a2af6c104dd388b6053f0b50398ec56c312b5f2fc53a00f05c6b6c8ae69f7f",
+      "bytes": 24820
     },
     "src/combatlog/RecentCasts.cpp": {
       "sha256": "f5aedf971fb5a30efcc3a061f84c2432a430296dc89a030fdc10916968ce9938",
@@ -9628,12 +9628,12 @@
       "bytes": 9454
     },
     "src/creature/Info.cpp": {
-      "sha256": "eaa85625012d8d196838afbf8ccb6976a7b3c5a2ba0a88e04d17b702781c232e",
-      "bytes": 17300
+      "sha256": "e1bfd4a397b24ea0fced53e08aef8775ff15e61ec96cea8970849b9f0d30413e",
+      "bytes": 17351
     },
     "src/creature/Info.h": {
-      "sha256": "c8f86524feb62db9ffe391ed42cc2690edbc42bdf3dace7b23bd1d631ff872ef",
-      "bytes": 1971
+      "sha256": "5b3dfdf5e9cc79d8adce6d0bbef7344ae3faa3d2bc0ab5e0e3d5d6d5261ff1ac",
+      "bytes": 2271
     },
     "src/currency/CoinText.cpp": {
       "sha256": "57fac4bdfb32b02d37164557c0137dc5fb5f699ac622243618ccd98ad6f9bdd9",
@@ -10060,8 +10060,8 @@
       "bytes": 11551
     },
     "src/embed/AddOns/!!!ClassicAPI/locales/enUS.lua": {
-      "sha256": "130b935a9b9319fe969247b3a96810046cd650c7f69f73cc4bdb89add6c6e630",
-      "bytes": 18228
+      "sha256": "af69a1c0ae9bd3a26fb903c55e3ee10e9fb8fba32059905b633cfed73fd05bc4",
+      "bytes": 18273
     },
     "src/embed/AddOns/!!!ClassicAPI/locales/esES.lua": {
       "sha256": "8ded198bf295bcc4abe53dea4792ff4445f6e0cb2011271f6fe2cb4aa6ab1c5e",
@@ -10080,12 +10080,12 @@
       "bytes": 413
     },
     "src/embed/AddOns/!!!ClassicAPI/locales/ruRU.lua": {
-      "sha256": "900066ae52eb6f912000bb20644581530eb79fc01d84548269f515d4f6075f6a",
-      "bytes": 27482
+      "sha256": "5b1b6e8a4247d79e62f4d903c3cc190a448e37dd70d41446f76cc180846bee8d",
+      "bytes": 27599
     },
     "src/embed/AddOns/!!!ClassicAPI/locales/zhCN.lua": {
-      "sha256": "79813e67d48dc6c5c89d36142424103f2b306732d21803d364db56a7a082602a",
-      "bytes": 17422
+      "sha256": "e4c664616dff10d1f550d3e4c281a27325a567abd82c9bb68aa61b22acf19583",
+      "bytes": 17479
     },
     "src/embed/AddOns/!!!ClassicAPI/locales/zhTW.lua": {
       "sha256": "dada00a47513b38cc2c5e64f4d0bb90624be0768e2aef58cb5421584463c8684",
@@ -11688,8 +11688,8 @@
       "bytes": 2913
     },
     "src/loot/Scan.cpp": {
-      "sha256": "aacfc19834b13fd9eef5fb160ab15cd87a6aaa6d54ffa7b3e05111d7aa4cc545",
-      "bytes": 21288
+      "sha256": "b686beddbacaff968c3f0e288c4d0d9a2f87da8422db8ced149f929c27fdcab0",
+      "bytes": 24032
     },
     "src/loot/Unit.cpp": {
       "sha256": "c504a54b090fd92cdf1c643b479425fdca6f2da5fb685b4349c5ae9acc41db63",
@@ -11938,6 +11938,10 @@
     "src/model/VisualKit.cpp": {
       "sha256": "f5fc06dde3bfdd4f0e10b5a8ae02a76686eaf00bbbc84792eeb80b235f768c55",
       "bytes": 10287
+    },
+    "src/mount/Journal.cpp": {
+      "sha256": "23b58550ad6253ede8ff609ea954aed1e10a638252dc71612b8520af9dce64c1",
+      "bytes": 8977
     },
     "src/nameplate/Events.cpp": {
       "sha256": "16157b51a086eb2b4f5a4b1ac796d5a5ddb1394369127c874fa92cbc4db6fe65",
@@ -12320,8 +12324,8 @@
       "bytes": 6010
     },
     "src/spell/AutoPrepare.cpp": {
-      "sha256": "d1320cf7c424cd8538bbfe63e0c0d8fa4f503c6e6c054c8d05f4a1e032bcfc25",
-      "bytes": 29067
+      "sha256": "149ecbbea91384aa304effd71a9d4a28a3b9b7479d59a61f94c8356d6b17ba23",
+      "bytes": 30780
     },
     "src/spell/BaseCooldown.cpp": {
       "sha256": "313431b9d5544bc88ff8595b62a984af6c4af30bdd26aae3a9b6a88cfd36b449",
@@ -12376,8 +12380,8 @@
       "bytes": 1737
     },
     "src/spell/CrowdControl.cpp": {
-      "sha256": "ab2df29281fbb84370539445b1862673d2eb453cd4ed08c60f1636eaca47b46b",
-      "bytes": 2556
+      "sha256": "886dfe6029249d4a7269dc36511a070d368685daea5ea5ba608ca6f75603fbfb",
+      "bytes": 2112
     },
     "src/spell/CrowdControl.h": {
       "sha256": "211a399d3932eb51bf321b0302aaebc40566fd666c35378320d000b9fc605388",
@@ -12420,8 +12424,8 @@
       "bytes": 2061
     },
     "src/spell/Info.cpp": {
-      "sha256": "1b22dd1da27558e22b5055992c72e7b5b3072878e99ae645f76b9c45fa529da6",
-      "bytes": 48400
+      "sha256": "e61c0b857f7f870e2210ef6a552bceea2a27cd30a2f680b193a59e25ee646f7e",
+      "bytes": 48182
     },
     "src/spell/Info.h": {
       "sha256": "a5aa13f833f7c74d82925be46b8b8644bb61f1a87ba4deb2d9108d234bfac586",
@@ -12468,12 +12472,12 @@
       "bytes": 20492
     },
     "src/spell/Lookup.cpp": {
-      "sha256": "dd77e994edf55b7ad715f54343ae744c65341004d1aedfc5a0d3b80cc8426711",
-      "bytes": 8604
+      "sha256": "821280c33b9d105f92273cc77b869259ab6052a6f185bc1ed14e9446ae81606f",
+      "bytes": 9060
     },
     "src/spell/Lookup.h": {
-      "sha256": "539c1e1faac2ad9c3a7ca1371d5123cfb8c09e3aa4eed31bdd1f35e06786ef1f",
-      "bytes": 5427
+      "sha256": "442195cbe24cfc0e132216a94f4744054d6f5782e36a5867f3dca620f0080303",
+      "bytes": 5900
     },
     "src/spell/MacroPrimarySpell.cpp": {
       "sha256": "4bb87b1a59ae13cb17ebdd343016248a50796375221f873d5c58c7d247e6d0b9",
@@ -12572,8 +12576,8 @@
       "bytes": 1360
     },
     "src/spell/Tracking.cpp": {
-      "sha256": "6482da64606c52661d8ef62c93959c56ee4bcd750ee4c95fb80630a59ae6f9b9",
-      "bytes": 9526
+      "sha256": "f57553f60f3785b8c817d311df53858ef963574dd3f5cfe480d2aea2c839e79d",
+      "bytes": 9341
     },
     "src/spell/Usable.cpp": {
       "sha256": "a3587a017805f47773b8459dd41d90dc81e8dc232eab3571275336f224f65f55",
