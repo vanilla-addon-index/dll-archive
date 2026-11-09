@@ -26,7 +26,7 @@ See [OPERATIONS.md](OPERATIONS.md) for backup, schedules and recovery.
 | [AuctionQueryThrottle](AuctionQueryThrottle/) | DLL | 1 | mirrored |
 | [Nampower](Nampower/) | DLL | 2 | mirrored |
 | [No1600x1200](No1600x1200/) | DLL | 1 | mirrored |
-| [VanillaMultiMonitorFix](VanillaMultiMonitorFix/) | DLL | 1 | error |
+| [VanillaMultiMonitorFix](VanillaMultiMonitorFix/) | DLL | 1 | mirrored |
 | [Interact](Interact/) | DLL | 1 | mirrored |
 | [LeviFix](LeviFix/) | DLL | 1 | mirrored |
 | [WeirdUtils](WeirdUtils/) | DLL | 1 | mirrored |

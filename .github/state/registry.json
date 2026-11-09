@@ -286,7 +286,7 @@
             "api": "https://api.github.com/repos/hannesmann/vanillafixes"
           },
           "status": "error",
-          "error": "HTTP 504: https://github.com/hannesmann/vanillafixes/releases/download/v1.5.3/vanillafixes-1.5.3-dxvk.zip",
+          "error": "HTTP 504: https://github.com/hannesmann/vanillafixes/releases/download/v1.5.3/vanillafixes-1.5.3.zip",
           "active": true,
           "license": "MIT"
         }
@@ -594,8 +594,8 @@
             "url": "https://github.com/Mates1500/VanillaMultiMonitorFix",
             "api": "https://api.github.com/repos/Mates1500/VanillaMultiMonitorFix"
           },
-          "status": "error",
-          "error": "HTTP 504: https://github.com/Mates1500/VanillaMultiMonitorFix/releases/download/0.2/release.zip",
+          "status": "mirrored",
+          "error": null,
           "active": true,
           "license": "MIT"
         }
