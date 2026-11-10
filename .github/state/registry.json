@@ -191,6 +191,23 @@
           "error": null,
           "active": true,
           "license": "Unspecified"
+        },
+        {
+          "originalUrl": "https://octowow.st/git/OEVG/Octobus",
+          "folder": "Octobus",
+          "source": {
+            "kind": "repository",
+            "host": "octowow.st",
+            "owner": "OEVG",
+            "repo": "Octobus",
+            "name": "Octobus",
+            "url": "https://octowow.st/git/OEVG/Octobus",
+            "api": "https://octowow.st/git/api/v1/repos/OEVG/Octobus"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Unspecified"
         }
       ],
       "active": true,
@@ -285,8 +302,8 @@
             "url": "https://github.com/hannesmann/vanillafixes",
             "api": "https://api.github.com/repos/hannesmann/vanillafixes"
           },
-          "status": "error",
-          "error": "HTTP 504: https://github.com/hannesmann/vanillafixes/releases/download/v1.5.3/vanillafixes-1.5.3.zip",
+          "status": "mirrored",
+          "error": null,
           "active": true,
           "license": "MIT"
         }

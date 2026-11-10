@@ -1,0 +1,9 @@
+## Interface: 11200
+## Title: |cff33ffccOcto|rBus
+## Notes: Zeppelin and boat arrival timers for Orgrimmar. Reads live positions from ZepSense.dll; minimap icon toggles the window.
+## Author: Phridgey
+## Version: 1.3.6-oevg.3
+## SavedVariables: OctoBusDB
+
+OctoBus.lua
+OctoBusOptions.lua

@@ -1,0 +1,61 @@
+{
+  "upstream": "https://octowow.st/git/OEVG/Octobus",
+  "source": {
+    "kind": "repository",
+    "host": "octowow.st",
+    "owner": "OEVG",
+    "repo": "Octobus",
+    "name": "Octobus",
+    "url": "https://octowow.st/git/OEVG/Octobus",
+    "api": "https://octowow.st/git/api/v1/repos/OEVG/Octobus"
+  },
+  "commit": "fe0ac81cabb1337ab833407326e91ffa8be2976b",
+  "sourceFiles": {
+    ".gitattributes.upstream": {
+      "sha256": "d60f352d0db1404c70afb4bb8b2ca3fd1c610572aa40720e8a0b7baa7885418c",
+      "bytes": 19
+    },
+    ".gitignore.upstream": {
+      "sha256": "51a6b7e2d7492f770d05f6087edb31a242acd513b0d3cccfd6f09b276822e741",
+      "bytes": 9
+    },
+    "CHANGELOG.md": {
+      "sha256": "8cfd2819f08d1d53743a148216f4f501e4131fd90ef7f3327d51cc17cbc34206",
+      "bytes": 10647
+    },
+    "OctoBus.lua": {
+      "sha256": "54cd9e88e8c573946dee8c83ef1ea290227ae39fe17276203539204c8432569a",
+      "bytes": 88952
+    },
+    "OctoBus.toc": {
+      "sha256": "060df1896712c1a9153b7a0d3ebec086cf9fabdbb8de11ec2281cd5f3b4de777",
+      "bytes": 287
+    },
+    "OctoBusOptions.lua": {
+      "sha256": "725b79a76c8f8a11f91f38994a42b499ffa28e8e5556e007d0b2736f52a98a31",
+      "bytes": 9044
+    },
+    "README.md": {
+      "sha256": "b113d0117f04d4177a57860ac2ef018468d5cea8b64d694f304861ae1eba013a",
+      "bytes": 17301
+    },
+    "screenshots/settings.png": {
+      "sha256": "68783327145986300fd09e31944ad9fb54de8f8808c3df34f43dda5b4d66143e",
+      "bytes": 424412
+    },
+    "screenshots/world-map-departure.png": {
+      "sha256": "e7e1be7373c551d74347d4b24bc972fd31824d5eb3e9da21e25c9293dacc33bb",
+      "bytes": 1890508
+    },
+    "screenshots/world-map-golden-ui.png": {
+      "sha256": "4c0c819041be8f80b6adb013c3b877157ed3cc97da9e10315120b42d9ee69c02",
+      "bytes": 1929230
+    },
+    "ZepSense_src/ZepSense_v5.c": {
+      "sha256": "48c3ce07df405b17095d12a710d4b422ad5a44697edff37f02a376eb4ee088e1",
+      "bytes": 16170
+    }
+  },
+  "symlinks": {},
+  "releases": {}
+}

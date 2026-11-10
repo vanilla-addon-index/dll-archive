@@ -13,10 +13,10 @@ See [OPERATIONS.md](OPERATIONS.md) for backup, schedules and recovery.
 | [ClassicAPI](ClassicAPI/) | DLL | 1 | mirrored |
 | [HearthDB](HearthDB/) | DLL | 1 | mirrored |
 | [DmorphOcto](DmorphOcto/) | DLL | 1 | mirrored |
-| [OctoBus](OctoBus/) | DLL | 1 | mirrored |
+| [OctoBus](OctoBus/) | DLL | 2 | mirrored |
 | [PandaConquest](PandaConquest/) | DLL | 2 | mirrored |
 | [Octo-TotemCircles](Octo-TotemCircles/) | DLL | 1 | mirrored |
-| [VanillaFixes](VanillaFixes/) | Util | 1 | error |
+| [VanillaFixes](VanillaFixes/) | Util | 1 | mirrored |
 | [DXVK](DXVK/) | DLL | 1 | mirrored |
 | [Vanilla Tweaks](Vanilla%20Tweaks/) | Util | 1 | mirrored |
 | [VanillaHelpers](VanillaHelpers/) | DLL | 1 | mirrored |
