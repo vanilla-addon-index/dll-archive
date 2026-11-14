@@ -1,0 +1,150 @@
+#foo 9300 base
+
+#######################################################
+# remove the obnoxious green effect from Decaying Flesh
+#######################################################
+SpellVisualKit.dbc:
+  - type: copy
+    key: 293
+    values:
+      Id: 9300
+      CharProc_1: 0 #remove coloring
+SpellVisual.dbc:
+  - type: copy
+    key: 177
+    values:
+      Id: 9300
+      StateKit: 9300
+Spell.dbc:
+  - type: update
+    key: 42025
+    values:
+      SpellVisualID_1: 9300
+#######################################################
+
+# todo, check dissolvent
+#######################################################
+# remove the tinting for deadly and corrosive poisons, very noisy in raid
+SpellVisual.dbc:
+  - type: update
+    key: 5100
+    values:
+      StateKit: 0
+#######################################################
+
+#######################################################
+# remove the tinting for pet poison spit, use same visual as scorpid
+Spell.dbc:
+  - type: update
+    key: 46271 #poison spit 1
+    values:
+      SpellVisualID_1: 19
+  - type: update
+    key: 46272 #poison spit 2
+    values:
+      SpellVisualID_1: 19
+  - type: update
+    key: 46273 #poison spit 3
+    values:
+      SpellVisualID_1: 19
+#######################################################
+
+#######################################################
+# remove the rocks from earthquake
+SpellVisualEffectName.dbc:
+  - type: copy
+    key: 4464
+    values:
+      ID: 9301
+      FileName: Spells\DangerZone_W10_S10_EarthQuake.m2
+      
+SpellVisual.dbc:
+  - type: update
+    key: 7976 #earthquake
+    values:
+      AreaModel: 9301
+
+#######################################################
+
+### Reality Fracture #################################
+# translucent raid bosses are annoying
+SpellVisual.dbc:
+  - type: copy
+    key: 72
+    values:
+      Id: 9302
+      StateKit: 0
+Spell.dbc:
+  - type: update
+    key: 52593
+    values:
+      SpellVisualID_1: 9302
+#######################################################
+
+#######################################################
+# remove the green effect from gift of arthas
+#######################################################
+SpellVisualKit.dbc:
+  - type: copy
+    key: 564
+    values:
+      Id: 9303
+      CharProc_1: 0 #remove coloring
+SpellVisual.dbc:
+  - type: copy
+    key: 2226
+    values:
+      Id: 9303
+      StateKit: 9303
+Spell.dbc:
+  - type: update
+    key: 11374
+    values:
+      SpellVisualID_1: 9303
+#######################################################
+
+#######################################################
+# guild teleport casting kit - they added an animation anyway
+#######################################################
+# Spell.dbc:
+#   - type: update
+#     key: 46010 #teleport to guild house
+#     values:
+#       SpellVisualID_1: 2936 #holy light
+#######################################################
+
+#######################################################
+# Thundercall - the storm area effect is too obnoxious,
+# replace with thunderclap's ground shockwave
+SpellVisual.dbc:
+  - type: copy
+    key: 125 # thundercall
+    values:
+      ID: 9304
+      AreaModel: 349 # thunderclap ground shockwave
+Spell.dbc:
+  - type: update
+    key: 52872 # thundercall
+    values:
+      SpellVisualID_1: 9304
+#######################################################
+
+#######################################################
+# Naxxramas entrance portal (EPL) - re-center AT 4055
+# onto the portal GameObject 181476 (3132.78, -3731.29)
+# and switch from a 10.03 axis-aligned cube to a 9 yd
+# sphere that matches the round visual of the portal.
+# Box fields are zeroed since the server/client uses
+# radius-mode when radius > 0. Max on-axis reach (9.0)
+# stays within the server's box+5.0f slack (10.015)
+AreaTrigger.dbc:
+  - type: update
+    key: 4055 # Naxxramas - Entrance
+    values:
+      X: 3132.78
+      Y: -3731.29
+      Radius: 8.0
+      BoxLength: 0.0
+      BoxWidth: 0.0
+      BoxHeight: 0.0
+#######################################################

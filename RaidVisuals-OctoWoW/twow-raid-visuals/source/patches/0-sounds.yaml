@@ -1,0 +1,114 @@
+#foo 9500 base (SpellVisual/Kit), 90000 base (SoundEntries)
+
+### baby murloc dance ###############
+# silence a weird murloc sound glitch
+SoundEntries.dbc:
+  - type: update
+    key: 8485 # baby murloc dance loop
+    values:
+      VolumeFloat: 0.0
+#####################################
+
+### caravan kodo ##################
+# silence kodo steps
+CreatureModelData.dbc:
+  - type: update
+    key: 1071
+    values:
+      SoundID: 171 # turtle footsteps
+###################################
+
+### field repair bot 75b ##########
+CreatureSoundData.dbc:
+  - type: update
+    key: 72
+    values:
+      SoundFootStepID: 0
+###################################
+
+### totemic recall ################
+# give unique sound
+SoundEntries.dbc:
+  - type: copy
+    key: 2552
+    values:
+      ID: 90000
+      File_1: m1hAxeHitWood1A.wav
+      DirectoryBase: Sound\Item\Weapons\Axe1H
+      VolumeFloat: 0.8
+      # File_1: m2hAxeHitWood1C.wav
+      # DirectoryBase: Sound\Item\Weapons\Axe2H
+
+SpellVisualKit.dbc:
+  - type: copy
+    key: 352 # totem drop
+    values:
+      ID: 9500
+      SoundID: 90000 #yes really
+
+SpellVisual.dbc:
+  - type: copy
+    key: 319 # totem drop
+    values:
+      ID: 9500
+      CastKit: 9500
+
+Spell.dbc:
+  - type: update
+    key: 45513
+    values:
+      SpellVisualID_1: 9500
+###################################
+
+### concussion blow ###############
+# give unique sound
+SoundEntries.dbc:
+  - type: copy
+    key: 42
+    values:
+      ID: 90001
+      File_1: 2hMaceHitMetalShield1b.wav
+      DirectoryBase: Sound\Item\Weapons\Mace2H
+      VolumeFloat: 1.3 #a bit quiet currently
+
+SpellVisualKit.dbc:
+  - type: copy
+    key: 1666
+    values:
+      ID: 9501
+      SoundID: 90001 #yes really
+
+SpellVisual.dbc: # don't clobber other users of 2719
+  - type: copy
+    key: 2719
+    values:
+      ID: 9501
+      ImpactKit: 9501
+
+Spell.dbc:
+  - type: update
+    key: 1809
+    values:
+      SpellVisualID_1: 9501
+  - type: update
+    key: 51600
+    values:
+      SpellVisualID_1: 9501
+  - type: update
+    key: 51601
+    values:
+      SpellVisualID_1: 9501
+  - type: update
+    key: 51602
+    values:
+      SpellVisualID_1: 9501
+###################################
+
+### duck ############################
+# tried to switch from loop to various fidget timings to randomize the quack but duck has no fidgets
+CreatureSoundData.dbc: #re-enabled, he's too goddamn annoying
+  - type: update
+    key: 5012
+    values:
+      LoopSoundID: 0
+#####################################

@@ -33,6 +33,6 @@ See [OPERATIONS.md](OPERATIONS.md) for backup, schedules and recovery.
 | [WowPresence](WowPresence/) | DLL | 1 | mirrored |
 | [Modernization-Tool](Modernization-Tool/) | Util | 1 | mirrored |
 | [GlueXML](GlueXML/) | MPQ | 1 | mirrored |
-| [RaidVisuals-OctoWoW](RaidVisuals-OctoWoW/) | MPQ | 1 | mirrored |
+| [RaidVisuals-OctoWoW](RaidVisuals-OctoWoW/) | MPQ | 2 | mirrored |
 
 This repository’s automation is MIT licensed. Mirrored source and release files retain their upstream license notices when provided.

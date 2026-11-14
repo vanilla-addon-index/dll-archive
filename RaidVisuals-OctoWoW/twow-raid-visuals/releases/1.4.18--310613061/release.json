@@ -1,0 +1,9 @@
+{
+  "id": "310613061",
+  "tag": "1.4.18",
+  "name": "patch-O.mpq 1.4.18",
+  "body": "The following is a pre-built .mpq containing this project's changes for Turtle WoW `1.18.1`\r\nPlace it in your Turtle WoW's `Data` folder along with the other `.mpq` files there.\r\n\r\n---\r\n\r\n- Naxxramas entrance portal re-centered and widened to hopefully assist entry\r\n- Rotgrowl's Volley of Arrows indicator resized from 10y to 8y to match its actual radius\r\n- Corrected poison pools for TMH trash",
+  "published": "2026-04-18T01:12:04Z",
+  "prerelease": false,
+  "url": "https://github.com/MarcelineVQ/twow-raid-visuals/releases/tag/1.4.18"
+}

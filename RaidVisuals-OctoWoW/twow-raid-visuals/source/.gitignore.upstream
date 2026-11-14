@@ -1,0 +1,6 @@
+build/
+target/
+Cargo.lock
+.kangentic/
+.claude/settings.local.json
+kangentic.local.json

@@ -1,0 +1,271 @@
+#foo 9100 base
+
+### garlmoon ##############################
+# removes extra spell effects from gnarlmoon red and blue moon auras
+SpellVisualKit.dbc:
+  - type: update
+    key: 5849 # red moon Spell 51081, SpellVisual 6539
+    values:
+      HeadEffect: 1544 #add an orb above you
+      ChestEffect: 0
+      BaseEffect: 0
+      LeftHandEffect: 0
+      RightHandEffect: 0
+      CharProc_1: 1 #allows this to fade properly if not cleared by other effects
+  - type: update
+    key: 5893 #blue moon Spell 51080, SpellVisual 6589
+    values:
+      HeadEffect: 1544 #add an orb above you
+      ChestEffect: 0
+      BaseEffect: 0
+      LeftHandEffect: 0
+      RightHandEffect: 0
+      CharProc_1: 1 #allows this to fade properly if not cleared by other effects
+###########################################
+
+### draconic intimidation ###################
+# remove the skull visual on the lasting debuff, it should only mean fear
+Spell.dbc:
+  - type: update
+    key: 52393 #draconic intimidation
+    values:
+      SpellVisualID_1: 852 # a lesser fear visual
+
+#############################################
+
+### incantagos ##############################
+# his blizard is provided in flamestrikes.yaml
+
+# make guided ley-beams more clear
+# todo, double-check this not sure the area is playing
+SpellVisualKit.dbc:
+  - type: copy
+    key: 221 #green
+    values:
+      ID: 9103
+      HeadEffect: 2963 #arrow over head
+      ChestEffect: 1562 #hunter mark
+      BaseEffect: 4707 #35y ring
+
+SpellVisual.dbc:
+  - type: copy
+    key: 5780
+    values:
+      ID: 9102
+      StateKit: 668
+      AreaModel: 4811 #40y arrow ring
+      HasMissile: 1 #disable secondary ground effect renderings
+  - type: copy
+    key: 277
+    values:
+      ID: 9103
+      StateKit: 9103
+
+Spell.dbc:
+  - type: update
+    key: 51182 # guided ley beam ground effect
+    values:
+      SpellVisualID_1: 9102
+  - type: update
+    key: 52011 # guided ley-beam pe-cast targeting
+    values:
+      SpellVisualID_1: 9103
+###########################################
+
+### anomalus ##############################
+# improved bomb zone visibility via texture swap
+###########################################
+
+### medivh ##############################
+# his flamestrike is provided in flamestrikes.yaml
+
+# make corruption much more obvious
+SpellVisualKit.dbc:
+  - type: copy
+    key: 657
+    values:
+      ID: 9100
+      HeadEffect: 397 #add a purple orb above you
+      BaseEffect: 4752 #a ring under you, white base colored by aura
+      ChestEffect: 300 #just a flair for visibility
+
+SpellVisual.dbc:
+  - type: copy
+    key: 5981 # copy corruption of medivh visual, give it new kit
+    values:
+      ID: 9100
+      StateKit: 9100
+
+Spell.dbc:
+  - type: update
+    key: 52674 # give corruption of medivh new visual
+    values:
+      SpellVisualID_1: 9100
+#########################################
+
+### rupturan #####################################
+# flamestrikes provided in flamestrikes.yaml
+# dirt mound visual provided in aq4-naxx.yaml
+##################################################
+
+### sanv ##############################
+# overflowing hatred, adding a ring to the precast kit
+SpellVisualKit.dbc:
+  - type: copy
+    key: 60
+    values:
+      ID: 9101
+      # BaseEffect: 4700 #a ring under him
+      BaseEffect: 4903 #geddon ring, 10y before scaling
+      # red coloring to self-desruct
+      CharProc_1: 13
+      CharParamZero_1: 16716055.0
+      CharParamOne_1: 6.0 # hold time
+      CharParamTwo_1: 1.0 # fade out time
+      # todo, fix texture edge bleed
+
+SpellVisual.dbc:
+  - type: copy
+    key: 963
+    values:
+      ID: 9101
+      PrecastKit: 9101
+
+Spell.dbc:
+  - type: update
+    key: 51203 # overflowing hatred 51203 visual 963 changed to 8013
+    values:
+      SpellVisualID_1: 9101
+#######################################
+
+
+### netherwalkers ############################
+# make netherwalkers easier to see in the fray
+# does NOT affect their invisibility
+SpellVisualKit.dbc:
+  - type: copy
+    key: 5372
+    values:
+      ID: 9105
+      CharProc_1: 2
+      CharParamOne_1: 2.0
+      CharProc_2: 4
+      CharParamOne_2: 4294901760 #todo, check this is this scale? scale doesn't work here
+
+SpellVisual.dbc:
+  - type: copy
+    key: 140
+    values:
+      ID: 9105
+      StateKit: 9105
+
+Spell.dbc:
+  - type: update
+    key: 46540 # netherwalker invisibility
+    values:
+      SpellVisualID_1: 9105
+##############################################
+
+### arcane anomaly ##############################
+# anomaly seems to have a 4x model scale factor
+
+# show stacking debuff range
+SpellVisualKit.dbc:
+  - type: copy
+    key: 1004
+    values:
+      ID: 9107
+      BaseEffect: 4930 # 15y ring after scaling, unsure of exact extent. spell data claims 15
+      WorldEffect: 734 # was the base effect before
+
+SpellVisual.dbc:
+  - type: copy
+    key: 965
+    values:
+      ID: 9107
+      CastKit: 9107 #apply specifically on cast
+
+Spell.dbc:
+  - type: update
+    key: 57646 # overflowing arcana
+    values:
+      SpellVisualID_1: 9107
+########################################
+
+### protectors ####################
+SpellVisualKit.dbc:
+  # red coloring to self-desruct
+  - type: copy
+    key: 4129
+    values:
+      ID: 9111
+      CharProc_1: 1
+      CharParamZero_1: 16716055.0
+      CharParamOne_1: 2.0
+      CharParamTwo_1: 2.0
+  # green coloring to reflect
+  - type: copy
+    key: 252
+    values:
+      ID: 9110
+      CharProc_1: 1
+      CharParamZero_1: 65280.0
+      CharParamOne_1: 2.0
+      CharParamTwo_1: 2.0
+
+SpellVisual.dbc:
+  - type: copy
+    key: 4760
+    values:
+      ID: 9111
+      StateKit: 9111
+  - type: copy
+    key: 154
+    values:
+      ID: 9110
+      StateKit: 9110
+
+Spell.dbc:
+  - type: update
+    key: 57652 # self-destruction protocol
+    values:
+      SpellVisualID_1: 9111
+  - type: update
+    key: 57654 # reflection protocol
+    values:
+      SpellVisualID_1: 9110
+###################################
+
+### kruul #########################
+# mark of the highlord, exploding curse
+SpellVisualKit.dbc:
+  - type: copy
+    key: 653
+    values:
+      ID: 9106
+      BaseEffect: 4710 # 18y ring
+
+SpellVisual.dbc:
+  - type: copy
+    key: 561
+    values:
+      ID: 9106
+      StateKit: 9106
+
+Spell.dbc:
+  - type: update
+    key: 51166 # mark of the highlord
+    values:
+      SpellVisualID_1: 9106
+########################################
+
+### mephistroph ###################
+# todo add better indicator for slept
+# todo add his 20% melee aoe ring
+# todo, make the range add more visible if possible
+Spell.dbc:
+  - type: update
+    key: 51912 # doom of outland, give netherwalker vis improvement
+    values:  
+      SpellVisualID_1: 9105
+###################################

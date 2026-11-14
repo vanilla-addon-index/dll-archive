@@ -1,0 +1,1182 @@
+{
+  "upstream": "https://github.com/MarcelineVQ/twow-raid-visuals",
+  "source": {
+    "kind": "repository",
+    "host": "github.com",
+    "owner": "MarcelineVQ",
+    "repo": "twow-raid-visuals",
+    "name": "twow-raid-visuals",
+    "url": "https://github.com/MarcelineVQ/twow-raid-visuals",
+    "api": "https://api.github.com/repos/MarcelineVQ/twow-raid-visuals"
+  },
+  "commit": "862af96df93d594b034915893b844eaea051bb9e",
+  "sourceFiles": {
+    ".gitignore.upstream": {
+      "sha256": "f6a42e96c394b5ad1c4f12f3f801671f81e263f7e68207958a5694ebddea4ce9",
+      "bytes": 87
+    },
+    "Cargo.toml": {
+      "sha256": "0892e67a67a5d5808c7b89c43f591fbfadbbd209dedaaa3c42ec7c41fc52d898",
+      "bytes": 981
+    },
+    "dbc/AnimationData.dbc": {
+      "sha256": "80091d96ac4d1843aef1b934b0628a628ad8e0c6e1bfbe61b3cba88d4c7a4bbc",
+      "bytes": 8887
+    },
+    "dbc/AreaPOI.dbc": {
+      "sha256": "257a66470faf0068fd3e40699368a75d4d5691ad10f63c38a63ee0a4a91008c8",
+      "bytes": 84920
+    },
+    "dbc/AreaTable.dbc": {
+      "sha256": "990d23c46d40cecc1aa68bfdad3810cacbb8f3c6fa1abfc19ad1c0f63f8ca88f",
+      "bytes": 295135
+    },
+    "dbc/AreaTrigger.dbc": {
+      "sha256": "c7205285143bf8e5fbab4fab1a8542dd46bc4f2a8387e1d3a06511862ad3f5f7",
+      "bytes": 20701
+    },
+    "dbc/AuctionHouse.dbc": {
+      "sha256": "2e3ceb57411b91177b09e43a193758d7eada75710b0c336dbb590ca0e1b1f6d5",
+      "bytes": 1615
+    },
+    "dbc/CameraShakes.dbc": {
+      "sha256": "bfa2956cae256a8e53f8c2b1e18a9d9e4c181bf9a51efdd2659308798a6ab78f",
+      "bytes": 789
+    },
+    "dbc/Cfg_Categories.dbc": {
+      "sha256": "ffa2df786300381f5102e3c99df21ec947626e3a873d8dfff5e163c8bb6b767e",
+      "bytes": 738
+    },
+    "dbc/Cfg_Configs.dbc": {
+      "sha256": "737186ccba676353afaa861357c35d6312997d527bf5586dfaa8425d4926b1a2",
+      "bytes": 197
+    },
+    "dbc/CharacterCreateCameras.dbc": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "dbc/CharacterFacialHairStyles.dbc": {
+      "sha256": "cd962c5a5395f7389379224b91e909493f69cfd1a0c2e738a98091a682faca01",
+      "bytes": 7437
+    },
+    "dbc/CharBaseInfo.dbc": {
+      "sha256": "dc65161aa9e3eb1acddaf4c63c41194af36eef547e52ae606981ba0930ca2742",
+      "bytes": 139
+    },
+    "dbc/CharHairGeosets.dbc": {
+      "sha256": "ce94472e5a293bcd16ae8a8560af356e71fb6c6c5c431e94928316bbe891e00f",
+      "bytes": 7197
+    },
+    "dbc/CharHairTextures.dbc": {
+      "sha256": "a23c234bd1248efb8a44c8ecf65b33ab15ebaebc83af1828895516cc3cf58876",
+      "bytes": 2293
+    },
+    "dbc/CharSections.dbc": {
+      "sha256": "40f020b68e087141f779c3eae91c7a9a602f73a5b2f7aad0cac68313fb403c48",
+      "bytes": 538099
+    },
+    "dbc/CharStartOutfit.dbc": {
+      "sha256": "67729253272fd261b2386308ed6668e9c74989b9597e33108de0b2084b94bc78",
+      "bytes": 20693
+    },
+    "dbc/ChatChannels.dbc": {
+      "sha256": "599782a45c061e63ce9ed386e414841a994e34366b672bbf5b4b1924d1dc58c0",
+      "bytes": 1556
+    },
+    "dbc/ChatProfanity.dbc": {
+      "sha256": "83c25d523b04baa6235243fabacd00f8591f20f9d8ead3713c5225d9ebf83091",
+      "bytes": 46866
+    },
+    "dbc/ChrClasses.dbc": {
+      "sha256": "0d95c935716825f8f04d7110444e6060fdc4213896bd5e602e8403feda638240",
+      "bytes": 1166
+    },
+    "dbc/ChrRaces.dbc": {
+      "sha256": "218b79b5424e09aa33030455205ecd5abd3617597bccef41ba835b2ce70c09df",
+      "bytes": 1720
+    },
+    "dbc/CinematicCamera.dbc": {
+      "sha256": "264f02b1b212d90f16872254d5b0dd451120de6ca2981fbcb0e5a5c1e8ae36ae",
+      "bytes": 686
+    },
+    "dbc/CinematicSequences.dbc": {
+      "sha256": "b75c994b3392c0f0279e844baef2b80cb36b6e3b8a449c8c79af633e887ddac3",
+      "bytes": 541
+    },
+    "dbc/CreatureDisplayInfo.dbc": {
+      "sha256": "ef258b5fe3a366000d4b152da4099b77adb6c78487e388ad31d38b1fda818689",
+      "bytes": 699647
+    },
+    "dbc/CreatureDisplayInfoExtra.dbc": {
+      "sha256": "cd025ceb4d2f1c1b73f838740b5fe3f930c3d7e990bf8fa5a260f45864d18e26",
+      "bytes": 1009817
+    },
+    "dbc/CreatureFamily.dbc": {
+      "sha256": "2912b5de3da34a664b1cb5202414c9bf9cde1ee90c7ac8aec7d8e8521c0b9dff",
+      "bytes": 5175
+    },
+    "dbc/CreatureModelData.dbc": {
+      "sha256": "32a829f2f8f969a592d53a714cb181153df7e25ee5321a492387b5ed86167ca5",
+      "bytes": 79705
+    },
+    "dbc/CreatureSoundData.dbc": {
+      "sha256": "4f04aac393d6b91c109fb7a13aa3f377b33c4d35472a1af861302186c8712d84",
+      "bytes": 63021
+    },
+    "dbc/CreatureSpellData.dbc": {
+      "sha256": "ca188a1378220379ec8eedf3d0f132f2724c1f095c2b7dddfe5c7f38d7d233f7",
+      "bytes": 12765
+    },
+    "dbc/CreatureType.dbc": {
+      "sha256": "f8665f9e194e1387a6572bf8fe2e0c2e7d3187462ab9ca63900b02d90bc4ef1f",
+      "bytes": 1114
+    },
+    "dbc/DeathThudLookups.dbc": {
+      "sha256": "8db1d2d037a23a257e8057832481015654d21402d396aa74244e2f990e19b7c0",
+      "bytes": 921
+    },
+    "dbc/DurabilityCosts.dbc": {
+      "sha256": "2d98d9440c0292b14f1dd7018a9c1a5ae7ab1a3c653a9ed52b29b78fb8f79f4b",
+      "bytes": 36021
+    },
+    "dbc/Emotes.dbc": {
+      "sha256": "9b2219d14002ab5a465d1f487805db88d2f6c93f29ebc548c316e52c53d4bbe0",
+      "bytes": 5695
+    },
+    "dbc/EmotesText.dbc": {
+      "sha256": "1f87bcf149ea115cbf9cfb8c4f46484822823fb0c888a05b8ced2b5e4666bc32",
+      "bytes": 14084
+    },
+    "dbc/EmotesTextData.dbc": {
+      "sha256": "63ceb3f42f597eecf195eb3ca275c17a9d636d558ec92138c8f833f3cbf53d8c",
+      "bytes": 206865
+    },
+    "dbc/EmotesTextSound.dbc": {
+      "sha256": "6a6374b1f1505b55089f738c1e368207d5fef894dd46bbc3419c1ff0e43be3a3",
+      "bytes": 17661
+    },
+    "dbc/Exhaustion.dbc": {
+      "sha256": "01fc83d0708ec12c7e1fe1e38fcb969d045a4b91e20446a3139791c4b5020e0f",
+      "bytes": 468
+    },
+    "dbc/Faction.dbc": {
+      "sha256": "8e4f210fb5a1f644ad2348a4a9fc806677dc8b8f833d97a282ba0a8238a57cda",
+      "bytes": 106042
+    },
+    "dbc/FactionGroup.dbc": {
+      "sha256": "32991c0a67934ecc19675e8772c224007984f9e9add28a8085857b2e2576fbf8",
+      "bytes": 310
+    },
+    "dbc/FactionTemplate.dbc": {
+      "sha256": "44844dfddd7706600b80f8efa14ecc80463e2bcfc67288dea51268200923ec44",
+      "bytes": 18725
+    },
+    "dbc/FootstepTerrainLookup.dbc": {
+      "sha256": "44b5c7d562dde293ac9b474cf88bf7872808d2d484fa3b4cc953150b2996c4c8",
+      "bytes": 3601
+    },
+    "dbc/GameObjectArtKit.dbc": {
+      "sha256": "6a5905557320038d95af70ad43247fbeaf653731a67798ba32a7ab550325d0ce",
+      "bytes": 366
+    },
+    "dbc/GameObjectDisplayInfo.dbc": {
+      "sha256": "e2878828a1da174c096ef5301940fcc0c01acbe55b162c726a3e3e1b99a19ba3",
+      "bytes": 1259362
+    },
+    "dbc/GameTips.dbc": {
+      "sha256": "1b58455be74b02d2abdc7fdb930ccd2a552895b2fe54ff45139351caec6780e5",
+      "bytes": 81172
+    },
+    "dbc/GMSurveyCurrentSurvey.dbc": {
+      "sha256": "746b4f82178f4320fe7abe753bf13a8107915c02f0160ed86b260b0e6d732ad0",
+      "bytes": 85
+    },
+    "dbc/GMSurveyQuestions.dbc": {
+      "sha256": "14cc4dee6f08593f2431d3b0ff870636a36637a671f11c621f5e9aa531b7b403",
+      "bytes": 2163
+    },
+    "dbc/GMSurveySurveys.dbc": {
+      "sha256": "a21c0aa175e5f4eb5c19c4af35b6c6f7a3b2cbb646d611eed36af85db54e903a",
+      "bytes": 65
+    },
+    "dbc/GMTicketCategory.dbc": {
+      "sha256": "47ef493cb40c3770de5bfa0a827221c84b9f1386613708044a2676b7c87364f0",
+      "bytes": 357
+    },
+    "dbc/GroundEffectDoodad.dbc": {
+      "sha256": "dbc8a98a18d663e46bf2fb9cbc1810905fc161c7873846a0831053ee7046836b",
+      "bytes": 13227
+    },
+    "dbc/GroundEffectTexture.dbc": {
+      "sha256": "ad3dee5c8d896a174f3c2e5c99f633e0b8c8786a048742b37451fae41c6d4dd8",
+      "bytes": 330869
+    },
+    "dbc/HelmetGeosetVisData.dbc": {
+      "sha256": "0fb3bd7f371dfd452afbcb5bb4d0ed5ed364af03281c4336c07404499324e324",
+      "bytes": 981
+    },
+    "dbc/ItemBagFamily.dbc": {
+      "sha256": "6578449d1801c946546cd872a2c2d61f59c3e924f17ff99769634c8ecc8c0ada",
+      "bytes": 1263
+    },
+    "dbc/ItemClass.dbc": {
+      "sha256": "6689bf32481ccf84154bd6b48838be28ed5833984e809a28f76b70dcf90349de",
+      "bytes": 1928
+    },
+    "dbc/ItemDisplayInfo.dbc": {
+      "sha256": "38ea4bb052e640c78cabc23fc75371868d22733bcf6be3475a2ff3c094de6af3",
+      "bytes": 4823630
+    },
+    "dbc/ItemPetFood.dbc": {
+      "sha256": "b4f21d7614af52cdbde9ec1f816d569a1deb3356c6bfac6f0fec45ff130800cb",
+      "bytes": 621
+    },
+    "dbc/ItemRandomProperties.dbc": {
+      "sha256": "15cdb2eb1ef4df50179acd923a25a0f92e22e07baeca5ec23d83ab54475d658b",
+      "bytes": 132918
+    },
+    "dbc/ItemSet.dbc": {
+      "sha256": "d8ebc82fa726c3b1572ae6fd1f76beaba668fee199296b76f61d9434704e9436",
+      "bytes": 105274
+    },
+    "dbc/ItemSubClass.dbc": {
+      "sha256": "d9d04baf052a36117277f3923a66ca9deff4c0d61628b4c4bd37d5994500eb56",
+      "bytes": 13208
+    },
+    "dbc/ItemSubClassMask.dbc": {
+      "sha256": "35c5aff792e047550025240563c7839d87f2d5f778206aeca39b848b7f85cb65",
+      "bytes": 187
+    },
+    "dbc/ItemVisualEffects.dbc": {
+      "sha256": "d4b9668cd2a2101015c92ed69893c635204c9fed8210a533c7a1b5fd7ff1d358",
+      "bytes": 1604
+    },
+    "dbc/ItemVisuals.dbc": {
+      "sha256": "7e6dfbdb3475e830fa1ac3b6f6bea95569f8cfa2b9cfbd09ba39a35f3929c826",
+      "bytes": 837
+    },
+    "dbc/Languages.dbc": {
+      "sha256": "3d9a5cfae8603abe227a103a010d31ab93c77fd5e46205e3ab8bcefe1243d2f4",
+      "bytes": 1002
+    },
+    "dbc/LFGDungeons.dbc": {
+      "sha256": "16246fddc398a682b10c21843a180bb576a36230e02165899c0d6551d91d1303",
+      "bytes": 7662
+    },
+    "dbc/Light.dbc": {
+      "sha256": "92f3592b87470f4211da5afa32b029bb51b00a81287a29d47b089c7c2e808da4",
+      "bytes": 22773
+    },
+    "dbc/LightFloatBand.dbc": {
+      "sha256": "cc2f559e781b000904e9168c1c1bd917c5f8a781b3aa28829ef88a7480d20f0a",
+      "bytes": 426789
+    },
+    "dbc/LightIntBand.dbc": {
+      "sha256": "19aeab14e1fc15b4359ac1bb5a5cd2f39da013ec206df536361cbca1b9002fb7",
+      "bytes": 1280325
+    },
+    "dbc/LightParams.dbc": {
+      "sha256": "de3f19c37146f38ecddbe2885b176774467a13d90ab31db36e80e68e1af78845",
+      "bytes": 19029
+    },
+    "dbc/LightSkybox.dbc": {
+      "sha256": "e7b691660480cb2200259d59b93c49853ddf70c157d316a5b9d7ea09ee0c3603",
+      "bytes": 388
+    },
+    "dbc/LiquidType.dbc": {
+      "sha256": "13cda3716638be3c21b2441b44b1c44ecaca569566746145ebd0462eb473ac14",
+      "bytes": 143
+    },
+    "dbc/LoadingScreens.dbc": {
+      "sha256": "d71444756b6ed3ccef45a703181c29b5c535643aee1a6edb7d1a906b7b4a6fc0",
+      "bytes": 5873
+    },
+    "dbc/LoadingScreenTaxiSplines.dbc": {
+      "sha256": "f2b3741ef8845d43cab8167a821125ffd4553ef46d02a13228e76dd7fc1b9c1d",
+      "bytes": 933
+    },
+    "dbc/Lock.dbc": {
+      "sha256": "a1465e4695a78cbb3309ac9d7f00c0bd742a66e210f6f91be6f97ea6c2e085a6",
+      "bytes": 30117
+    },
+    "dbc/LockType.dbc": {
+      "sha256": "0fb3828b0c1cb688ca5c934d7b230aea008c3aa077f4542e7c385799ce5a54e7",
+      "bytes": 4943
+    },
+    "dbc/MailTemplate.dbc": {
+      "sha256": "696ce48520c2285bbcae54f9d132e408f9a751a2109008d7debdd4551af8608d",
+      "bytes": 61398
+    },
+    "dbc/Map.dbc": {
+      "sha256": "6cfaf97338baabfeb1d43cccc48439783771ab941d506845ae73ada32a1a47e9",
+      "bytes": 24700
+    },
+    "dbc/NameGen.dbc": {
+      "sha256": "ab69877801eff3c355416c2daeffe9c1feb0588e1362cbcd41db5d7794a4c683",
+      "bytes": 44884
+    },
+    "dbc/NamesProfanity.dbc": {
+      "sha256": "d890cf99a36f3080bc9c27b0a4e39dac563c92826a5bdffca0eb2ed3d44b5c2d",
+      "bytes": 29877
+    },
+    "dbc/NamesReserved.dbc": {
+      "sha256": "be2f822e62f14dd6557944d67262e269510bea1172a1ba871f2681f1fe32cd82",
+      "bytes": 45645
+    },
+    "dbc/NPCSounds.dbc": {
+      "sha256": "733eb1385350436d4a88eb83b92962ac02e6a50243fc8f96999118016318b8bd",
+      "bytes": 4961
+    },
+    "dbc/Package.dbc": {
+      "sha256": "af849f18bc52117ca6834def8ae7989e31b9d706a2b793737d4935ec5ec9f63c",
+      "bytes": 93
+    },
+    "dbc/PageTextMaterial.dbc": {
+      "sha256": "3f1446c8b5c896dcb219ab850b9c22b614df3e5e4ef905ff76ec95b494ba0ed0",
+      "bytes": 116
+    },
+    "dbc/PaperDollItemFrame.dbc": {
+      "sha256": "43c40ee0a4ea5bd9046056a18062e01ef7aafeea62fb2c5022421ef760642817",
+      "bytes": 1602
+    },
+    "dbc/PetLoyalty.dbc": {
+      "sha256": "4836aa8444427da4306c05e500243b728615374d5fa7c4806565723b01b1be9c",
+      "bytes": 1521
+    },
+    "dbc/PetPersonality.dbc": {
+      "sha256": "425c9e3e8fee81419ff89815a9681e063c2735e9105894bdacf2e7922873f0cc",
+      "bytes": 207
+    },
+    "dbc/QuestInfo.dbc": {
+      "sha256": "8702ce40415e7531e04a2d01a084c898e9addd8bb2ff0d42932bb931cca3be80",
+      "bytes": 614
+    },
+    "dbc/QuestSort.dbc": {
+      "sha256": "0345fe2df72572aa03fc3ba318def05db72dbb1f31fcda1055ed75112b54d8e8",
+      "bytes": 4982
+    },
+    "dbc/Resistances.dbc": {
+      "sha256": "7ec01b0b43082dae594d1d71ee688efdebaa588643190c5a8760854c366f29fc",
+      "bytes": 524
+    },
+    "dbc/ServerMessages.dbc": {
+      "sha256": "f747329389fc6ebcef00e708feb5737482bf7e2564270c1e52a6d66a85154457",
+      "bytes": 690
+    },
+    "dbc/SkillLine.dbc": {
+      "sha256": "a982ce23d52be7cac2a0ffb905f54a2ab35de65081dde113d897844accc0d23a",
+      "bytes": 35915
+    },
+    "dbc/SkillLineAbility.dbc": {
+      "sha256": "833d1196df859482d9fe85cef48562c6b63731d3490833f750e98e2ff5518c5b",
+      "bytes": 406221
+    },
+    "dbc/SkillLineCategory.dbc": {
+      "sha256": "797d86829d56dfb657619a7a901c4314066fc281401eec48006d1ee50caff42b",
+      "bytes": 800
+    },
+    "dbc/SkillRaceClassInfo.dbc": {
+      "sha256": "17d581e1742cf7f9b7e416daee3bc189106b1764b97761d7173e9b09e4c92918",
+      "bytes": 6549
+    },
+    "dbc/SkillTiers.dbc": {
+      "sha256": "2e9d2d244007747b2bc1564c34fc703f921c9d09d032cd32a5cbeb61ce3080a9",
+      "bytes": 3453
+    },
+    "dbc/SoundAmbience.dbc": {
+      "sha256": "032d404e029d969e82289e495543bb96b6ab6a20b9e060cd69787bbe5e290884",
+      "bytes": 1725
+    },
+    "dbc/SoundCharacterMacroLines.dbc": {
+      "sha256": "13912eb60a6d51d457fdccbc557342eebadb7dba0e404744d5d7e520e15d5978",
+      "bytes": 8421
+    },
+    "dbc/SoundEntries.dbc": {
+      "sha256": "9b82fdcc12de977984c323b2a1090c4c88f6ea5fa3b9261662951fb721e1749b",
+      "bytes": 1579819
+    },
+    "dbc/SoundProviderPreferences.dbc": {
+      "sha256": "47e455573707733e542729aa1bd361d1895fc8fe0858556b576f66ed6f2c23e9",
+      "bytes": 4242
+    },
+    "dbc/SoundWaterType.dbc": {
+      "sha256": "5702931f6f68b38c5805b7a4720ebe6adf187054c99976fe5c5f000b90047cf7",
+      "bytes": 213
+    },
+    "dbc/SpamMessages.dbc": {
+      "sha256": "553c233bc8babb87f8be69cdb16d04f7128ec53fbb4ffc1a548629478f821274",
+      "bytes": 93
+    },
+    "dbc/Spell.dbc": {
+      "sha256": "7d9f83e7a6a3ae642d23597a1a0bc4216fa3d688d00428dd3b5d1f47465af27f",
+      "bytes": 27939905
+    },
+    "dbc/SpellAuraNames.dbc": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "dbc/SpellCastTimes.dbc": {
+      "sha256": "d80af2009fd1acd0a2c78a7af1604703c2639796ceb2267747c49f1d234ba27f",
+      "bytes": 853
+    },
+    "dbc/SpellCategory.dbc": {
+      "sha256": "6ae9f7d3546dbadfe3a8f1c7f092e2dc6058576fd220c6d7f602f5192b960de9",
+      "bytes": 1141
+    },
+    "dbc/SpellChainEffects.dbc": {
+      "sha256": "47a9a7cc23f1151ae05c08f5545f5b389f5f9398edf885149d67fddf7937426b",
+      "bytes": 1346
+    },
+    "dbc/SpellDispelType.dbc": {
+      "sha256": "a7793097d2e38dfbbf157faebda9445c07e872a2789cb9ff27904a5f19baa547",
+      "bytes": 1006
+    },
+    "dbc/SpellDuration.dbc": {
+      "sha256": "b72a788827c70a2ecc9c2845fc7456fa5f81f67e5c67567b19f2e8d2b0efb1e0",
+      "bytes": 1397
+    },
+    "dbc/SpellEffectCameraShakes.dbc": {
+      "sha256": "0c21365fb5c8bd07ec8c44cd5140e45c81dd44943a1596373edc9b6a77d32bb8",
+      "bytes": 165
+    },
+    "dbc/SpellEffectNames.dbc": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "dbc/SpellFocusObject.dbc": {
+      "sha256": "6abc130c3058f01d83eed2848e9ac8a52b8471300545d76156832e46528f109c",
+      "bytes": 20312
+    },
+    "dbc/SpellIcon.dbc": {
+      "sha256": "3e71cb31a2bd21b13dc0d3c66c20205e60ee57ca14a79c10ed62c022f9e436ab",
+      "bytes": 68474
+    },
+    "dbc/SpellItemEnchantment.dbc": {
+      "sha256": "5a0bc74eeee40ca5ddc2605da4614efa93aa4622823357d371717ecb2b1491fc",
+      "bytes": 330273
+    },
+    "dbc/SpellMechanic.dbc": {
+      "sha256": "2322fed065844c229dcb16a1fc2098a167c4066e5e48f20874e559762af18a33",
+      "bytes": 1571
+    },
+    "dbc/SpellRadius.dbc": {
+      "sha256": "f86dd15b5369a6a33b7f0f80d4f03eb9d8f160ac215b82e116ca1a97f80bd23b",
+      "bytes": 405
+    },
+    "dbc/SpellRange.dbc": {
+      "sha256": "8a0a0c067b34e84e9224436057a867689db88527dc230bd247be51cc55c22e00",
+      "bytes": 5900
+    },
+    "dbc/SpellShapeshiftForm.dbc": {
+      "sha256": "ad71207db1969b2388f726a5c1b19256353b92154d88d39ab0db44111663329e",
+      "bytes": 3859
+    },
+    "dbc/SpellVisual.dbc": {
+      "sha256": "54ba7a50d6989e5ce2be5fda1845b7aeea3709ddc73716186e2481c61618720a",
+      "bytes": 147285
+    },
+    "dbc/SpellVisualEffectName.dbc": {
+      "sha256": "1addd4cff7e5655378c0eed56d8dfa9a1c731b78791e202cc8a0d23b56e0a08d",
+      "bytes": 120430
+    },
+    "dbc/SpellVisualKit.dbc": {
+      "sha256": "2efada4534303b973333e52575595505a7ea5b0ea6b000b7f0d541f77e263fc9",
+      "bytes": 273021
+    },
+    "dbc/SpellVisualPrecastTransitions.dbc": {
+      "sha256": "3f81455326df9c6568ce34bb8afe81b9d66694e5b763e0909380a9f184dd98ee",
+      "bytes": 115
+    },
+    "dbc/StableSlotPrices.dbc": {
+      "sha256": "d86bbc8707abe3ee738932b93f8ab699a84d24fc32d905dc9593906ceb55d533",
+      "bytes": 53
+    },
+    "dbc/Startup_Strings.dbc": {
+      "sha256": "d5bd0c2ce9f93bcdbc1af4023bbb531e26580451a8504b8f29659494bfa17668",
+      "bytes": 2678
+    },
+    "dbc/Stationery.dbc": {
+      "sha256": "8f35c15cb7b5d0b5e30bde799befeedc3ddbe4a5668df8ead8ef9216161737ac",
+      "bytes": 162
+    },
+    "dbc/Talent.dbc": {
+      "sha256": "48d8d121ccec21d23922f809023a0b8d78b7a565878e357269832d79c87e6a39",
+      "bytes": 40005
+    },
+    "dbc/TalentTab.dbc": {
+      "sha256": "72597a89f38b47612acdcb487d90604b32faabba8af216c4d0dfd654bd0ab6e1",
+      "bytes": 3568
+    },
+    "dbc/TaxiNodes.dbc": {
+      "sha256": "29ca887c425c0eae71a82ad46c4d8d61d7cefc5e9f210fac54417b1bafbaad77",
+      "bytes": 29515
+    },
+    "dbc/TaxiPath.dbc": {
+      "sha256": "4f15f204010c99b9bddcf89b9ee825ae60816dc17a36da5248aec5a832499f73",
+      "bytes": 5781
+    },
+    "dbc/TaxiPathNode.dbc": {
+      "sha256": "45417300e93e2194ad9ace668e4e5fb7d9621c755c35ea85a8e42d719d7f323a",
+      "bytes": 400809
+    },
+    "dbc/TerrainType.dbc": {
+      "sha256": "207d4940a2b2b692041b07c4406267f8cc6d3e4a7532a38ec5dedaefc6f99eaf",
+      "bytes": 355
+    },
+    "dbc/TerrainTypeSounds.dbc": {
+      "sha256": "c886bbdb1636d8f2e6a0ae399185b6da991b47475cc92b39754da1c19f1abbea",
+      "bytes": 57
+    },
+    "dbc/TransportAnimation.dbc": {
+      "sha256": "4b47398842d741991892fcb9dd732f7811f22fd15571ac1993a025ed87f411df",
+      "bytes": 17661
+    },
+    "dbc/VideoHardware.dbc": {
+      "sha256": "a16f9bdb8d450b8055e5c0a0fd1f13bebadfc0c02293a6cb6043217940e38201",
+      "bytes": 17029
+    },
+    "dbc/VocalUISounds.dbc": {
+      "sha256": "6287dd0f8aa8af0a5112ffb5ba040f2fd922f6a584f395bad37b50278aabf22d",
+      "bytes": 19285
+    },
+    "dbc/WeaponImpactSounds.dbc": {
+      "sha256": "adde2b6e8e205d60e8f7c4feee0169b2fdd8f77ac15ae49fc9a6bf297bdef428",
+      "bytes": 2781
+    },
+    "dbc/WMOAreaTable.dbc": {
+      "sha256": "d5478669cfb44c32281b838a8a678f3dbc4205a32176b688ba3ec886f21f969c",
+      "bytes": 2211000
+    },
+    "dbc/WorldMapArea.dbc": {
+      "sha256": "97fbaf8cf54578d9d7de3cb221e1cb8e784969658b8b72dac0abd0af4492841e",
+      "bytes": 7278
+    },
+    "dbc/WorldMapContinent.dbc": {
+      "sha256": "a33c3ccd6ecf04c640a3ac022ff6260cb90656eb01c68f98cd1b512cd9efb059",
+      "bytes": 177
+    },
+    "dbc/WorldMapOverlay.dbc": {
+      "sha256": "cb1ecf1122a741837a725ac52ca845d574fecfb66741951871a04cbf4613bea7",
+      "bytes": 58183
+    },
+    "dbc/WorldSafeLocs.dbc": {
+      "sha256": "d2102bab9c58b140ccb548129b4b7e0f9a105ce0b3ff91e33c3aca412c51a246",
+      "bytes": 40928
+    },
+    "dbc/WorldStateUI.dbc": {
+      "sha256": "aaed499a8d85482cdfff73d6f34d74f7be74fbe980131a78b643d290a0180857",
+      "bytes": 11386
+    },
+    "dbc/WowError_Strings.dbc": {
+      "sha256": "eaf061404edbab9e99b37e58757e64e9f9e91777eee0fd874106d7cb4dd49106",
+      "bytes": 1058
+    },
+    "dbc/ZoneIntroMusicTable.dbc": {
+      "sha256": "e5c3f452a3873d58b032bf6e994916fe38030302fa8ec8aa563a54e11c708622",
+      "bytes": 5219
+    },
+    "dbc/ZoneMusic.dbc": {
+      "sha256": "eeda189ecad12d4a1c593133d0fad5021e8f3ebe22caeb3b26bde3aba4fedd6c",
+      "bytes": 15206
+    },
+    "includes/Interface/Icons/Spell_BurningChains.blp": {
+      "sha256": "f3c69b2c0d046dda699797fd150c01dc362ee4f12a86f7c4274383d3c01262d1",
+      "bytes": 6660
+    },
+    "includes/Patch.toc": {
+      "sha256": "5dadade3303828581ccc9e07cb564c702f6bb72a3e3fe0126b1629997cecb70d",
+      "bytes": 108
+    },
+    "includes/Sound/Creature/Duck/DuckQuack1.wav": {
+      "sha256": "9e65ae2a8d24fe786e893de0c570f4b9caac44886a7b9488580849606fb82679",
+      "bytes": 9118
+    },
+    "includes/Sound/Creature/Duck/DuckQuack2.wav": {
+      "sha256": "2e74830b4f7720cfb8fa4b98799233ebc44a43a94bbcc029bbd7a66a50c9af94",
+      "bytes": 10428
+    },
+    "includes/Sound/Creature/Duck/DuckQuack3.wav": {
+      "sha256": "04c56808c76940b90ccb29c8bf8453f5239306729daa7157f844a79be128704f",
+      "bytes": 22238
+    },
+    "includes/Sound/Creature/Duck/DuckQuack4.wav": {
+      "sha256": "97efb0a295c9e94c504ecdaf7c8296c13de54a1af5388b4807abd6c1bf40f38a",
+      "bytes": 12668
+    },
+    "includes/Sound/Creature/Duck/DuckQuack5.wav": {
+      "sha256": "3a3e7d528af101e7ed346d8b56be7f9e666040ea99d66f8c843045cdec696942",
+      "bytes": 12262
+    },
+    "includes/Sound/Creature/Duck/DuckQuack6.wav": {
+      "sha256": "f6b45efa95eeae1aa85bb899be26fc029d58f95b5a20a6560592d033878d1e2f",
+      "bytes": 12058
+    },
+    "includes/Spells/ArcaneConsecration_Impact_Base_Q.m2": {
+      "sha256": "3655b2e597e67405630d60adee73fbd34d0386ceb96f7c7632cd19fd2e8b2bed",
+      "bytes": 4608
+    },
+    "includes/Spells/BAVAGROUNDARCANE.blp": {
+      "sha256": "c1c7676d70b47d1240790daa5c352d86889dc5b4c8a578b79e422c411f69ca25",
+      "bytes": 88596
+    },
+    "includes/Spells/DangerAreaArrow.blp": {
+      "sha256": "299d6321943163bd786a13877241e9addbc8c4ff9a372300931668c05389a20c",
+      "bytes": 350724
+    },
+    "includes/Spells/DangerAreaBlue.blp": {
+      "sha256": "ad08ca5881a04276179d3509b5902cb612302dfe4b671bf02cb2184c033ecb80",
+      "bytes": 350724
+    },
+    "includes/Spells/DangerAreaFlame.blp": {
+      "sha256": "dda5e2464d339ed746112b53d09f000f0225aff2065cd5daca522e78ddc475d3",
+      "bytes": 350724
+    },
+    "includes/Spells/DangerAreaFrost.blp": {
+      "sha256": "95cea9e7a622aeb55e89c9e172dfd05308081ae84e0361d423476768946e7f92",
+      "bytes": 350724
+    },
+    "includes/Spells/DangerAreaOrange.blp": {
+      "sha256": "547fac9626b8c17b57b82912becaa40bcafad8841b6964f87d834c4eade26619",
+      "bytes": 350724
+    },
+    "includes/Spells/DangerAreaOrangeS.blp": {
+      "sha256": "19fa0b3498034e7545d948ec9dff7a5a396957016b213cd7ac8706d320eb9284",
+      "bytes": 350724
+    },
+    "includes/Spells/DangerAreaRed.blp": {
+      "sha256": "0c45c05f1d1bb9bcf0089b04acfdee488459a9c7fa51dcab35550a532b05ee49",
+      "bytes": 350724
+    },
+    "includes/Spells/DangerAreaWhite.blp": {
+      "sha256": "2c95ffdda40fd7a909f3e564f91e9be73977def793ed768fc8067614f7c1ba50",
+      "bytes": 350724
+    },
+    "includes/Spells/DangerAreaX.blp": {
+      "sha256": "11c25a0d58cc64db32cb21b3dbf304627fb3783ee2fcc2fcbaba3b3a29093728",
+      "bytes": 350724
+    },
+    "includes/Spells/DangerAreaX2.blp": {
+      "sha256": "77b73c583623f3a1332bd23ad2fdb72fb5e7ebf0c708047552c8327c12673848",
+      "bytes": 350724
+    },
+    "includes/Spells/DangerJagged.blp": {
+      "sha256": "4bb42538f07e31912f2a15d68fa03405d2112c9bf5683c3d17c4102df5acb13a",
+      "bytes": 350724
+    },
+    "includes/Spells/DangerJaggedG.blp": {
+      "sha256": "1ca658f1cc1ece7c98ff6d8327e6a55d197447c1c02f98872bde681739befc77",
+      "bytes": 350724
+    },
+    "includes/Spells/DangerZone_W10_S10_EarthQuake.m2": {
+      "sha256": "542d1040a62b4ca9266957c73076cc36ef318550d34132299c29a6ebc369ddb7",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W10_S2_X.m2": {
+      "sha256": "31f7c11209c1b8999605e707da6724f17a144940d88c77ba29e9d7e07387244f",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W10_S30_Arrow.m2": {
+      "sha256": "55d89674f87dda3e67fb8e141cb7cf61908c6955fcc00b692f95731030b689db",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W10_S30_Flame.m2": {
+      "sha256": "c0ddfb22148119b2df6af84744654a4a6c5f6528f85449f5d5b75729a4347f5e",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W10_S30_White.m2": {
+      "sha256": "9f9a5cb49b0a1433a88accb67f96e6790ec6ab0311af7bb8f8e82334d36f7c46",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W10_S30.m2": {
+      "sha256": "729698ba85c96f799ceb51ba60c0de251c2bdb120d64f871d69d8b4a5843a18c",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W10_S9_White.m2": {
+      "sha256": "7edd6b2fbdb3f718342e407e1e5370095e0e9275d91dda93cda6abab93eb073e",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W12_S20_White.m2": {
+      "sha256": "e9aa20ad14afd1c09ca43913e8138a18ef0beb414d93d26f5a3402b44eb0a5ff",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W12_S30_Arrow.m2": {
+      "sha256": "3eaf926215df787b4542421a23f844aa5bf3be87c8ffc441e4641b26f440bc2d",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W12_S30_Jagged.m2": {
+      "sha256": "61bf28bfa26e5367579f26ee52e15a21915adcd2d41060465bd42500a4e4ae2e",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W12_S30_JaggedG.m2": {
+      "sha256": "d7e7c3448f72dd5ed4de1ec78d3649eaa4a49b8a7a5afcae416f62ed4065e782",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W12_S30_White.m2": {
+      "sha256": "d85fa5452e4f2b3b4768388648d524f2d1ae7278e8c7090e8a64a41f53ab34a0",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W12_S30.m2": {
+      "sha256": "917264a95c785a46937e1c5e2ee12953a83403c12f3d1e3391236988ee29fe23",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W12_S60.m2": {
+      "sha256": "70633d6ccd7b4f5438ec4423c704c825e9f5339742d2f44b1a8d001e8fed154c",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W12_S8.m2": {
+      "sha256": "dc067fdcda4f3a3cb2e61ac5a5bf868c84810d58e44abc3a57324aa73e995732",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W15_S30_White.m2": {
+      "sha256": "4b179e489de2d9bfcdde9f4f545dce23d305b299c126433c0aa5c69188388447",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W15_S30.m2": {
+      "sha256": "8e2b16d9d7642399fc90ed33548787366ad206ad8dcdf53e0f06df0a3096aed8",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W17_S30_Jagged.m2": {
+      "sha256": "3292eed2e95dda062a784559b1c666a4a3671ff1fbca513be41fc45bad79e74b",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W17_S30.m2": {
+      "sha256": "368b9cd59715fa585b9f4f22ba553bcfb7bd455155505c79cf03ab60f1c7b836",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W18_S30.m2": {
+      "sha256": "d05a1a46a853605bc82382a5f33420c296f0bc514f646820cb7559fd1f13cc94",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W20_S12_Flame.m2": {
+      "sha256": "f743407990e1864534089e327b931121b7253e2a1e0bd3ad6a9dc9eb1b1417de",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W20_S12.m2": {
+      "sha256": "0db8490c6fc02d4b9eaf810e1e0e5348eb9b0a8b2730bcb0bcd460c3e5938802",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W20_S120_Jagged.m2": {
+      "sha256": "03e482bfb0e87788893ac827e6489dc3ca71d2ed4f8b2ac84b6240b5dac1e81b",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W20_S120.m2": {
+      "sha256": "00a926ee71b4fc3e538a136340ad262fd5a9f3dded1e4f21e6fe359a765ce1b5",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W20_S13_Flame.m2": {
+      "sha256": "b51644c76474f589aab075855ea38755c770b22c59a0b764ce60c541575b7c00",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W20_S18_Flame.m2": {
+      "sha256": "012c8809c25b9a2ea30bc6d848fb1b558a1a4bcf444678cf91ea3231a782b790",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W20_S18.m2": {
+      "sha256": "4995f7379123a66e633a6daf91fbb9e4fbb31c5641213908912e3d0e5dbf06c0",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W20_S30.m2": {
+      "sha256": "2dd8196132a3fb8348f62a04acae71722169efdbdf5f0f7b547d7f0e8cd067db",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W22_S12_Flame.m2": {
+      "sha256": "a08eefc548a2b38a05859cae70291a42bcf1d41dff5188bf829a862e12a92055",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W22_S12_Frost.m2": {
+      "sha256": "e72ee64777a8dbb11f16740a297cb9ac4176552254646226240c0ff55742324f",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W22_S30_Flame.m2": {
+      "sha256": "efe0cc3dc3af37281146039693d780f9a8a03733c98e281194ec7f2d56eb8acd",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W22_S30.m2": {
+      "sha256": "7edb65e1c4414a59c7ddbbe61c126f3f2f99944a75c6adf0dbe68607e4eb5195",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W23_S30.m2": {
+      "sha256": "d1318e1681bcd5d9a682e2c8bacc75b6ae209bdaee40fb8b672a0f8129bbc9e4",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W25_S13_Arcane.m2": {
+      "sha256": "4a9701e0e3e6d9456006d682086c14fd147fa875090b93765777765bca509c43",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W25_S30.m2": {
+      "sha256": "1f1e3fc16f6767ce7b54fd3ebca13a0d4f1f1a433d7c491c4dc2ea8682ca3f3d",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W30_S30.m2": {
+      "sha256": "5621ca6f8ec1e54d83a6ef12418af67773cfe483e13eb69c1609d9c2024665c8",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W35_S30.m2": {
+      "sha256": "5225ab1bf4c093c5c539d56c09f22441a74bd6263da725949a030ec8088e4e77",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W4_S1_White.m2": {
+      "sha256": "92a4966b5b6e3fa88ef021e8948d1aaf076834593bcfa9fc4a9d2df30bda2e73",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W4_S7_Flame.m2": {
+      "sha256": "b1efe3d5bf2a828a19a64065932c6c043ccaae40a2e03dbdb9933cee29573992",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W4_S7_Jagged.m2": {
+      "sha256": "bb493b91922930e0030366181ba5c8e308e94a7d8615a37cc1e1eaf0bc370746",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W40_S30_Arrow.m2": {
+      "sha256": "5e82e4642cdbc669853afefc6e7113eb7ba61f35f8a1021727d156b4d42d74a9",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W40_S30.m2": {
+      "sha256": "3e41bf0955d25ba3b73b9a2b5b313a7ba878b816122e126be5ba8499e780bbaa",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W5_S2_X.m2": {
+      "sha256": "0bd29d5973345d5f85faa7fda43a4ab4dd2a89532f951a5f9e16ef8a90a18c9b",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W50_S30.m2": {
+      "sha256": "72dc713adc85902f591e34b99a0bafd7c2e38fdc2c7672bf439b8ffcd42c4ea1",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W7_S15_Red.m2": {
+      "sha256": "092fbc701162377e482399d428439ad9bac7901d1994b57cf31cf5a8e3a1d149",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W7_S18_Orange.m2": {
+      "sha256": "0c828963ab9e7767df10219215c94f33aa58495e3e2f02cbe188944c81f6ec2d",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W7_S18_Red.m2": {
+      "sha256": "3f6d771df2f53bd0ca3e09d710ad32b93a0e801f106025ded0b9ca79a0172d20",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W7_S2_Orange_Fast.m2": {
+      "sha256": "5e9b74c01ea37ef6832e75e2690553364b2627f78e338fd4a890bd97f4835e31",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W7_S30_Flame.m2": {
+      "sha256": "ad65281b8bd65f8f4142264adc9d8b033c0f4c04927db5ca0d245cd71c84392f",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W8_S30_Arrow.m2": {
+      "sha256": "26409c5f2389f902a9d199563d2c0859e6f24367cf977c089a3c7ac4e544e0f9",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W8_S30_Jagged.m2": {
+      "sha256": "6a408edcc42bf3b907c843539e45aea93107413312f87c2300ea9a4d76db732d",
+      "bytes": 4752
+    },
+    "includes/Spells/DangerZone_W8_S30.m2": {
+      "sha256": "17a68aaa65f86b01d1a1f91875b6e10aef239daff2c57edfbb7c0c0f6f7ab465",
+      "bytes": 4752
+    },
+    "includes/Spells/DBolt_Ice_Body.blp": {
+      "sha256": "4928850fbc68405793cfcb8db22feb8efb6fc736852b1a59f5e61a582b25fc2e",
+      "bytes": 23044
+    },
+    "includes/Spells/DBolt_Ice_Trail.blp": {
+      "sha256": "ebb88632a10580bf7f29cbed617a81e8693570554688d74c23fcd94a4cb2272b",
+      "bytes": 6660
+    },
+    "includes/Spells/DeathBolt_Ice.m2": {
+      "sha256": "985ad371b9bfc0846e515ae338994030b34d321f63637c9f410085c18c5468c0",
+      "bytes": 24208
+    },
+    "includes/Spells/FooSmoke.m2": {
+      "sha256": "a309dc03c0060c695e60fab0fd3d5a13d01e1a61f8d24062c4f704ec71ba8d07",
+      "bytes": 8480
+    },
+    "includes/Spells/InfectedSecretion_Marked.m2": {
+      "sha256": "91b2b3120448dcb39bb667c65638a832fd2969e01eca6cab63e9cb2f7ff18edf",
+      "bytes": 6272
+    },
+    "includes/Spells/KruulCone.blp": {
+      "sha256": "8073195eb6bf204caf2ead2c1ca2624b7eb077a9e527087a18615b0c32eca9a6",
+      "bytes": 350724
+    },
+    "includes/Spells/KruulCone.m2": {
+      "sha256": "7039388418e103cfdbd6ee7bb6a75b1f480d410aeda15a97412e0052fc791efc",
+      "bytes": 4752
+    },
+    "includes/Spells/labaground.blp": {
+      "sha256": "5f0f9fa79c87733345430da44061334a2f6cddc3c85d638aa8a2cbc3c58ef435",
+      "bytes": 350724
+    },
+    "includes/Spells/lacaground.blp": {
+      "sha256": "ccc6462bf8c4b22bc8690562b35da2fca43760a848da0abd8f48eb009f65337d",
+      "bytes": 350724
+    },
+    "includes/Spells/lavaground.blp": {
+      "sha256": "590f9d2c9afd93f67ca5c205a3e90ee468d65df34dafc35784c1ff0ab6831a97",
+      "bytes": 350724
+    },
+    "includes/Spells/LAVAGROUNDARCANE.blp": {
+      "sha256": "4c7f0fd6b7ee0da33786f5a445dca8201f625aa80db1f6d5f677e50faecc2217",
+      "bytes": 88580
+    },
+    "includes/Spells/Solid.blp": {
+      "sha256": "7f008dc4df3bbb2471f0075fda470b7fa3c975f9edf238d7648ba54f85a92889",
+      "bytes": 350724
+    },
+    "includes/World/WMO/Dungeon/AZ_Blackrock/Blackrock_038.wmo": {
+      "sha256": "e97f682cdb93897df12d84792e9d0985d9ea56e773a6a459a820fd14d5900b29",
+      "bytes": 1182498
+    },
+    "includes/World/WMO/Dungeon/AZ_Blackrock/Blackrock_Lower_Guild_015.wmo": {
+      "sha256": "fa6fd1da508de4a648cf7c1b4005c850e5f34d1c5ab2bb39a8edbc3fac204506",
+      "bytes": 538566
+    },
+    "includes/World/WMO/Dungeon/AZ_Blackrock/Blackrock_Lower_Guild_017.wmo": {
+      "sha256": "a941773aee0794f44811be71b476ad5ae47d7e8aac42831750a66ca23f96e756",
+      "bytes": 526902
+    },
+    "includes/World/WMO/Dungeon/AZ_Blackrock/Blackrock_Lower_Guild_018.wmo": {
+      "sha256": "8141c93451ac52f262b80d649ebf5dfe95eaebc5a61c907d0c97b017a667a56d",
+      "bytes": 525484
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/kharazan_000.wmo": {
+      "sha256": "6d2a2640b25ab32a63d3ec3aebe63d8881c8e52a1031889caf0c9670c05303b9",
+      "bytes": 8674
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/kharazan_001.wmo": {
+      "sha256": "0256bea47a4645aff19cc5905de8936f9a5f5ef28dce4557c06ee203d018e638",
+      "bytes": 71110
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/kharazan_002.wmo": {
+      "sha256": "100fc7717a249b6a233d3fc7f6a06aec38eb9f889a9cc837ff65ccad72236029",
+      "bytes": 61518
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/kharazan_003.wmo": {
+      "sha256": "a8dd6023e95c0e2e0a3ad439cf1a04bf4999d493133fc50ea538bd39d04a0a4c",
+      "bytes": 26572
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/kharazan_004.wmo": {
+      "sha256": "3ae4669cf41c58e797a510b13d6528bd5af204ca3a5d395a35379c76ce311508",
+      "bytes": 40152
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/kharazan_005.wmo": {
+      "sha256": "a39be42132ba293a79220c379033c6af2477b47f334c229c3b645046c140dc8f",
+      "bytes": 318786
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/kharazan_006.wmo": {
+      "sha256": "c2e61653997faa39696dd7bee9bb67a597a5820d0a292aa81dbe5effd0540e51",
+      "bytes": 47888
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/kharazan_007.wmo": {
+      "sha256": "a396f76fbdaff6d32be83a37ab4e97feef137df64eca9dcbb338ba2943083244",
+      "bytes": 17976
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/kharazan_008.wmo": {
+      "sha256": "dee3afd8db9465d29120c7d3e5adfd75917501a6e4c748d06cbe6d94246fdf41",
+      "bytes": 148252
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/kharazan_009.wmo": {
+      "sha256": "289fc0f217e44e36775b94a0501ac47ab69d511b27cd79e1e8731a947a359d56",
+      "bytes": 410928
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/kharazan_010.wmo": {
+      "sha256": "9b892944d720a236d52876640af022ad334321f13f08fd0674f403af184e0342",
+      "bytes": 22830
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/Kharazan_Instance_008.wmo": {
+      "sha256": "07bc3720305513060481144441ce4987a39e9a15898bc6402b4c0144e464f0ba",
+      "bytes": 131322
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/Kharazan_Instance_009.wmo": {
+      "sha256": "49bbd815480a91aa284df81396aa632915c7c3ea2f7ab587464800e3547e8bed",
+      "bytes": 230690
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/Kharazan_Instance_013.wmo": {
+      "sha256": "9616b44468f0575ff3fab375cd1e361e4230d554aefbeefb284cc9cfa01e219e",
+      "bytes": 1241458
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/Kharazan_Instance_019.wmo": {
+      "sha256": "fd5a03974504edb71d43959de142745b3baa67c9134069984974302c35787e71",
+      "bytes": 246186
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/Kharazan_Instance_029.wmo": {
+      "sha256": "ba3f85fe711c02688181c5094894d64ea1be187f5c00070dc2fda1e456a91e82",
+      "bytes": 13424
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/Kharazan_Instance_059.wmo": {
+      "sha256": "7785e13db3794a52edf95b765580d4d564a99d477dd6c0726956e9c2cf0bfbb9",
+      "bytes": 213282
+    },
+    "includes/World/WMO/Dungeon/AZ_Karazahn/kharazan.wmo": {
+      "sha256": "c5b978dea2e6eb8720774f24abc6ae82e21e6fcb82e6b1e47678cb5196ffe4e8",
+      "bytes": 14049
+    },
+    "includes/World/WMO/Kalimdor/Buildings/OrcZeppelinHouse/OrcZeppelinHouse_000.wmo": {
+      "sha256": "679e20f68bd3b751f5ccaab42daabca7ca4e3997353baa92415418ccf1136d87",
+      "bytes": 78316
+    },
+    "includes/World/WMO/KarazhanOutland/OutlandBoss_000.wmo": {
+      "sha256": "8b5a7d4995c71393371eea383a52875d3dd0506e4822c2d6180b2021330031db",
+      "bytes": 97068
+    },
+    "make.sh": {
+      "sha256": "f45fe6d6d0ef07c313353233da16f5c915df63552f109f89fd5fa1ad68a88c60",
+      "bytes": 271
+    },
+    "patches/0-ground_effects.yaml": {
+      "sha256": "2dbed182bba9dfdfb048cce10af8afb54b9fa4d4c723bfa99cdadf6885db1314",
+      "bytes": 8111
+    },
+    "patches/0-sounds.yaml": {
+      "sha256": "1607c24ed30e753b1d51001c902980cb0a7e569dd142909ca31afa2d5d5c8658",
+      "bytes": 2456
+    },
+    "patches/1-blizzard.yaml": {
+      "sha256": "fca9cf8b0cedb08bf571034360b024398683dc53e292975347b1dd9855df32ad",
+      "bytes": 865
+    },
+    "patches/2-rain_of_fire.yaml": {
+      "sha256": "d31ad84b64fb2fa0606185ae0846609646d9165f9c656bc4c92c5d80d01356cc",
+      "bytes": 869
+    },
+    "patches/3-flamestrike.yaml": {
+      "sha256": "3f5766d14dfd4adc07cd8db689cbd4fa4312fafc0b35655214e2ba47a744a937",
+      "bytes": 3141
+    },
+    "patches/4-zg-aq20.yaml": {
+      "sha256": "c5358af9b8ffc40aaf0cae72a26d5d93d61e83e733fff755dbebfa70c78c087f",
+      "bytes": 6946
+    },
+    "patches/5-mc-bwl-es.yaml": {
+      "sha256": "5a81ae0fba3f928ecc8906a2c26adce0340457a6d10c42739e39cb7f95143149",
+      "bytes": 5075
+    },
+    "patches/6-aq40-naxx.yaml": {
+      "sha256": "c45452b5600386efc7d6ff21f058a746e613e17784b06fe24784cec1efba22c8",
+      "bytes": 8499
+    },
+    "patches/7-kara.yaml": {
+      "sha256": "9323a044569b2f49557245506d4c01a3b379c1bb7298759d2264b02c1241d151",
+      "bytes": 6633
+    },
+    "patches/8-dungeons.yaml": {
+      "sha256": "3f8268f4413f95c1c71f99d295ca8ea2deabcfda2bfcd467d963f210f07319a8",
+      "bytes": 544
+    },
+    "patches/9-misc.yaml": {
+      "sha256": "5d8bcd409e2ce733fe02689a00457a0ab959fe114c612459b6f83f123e763aa7",
+      "bytes": 3982
+    },
+    "patches/green_water_shield.yaml": {
+      "sha256": "ac0afa161cf43fa9d891887f6382116f31d6ba54ea9dd1588c86a2d4b68bb6aa",
+      "bytes": 1580
+    },
+    "README.md": {
+      "sha256": "ab67a5f8daf4d3dc3219de4852ec8e74e89a48088902f6de36d73653e88b2740",
+      "bytes": 11418
+    },
+    "schema/AreaTrigger.dbc.yaml": {
+      "sha256": "a73bf24d8730df87d4202a84edb16df99f0d32cbfb05164e5f1a236381a1fed2",
+      "bytes": 768
+    },
+    "schema/CreatureDisplayInfo.dbc.yaml": {
+      "sha256": "5fd83777071cbe65f7f90545a22a2441f8db4ac9de9100a75358e261a8910b94",
+      "bytes": 402
+    },
+    "schema/CreatureModelData.dbc.yaml": {
+      "sha256": "e77fe9614ae065a9c5667878be934e354ee5d374f9da0e155fe1a46f99212c6a",
+      "bytes": 478
+    },
+    "schema/CreatureSoundData.dbc.yaml": {
+      "sha256": "1ac39da1dfae0a77996cf6d503c53a2bf926026bbc0f9c064e8466f4a7e2c40e",
+      "bytes": 766
+    },
+    "schema/SoundEntries.dbc.yaml": {
+      "sha256": "30fa7cb4ef47f3d2d8b3e23d966c7753270408f9c409a5a1ad749917c0e5fbc9",
+      "bytes": 1099
+    },
+    "schema/spell_colors.json": {
+      "sha256": "6b4c7684493b38d5979db127ffc1784be743300ede3a160c6d7c3ceb94a747a8",
+      "bytes": 230587
+    },
+    "schema/Spell.dbc.yaml": {
+      "sha256": "c1c001abfb200a08f1acea8e92984164e622f16f5100b89a06304fb7fce2c33c",
+      "bytes": 4966
+    },
+    "schema/SpellIcon.dbc.yaml": {
+      "sha256": "7b84721fb470d76300f6dd1a1f2e33d859023cba1e7ed0b902ee490335d5f8ec",
+      "bytes": 242
+    },
+    "schema/SpellVisual.dbc.yaml": {
+      "sha256": "e5f2d84a401d4eff06f875ebd16dd0f315c254abe2c85f9ae8a2a94a10f66ac2",
+      "bytes": 741
+    },
+    "schema/SpellVisualEffectName.dbc.yaml": {
+      "sha256": "e35a6eac2f0e944f9a659b1393f660ac382e4367e0dffd7c7c6260c14b00e28c",
+      "bytes": 194
+    },
+    "schema/SpellVisualKit.dbc.yaml": {
+      "sha256": "42a62149e9d2623fd9d73773dee0af6986e3d2e5ef6a13f46c8fbe10c91a100e",
+      "bytes": 1094
+    },
+    "src/dbc.rs": {
+      "sha256": "7472c38956a4e1771234306f79a9b9eade22680f6bbf86f6861425af29f78c42",
+      "bytes": 5983
+    },
+    "src/main.rs": {
+      "sha256": "7be61f67ff898a5ab804e5219106af98ab85480c40401d4c7a0c9715610e0466",
+      "bytes": 38869
+    },
+    "src/patch.rs": {
+      "sha256": "973e7e166794c7b82c87ca843fd1e2af033349198779bee25dc3af2ea136cb28",
+      "bytes": 5357
+    },
+    "ss1.png": {
+      "sha256": "cbe1f16c28a414f5edf16143f49dd9d2fff363ebc53fd4a4136559e1c881abb5",
+      "bytes": 509409
+    },
+    "tools/BLPConverter.exe": {
+      "sha256": "8f907f56ae6174bafdf39fa17d65bb3fcc5ab07b28f18eb8063057afbffe705e",
+      "bytes": 332800
+    },
+    "tools/create_zone.py": {
+      "sha256": "f35cb06c2ab9f8fea893057e6e170b77a41cfc2de4dc88cd02e86ca169d0528f",
+      "bytes": 6285
+    },
+    "tools/danger-area.xcf": {
+      "sha256": "5c3b2e261e42e67f7f61c60e7d4bf411d28e41adef7a532598eb7ed8d9141377",
+      "bytes": 2755564
+    },
+    "tools/DangerZone.m2": {
+      "sha256": "c742132240daa57f2d08bf19ed5ff217bd534dbff16a46c81fd145d6682f5c3a",
+      "bytes": 4752
+    },
+    "tools/png2blp.py": {
+      "sha256": "a8d030bdf1fd527a6075930d1e8a5c146daad42cfe3f4e6cbd93ea8e08abaff9",
+      "bytes": 5788
+    }
+  },
+  "symlinks": {},
+  "releases": {
+    "310613061": {
+      "tag": "1.4.18",
+      "folder": "1.4.18--310613061",
+      "assets": {
+        "399041916": {
+          "sha256": "aa99e91794b52ef4dba076b154c9bf5abd1b9417aa4e66925a454e4506bf898f",
+          "bytes": 9331928,
+          "id": "399041916",
+          "name": "patch-O.mpq",
+          "url": "https://github.com/MarcelineVQ/twow-raid-visuals/releases/download/1.4.18/patch-O.mpq",
+          "path": "releases/1.4.18--310613061/assets/patch-O.mpq"
+        }
+      },
+      "source": {
+        "sha256": "dd69a7d7da1e6cf43464c72377a60b934e0c2698f7b6164b2890dd0d6485596a",
+        "bytes": 13495830,
+        "path": "releases/1.4.18--310613061/upstream-source.tar.gz",
+        "url": "https://api.github.com/repos/MarcelineVQ/twow-raid-visuals/tarball/1.4.18"
+      }
+    }
+  }
+}

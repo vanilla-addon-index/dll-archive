@@ -1,0 +1,26 @@
+#foo 9200 base
+
+#scholo
+
+# pretty useless tbb, maybe a good example piece
+### ??? ###############################
+# fixate given arlokk focus visual indicator
+# SpellVisualKit.dbc:
+#   - type: copy
+#     key: 668
+#     values:
+#       Id: 9200
+#       HeadEffect: 2963
+#       ChestEffect: 1562
+# SpellVisual.dbc:
+#   - type: copy
+#     key: 870
+#     values:
+#       Id: 9200
+#       StateKit: 9200
+# Spell.dbc:
+#   - type: update
+#     key: 12021
+#     values:
+#       SpellVisualID_1: 9200
+##################################################
