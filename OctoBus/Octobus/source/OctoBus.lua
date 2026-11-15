@@ -1016,12 +1016,12 @@ local OB_OK, OB_ERR = pcall(function ()
   panel:EnableMouse(true)
   CreateBackdrop(panel)
 
-  panel.goldBar = panel:CreateTexture(nil, "ARTWORK")
-  panel.goldBar:SetTexture("Interface\\PaperDollInfoFrame\\UI-Character-General-TopLeft")
-  panel.goldBar:SetTexCoord(80/256, 255/256, 18/256, 32/256)
-  panel.goldBar:SetPoint("TOPLEFT", panel, "TOPLEFT", 4, -4)
-  panel.goldBar:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -4, -4)
-  panel.goldBar:Hide()
+  panel.stoneHeader = panel:CreateTexture(nil, "ARTWORK")
+  panel.stoneHeader:SetTexture("Interface\\PaperDollInfoFrame\\UI-Character-General-TopLeft")
+  panel.stoneHeader:SetTexCoord(80/256, 255/256, 18/256, 32/256)
+  panel.stoneHeader:SetPoint("TOPLEFT", panel, "TOPLEFT", 4, -4)
+  panel.stoneHeader:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -4, -4)
+  panel.stoneHeader:Hide()
 
   local function MapAttached()
     return CFG.snapMap and ShaguTweaks and ShaguTweaks.WorldMapWindowActive and WorldMapFrame
@@ -1351,7 +1351,7 @@ local OB_OK, OB_ERR = pcall(function ()
   -- Appearance (set from the settings window, /ob options): background opacity, window
   -- opacity and text size. Text size scales the fonts and the row height and width with them.
   local function ApplyLook()
-    -- window opacity fades everything but the text, which has its own opacity
+    -- The default stone header stays opaque. Text has its own opacity.
     local wa = CFG.alpha or 1
     local bg = CFG.bgAlpha or 0.75
     panel:SetAlpha(1)
@@ -1363,20 +1363,23 @@ local OB_OK, OB_ERR = pcall(function ()
     ROW_H = math.floor(18 * textScale + 0.5)
     TOP = math.floor(14 + 18 * textScale + 0.5)
     panel:SetWidth(WIDTH)
-    panel.goldBar:SetHeight(TOP - 9)
+    panel.stoneHeader:SetHeight(TOP - 9)
     if ShaguTweaks and ShaguTweaks.GoldMode and not ShaguTweaks.DarkMode then
       local tint = ShaguTweaks.UITint
       local mods, translate = ShaguTweaks.mods, ShaguTweaks.T
       local golden = mods and translate and mods[translate["Golden UI"]]
       local bar = golden and golden.config and golden.config["goldmode.bar"]
       -- Same opaque stone artwork and multiplied palette as ShaguDPS.
-      panel.goldBar:SetVertexColor(
+      panel.stoneHeader:SetVertexColor(
         (tint and tint.r or 1) * (bar and bar.r or .8),
         (tint and tint.g or .78) * (bar and bar.g or .63),
         (tint and tint.b or .4) * (bar and bar.b or .62), wa)
-      panel.goldBar:Show()
+      panel.stoneHeader:Show()
+    elseif ShaguTweaks and ShaguTweaks.DarkMode then
+      panel.stoneHeader:Hide()
     else
-      panel.goldBar:Hide()
+      panel.stoneHeader:SetVertexColor(1, 1, 1, 1)
+      panel.stoneHeader:Show()
     end
     StyleText(panel.title, math.floor(13 * textScale + 0.5))
     PlaceDivider(-(TOP - 5), 0.6 * math.min(1, bg + 0.25) * wa)
@@ -1593,15 +1596,20 @@ local OB_OK, OB_ERR = pcall(function ()
   -- override: nil = automatic, "show" = forced open anywhere, "hide" = forced closed.
   -- Manual choices persist until toggled again or /ob resetpos restores auto mode.
   local override = nil
-  local attached, goldMode = nil, nil
+  local attached, palette = nil, nil
 
   local function ApplyVisibility()
     local area = InOrg()
     override = CFG.visibility
     local map = MapAttached() and true or false
-    local gold = ShaguTweaks and ShaguTweaks.GoldMode and not ShaguTweaks.DarkMode and true or false
+    local mode = "default"
+    if ShaguTweaks and ShaguTweaks.DarkMode then
+      mode = "dark"
+    elseif ShaguTweaks and ShaguTweaks.GoldMode then
+      mode = "gold"
+    end
     if map ~= attached then attached = map PlacePanel() end
-    if gold ~= goldMode then goldMode = gold ApplyLook() end
+    if mode ~= palette then palette = mode ApplyLook() end
     local want
     if override == "show" then want = true
     elseif override == "hide" then want = false

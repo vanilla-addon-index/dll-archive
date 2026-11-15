@@ -18,4 +18,7 @@ struct di_logger {
 void
 _di_logger_va_add_failure(struct di_logger *logger, const char fmt[], va_list args);
 
+void
+_di_logger_add_failure(struct di_logger *logger, const char fmt[], ...);
+
 #endif

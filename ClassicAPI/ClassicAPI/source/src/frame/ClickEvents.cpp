@@ -115,6 +115,7 @@
 #include "Common.h"
 #include "Game.h"
 #include "Offsets.h"
+#include "baselib/Ascii.h"
 #include "frame/MouseRegistration.h"
 #include "frame/RunnerHook.h"
 #include "frame/ScriptArgs.h"
@@ -275,10 +276,18 @@ bool TakeDown(void *button) {
     return down;
 }
 
+const Game::Doc::Field kGetMouseButtonClickedRets[] = {
+    Game::Doc::Opt("buttonName", "cstring", nullptr,
+                   "Nil outside a mouse-down, mouse-up or click handler."),
+};
+const Game::Doc::Function kGetMouseButtonClicked{
+    "Returns the name of the mouse button that started the running click handler.", {},
+    kGetMouseButtonClickedRets, "InputGlobals"};
+
 void RegisterLuaFunctions() {
     PatchClickCallers();
     Game::Lua::RegisterGlobalFunction("GetMouseButtonClicked",
-                                      &Script_GetMouseButtonClicked);
+                                      &Script_GetMouseButtonClicked, &kGetMouseButtonClicked);
 }
 
 const Game::ModuleAutoRegister _autoreg{&RegisterLuaFunctions};
@@ -470,6 +479,13 @@ const char *ButtonNameForMask(uint32_t mask) {
     default:   va = Offsets::VAR_BUTTON_NAME_UNKNOWN; break;
     }
     return reinterpret_cast<const char *>(va);
+}
+
+uint32_t MaskForButtonName(const char *name) {
+    for (uint32_t mask = 0x01; mask <= 0x10; mask <<= 1)
+        if (Ascii::EqualCI(name, ButtonNameForMask(mask)))
+            return mask;
+    return 0;
 }
 
 } // namespace Frame::ClickEvents

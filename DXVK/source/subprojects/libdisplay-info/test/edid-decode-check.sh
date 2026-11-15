@@ -8,7 +8,9 @@ trap cleanup EXIT
 
 edid="$1"
 diff="${edid%.edid}.diff"
-"$REF_EDID_DECODE" --skip-hex-dump --check --skip-sha <"$edid" >"$workdir/ref" || [ $? = 254 ]
+ref="${edid%.edid}.ref"
+
+cp "$ref" "$workdir/ref"
 "$DI_EDID_DECODE" <"$edid" >"$workdir/di" || [ $? = 254 ]
 
 if [ -f "$diff" ]; then

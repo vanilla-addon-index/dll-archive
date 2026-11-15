@@ -8,6 +8,7 @@ local W = 330          -- content width; the frame adds the dialog border around
 local PAD = 8
 local frame, body, controls = nil, nil, {}
 local loading = false
+local header
 
 -- the stock Blizzard dialog box: marbled dark background, gold-trimmed border
 local function Backdrop(f)
@@ -98,7 +99,7 @@ local function Build()
   body:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -PAD, PAD)
 
   -- gold title plate across the top edge, like the stock option windows
-  local header = frame:CreateTexture(nil, "ARTWORK")
+  header = frame:CreateTexture(nil, "ARTWORK")
   header:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
   header:SetWidth(256)
   header:SetHeight(64)
@@ -202,6 +203,9 @@ function OctoBus_Options()
     frame:Hide()   -- a new frame starts out shown; without this the first click hid it
   end
   if frame:IsShown() then frame:Hide() return end
+  -- The stock title plate is created on demand, after ShaguTweaks recolors the UI.
+  local tint = ShaguTweaks and ShaguTweaks.UITint
+  header:SetVertexColor(tint and tint.r or 1, tint and tint.g or 1, tint and tint.b or 1, 1)
   for i = 1, table.getn(controls) do controls[i].Update() end
   OctoBus.Show()   -- show the timer window so changes can be seen
   frame:Show()

@@ -12,6 +12,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <libdisplay-info/dmt.h>
+#include <libdisplay-info/hdmi-vic.h>
+#include <libdisplay-info/cta-vic.h>
+
 /**
  * DisplayID data structure.
  */
@@ -163,47 +167,49 @@ struct di_displayid_display_params {
 const struct di_displayid_display_params *
 di_displayid_data_block_get_display_params(const struct di_displayid_data_block *data_block);
 
-enum di_displayid_type_i_timing_stereo_3d {
+enum di_displayid_type_i_ii_vii_timing_stereo_3d {
 	/* This timing is always displayed monoscopic (no stereo) */
-	DI_DISPLAYID_TYPE_I_TIMING_STEREO_3D_NEVER = 0x00,
+	DI_DISPLAYID_TYPE_I_II_VII_TIMING_STEREO_3D_NEVER = 0x00,
 	/* This timing is always displayed in stereo */
-	DI_DISPLAYID_TYPE_I_TIMING_STEREO_3D_ALWAYS = 0x01,
+	DI_DISPLAYID_TYPE_I_II_VII_TIMING_STEREO_3D_ALWAYS = 0x01,
 	/* This timing is displayed in mono or stereo depending on a user action
 	 * (wearing the stereo glasses, etc.) */
-	DI_DISPLAYID_TYPE_I_TIMING_STEREO_3D_USER = 0x02,
+	DI_DISPLAYID_TYPE_I_II_VII_TIMING_STEREO_3D_USER = 0x02,
 };
 
-enum di_displayid_type_i_timing_aspect_ratio {
-	DI_DISPLAYID_TYPE_I_TIMING_ASPECT_RATIO_1_1 = 0x00,
-	DI_DISPLAYID_TYPE_I_TIMING_ASPECT_RATIO_5_4 = 0x01,
-	DI_DISPLAYID_TYPE_I_TIMING_ASPECT_RATIO_4_3 = 0x02,
-	DI_DISPLAYID_TYPE_I_TIMING_ASPECT_RATIO_15_9 = 0x03,
-	DI_DISPLAYID_TYPE_I_TIMING_ASPECT_RATIO_16_9 = 0x04,
-	DI_DISPLAYID_TYPE_I_TIMING_ASPECT_RATIO_16_10 = 0x05,
-	DI_DISPLAYID_TYPE_I_TIMING_ASPECT_RATIO_64_27 = 0x06,
-	DI_DISPLAYID_TYPE_I_TIMING_ASPECT_RATIO_256_135 = 0x07,
-	DI_DISPLAYID_TYPE_I_TIMING_ASPECT_RATIO_UNDEFINED = 0x08,
+enum di_displayid_timing_aspect_ratio {
+	DI_DISPLAYID_TIMING_ASPECT_RATIO_1_1 = 0x00,
+	DI_DISPLAYID_TIMING_ASPECT_RATIO_5_4 = 0x01,
+	DI_DISPLAYID_TIMING_ASPECT_RATIO_4_3 = 0x02,
+	DI_DISPLAYID_TIMING_ASPECT_RATIO_15_9 = 0x03,
+	DI_DISPLAYID_TIMING_ASPECT_RATIO_16_9 = 0x04,
+	DI_DISPLAYID_TIMING_ASPECT_RATIO_16_10 = 0x05,
+	DI_DISPLAYID_TIMING_ASPECT_RATIO_64_27 = 0x06,
+	DI_DISPLAYID_TIMING_ASPECT_RATIO_256_135 = 0x07,
+	DI_DISPLAYID_TIMING_ASPECT_RATIO_UNDEFINED = 0x08,
 };
 
-enum di_displayid_type_i_timing_sync_polarity {
-	DI_DISPLAYID_TYPE_I_TIMING_SYNC_NEGATIVE = 0x00,
-	DI_DISPLAYID_TYPE_I_TIMING_SYNC_POSITIVE = 0x01,
+enum di_displayid_type_i_ii_vii_timing_sync_polarity {
+	DI_DISPLAYID_TYPE_I_II_VII_TIMING_SYNC_NEGATIVE = 0x00,
+	DI_DISPLAYID_TYPE_I_II_VII_TIMING_SYNC_POSITIVE = 0x01,
 };
 
 /**
- * Type I timing, defined in section 4.4.1.
+ * Type I timing, defined in DisplayID 1.3 section 4.4.1 and
+ * Type II timing, defined in DisplayID 1.3 section 4.4.2 and
+ * Type VII timing, defined in DisplayID 2.0 section 4.3.1.
  */
-struct di_displayid_type_i_timing {
+struct di_displayid_type_i_ii_vii_timing {
 	double pixel_clock_mhz; /* mega-hertz */
 	bool preferred;
-	enum di_displayid_type_i_timing_stereo_3d stereo_3d;
+	enum di_displayid_type_i_ii_vii_timing_stereo_3d stereo_3d;
 	bool interlaced;
-	enum di_displayid_type_i_timing_aspect_ratio aspect_ratio;
+	enum di_displayid_timing_aspect_ratio aspect_ratio;
 	int32_t horiz_active, vert_active;
 	int32_t horiz_blank, vert_blank;
 	int32_t horiz_offset, vert_offset;
 	int32_t horiz_sync_width, vert_sync_width;
-	enum di_displayid_type_i_timing_sync_polarity horiz_sync_polarity, vert_sync_polarity;
+	enum di_displayid_type_i_ii_vii_timing_sync_polarity horiz_sync_polarity, vert_sync_polarity;
 };
 
 /**
@@ -214,8 +220,173 @@ struct di_displayid_type_i_timing {
  * Returns NULL if the data block tag isn't
  * DI_DISPLAYID_DATA_BLOCK_TYPE_I_TIMING.
  */
-const struct di_displayid_type_i_timing *const *
+const struct di_displayid_type_i_ii_vii_timing *const *
 di_displayid_data_block_get_type_i_timings(const struct di_displayid_data_block *data_block);
+
+/**
+ * Get type II timings from a DisplayID data block.
+ *
+ * The returned array is NULL-terminated.
+ *
+ * Returns NULL if the data block tag isn't
+ * DI_DISPLAYID_DATA_BLOCK_TYPE_II_TIMING.
+ */
+const struct di_displayid_type_i_ii_vii_timing *const *
+di_displayid_data_block_get_type_ii_timings(const struct di_displayid_data_block *data_block);
+
+/**
+ * Behavior when more than 1 tile and less than total number of tiles are driven
+ * by the source.
+ */
+enum di_displayid_tiled_topo_missing_recv_behavior {
+	/* Undefined */
+	DI_DISPLAYID_TILED_TOPO_MISSING_RECV_UNDEF = 0,
+	/* The image is displayed on the tile only */
+	DI_DISPLAYID_TILED_TOPO_MISSING_RECV_TILE_ONLY = 1,
+};
+
+/**
+ * Behavior of this tile when it is the only tile receiving an image from the
+ * source.
+ */
+enum di_displayid_tiled_topo_single_recv_behavior {
+	/* Undefined */
+	DI_DISPLAYID_TILED_TOPO_SINGLE_RECV_UNDEF = 0,
+	/* Image is displayed on the tile only */
+	DI_DISPLAYID_TILED_TOPO_SINGLE_RECV_TILE_ONLY = 1,
+	/* Image is scaled to fit the entire tiled display */
+	DI_DISPLAYID_TILED_TOPO_SINGLE_RECV_SCALED = 2,
+	/* Image is cloned to all other tiles of the entire tiled display */
+	DI_DISPLAYID_TILED_TOPO_SINGLE_RECV_CLONED = 3,
+};
+
+/**
+ * Tiled display capabilities.
+ */
+struct di_displayid_tiled_topo_caps {
+	/* The tiled display is within a single physical display enclosure */
+	bool single_enclosure;
+
+	/* Behavior when subsets of the tiles of the entire tiled display are
+	 * receiving images from source */
+	enum di_displayid_tiled_topo_missing_recv_behavior missing_recv_behavior;
+	enum di_displayid_tiled_topo_single_recv_behavior single_recv_behavior;
+};
+
+/**
+ * Tiled display bezel information.
+ *
+ * The lengths are measured in pixels, accurate to the tenths place.
+ */
+struct di_displayid_tiled_topo_bezel {
+	float top_px, bottom_px, right_px, left_px;
+};
+
+/**
+ * Tiled display topology, defined in section 4.14.
+ */
+struct di_displayid_tiled_topo {
+	/* Capabilities */
+	const struct di_displayid_tiled_topo_caps *caps;
+
+	/* Total number of horizontal/vertical tiles */
+	int32_t total_horiz_tiles, total_vert_tiles;
+	/* Horizontal/vertical tile location */
+	int32_t horiz_tile_location, vert_tile_location;
+	/* Horizontal/vertical size in pixels */
+	int32_t horiz_tile_pixels, vert_tile_lines;
+
+	/* Bezel information, NULL if unset */
+	const struct di_displayid_tiled_topo_bezel *bezel;
+
+	/* Vendor PnP ID, product code and serial number */
+	char vendor_id[3];
+	uint16_t product_code;
+	uint32_t serial_number;
+};
+
+/**
+ * Get tiled display topology from a DisplayID data block.
+ *
+ * Returns NULL if the data block tag isn't
+ * DI_DISPLAYID_DATA_BLOCK_TILED_DISPLAY_TOPO.
+ */
+const struct di_displayid_tiled_topo *
+di_displayid_data_block_get_tiled_topo(const struct di_displayid_data_block *data_block);
+
+/**
+ * Formula/algorithm for type III timings.
+ */
+enum di_displayid_type_iii_timing_algo {
+	/* VESA CVT, standard blanking */
+	DI_DISPLAYID_TYPE_III_TIMING_CVT_STANDARD_BLANKING = 0,
+	/* VESA CVT, reduced blanking */
+	DI_DISPLAYID_TYPE_III_TIMING_CVT_REDUCED_BLANKING = 1,
+};
+
+/**
+ * Type III timing, defined in section 4.4.3.
+ */
+struct di_displayid_type_iii_timing {
+	bool preferred;
+	enum di_displayid_type_iii_timing_algo algo;
+	enum di_displayid_timing_aspect_ratio aspect_ratio;
+	/* Horizontal Active Image (in pixels) */
+	int32_t horiz_active;
+	bool interlaced;
+	/* Frame/Field Refresh Rate (in Hz) */
+	int32_t refresh_rate_hz;
+};
+
+/**
+ * Get type III timings from a DisplayID data block.
+ *
+ * The returned array is NULL-terminated.
+ *
+ * Returns NULL if the data block tag isn't
+ * DI_DISPLAYID_DATA_BLOCK_TYPE_III_TIMING.
+ */
+const struct di_displayid_type_iii_timing *const *
+di_displayid_data_block_get_type_iii_timings(const struct di_displayid_data_block *data_block);
+
+/**
+ * Type IV timing, Timing Code Type
+ */
+enum di_displayid_type_iv_timing_code_type {
+	/* DMT Timing Code */
+	DI_DISPLAYID_TYPE_IV_TIMING_CODE_TYPE_DMT = 0,
+	/* CTA/CEA VIC Timing Code */
+	DI_DISPLAYID_TYPE_IV_TIMING_CODE_TYPE_VIC_CTA = 1,
+	/* HDMI VIC Timing Code */
+	DI_DISPLAYID_TYPE_IV_TIMING_CODE_TYPE_VIC_HDMI = 2,
+};
+
+/**
+ * Type IV timing, defined in section 4.4.4.
+ */
+struct di_displayid_type_iv_timing {
+	/* Type of codes */
+	enum di_displayid_type_iv_timing_code_type type;
+	/* Number of codes in one of dmts, cta_vics or hdmi_vics, depending on the value of type*/
+	size_t codes_len;
+	/* DMT Timing Codes, if type is DI_DISPLAYID_TYPE_IV_TIMING_CODE_TYPE_DMT, NULL otherwise */
+	const struct di_dmt_code *dmts;
+	/* CTA VICs, if type is DI_DISPLAYID_TYPE_IV_TIMING_CODE_TYPE_VIC_CTA, NULL otherwise */
+	const struct di_cta_vic *cta_vics;
+	/* HDMI VICs, if type is DI_DISPLAYID_TYPE_IV_TIMING_CODE_TYPE_VIC_HDMI, NULL otherwise */
+	const struct di_hdmi_vic *hdmi_vics;
+};
+
+/**
+ * Get type IV timing from a DisplayID data block.
+ *
+ * The returned array is NULL-terminated.
+ *
+ * Returns NULL if the data block tag isn't
+ * DI_DISPLAYID_DATA_BLOCK_TYPE_IV_TIMING.
+ */
+const struct di_displayid_type_iv_timing *
+di_displayid_data_block_get_type_iv_timing(const struct di_displayid_data_block *data_block);
 
 /**
  * Get DisplayID data blocks.

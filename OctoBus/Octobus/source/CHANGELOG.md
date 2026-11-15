@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.6-oevg.4 (12 November 2026)
+
+- Hotfix (14 November 2026): Tint the settings title plate with the active ShaguTweaks UI recolor.
+- Use ShaguDPS’s native stone texture at full color and opacity for the default title strip. Golden UI keeps its tint and window opacity, and Darkened UI hides the strip.
+
 ## 1.3.6-oevg.3 (8 November 2026)
 
 - Match ShaguDPS Golden UI headers using cropped native stone artwork and the configured ShaguTweaks tint multiplied by its title palette.

@@ -48,26 +48,78 @@ bool BufferIndexingPass::runPass(Builder& builder, const Options& options) {
 }
 
 
+uint32_t BufferIndexingPass::getOptimalStride(size_t count, const IndexedLoad* loads) {
+  uint32_t stride = 0u;
+  uint32_t merges = 0u;
+
+  if (count < 2u)
+    return 0u;
+
+  /* Try to find a stride which maximizes the length of the select chain that
+   * we can replace with a single load. This should handle most cases well where
+   * multiple loads with a non-trivial stride are used in the same block. */
+  size_t next = count - 1u;
+  size_t prev = count - 2u;
+
+  while (prev < next
+      && loads[prev].isMergeCandidate(loads[next])
+      && loads[next].compareValue <= loads[prev].compareValue + 1u) {
+    if (loads[next].compareValue != loads[prev].compareValue + 1u) {
+      prev -= 1u;
+      continue;
+    }
+
+    uint32_t candidateStride = loads[next].computeStride(loads[prev]);
+    uint32_t candidateMerges = 0u;
+
+    if (!candidateStride) {
+      prev -= 1u;
+      continue;
+    }
+
+    for (size_t i = prev; i <= prev; i--) {
+      if (!loads[next].isMergeCandidate(loads[i]))
+        break;
+
+      if (loads[next].canMergeWithStride(loads[i], candidateStride))
+        candidateMerges += 1u;
+    }
+
+    if (candidateMerges > merges) {
+      stride = candidateStride;
+      merges = candidateMerges;
+    }
+
+    prev -= 1u;
+  }
+
+  return stride;
+}
+
+
 bool BufferIndexingPass::optimizeBuffer(SsaDef descriptor) {
   auto loads = getIndexedLoads(descriptor);
   bool feedback = false;
 
   while (!loads.empty()) {
-    auto next = loads.back();
-    loads.pop_back();
+    size_t index = loads.size() - 1u;
 
-    if (loads.empty())
-      break;
+    auto load = loads[index];
+    auto stride = getOptimalStride(loads.size(), loads.data());
 
-    const auto& prev = loads.back();
+    if (stride) {
+      for (size_t i = index; i <= index; i--) {
+        if (!load.isMergeCandidate(loads[i]))
+          break;
 
-    if (!next.isNextOf(prev))
-      continue;
-
-    auto stride = next.indexOffset - prev.indexOffset;
-    feedback |= rewriteLoadAsIndexed(next, stride);
-    feedback |= rewriteLoadAsIndexed(prev, stride);
-    loads.pop_back();
+        if (load.canMergeWithStride(loads[i], stride)) {
+          feedback |= rewriteLoadAsIndexed(loads[i], stride);
+          loads.erase(loads.begin() + i);
+        }
+      }
+    } else {
+      loads.erase(loads.begin() + index);
+    }
   }
 
   return feedback;
@@ -109,13 +161,22 @@ bool BufferIndexingPass::rewriteLoadAsIndexed(const IndexedLoad& load, uint32_t 
   }
 
   /* Emit load. Let CSE deduplicate it as necessary. */
+  auto srcType = m_builder.getOp(load.loadOp).getType();
+  auto dstType = m_builder.getOp(load.selectOp).getType();
+
   auto newLoad = m_builder.addBefore(load.selectOp,
     Op(m_builder.getOp(load.loadOp)).setOperand(1u, newIndex));
 
   if (load.loadExtract) {
-    newLoad = m_builder.addBefore(load.selectOp, Op::CompositeExtract(
-      m_builder.getOp(load.selectOp).getType(), newLoad, load.loadExtract));
+    auto component = uint32_t(m_builder.getOp(load.loadExtract).getOperand(0u));
+
+    srcType = srcType.getSubType(component);
+    newLoad = m_builder.addBefore(load.selectOp,
+      Op::CompositeExtract(srcType, newLoad, load.loadExtract));
   }
+
+  if (srcType != dstType)
+    newLoad = m_builder.addBefore(load.selectOp, Op::Cast(dstType, newLoad));
 
   /* Rewrite select op in place to swap out the load */
   m_builder.rewriteOp(load.selectOp, Op(m_builder.getOp(load.selectOp)).setOperand(load.selectArg, newLoad));
@@ -163,6 +224,38 @@ small_vector<SsaDef, 256> BufferIndexingPass::getBuffers() {
 }
 
 
+void BufferIndexingPass::getLoadSelectInfos(SsaDef def, LoadInfo base, small_vector<LoadInfo, 1024>& loads) const {
+  auto [useA, useB] = m_builder.getUses(def);
+
+  for (auto use = useA; use != useB; use++) {
+    switch (use->getOpCode()) {
+      case OpCode::eSelect: {
+        auto& load = loads.emplace_back(base);
+        load.selectOp = use->getDef();
+        load.selectArg = def;
+      } break;
+
+      case OpCode::eCast: {
+        LoadInfo nested = base;
+        nested.castOp = use->getDef();
+
+        getLoadSelectInfos(use->getDef(), nested, loads);
+      } break;
+
+      case OpCode::eCompositeExtract: {
+        LoadInfo nested = base;
+        nested.extractOp = use->getDef();
+
+        getLoadSelectInfos(use->getDef(), nested, loads);
+      } break;
+
+      default:
+        break;
+    }
+  }
+}
+
+
 small_vector<BufferIndexingPass::IndexedLoad, 256> BufferIndexingPass::getIndexedLoads(SsaDef descriptor) {
   small_vector<IndexedLoad, 256> result;
 
@@ -175,25 +268,11 @@ small_vector<BufferIndexingPass::IndexedLoad, 256> BufferIndexingPass::getIndexe
       const auto& indexOp = m_builder.getOpForOperand(*load, 1u);
 
       /* Gather actual uses into (use, load) pairs */
-      small_vector<std::pair<SsaDef, SsaDef>, 1024> uses;
-      auto [useA, useB] = m_builder.getUses(load->getDef());
-
-      for (auto use = useA; use != useB; use++) {
-        if (use->getOpCode() == OpCode::eSelect)
-          uses.emplace_back(use->getDef(), load->getDef());
-
-        if (use->getOpCode() == OpCode::eCompositeExtract) {
-          auto [extrA, extrB] = m_builder.getUses(use->getDef());
-
-          for (auto extr = extrA; extr != extrB; extr++) {
-            if (extr->getOpCode() == OpCode::eSelect)
-              uses.emplace_back(extr->getDef(), use->getDef());
-          }
-        }
-      }
+      small_vector<LoadInfo, 1024> uses;
+      getLoadSelectInfos(load->getDef(), LoadInfo(), uses);
 
       for (auto use : uses) {
-        const auto& useOp = m_builder.getOp(use.first);
+        const auto& useOp = m_builder.getOp(use.selectOp);
         dxbc_spv_assert(useOp.getOpCode() == OpCode::eSelect);
 
         bool isIndexedSelect = false;
@@ -207,7 +286,7 @@ small_vector<BufferIndexingPass::IndexedLoad, 256> BufferIndexingPass::getIndexe
 
             uint32_t selectArg = cond.getOpCode() == OpCode::eIEq ? 1u : 2u;
 
-            if (SsaDef(useOp.getOperand(selectArg)) != use.second)
+            if (SsaDef(useOp.getOperand(selectArg)) != use.selectArg)
               continue;
 
             if (condB.isConstant() && condB.getType().getBaseType(0u).isUnsignedIntType()) {
@@ -220,8 +299,8 @@ small_vector<BufferIndexingPass::IndexedLoad, 256> BufferIndexingPass::getIndexe
               loadInfo.compareValue = uint32_t(condB.getOperand(0u));
               loadInfo.loadOp = load->getDef();
 
-              if (use.second != loadInfo.loadOp)
-                loadInfo.loadExtract = m_builder.getOpForOperand(use.second, 1u).getDef();
+              if (use.extractOp)
+                loadInfo.loadExtract = m_builder.getOpForOperand(use.extractOp, 1u).getDef();
 
               if (indexOp.isConstant()) {
                 loadInfo.indexOffset = uint32_t(indexOp.getOperand(0u));
@@ -261,12 +340,28 @@ small_vector<BufferIndexingPass::IndexedLoad, 256> BufferIndexingPass::getIndexe
 }
 
 
-bool BufferIndexingPass::IndexedLoad::isNextOf(const IndexedLoad& other) const {
+bool BufferIndexingPass::IndexedLoad::canMergeWithStride(const IndexedLoad& other, uint32_t stride) const {
+  if (!isMergeCandidate(other))
+    return false;
+
+  uint32_t a = indexOffset - compareValue * stride;
+  uint32_t b = other.indexOffset - other.compareValue * stride;
+
+  return a == b;
+}
+
+
+bool BufferIndexingPass::IndexedLoad::isMergeCandidate(const IndexedLoad& other) const {
   return compareVar   == other.compareVar
       && loadExtract  == other.loadExtract
-      && indexBase    == other.indexBase
-      && compareValue == other.compareValue + 1u
-      && indexOffset  >  other.indexOffset;
+      && indexBase    == other.indexBase;
+}
+
+
+uint32_t BufferIndexingPass::IndexedLoad::computeStride(const IndexedLoad& other) const {
+  auto hi = std::max(indexOffset, other.indexOffset);
+  auto lo = std::min(indexOffset, other.indexOffset);
+  return hi - lo;
 }
 
 

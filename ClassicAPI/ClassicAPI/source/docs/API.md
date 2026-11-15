@@ -83,6 +83,9 @@ build instructions.
   - [Function keys F13 to F24](#function-keys-f13-to-f24)
   - [Modified clicks](#modified-clicks)
   - [`ActionButtonUseKeyDown`](#actionbuttonusekeydown)
+  - [`Enum.BindingSet`](#enumbindingset)
+  - [`C_KeyBindings.GetBindingIndex(action)`](#c_keybindingsgetbindingindexaction)
+  - [`C_KeyBindings.GetBindingContextForAction(action)` / `C_KeyBindings.GetCustomBindingType(bindingIndex)`](#c_keybindingsgetbindingcontextforactionaction--c_keybindingsgetcustombindingtypebindingindex)
 
 - [CharacterList](#characterlist)
   - [`GetSavedCharacterOrder(realm)` / `SetSavedCharacterOrder(realm, order)` — GlueXML only](#getsavedcharacterorderrealm--setsavedcharacterorderrealm-order--gluexml-only)
@@ -200,6 +203,7 @@ build instructions.
 - [CVar](#cvar)
   - [`GetCVar(name)`](#getcvarname)
   - [`GetCVarDefault(name)`](#getcvardefaultname)
+  - [`C_CVar.GetCVar(name)` / `C_CVar.GetCVarDefault(name)` / `C_CVar.RegisterCVar(name [, value])`](#c_cvargetcvarname--c_cvargetcvardefaultname--c_cvarregistercvarname--value)
   - [`C_CVar.SetCVar(name [, value])`](#c_cvarsetcvarname--value)
   - [`C_CVar.GetCVarInfo(name)`](#c_cvargetcvarinfoname)
   - [`C_CVar.DoesCVarExist(name)`](#c_cvardoescvarexistname)
@@ -255,6 +259,7 @@ build instructions.
   - [`ACTION_USABLE_CHANGED` event](#action_usable_changed-event)
   - [`COMBAT_LOG_EVENT_UNFILTERED` / `COMBAT_LOG_EVENT` events](#combat_log_event_unfiltered--combat_log_event-events)
   - [`CURSOR_CHANGED` event](#cursor_changed-event)
+  - [`CVAR_UPDATE` event (fires for every change)](#cvar_update-event-fires-for-every-change)
   - [`EQUIPMENT_SETS_CHANGED` event](#equipment_sets_changed-event)
   - [`EQUIPMENT_SWAP_PENDING` event](#equipment_swap_pending-event)
   - [`EQUIPMENT_SWAP_FINISHED` event](#equipment_swap_finished-event)
@@ -281,6 +286,8 @@ build instructions.
   - [`QUEST_REMOVED` event](#quest_removed-event)
   - [`QUEST_TURNED_IN` event](#quest_turned_in-event)
   - [`SELF_RES_SPELL_CHANGED` event](#self_res_spell_changed-event)
+  - [`SETTINGS_LOADED` event](#settings_loaded-event)
+  - [`SETTINGS_PANEL_OPEN` event](#settings_panel_open-event)
   - [`SOUNDKIT_FINISHED` event](#soundkit_finished-event)
   - [`SPELL_ACTIVATION_OVERLAY_SHOW` / `SPELL_ACTIVATION_OVERLAY_HIDE` events](#spell_activation_overlay_show--spell_activation_overlay_hide-events)
   - [`SPELL_ACTIVATION_OVERLAY_GLOW_SHOW` / `SPELL_ACTIVATION_OVERLAY_GLOW_HIDE` events](#spell_activation_overlay_glow_show--spell_activation_overlay_glow_hide-events)
@@ -299,6 +306,7 @@ build instructions.
   - [`UPDATE_SHAPESHIFT_FORM` event](#update_shapeshift_form-event)
   - [`UNIT_SPELLCAST_*` events](#unit_spellcast_-events)
   - [`USER_WAYPOINT_UPDATED` event](#user_waypoint_updated-event)
+  - [`WEAPON_ENCHANT_CHANGED` event](#weapon_enchant_changed-event)
   - [`WEAPON_SLOT_CHANGED` event](#weapon_slot_changed-event)
 
 - [Expansion](#expansion)
@@ -354,6 +362,8 @@ build instructions.
   - [`CreateFrame("Cooldown" [, name, parent, template])`](#createframecooldown--name-parent-template)
   - [`frame:SetShown(shown)`](#framesetshownshown)
   - [A frame moved to a new parent takes its children along](#a-frame-moved-to-a-new-parent-takes-its-children-along)
+  - [A shown frame moved under a visible parent becomes visible](#a-shown-frame-moved-under-a-visible-parent-becomes-visible)
+  - [`OnShow` and `OnHide` can move frames](#onshow-and-onhide-can-move-frames)
   - [A ScrollFrame keeps clipping its content when it moves](#a-scrollframe-keeps-clipping-its-content-when-it-moves)
   - [`fontstring:GetStringHeight()`](#fontstringgetstringheight)
   - [`fontstring:GetUnboundedStringWidth()`](#fontstringgetunboundedstringwidth)
@@ -401,7 +411,7 @@ build instructions.
   - [`editBox:SetCountInvisibleLetters(count)` / `editBox:IsCountInvisibleLetters()`](#editboxsetcountinvisibleletterscount--editboxiscountinvisibleletters)
   - [`editBox:ClearHistory()`](#editboxclearhistory)
   - [`editBox:Enable()` / `editBox:Disable()` / `editBox:IsEnabled()`](#editboxenable--editboxdisable--editboxisenabled)
-  - [`slider:Enable()` / `slider:Disable()` / `slider:IsEnabled()`](#sliderenable--sliderdisable--sliderisenabled)
+  - [`slider:Enable()` / `slider:Disable()` / `slider:SetEnabled(enabled)` / `slider:IsEnabled()`](#sliderenable--sliderdisable--slidersetenabledenabled--sliderisenabled)
   - [`OnEnable` and `OnDisable` (scripts)](#onenable-and-ondisable-scripts)
   - [`OnMinMaxChanged(self, min, max)` (script)](#onminmaxchangedself-min-max-script)
   - [`statusBar:SetReverseFill(isReverseFill)` / `statusBar:GetReverseFill()`](#statusbarsetreversefillisreversefill--statusbargetreversefill)
@@ -428,6 +438,7 @@ build instructions.
   - [`frame:IsMouseMotionFocus()`](#frameismousemotionfocus)
   - [`frame:SetMouseClickEnabled(enabled)` / `frame:SetMouseMotionEnabled(enabled)`](#framesetmouseclickenabledenabled--framesetmousemotionenabledenabled)
   - [`frame:SetPropagateMouseClicks(propagate)` / `frame:CanPropagateMouseClicks()`](#framesetpropagatemouseclickspropagate--framecanpropagatemouseclicks)
+  - [`frame:SetPassThroughButtons(...)`](#framesetpassthroughbuttons)
   - [`frame:SetDontSavePosition([dontSave])` / `frame:GetDontSavePosition()`](#framesetdontsavepositiondontsave--framegetdontsaveposition)
   - [`frame:SetUsingParentLevel(usingParentLevel)` / `frame:IsUsingParentLevel()`](#framesetusingparentlevelusingparentlevel--frameisusingparentlevel)
   - [`frame:SetClipsChildren(clipsChildren)` / `frame:DoesClipChildren()`](#framesetclipschildrenclipschildren--framedoesclipchildren)
@@ -555,6 +566,7 @@ build instructions.
   - [`IsMouseButtonDown([button])`](#ismousebuttondownbutton)
   - [`GetMouseButtonName(button)`](#getmousebuttonnamebutton)
   - [`GetMouseButtonClicked()`](#getmousebuttonclicked)
+  - [`GetCursorDelta()`](#getcursordelta)
 
 - [Instance](#instance)
   - [`GetInstanceInfo()`](#getinstanceinfo)
@@ -811,10 +823,125 @@ build instructions.
   - [`DressUpModel:GetSheathed()`](#dressupmodelgetsheathed)
   - [`DressUpModel:SetAutoDress([enabled])`](#dressupmodelsetautodressenabled)
   - [`DressUpModel:GetAutoDress()`](#dressupmodelgetautodress)
+  - [`DressUpModel:GetItemTransmogInfo(slot)` / `DressUpModel:GetItemTransmogInfoList()`](#dressupmodelgetitemtransmoginfoslot--dressupmodelgetitemtransmoginfolist)
+  - [`DressUpModel:SetItemTransmogInfo(info [, slot, ignoreChildItems])`](#dressupmodelsetitemtransmoginfoinfo--slot-ignorechilditems)
+  - [`DressUpModel:IsSlotAllowed(slot)` / `DressUpModel:IsSlotVisible(slot)`](#dressupmodelisslotallowedslot--dressupmodelisslotvisibleslot)
   - [`Model:SetGlow(value)`](#modelsetglowvalue)
+
+- [ModelScene](#modelscene)
+  - [`CreateFrame("ModelScene" [, name, parent, template])`](#createframemodelscene--name-parent-template)
+  - [`scene:CreateActor([name, template])`](#scenecreateactorname-template)
+  - [`scene:GetNumActors()` / `scene:GetActorAtIndex(index)`](#scenegetnumactors--scenegetactoratindexindex)
+  - [`scene:SetCameraPosition(x, y, z)` / `scene:GetCameraPosition()`](#scenesetcamerapositionx-y-z--scenegetcameraposition)
+  - [`scene:SetCameraOrientationByYawPitchRoll(yaw, pitch, roll)`](#scenesetcameraorientationbyyawpitchrollyaw-pitch-roll)
+  - [`scene:SetCameraOrientationByAxisVectors(forwardX, forwardY, forwardZ, rightX, rightY, rightZ, upX, upY, upZ)`](#scenesetcameraorientationbyaxisvectorsforwardx-forwardy-forwardz-rightx-righty-rightz-upx-upy-upz)
+  - [`scene:GetCameraForward()` / `scene:GetCameraRight()` / `scene:GetCameraUp()`](#scenegetcameraforward--scenegetcameraright--scenegetcameraup)
+  - [`scene:SetCameraFieldOfView(fov)` / `scene:GetCameraFieldOfView()`](#scenesetcamerafieldofviewfov--scenegetcamerafieldofview)
+  - [`scene:SetCameraNearClip(nearClip)` / `scene:SetCameraFarClip(farClip)`](#scenesetcameranearclipnearclip--scenesetcamerafarclipfarclip)
+  - [`scene:SetViewInsets(left, right, top, bottom)` / `scene:GetViewInsets()`](#scenesetviewinsetsleft-right-top-bottom--scenegetviewinsets)
+  - [`scene:SetViewTranslation(x, y)` / `scene:GetViewTranslation()`](#scenesetviewtranslationx-y--scenegetviewtranslation)
+  - [`scene:Project3DPointTo2D(x, y, z)`](#sceneproject3dpointto2dx-y-z)
+  - [Follow camera](#follow-camera)
+  - [`scene:SetLightType(lightType)` / `scene:GetLightType()`](#scenesetlighttypelighttype--scenegetlighttype)
+  - [`scene:SetLightVisible([visible])` / `scene:IsLightVisible()`](#scenesetlightvisiblevisible--sceneislightvisible)
+  - [`scene:SetLightDirection(x, y, z)` / `scene:SetLightPosition(x, y, z)`](#scenesetlightdirectionx-y-z--scenesetlightpositionx-y-z)
+  - [`scene:SetLightAmbientColor(r, g, b)` / `scene:SetLightDiffuseColor(r, g, b)`](#scenesetlightambientcolorr-g-b--scenesetlightdiffusecolorr-g-b)
+  - [`scene:SetFogColor(r, g, b)` / `scene:GetFogColor()`](#scenesetfogcolorr-g-b--scenegetfogcolor)
+  - [`scene:SetFogNear(near)` / `scene:SetFogFar(far)`](#scenesetfognearnear--scenesetfogfarfar)
+  - [`scene:ClearFog()`](#sceneclearfog)
+  - [`scene:SetDrawLayer(layer)` / `scene:GetDrawLayer()`](#scenesetdrawlayerlayer--scenegetdrawlayer)
+  - [`scene:SetPaused(paused [, affectsGlobalPause])`](#scenesetpausedpaused--affectsglobalpause)
+  - [`scene:GetSceneTime()`](#scenegetscenetime)
+  - [`scene:After(seconds, callback)` / `scene:NewTimer(seconds, callback)` / `scene:NewTicker(seconds, callback [, iterations])`](#sceneafterseconds-callback--scenenewtimerseconds-callback--scenenewtickerseconds-callback--iterations)
+  - [`scene:SetAllowOverlappedModels(allow)` / `scene:GetAllowOverlappedModels()`](#scenesetallowoverlappedmodelsallow--scenegetallowoverlappedmodels)
+  - [`scene:SetGroundTerrain([terrainTypeID])` / `scene:GetGroundTerrain()`](#scenesetgroundterrainterraintypeid--scenegetgroundterrain)
+  - [`scene:SetWorldModel(path [, x, y, z [, yaw [, doodadSet [, mapID]]]])`](#scenesetworldmodelpath--x-y-z--yaw--doodadset--mapid)
+  - [`scene:SetWorldModelByMapID(mapID)`](#scenesetworldmodelbymapidmapid)
+  - [`scene:ClearWorldModel()`](#sceneclearworldmodel)
+  - [`scene:SetWorldTerrain(mapID, x, y [, radius])`](#scenesetworldterrainmapid-x-y--radius)
+  - [`scene:ClearWorldTerrain()`](#sceneclearworldterrain)
+  - [`scene:SetPlayWorldModelSounds(enabled)` / `scene:GetPlayWorldModelSounds()`](#scenesetplayworldmodelsoundsenabled--scenegetplayworldmodelsounds)
+  - [`scene:TraceSegment(startX, startY, startZ, endX, endY, endZ [, camera])`](#scenetracesegmentstartx-starty-startz-endx-endy-endz--camera)
+  - [`scene:GetLiquidAtPoint(x, y, z)`](#scenegetliquidatpointx-y-z)
+  - [`scene:SweepCollider(feetX, feetY, feetZ, radius, height, moveX, moveY, moveZ)`](#scenesweepcolliderfeetx-feety-feetz-radius-height-movex-movey-movez)
+  - [Scene sounds](#scene-sounds)
+  - [`scene:SetSoundListenerActor([actor])` / `scene:GetSoundListenerActor()`](#scenesetsoundlisteneractoractor--scenegetsoundlisteneractor)
+  - [`scene:GetActorAtCursor()`](#scenegetactoratcursor)
+  - [`scene:GetCursorRay()`](#scenegetcursorray)
+  - [`scene:GetActorsInRadius(x, y, z, radius)`](#scenegetactorsinradiusx-y-z-radius)
+  - [`scene:SetMoveMarker(x, y, z)` / `scene:ClearMoveMarker()` / `scene:GetMoveMarker()`](#scenesetmovemarkerx-y-z--sceneclearmovemarker--scenegetmovemarker)
+  - [`OnActorEnter` / `OnActorLeave`](#onactorenter--onactorleave)
+  - [`actor:SetModelByCreatureDisplayID(displayID [, useActivePlayerCustomizations])`](#actorsetmodelbycreaturedisplayiddisplayid--useactiveplayercustomizations)
+  - [`actor:SetModelByPath(path [, useMips])`](#actorsetmodelbypathpath--usemips)
+  - [`actor:SetModelBySpellArea(spellID, radius)`](#actorsetmodelbyspellareaspellid-radius)
+  - [`actor:SetModelByUnit(unit [, sheatheWeapons, autoDress, hideWeapons, usePlayerNativeForm, holdBowString, customRaceID])`](#actorsetmodelbyunitunit--sheatheweapons-autodress-hideweapons-useplayernativeform-holdbowstring-customraceid)
+  - [`actor:SetModelByUnitCreatureDisplayID(unit)`](#actorsetmodelbyunitcreaturedisplayidunit)
+  - [`actor:GetModelUnitGUID()`](#actorgetmodelunitguid)
+  - [`actor:Dress()` / `actor:Undress([includeWeapons])` / `actor:UndressSlot(slot)`](#actordress--actorundressincludeweapons--actorundressslotslot)
+  - [`actor:TryOn(item [, handSlotName, spellEnchantID])`](#actortryonitem--handslotname-spellenchantid)
+  - [`actor:DressPlayerSlot(slot)`](#actordressplayerslotslot)
+  - [`actor:IsSlotAllowed(slot)` / `actor:IsSlotVisible(slot)`](#actorisslotallowedslot--actorisslotvisibleslot)
+  - [`actor:GetItemTransmogInfo(slot)` / `actor:GetItemTransmogInfoList()`](#actorgetitemtransmoginfoslot--actorgetitemtransmoginfolist)
+  - [`actor:SetItemTransmogInfo(info [, slot, ignoreChildItems])`](#actorsetitemtransmoginfoinfo--slot-ignorechilditems)
+  - [`actor:SetSheathed(sheathed [, hidden])` / `actor:GetSheathed()`](#actorsetsheathedsheathed--hidden--actorgetsheathed)
+  - [`actor:SetSheathedCategory(slot, category)`](#actorsetsheathedcategoryslot-category)
+  - [`actor:UseUnitSheatheCategory(useCategory)`](#actoruseunitsheathecategoryusecategory)
+  - [`actor:SetAutoDress(autoDress)` / `actor:GetAutoDress()`](#actorsetautodressautodress--actorgetautodress)
+  - [`actor:IsGeoReady()`](#actorisgeoready)
+  - [`actor:ClearModel()` / `actor:IsLoaded()` / `actor:GetModelPath()`](#actorclearmodel--actorisloaded--actorgetmodelpath)
+  - [`actor:SetPosition(x, y, z)` / `actor:GetPosition()`](#actorsetpositionx-y-z--actorgetposition)
+  - [`actor:SetYaw(yaw)` / `actor:SetPitch(pitch)` / `actor:SetRoll(roll)`](#actorsetyawyaw--actorsetpitchpitch--actorsetrollroll)
+  - [`actor:SetScale(scale)` / `actor:GetScale()`](#actorsetscalescale--actorgetscale)
+  - [`actor:SetUseCenterForOrigin([x, y, z])` / `actor:IsUsingCenterForOrigin()`](#actorsetusecenterfororiginx-y-z--actorisusingcenterfororigin)
+  - [`actor:GetActiveBoundingBox()` / `actor:GetMaxBoundingBox()`](#actorgetactiveboundingbox--actorgetmaxboundingbox)
+  - [`actor:Show()` / `actor:Hide()` / `actor:SetShown(shown)`](#actorshow--actorhide--actorsetshownshown)
+  - [`actor:FadeOut()` / `actor:IsFadingOut()`](#actorfadeout--actorisfadingout)
+  - [`actor:SetAlpha(alpha)` / `actor:GetAlpha()`](#actorsetalphaalpha--actorgetalpha)
+  - [`actor:SetAnimation(animation [, variation, animSpeed, animOffsetSeconds])`](#actorsetanimationanimation--variation-animspeed-animoffsetseconds)
+  - [`actor:SetAnimationBlendOperation(blendOperation)` / `actor:GetAnimationBlendOperation()`](#actorsetanimationblendoperationblendoperation--actorgetanimationblendoperation)
+  - [`actor:SetPaused(paused [, affectsGlobalPause])` / `actor:GetPaused()`](#actorsetpausedpaused--affectsglobalpause--actorgetpaused)
+  - [`actor:SetSpellVisualKit([spellVisualKitID, oneShot])` / `actor:GetSpellVisualKit()`](#actorsetspellvisualkitspellvisualkitid-oneshot--actorgetspellvisualkit)
+  - [`actor:ApplySpellVisualKit(spellVisualKitID [, oneShot])`](#actorapplyspellvisualkitspellvisualkitid--oneshot)
+  - [`actor:PlayAnimationKit(animationKit [, isLooping])` / `actor:StopAnimationKit()`](#actorplayanimationkitanimationkit--islooping--actorstopanimationkit)
+  - [`actor:AttachToMount(rider, animation [, spellKitVisualID])`](#actorattachtomountrider-animation--spellkitvisualid)
+  - [`actor:DetachFromMount(rider)`](#actordetachfrommountrider)
+  - [`actor:CalculateMountScale(rider)`](#actorcalculatemountscalerider)
+  - [`actor:GetAttachmentPosition(attachmentID)`](#actorgetattachmentpositionattachmentid)
+  - [`actor:AttachToActor(parent, attachmentID)`](#actorattachtoactorparent-attachmentid)
+  - [`actor:DetachFromActor()`](#actordetachfromactor)
+  - [`actor:SetPlayAnimationSounds(enabled)` / `actor:GetPlayAnimationSounds()`](#actorsetplayanimationsoundsenabled--actorgetplayanimationsounds)
+  - [`actor:SetShadowShown(shown)` / `actor:IsShadowShown()`](#actorsetshadowshownshown--actorisshadowshown)
+  - [`actor:SetHighlight(kind, highlighted)` / `actor:IsHighlighted([kind])`](#actorsethighlightkind-highlighted--actorishighlightedkind)
+  - [`actor:SetSelectionCircle(r, g, b [, a])` / `actor:ClearSelectionCircle()` / `actor:GetSelectionCircle()`](#actorsetselectioncircler-g-b--a--actorclearselectioncircle--actorgetselectioncircle)
+  - [`actor:SetGroundReticle(radius [, valid])` / `actor:ClearGroundReticle()` / `actor:GetGroundReticle()`](#actorsetgroundreticleradius--valid--actorcleargroundreticle--actorgetgroundreticle)
+  - [`actor:SetNameText(text [, r, g, b])` / `actor:ClearNameText()` / `actor:GetNameText()`](#actorsetnametexttext--r-g-b--actorclearnametext--actorgetnametext)
+  - [`actor:GetNamePosition()`](#actorgetnameposition)
+  - [`actor:PlaySpellVisual(spellID [, target [, castTimeMs [, channelTimeMs]]])`](#actorplayspellvisualspellid--target--casttimems--channeltimems)
+  - [`actor:PlaySpellVisualAtPoint(spellID, x, y, z [, castTimeMs [, channelTimeMs]])`](#actorplayspellvisualatpointspellid-x-y-z--casttimems--channeltimems)
+  - [`actor:StopSpellVisual([castID])`](#actorstopspellvisualcastid)
+  - [`actor:AddAuraVisual(spellID)`](#actoraddauravisualspellid)
+  - [`actor:RemoveAuraVisual([spellID])`](#actorremoveauravisualspellid)
+  - [`actor:PlayLevelUpEffect()`](#actorplaylevelupeffect)
+  - [`actor:PlaySound(soundKitID)`](#actorplaysoundsoundkitid)
+  - [`actor:SetMovementEnabled(enabled)` / `actor:IsMovementEnabled()`](#actorsetmovementenabledenabled--actorismovementenabled)
+  - [Movement commands](#movement-commands)
+  - [`actor:IsFalling()`](#actorisfalling)
+  - [`actor:IsSwimming()`](#actorisswimming)
+  - [`actor:MoveTo(x, y, z [, facing])`](#actormovetox-y-z--facing)
+  - [`actor:KnockBack(fromX, fromY, horizontalSpeed, verticalSpeed)`](#actorknockbackfromx-fromy-horizontalspeed-verticalspeed)
+  - [`actor:SetWalking(walking)` / `actor:IsWalking()`](#actorsetwalkingwalking--actoriswalking)
+  - [`actor:SetMovementSpeed(speedType, speed)` / `actor:GetMovementSpeed(speedType)`](#actorsetmovementspeedspeedtype-speed--actorgetmovementspeedspeedtype)
+  - [`actor:GetCameraPivotHeight(distance)`](#actorgetcamerapivotheightdistance)
+  - [Actor scripts](#actor-scripts)
+  - [`<Actor>` templates](#actor-templates)
+  - [`C_ModelInfo.GetModelSceneInfoByID(modelSceneID)`](#c_modelinfogetmodelsceneinfobyidmodelsceneid)
+  - [`C_ModelInfo.GetModelSceneCameraInfoByID(modelSceneCameraID)`](#c_modelinfogetmodelscenecamerainfobyidmodelscenecameraid)
+  - [`C_ModelInfo.GetModelSceneActorInfoByID(modelActorID)`](#c_modelinfogetmodelsceneactorinfobyidmodelactorid)
+  - [`C_ModelInfo.GetModelSceneActorDisplayInfoByID(modelActorDisplayID)`](#c_modelinfogetmodelsceneactordisplayinfobyidmodelactordisplayid)
 
 - [Mount](#mount)
   - [`C_MountJournal.GetMountFromSpell(spellID)`](#c_mountjournalgetmountfromspellspellid)
+  - [`C_MountJournal.GetMountFromItem(itemID)`](#c_mountjournalgetmountfromitemitemid)
   - [`C_MountJournal.GetMountInfoExtraByID(mountID)`](#c_mountjournalgetmountinfoextrabyidmountid)
 
 - [NameCache](#namecache)
@@ -897,6 +1024,10 @@ build instructions.
   - [`C_QuestLog.IsQuestFlaggedCompleted(questID)`](#c_questlogisquestflaggedcompletedquestid)
   - [`C_QuestLog.GetAllCompletedQuestIDs()`](#c_questloggetallcompletedquestids)
   - [A turn-in always prints "*quest* completed."](#a-turn-in-always-prints-quest-completed)
+
+- [SettingsUtil](#settingsutil)
+  - [`C_SettingsUtil.OpenSettingsPanel([openToCategoryID [, scrollToElementName]])`](#c_settingsutilopensettingspanelopentocategoryid--scrolltoelementname)
+  - [`C_SettingsUtil.NotifySettingsLoaded()`](#c_settingsutilnotifysettingsloaded)
 
 - [Sound](#sound)
   - [`PlaySound(soundKitID)` / `PlaySound(soundName)`](#playsoundsoundkitid--playsoundsoundname)
@@ -1518,9 +1649,7 @@ set.
 `C_AddOns.*` getters that splat the
 `GetAddOnInfo(arg)` 7-tuple `(name, title, notes, enabled,
 loadable, reason, security)` into single-field accessors, plus a
-getter for the addon's optional dependencies. Most bypass
-`GetAddOnInfo` entirely and call the engine's per-field helpers
-directly.
+getter for the addon's optional dependencies.
 
 All accept either a 1-based index (`1..GetNumAddOns()`) or an
 addon directory name string.
@@ -1654,11 +1783,9 @@ Returns `true` iff the engine's addon registry has a matching
 entry, `false` otherwise. Cheap existence probe used by addons
 doing soft-dependency checks.
 
-The implementation goes through the registry directly rather than
-dispatching to `GetAddOnInfo` — the engine echoes its input name
-back as ret1 unconditionally (before the lookup), so a
-`GetAddOnInfo("garbage") ~= nil` heuristic returns true for any
-string. This wrapper avoids that.
+Use this function, not `GetAddOnInfo`, to test if an addon exists.
+`GetAddOnInfo` always returns its input name as the first value, so
+`GetAddOnInfo("garbage") ~= nil` is true for any string.
 
 ```lua
 C_AddOns.DoesAddOnExist("MyAddon")     -- true
@@ -2268,9 +2395,10 @@ local missing, count = _classicapi_UndocumentedAPI()
 ### `C_AuctionHouse.PostItem(itemLocation, duration, quantity, numStacks, bid, buyout)`
 
 Posts `numStacks` auctions of `quantity` each, from a single source stack,
-in one call — a ClassicAPI extension modelled on the multi-sell flow.
-The engine's `StartAuction` only ever posts one whole item object, so this
-handles the splitting and the sequence of posts for you.
+in one call. Retail's `C_AuctionHouse.PostItem` has no `numStacks`
+argument; this version adds it.
+The stock `StartAuction` posts only one whole stack. This function does
+the splitting and the sequence of posts for you.
 
 - `itemLocation` — a `{ bagID = B, slotIndex = S }` table identifying the
   source stack (0 = backpack, 1–4 = equipped bags; `slotIndex` 1-based).
@@ -2286,25 +2414,22 @@ Returns `true` when the job is accepted and posting has started, or
 items for `numStacks × quantity`, no free general bag slot to split into, a
 job already in progress, or bad arguments).
 
-**It's asynchronous.** `CMSG_AUCTION_SELL_ITEM` has no count field — the
-server posts the *entire* item object a GUID points at. So to post a partial
-`quantity` the DLL first splits
-that amount into a bag slot (a server round-trip), then posts the resulting
-stack (another round-trip), repeating for each stack. Progress is reported
-through events rather than the return value:
+**It's asynchronous.** The server always posts a whole stack. To post a
+partial `quantity`, the function first splits that amount into a bag slot
+(a server round-trip). Then it posts the new stack (another round-trip). It
+does this for each stack. Events report the progress, not the return value:
 
 | Event | Payload | When |
 |-------|---------|------|
-| `AUCTION_MULTISELL_START` | — | job accepted, posting begins |
+| `AUCTION_MULTISELL_START` | `totalCount` | job accepted, posting begins |
 | `AUCTION_MULTISELL_UPDATE` | `postedCount, totalCount` | after each stack lands (final one has `postedCount == totalCount`) |
 | `AUCTION_MULTISELL_FAILURE` | — | aborted (source changed under it, no free slot, AH closed, or a step timed out ~10s) |
 
 Splitting reuses **one** general-purpose bag slot (each post empties it for
 the next split); the final stack posts the source object directly with no
 split. Posting a whole existing stack (`quantity` == the source count,
-`numStacks` 1) needs no free slot at all. Every individual post goes through
-the engine's own `StartAuction`, so its validation (damaged-item reject,
-buyout normalization, duration check) applies to each stack.
+`numStacks` 1) needs no free slot at all. Each post gets the same checks as
+`StartAuction` (damaged-item reject, buyout normalization, duration check).
 
 ```lua
 -- Watch progress
@@ -2342,8 +2467,8 @@ end
 
 ## AuraUtil
 
-Helper library over [`C_UnitAuras`](#unitauras), backported from FrameXML. Its
-purpose on 1.12 is the allocation-free aura scan: the non-packed path builds no
+Helper library over [`C_UnitAuras`](#unitauras). Its main purpose is
+the allocation-free aura scan: the non-packed path builds no
 table per aura, which matters under Lua's garbage collector when you scan many
 units each frame.
 
@@ -2731,14 +2856,39 @@ No default key — assign one in the keybind UI like any other binding.
 The two together give you a quick "set focus → swap to focus" loop
 common in PvP / heal-tank-while-killing-add scenarios.
 
-Implementation note: addon-side `Bindings.xml` files always render at
-the bottom of the keybind list (orphaned from any `header="..."` they
-declare) because the engine's binding registry is linearly indexed by
-insertion order and addons load after FrameXML. To land inside the
-TARGETING block, the DLL splices the two `<Binding>` entries into the
-engine's `Interface\FrameXML\Bindings.xml` at file-read time via a
-hook on `FUN_FILE_READ` — see [`src/bindings/Inject.cpp`](../src/bindings/Inject.cpp).
+The two bindings show in the TARGETING block of the keybind list, not at
+the bottom.
 
+
+### `Enum.BindingSet`
+
+The sets of key bindings, for `LoadBindings`, `SaveBindings` and
+`GetCurrentBindingSet`.
+
+| Field | Value |
+|---|---|
+| `Default` | 0 |
+| `Account` | 1 |
+| `Character` | 2 |
+| `Current` | 3 |
+
+`GetCurrentBindingSet()` returns `Account` or `Character`.
+
+### `C_KeyBindings.GetBindingIndex(action)`
+
+Returns the index of the binding for `action`, the index that
+`GetBinding(index)` takes. Returns `nil` when no binding has that action.
+
+```lua
+local index = C_KeyBindings.GetBindingIndex("INTERACTTARGET")
+local action, key1, key2 = GetBinding(index)
+```
+
+### `C_KeyBindings.GetBindingContextForAction(action)` / `C_KeyBindings.GetCustomBindingType(bindingIndex)`
+
+Both functions return `nil`. The client has one set of key bindings for all
+actions, so no action has a binding context of its own. The client has no
+custom binding types.
 ## CharacterList
 
 ### `GetSavedCharacterOrder(realm)` / `SetSavedCharacterOrder(realm, order)` — GlueXML only
@@ -2766,7 +2916,7 @@ what `GetCharacterInfo` returns.
 Saved to `WTF\Account\<ACCOUNT>\ClassicAPI.txt`, one line per realm:
 
 ```ini
-CharacterOrder.Octo=Thrall|Jaina|Sylvanas
+CharacterOrder.MyRealm=Thrall|Jaina|Sylvanas
 CharacterOrder.AnotherRealm=Foo|Bar
 ```
 
@@ -2941,12 +3091,11 @@ for _, bubble in ipairs(C_ChatBubbles.GetAllChatBubbles()) do
 end
 ```
 
-Chat bubbles are `CGChatBubbleFrame`s — full frames the
-engine creates in C++ without ever calling `CreateFrame` (same as
-default nameplates). The returned frames are the engine's **canonical
-wrappers**: real, method-capable (`:GetRegions()`, `:IsShown()`,
-`:GetPoint()`, …), and identical to the object any other addon that
-touches the bubble sees, so decorations survive. The spoken-text
+The game creates chat bubbles without `CreateFrame` (the same as
+default nameplates). The returned frames are real frames with all
+methods (`:GetRegions()`, `:IsShown()`, `:GetPoint()`, …). Each one is
+the same object that any other addon that touches the bubble sees, so
+decorations survive. The spoken-text
 FontString is parented to the bubble, so it shows up in
 `:GetRegions()`.
 
@@ -2975,16 +3124,13 @@ local classes = FillLocalizedClassList({})
 -- ...
 ```
 
-An optional `isFemale` boolean can fetch female-form names.
-`ChrClasses.dbc` has no separate female-name array — `Name[9]` (one
-localized string per locale) sits exactly between offsets `+0x14` and
-`+0x38`, with the class token immediately after, leaving no room. The
-arg is accepted for signature parity but ignored; the same names are
-returned either way. Most locales (English included) wouldn't
-differentiate the two anyway, so callers won't typically notice.
+The function accepts an optional `isFemale` boolean but ignores it. The
+client has no female-form class names. The function returns the same
+names either way. Most locales (English included) use the same names for
+both forms.
 
-Sparse class IDs (classID 6 and a few others are skipped) have NULL
-records and are silently skipped.
+The class list has gaps (for example, classID 6). The function skips these
+IDs.
 
 ## ClassColor
 
@@ -3052,7 +3198,7 @@ rather than functions, and a mirrored value would be a stale copy.
 ## ColorUtil
 
 The `C_ColorUtil` color-space and text-color-code helpers. All are
-pure functions (no engine state); conventions verified in-game.
+pure functions (no game state).
 
 **Ranges:** hue is in **degrees**, `[0, 360)`; saturation / value / lightness
 are `[0, 1]`. RGB channels are `[0, 1]` (not 0–255). Achromatic (gray) inputs
@@ -3091,7 +3237,7 @@ Returns `(h, s, v)`. Hue passes through unchanged.
 
 ### `C_ColorUtil.ConvertHSLToRGB(h, s, l)`
 
-Returns `(r, g, b)`. A negative hue (or `s == 0`) is achromatic → `r == g ==
+A ClassicAPI extension. Returns `(r, g, b)`. A negative hue (or `s == 0`) is achromatic → `r == g ==
 b == l`.
 
 ### `C_ColorUtil.GenerateTextColorCode(color)`
@@ -3136,7 +3282,7 @@ which the engine ships.
 
 ```lua
 if not InCombatLockdown() then
-    -- always true in 1.12 — falls through unconditionally
+    -- always runs: InCombatLockdown() always returns false
 end
 
 if UnitAffectingCombat("player") then
@@ -3493,24 +3639,16 @@ export.
 ExportDBCFiles: wrote 155 .dbc file(s) to DBFilesClient\
 ```
 
-Unlike the MPQ `(listfile)` alone (which omits ~18 of the tables the
-client actually loads — mostly cosmetic animation/sound/lookup DBCs that
-Blizzard left out of the index), this unions two sources for a complete
-set:
+The export is complete. It writes two groups of files:
 
-1. the **MPQ `(listfile)`** under `DBFilesClient\` — catches files that
-   ship in the archives without a loader (e.g. `wowerror_strings.dbc`);
-2. a **`.text` scan for the DBC path-getter pattern**
-   (`mov eax, &"DBFilesClient\X.dbc"; ret`) — the authoritative list of
-   what this build loads. The master DBC init (`FUN_0053f8b0`) is
-   straight-line with no iterable name table, so the per-DBC getters
-   *are* the registry; scanning for them is the same technique that
-   built [docs/DBCs.md](DBCs.md).
+1. Every table that the client loads. This includes about 18 tables that
+   the MPQ `(listfile)` does not list (mostly cosmetic animation, sound,
+   and lookup DBCs).
+2. Every file under `DBFilesClient\` in the MPQ `(listfile)`. This includes
+   files that the client does not load (for example, `wowerror_strings.dbc`).
 
-Results are deduped case-insensitively. Handy for a local DBC dump to
-inspect schemas/values directly — e.g. verifying a record's column
-layout against a known row, the way `C_Item.GetEnchantInfo`'s effect
-columns were confirmed — without a standalone MPQ extraction tool.
+Each file is written one time (names are compared case-insensitively). Use
+the dump to examine DBC schemas and values without an MPQ extraction tool.
 
 ### `ExportSoundFiles [subpath]` (console command)
 
@@ -3605,9 +3743,8 @@ lookup `C_Item.GetItemID({bagID=B, slotIndex=S})` performs.
 
 - `bagIndex = 0` — the player's main backpack.
 - `bagIndex = 1..4` — the player's equipped bag slots.
-- `slotIndex` — 1-based, capped at the bag's actual slot count (the
-  engine's `PackBagSlot` rejects out-of-range slots and returns nil
-  cleanly).
+- `slotIndex` — 1-based, capped at the bag's actual slot count. An
+  out-of-range slot returns nil.
 
 ```lua
 for slot = 1, 16 do
@@ -3778,18 +3915,12 @@ required.
 
 **Input shapes**:
 
-- `GetItemCooldown(itemInfo)` — accepts itemID, `item:N` / chat-link
-  hyperlink, numeric string, or item name (resolved via the shared
-  `Item::Arg` helper, same chain `C_Item.GetItemCount` etc. use).
-- `C_Container.GetItemCooldown(itemID)` — the namespaced signature accepts
-  number / hyperlink but **not** spell name (per the spec
-  "will not accept an itemlink or name", but link parsing falls out
-  of the shared `Item::Arg::Resolve` for free, so we accept it).
+Both forms accept an itemID, an `item:N` string or chat link, or a
+numeric string. An item name does not work: it returns `0, 0, 0`. The
+retail documentation of `C_Container.GetItemCooldown` says that it
+does not accept an item link, but this version accepts one.
 
-Routes through `FUN_ITEM_QUERY_COOLDOWN` (`0x006E2ED0`) which finds
-the item's ON_USE spell slot in its `ItemStats_C` record and queries
-that spell's cooldown via the same manager player-spell cooldowns
-use.
+The cooldown is the cooldown of the item's ON_USE spell.
 
 ### `C_Container.GetContainerItemDurability(containerIndex, slotIndex)`
 
@@ -3816,10 +3947,8 @@ for slot = 1, GetContainerNumSlots(0) do
 end
 ```
 
-Goes through the same bag-resolve chain
-[`C_Container.GetContainerItemID`](#c_containergetcontaineritemidbagindex-slotindex)
-uses (engine's `PackBagSlot` → `GetItemBySlot`), then reads the same
-durability fields off the descriptor.
+The bag and slot arguments work the same as in
+[`C_Container.GetContainerItemID`](#c_containergetcontaineritemidbagindex-slotindex).
 
 ### `C_Container.GetContainerItemRepairCost(containerIndex, slotIndex)`
 
@@ -4081,8 +4210,8 @@ end
 ```
 
 Same cache-warming caveat as the underlying `C_Item.IsItemOpenable` —
-a freshly-seen item may report `false` for one call while the
-`SMSG_ITEM_QUERY_SINGLE` round-trips. Bag-resident items are almost
+a freshly-seen item may report `false` for one call while the client
+waits for the server to send the item data. Bag-resident items are almost
 always already cached.
 
 ### `C_Container.PlayerHasHearthstone()`
@@ -4113,17 +4242,12 @@ constant, so code that wants to do something with the found id
 (`SetItemRef` for chat-linking, `GetItemInfo` for the item's
 name, etc.) gets the right value for any variant.
 
-> **Cache dependency for rule 2.** The on-use-spell check requires
-> the item's `ItemStats_C` record to be in the local cache. Items
-> currently in the player's bags are always cached (the engine
-> pre-fills the cache during bag sync), so the check is reliable
-> for this code path. The fallback to rule 1 (itemID
-> equality) covers the moment-of-login window before the cache is
-> fully populated.
+> **Cache dependency for rule 2.** The on-use-spell check needs the
+> item's data in the local item cache. Items in the player's bags are
+> always cached, so the check is reliable here. Rule 1 (itemID
+> equality) covers the short time at login before the cache is full.
 
-Walks bags 0..4 via the same chain
-[`C_Container.GetContainerItemID`](#c_containergetcontaineritemidbagindex-slotindex)
-uses internally. Stops on first match.
+The function searches bags 0..4 and returns the first match.
 
 ### `C_Container.UseHearthstone()`
 
@@ -4141,22 +4265,16 @@ if not C_Container.UseHearthstone() then
 end
 ```
 
-> **`true` doesn't guarantee the cast started.** The return reflects
-> "we had a hearthstone to try with and called the engine's
-> `UseContainerItem` on it." Whether the cast actually starts depends
+> **`true` doesn't guarantee the cast started.** The return means
+> "a hearthstone was found and the function used it." Whether the cast actually starts depends
 > on cooldown, combat, movement, etc. — same downstream rules as
 > calling `UseContainerItem(bag, slot)` manually. If you need to
 > know whether the hearth completed, listen for the appropriate cast
 > events (`SPELLCAST_START` / `SPELLCAST_STOP`).
 
-Internally locates the hearthstone with the same walk
-`PlayerHasHearthstone` uses and hands the resulting `CGItem *` pointer
-to the engine's by-pointer use primitive at `0x005D8D00` — the same
-fallback path `Script_UseContainerItem` ends up at after every special
-cursor-mode branch (repair vendor, spell-cast targeting, drop-on-bag)
-is skipped. Bypassing the dispatcher avoids the Lua-stack roundtrip
-of pushing `(bag, slot)` only for `Script_UseContainerItem` to re-parse
-and re-resolve the same item.
+The function finds the hearthstone the same way as
+`PlayerHasHearthstone`. It uses the item directly. The cursor mode
+(repair, spell targeting, an item on the cursor) has no effect on it.
 
 ### `C_Container.SwapItems(srcBag, srcSlot, dstBag, dstSlot)`
 
@@ -4179,31 +4297,27 @@ Bag IDs match the rest of `C_Container.*`:
 - `-1` — main bank (24 slots; **requires the bank window to be open**)
 - `5..10` — equipped bank bags (**requires the bank window to be open**)
 
-Slots are 1-based. The engine accepts both directions:
+Slots are 1-based. Both kinds of swap work:
 
-- Same container (e.g. backpack ↔ backpack, bag1 ↔ bag1, bank ↔ bank)
-  sends opcode `0x10D` `CMSG_SWAP_INV_ITEM` with the two linear slot bytes.
-- Cross-container (e.g. backpack ↔ bag1, bag2 ↔ bank, bank ↔ bank bag)
-  sends opcode `0x10C` `CMSG_SWAP_ITEM` with `(srcBag, srcSlot, dstBag, dstSlot)`.
+- Same container (e.g. backpack ↔ backpack, bag1 ↔ bag1, bank ↔ bank).
+- Cross-container (e.g. backpack ↔ bag1, bag2 ↔ bank, bank ↔ bank bag).
 
 Destination empty becomes a move; destination occupied becomes an
 atomic swap.
 
-> **Bank slots require the bank window to be open.** The engine
-> doesn't sync bank-side `CGContainer`s or bank inventory entries
-> before the first bank interaction, so any bank `EncodeBagSlot`
-> path returns false until then. Same constraint as
+> **Bank slots require the bank window to be open.** The client does
+> not know the bank contents before the first bank interaction. Until
+> then, the function returns `false` for bank slots. Same constraint as
 > `C_Container.GetContainerItemInfo` on bank IDs.
 
 > **ClassicAPI-only.** There is no other direct swap-two-slots
 > call — addons otherwise drive the cursor with two `PickupContainerItem`
-> calls in sequence. This single-call form bypasses the cursor
-> entirely (same path
-> [`C_EquipmentSet.UseEquipmentSet`](#c_equipmentsetuseequipmentsetsetid)
-> uses for its swap chain).
+> calls in sequence. This single-call form does not use the cursor
+> (the same as the swaps of
+> [`C_EquipmentSet.UseEquipmentSet`](#c_equipmentsetuseequipmentsetsetid)).
 
-Send is fire-and-forget. Server confirms via the normal
-`BAG_UPDATE` / `SMSG_INVENTORY_CHANGE_FAILURE` flow; this call does not
+Send is fire-and-forget. The server confirms with the normal
+`BAG_UPDATE` event, or reports an inventory error. This call does not
 wait for that round-trip.
 
 ### `C_Container.MoveItem(srcBag, srcSlot, dstBag, dstSlot, count)`
@@ -4228,8 +4342,8 @@ form:
 - `dst` holds the same item & `dstCount + count ≤ maxStack` → merges
   `count` into dst.
 - `dst` holds a different item, or the merge would overflow → server
-  rejects entirely (source untouched, `SMSG_INVENTORY_CHANGE_FAILURE`
-  fires).
+  rejects entirely (source untouched, the server reports an inventory
+  error).
 
 Use this instead of `C_Container.SwapItems` when you want to
 consolidate partial stacks — `SwapItems` swaps the whole slots, which
@@ -4242,8 +4356,8 @@ constraint as `SwapItems`.
 > **vs. the cursor approach.** There is no other direct one-call move —
 > addons otherwise string `SplitContainerItem(bag, slot, count)` +
 > `PickupContainerItem(dstBag, dstSlot)` together to drive the cursor.
-> This bundles the same two-step into one packet (`CMSG_SPLIT_ITEM`,
-> opcode 0x10E), so the cursor is never touched.
+> This function does the same two steps in one request to the server. It
+> does not use the cursor.
 
 Send is fire-and-forget (same as `SwapItems`).
 
@@ -4519,8 +4633,8 @@ the target's cached name/type/family/rank.
 
 ### `C_CreatureInfo.GetCreatureInfoByID(creatureID)`
 
-Reads the client-side **creature cache** (`creaturecache.wdb`, fed by
-`SMSG_CREATURE_QUERY_RESPONSE`) for an NPC/creature by ID and returns a
+Reads the client-side **creature cache** (`creaturecache.wdb`) for an
+NPC/creature by ID and returns a
 table — or `nil` if it isn't cached:
 
 ```lua
@@ -4541,14 +4655,7 @@ already cached (seen this session, or loaded from `creaturecache.wdb`
 at login), and `nil` otherwise. Unlike `UnitCreatureType`/
 `UnitClassification`, which only work on a *live unit token*, this
 answers for any creatureID you have cached — even one not currently in
-the world.
-
-Reads through the engine's generic cache `_GetRecord` (with no callback,
-so it's a pure lookup — no network query) and pulls the fields straight
-off the cached data block. Field offsets verified against the binary
-(rank read by the engine's classification helper at `[block+0x20]`) and
-real `creaturecache.wdb` rows (Misthoof Stag→type 1, Nordrassil
-Nymph→type 7 rank 1, Greathorn Hunter→family 26).
+the world. The function never sends a query to the server.
 
 For a creature that isn't cached yet, call
 [`RequestLoadCreatureByID`](#c_creatureinforequestloadcreaturebyidcreatureid)
@@ -4556,9 +4663,9 @@ first and read it once `CREATURE_DATA_LOAD_RESULT` fires.
 
 ### `C_CreatureInfo.RequestLoadCreatureByID(creatureID)`
 
-Asynchronously fetches a creature that isn't in the cache yet — issues
-`SMSG_CREATURE_QUERY` and fires **`CREATURE_DATA_LOAD_RESULT(creatureID,
-success)`** when the response lands, at which point
+Asynchronously fetches a creature that isn't in the cache yet — asks
+the server and fires **`CREATURE_DATA_LOAD_RESULT(creatureID,
+success)`** when the server answers, at which point
 [`GetCreatureInfoByID`](#c_creatureinfogetcreatureinfobyidcreatureid)
 returns its data. The same shape as
 [`C_Item.RequestLoadItemData`](#c_itemrequestloaditemdatabyiditem--c_itemrequestloaditemdataitemlocation).
@@ -4567,7 +4674,7 @@ returns its data. The same shape as
 local f = CreateFrame("Frame")
 f:RegisterEvent("CREATURE_DATA_LOAD_RESULT")
 f:SetScript("OnEvent", function()
-    -- 1.12 passes event args as globals: arg1 = creatureID, arg2 = success
+    -- event args arrive as globals: arg1 = creatureID, arg2 = success
     if arg2 then
         local info = C_CreatureInfo.GetCreatureInfoByID(arg1)
         -- info.name, info.type, info.rank, …
@@ -4582,14 +4689,6 @@ Returns `true` if the request was accepted (`false` only on bad input
 or a full pending set). If the creature is **already** cached, the
 event fires synchronously with `success = true`. On a query that never
 resolves it fires once with `success = false` after a timeout.
-
-Implementation: a shared `Cache::QueryLoad` dispatcher hooks the engine's
-generic cache response parser (`FUN_00556E20`) **once** and routes by
-cache instance — the same hook serves the gameobject cache too. The
-creature/gameobject caches use this generic parser; the item and quest
-caches have their own, so there's no hook collision. Verified in-game: `RequestLoadCreatureByID(10184)` on
-an uncached Onyxia fired the event and populated the cache (type 2
-Dragonkin, rank 3 world boss).
 
 ### `C_CreatureInfo.GetRaceInfo(raceID)`
 
@@ -4680,11 +4779,8 @@ C_CreatureInfo.GetFactionInfo(2)   -- Orc  → { name = "Horde", groupTag = "Hor
 
 This is the by-`raceID` form of the stock `UnitFactionGroup(unit)`
 (which returns `groupTag, name` for a live unit) — same resolution, no unit
-required. It mirrors that engine function's chain exactly: race →
-`FactionTemplate` group mask → `FactionGroup.dbc`, selecting the row whose
-bit the mask sets and whose localized name is non-empty (that non-empty test
-is how the engine skips the always-present `"Player"` bit and the nameless
-`"Monster"` row to land on Alliance / Horde).
+required. It always gives the same answer as `UnitFactionGroup` for a
+unit of that race.
 
 ### `C_CreatureInfo.GetCreatureTypeInfo(creatureTypeID)`
 
@@ -4797,9 +4893,8 @@ GetMoneyString(51234, nil, true)    -- "5g 12s 34c" with coin icons
 
 Returns a tuple describing whatever the player has picked up on the
 cursor (item, money, spell, macro, merchant slot, pet), or nothing when
-the cursor is empty. Reads the same engine globals `CursorHasItem` /
-`CursorHasSpell` / `GetCursorMoney` consult, so the answer always
-matches what the rest of the engine sees.
+the cursor is empty. The answer always matches `CursorHasItem` /
+`CursorHasSpell` / `GetCursorMoney`.
 
 Return shape per cursor state:
 
@@ -4943,6 +5038,12 @@ Returns the default value of the cvar as a string. If no cvar has that name,
 it returns no values. If `name` is not a string or a number,
 `GetCVarDefault` raises an error. `GetCVarDefault` works the same way on the
 glue screens.
+
+### `C_CVar.GetCVar(name)` / `C_CVar.GetCVarDefault(name)` / `C_CVar.RegisterCVar(name [, value])`
+
+The same functions as [`GetCVar`](#getcvarname),
+[`GetCVarDefault`](#getcvardefaultname) and `RegisterCVar`, under their
+`C_CVar` names.
 
 ### `C_CVar.SetCVar(name [, value])`
 
@@ -5127,17 +5228,15 @@ Coercion rules (only applied when the cvar exists):
 | Non-numeric, non-`"true"` (`"on"`, `"yes"`) | `false` |
 | Cvar name not registered | `nil` |
 
-Implementation reads the cvar registry directly (engine's
-`FUN_FIND_CVAR` at `0x0063DEC0`), bypassing `GetCVar`'s Lua-error
-path for unknown cvars. The `nil` return lets callers distinguish
+For an unknown cvar, the function returns `nil` and does not raise an
+error. The `nil` return lets callers distinguish
 "the cvar exists and is falsy" from "no such cvar."
 
 #### Glue-state availability
 
-`C_CVar.GetCVarBool` is also registered on the glue Lua state, and
-the engine's stock `GetCVar` / `SetCVar` / `RegisterCVar` /
-`GetCVarDefault` — which are otherwise exposed only in-game — are
-mirrored onto glue too. GlueXML patches at the login / realm /
+`C_CVar.GetCVarBool` is also available on the glue screens. The stock
+`GetCVar` / `SetCVar` / `RegisterCVar` / `GetCVarDefault` functions
+are also available there. GlueXML patches at the login / realm /
 char-select screens can now read and write CVars directly. CVar
 storage is process-global, so writes on either state are
 immediately visible on the other (a `SetCVar("foo", "1")` from a
@@ -5576,8 +5675,8 @@ optionally `ClearIgnoredSlotsForSave()` afterward.
 
 Returns `true` if any item in the set is currently flagged "locked"
 by the engine — a pending pickup or use is in flight that
-`UseEquipmentSet` would race with. Reads bit 2 (`0x04`) of
-`ITEM_FIELD_FLAGS` for each resolvable item in the set.
+`UseEquipmentSet` would race with. The function examines each set item
+that it can find.
 
 ### `C_EquipmentSet.UseEquipmentSet(setID)`
 
@@ -5656,13 +5755,9 @@ if C_EventUtils.IsEventValid("PLAYER_LOGIN") then ... end       -- true
 if C_EventUtils.IsEventValid("COMBAT_LOG_EVENT") then ... end   -- false (not a registered event)
 ```
 
-The check walks the engine's static event-name table at runtime, so it
-sees events added by **any** loaded DLL that injects names by overwriting
-`.rdata` strings in place — for example, on a Turtle WoW client running
-SuperWoWhook, `IsEventValid("UNIT_CASTEVENT")` returns `true` because
-SuperWoWhook patches the binary's event names with its own. This matches
-what `frame:RegisterEvent` will actually accept, which is what addon code
-needs to know.
+The result matches what `frame:RegisterEvent` accepts. This includes
+events that other loaded DLLs add. For example, on a Turtle WoW client
+with SuperWoWhook, `IsEventValid("UNIT_CASTEVENT")` returns `true`.
 
 ### `GetFramesRegisteredForEvent(event)`
 
@@ -5678,11 +5773,10 @@ for i = 1, select("#", GetFramesRegisteredForEvent("BAG_UPDATE")) do
 end
 ```
 
-Reads the engine's own subscriber chain — the exact list
-`frame:RegisterEvent` appends to — so it stays in sync with real
-registrations, including our `AutoReserve`-backed custom events. Frames
-created purely in C++ (nameplates, etc.) come back as their canonical
-wrapper, so `:GetName()` and other methods work; an anonymous frame's
+The result always matches the real registrations, including
+registrations for ClassicAPI's custom events. Frames that the game
+creates without Lua (nameplates, etc.) come back as normal frame
+objects, so `:GetName()` and other methods work. An anonymous frame's
 `:GetName()` is `nil`.
 
 ### `PLAYER_ENTERING_WORLD` payload (`isInitialLogin`, `isReloadingUi`)
@@ -5708,16 +5802,9 @@ end)
 - Both `nil` on an instance/zone transition.
 
 Delivered as real event args (`arg1`/`arg2`), so positional handlers work
-unchanged. Values are `true`→`1` / false→`nil` (the engine dispatcher has no
-boolean), so `if isInitialLogin then …` reads naturally. Existing handlers
+unchanged. Values are `true`→`1` / false→`nil` (event args cannot be
+booleans), so `if isInitialLogin then …` reads naturally. Existing handlers
 that ignore the args are unaffected.
-
-PEW is a no-arg event, so the engine broadcasts it through the
-`FUN_FIRE_EVENT_NO_ARGS` dispatcher; we intercept that (via the shared
-`Event::SignalHook`) and re-broadcast through the variadic dispatcher with
-the payload. The flags are derived from whether the in-game Lua state was
-just (re)built (login/`reload`) and whether we just came through the
-glue/login screen — no `PLAYER_ENTERING_WORLD`-specific engine hook.
 
 ### `CHAT_MSG_*` arguments `lineID` (`arg11`) and `guid` (`arg12`)
 
@@ -5790,24 +5877,12 @@ A trade with 6 stacks (12 `BAG_UPDATE`s, all processed in one
 frame) produces exactly 1 `BAG_UPDATE_DELAYED` at the end of the
 frame.
 
-Implemented by three hooks, none in regions other DLLs touch:
-- `FUN_004F91A0` / `FUN_004F9370` (bag subsystem at `0x004F9xxx`)
-  — each just sets a `g_pending` flag, no fire
-- `FUN_0066FD50` (engine's per-frame world-subsystem update at
-  `0x0066xxxx`, deep in the rendering pipeline, only one caller in
-  the entire binary) — drains the flag at the tail of the world
-  tick
+The event fires after all other per-frame world updates. Addon
+callbacks see `BAG_UPDATE_DELAYED` after their normal event handlers.
 
-The world-tick hook is a tail hook (run original first, then fire
-DELAYED), so the fire happens after every other per-frame world
-work completes. Addon callbacks see DELAYED after their normal
-event handlers.
-
-> **Coverage limitation.** The keyring `BAG_UPDATE(-2)` path goes
-> through a separate function (`FUN_004F8DB0`) that uses
-> `__thiscall` with an awkward register-arg shape. Keyring updates
-> currently won't trigger `BAG_UPDATE_DELAYED`. Player bag (0..4)
-> and bank (5..10) updates work normally — the 95% case.
+> **Coverage limitation.** Keyring updates (`BAG_UPDATE(-2)`) do not
+> fire `BAG_UPDATE_DELAYED`. Player bag (0..4) and bank (5..10)
+> updates work normally — the 95% case.
 
 ### `PLAYER_EQUIPMENT_CHANGED` event
 
@@ -5836,13 +5911,9 @@ f:SetScript("OnEvent", function()
 end)
 ```
 
-Fully event-driven — no polling. The DLL registers change observers
-for the 19 equipment GUID fields of the player descriptor through the
-engine's own field-observer system (the same mechanism the engine
-uses to watch bag slots), so the event fires exactly when the
-server's update packet writes a new item GUID into a slot, once per
-changed slot. Swapping two items (e.g. weapon ⇄ bag) fires once per
-affected equipment slot.
+Fully event-driven — no polling. The event fires when the server
+update puts a new item into a slot, once per changed slot. Swapping
+two items (e.g. weapon ⇄ bag) fires once per affected equipment slot.
 
 ### `UPDATE_INVENTORY_DURABILITY` event
 
@@ -5884,11 +5955,11 @@ end)
 ### `HEARTHSTONE_BOUND` event
 
 Fires (with no payload) every time the player binds their
-hearthstone at an innkeeper — including a rebind at the same inn.
+hearthstone at an innkeeper, including a rebind at the same inn.
 Addons listen to `HEARTHSTONE_BOUND` and re-read `GetBindLocation()`
 to refresh whatever bind-location UI they show.
 
-It never fires on login or on a map change.
+It never fires on login, on a character switch, or on a map change.
 
 ```lua
 local f = CreateFrame("Frame")
@@ -5899,25 +5970,6 @@ f:SetScript("OnEvent", function()
 end)
 ```
 
-Fires **every time** the player confirms a bind, including when the
-new bind is at the same inn as before. The event is driven by the
-bind ACTION (server's SMSG_BINDPOINTUPDATE), not by the area name
-changing.
-
-Implemented by hooking the BINDPOINTUPDATE packet handler at
-`FUN_005ED3C0`. The handler runs in two distinct cases:
-
-1. **Initial post-login sync** — the engine has just zeroed the
-   "bind valid" flag during character-entry init (`FUN_005E2510`),
-   and this packet repopulates it. We detect this by reading the
-   flag *before* the original handler runs; if it's `0`, this is
-   the sync and we suppress the event.
-2. **Innkeeper rebind** — the flag is already `1`. Fire.
-
-Character switch is handled automatically: the character-entry init
-re-zeroes the flag, so each new character's first update is also
-treated as sync and suppressed.
-
 ### `DYNAMIC_GOSSIP_POI_UPDATED` event
 
 Fires (with no payload) when a gossip point of interest is added to the map or
@@ -5926,15 +5978,14 @@ removed from it. When it fires, read the marker again with
 
 ### Player input-state events
 
-Three pairs of zero-payload events fired from a single per-frame
-`Tick::WorldTick` callback that reads input state once and edge-
-detects each pair.
+Three pairs of events with no payload. Each pair tells you when one kind
+of player input starts and stops.
 
-| Event | Fires on | Source |
-|-------|----------|--------|
-| `PLAYER_STARTED_MOVING` / `PLAYER_STOPPED_MOVING` | WASD or autorun toggle | UI-input controller flags at `*0x00BE1148 + 0x04` (`0x10` W \| `0x20` S \| `0x40` A \| `0x80` D \| `0x1000` autorun) |
-| `PLAYER_STARTED_TURNING` / `PLAYER_STOPPED_TURNING` | Mouselook bit held AND character body yaw is changing | Mouselook bit `0x01` + per-frame delta on `CGPlayer + 0x9C4` (body yaw, radians) |
-| `PLAYER_STARTED_LOOKING` / `PLAYER_STOPPED_LOOKING` | Free-look bit held AND camera-relative yaw is changing | Free-look bit `0x02` + per-frame delta on `[*0x00B4B2BC + 0x65B8] + 0xF0` (camera yaw, radians) |
+| Event | Fires on |
+|-------|----------|
+| `PLAYER_STARTED_MOVING` / `PLAYER_STOPPED_MOVING` | The movement keys, autorun, or holding both mouse buttons to run |
+| `PLAYER_STARTED_TURNING` / `PLAYER_STOPPED_TURNING` | Turning the character while holding the right mouse button |
+| `PLAYER_STARTED_LOOKING` / `PLAYER_STOPPED_LOOKING` | Moving the camera while holding the left mouse button |
 
 ```lua
 local f = CreateFrame("Frame")
@@ -5948,31 +5999,20 @@ end
 f:SetScript("OnEvent", function(_, event) print(event) end)
 ```
 
-**Key-state semantics for MOVING**: `STOPPED_MOVING` fires the
-instant the movement keys release, even if the character is still
-airborne from a jump (verified empirically). For an "is the character
-actually displacing this frame" signal, use `GetUnitSpeed("player")`
-and watch the first return.
+**MOVING follows the input, not the motion.** `STOPPED_MOVING` fires when
+the movement input stops, even if the character is still in the air from a
+jump. For the current motion of the character, use `GetUnitSpeed("player")`
+and read the first return.
 
-**Latched semantics for TURNING and LOOKING**: each pair fires
-exactly once per RMB / LMB hold. STARTED waits until both the
-mouse-button bit is held AND the relevant yaw has actually
-changed ("camera has moved" semantics — clicking without dragging
-doesn't fire). STOPPED fires when the button bit
-clears (RMB / LMB release). The latch stays on through any drag-
-stop-drag motion within a single hold; no spurious flapping.
+**TURNING and LOOKING fire once per button hold.** `STARTED` fires when
+you hold the button and the character or the camera turns.
+A click without a drag fires nothing. `STOPPED` fires when the button is
+released. If you stop and drag again during the same hold, the pair does
+not fire again.
 
-The camera-relative yaw at `[camera + 0xF0]` stays at 0 during
-RMB-mouselook (camera rotates *with* the character, so its offset
-from the character doesn't change), so TURNING and LOOKING are
-cleanly separable: RMB only fires TURNING, LMB only fires LOOKING.
-
-Implementation: single subscriber on the shared `Tick::WorldTick`
-registry (same `MinHook` on `FUN_0066FD50` shared with
-`BAG_UPDATE_DELAYED`). When any of the input controller / player /
-camera pointers is null (pre-login, loading screen, character
-select), all states reset so the next valid tick doesn't fire
-spurious STOPPED transitions.
+The right mouse button fires only TURNING, and the left mouse button fires
+only LOOKING. While you turn the character, the camera turns with it, so
+LOOKING does not fire.
 
 ### `GLOBAL_MOUSE_DOWN` / `GLOBAL_MOUSE_UP` events
 
@@ -6224,7 +6264,7 @@ f:SetScript("OnEvent", function(self, event, timestamp, subevent, hideCaster,
 end)
 ```
 
-A handler that reads the vanilla `arg1` … `argN` globals gets the same
+A handler that reads the `arg1` … `argN` globals gets the same
 values: `arg1` is the timestamp, `arg2` the subevent, and so on.
 
 ### `CURSOR_CHANGED` event
@@ -6274,6 +6314,26 @@ Two holdings that look alike still count as a change: picking up one of
 two identical stacks, dropping it, and picking up the other reports each
 pickup separately.
 
+### `CVAR_UPDATE` event (fires for every change)
+
+```
+CVAR_UPDATE: cvarName, value
+```
+
+Fires when the value of a cvar changes. `cvarName` is the name of the cvar,
+and `value` is its new value as a string. The Settings window and
+`CVarCallbackRegistry` use this event to keep their controls up to date.
+
+- The event fires only when the value changes, and only for a cvar that
+  `GetCVar` can read.
+- The event fires at the start of the next frame, not during the call that
+  changes the cvar. A script that sets a cvar sees the event after the
+  script ends.
+- A cvar that changes more than one time in a frame fires one event.
+  `value` is the value that the cvar has when the event fires.
+- `SetCVar(name, value, eventName)` fires a second `CVAR_UPDATE`, with
+  `eventName` in place of the cvar name.
+
 ### `EQUIPMENT_SETS_CHANGED` event
 
 Fires (with no payload) after any mutation: `Create`, `Save`,
@@ -6322,20 +6382,19 @@ Fires once per reputation change with `(factionID, newStanding, repGained)`:
 | arg2 (`newStanding`)  | New total standing value (post-change `barValue`)        |
 | arg3 (`repGained`)    | Signed delta — positive on gain, negative on loss        |
 
-The engine exposes only `CHAT_MSG_COMBAT_FACTION_CHANGE`, whose `arg1`
-is the localized chat string (`"Your Stormwind reputation has increased
-by 100."`) — addons have to parse the text and reverse-resolve the
-faction name back to an ID. This event lets addons skip that work.
+Without this event, addons get only `CHAT_MSG_COMBAT_FACTION_CHANGE`,
+whose `arg1` is the localized chat string (`"Your Stormwind reputation
+has increased by 100."`). Addons then must parse the text and find the
+faction ID from the name. This event lets addons skip that work.
 
 Does **not** fire for the initial faction sync at login or `/reload`.
-Only fires when a real reputation gain or loss arrives from the server
-(`SMSG_SET_FACTION_STANDING`).
+Only fires when a real reputation gain or loss arrives from the server.
 
 ```lua
 local f = CreateFrame("Frame")
 f:RegisterEvent("FACTION_STANDING_CHANGED")
 f:SetScript("OnEvent", function()
-    -- in vanilla 1.12 OnEvent receives no args; engine sets `event`
+    -- OnEvent receives no args; the game sets `event`
     -- and `arg1..argN` as globals before invoking the handler.
     if event == "FACTION_STANDING_CHANGED" then
         local name = GetFactionInfoByID(arg1)
@@ -6348,23 +6407,11 @@ end)
 case (e.g. killing a Goblin Commodity Exchange NPC drops your rep
 with Booty Bay).
 
-**Implementation notes**
-
-Hooks the engine's per-rep-change notify dispatcher at `0x0062C5F0`
-— the chokepoint called once per `(factionID, signedDelta)` from
-the per-slot setter at `0x004D6330`, gated by "value-actually-changed
-AND notify-flag-set". The setter has already written the new delta
-into the per-slot storage by the time the hook fires, so we read the
-total back via `FUN_REPUTATION_GET_STANDING(factionID)` (`0x004D6370`)
-to produce the `newStanding` payload.
-
-The hook calls the original before firing our event so the engine's
-`CHAT_MSG_COMBAT_FACTION_CHANGE` still fires first — no behavior
-change for addons that depended on the chat text. A per-call
-snapshot of `(factionID, newStanding, repGained)` is captured before
-forwarding, which [`C_Reputation.GetLastStandingChange`](#c_reputationgetlaststandingchange)
-exposes — so addons can read the structured payload from inside the
-chat event without re-parsing the localized string.
+`CHAT_MSG_COMBAT_FACTION_CHANGE` still fires, and it fires before this
+event. Addons that use the chat text see no change. Inside that chat
+event, [`C_Reputation.GetLastStandingChange`](#c_reputationgetlaststandingchange)
+gives `(factionID, newStanding, repGained)`, so addons do not have to
+parse the localized string.
 
 ### `INCOMING_RESURRECT_CHANGED` event
 
@@ -6404,7 +6451,7 @@ polling. Register like any engine event
 
 | Event | Args | When |
 |---|---|---|
-| `LOOT_HISTORY_ROLL_CHANGED` | `itemIndex`, `playerIndex` (numbers) | A player selected need, greed, or pass, or rolled the dice. |
+| `LOOT_HISTORY_ROLL_CHANGED` | `itemIndex`, `playerIndex` (numbers) | A player selected need, greed, or pass, or rolled the dice. `playerIndex` is `0` when the roll names no player or when the player list of the item is full. |
 | `LOOT_HISTORY_ROLL_COMPLETE` | `itemIndex` (number) | The item was decided — won or all-passed. |
 | `LOOT_HISTORY_FULL_UPDATE` | — | The item set changed structurally — a new item appeared (roll opened) or the 128-item ring evicted the oldest (every index shifted). Re-read the whole list. Also fired by `C_LootHistory.Clear()`. |
 
@@ -6466,12 +6513,11 @@ Register like any engine event
 
 | Event | Args | When |
 |---|---|---|
-| `LOSS_OF_CONTROL_ADDED` | `eventIndex` (number) | A new effect was applied — `eventIndex` is its 1-based index for [`C_LossOfControl.GetActiveLossOfControlData`](#c_lossofcontrolgetactivelossofcontroldataindex). |
+| `LOSS_OF_CONTROL_ADDED` | `unitToken` (string), `eventIndex` (number) | A new effect was applied — `unitToken` is always `"player"`, and `eventIndex` is the 1-based index of the effect for [`C_LossOfControl.GetActiveLossOfControlData`](#c_lossofcontrolgetactivelossofcontroldataindex). |
 | `LOSS_OF_CONTROL_UPDATE` | `unitToken` (string) | The active set changed — an effect was added, fell off, or expired. Re-scan with `GetActiveLossOfControlData`. Always `"player"` (only the local player is tracked), but passed so the event carries a unit token and leaves room for per-unit tracking. |
 
-Detection is a per-frame diff of the active set (effect *expiry* has no engine
-packet to hook), so events land within a frame of the change and coalesce
-multiple simultaneous changes into a single `LOSS_OF_CONTROL_UPDATE`. A
+Events fire within one frame of the change. Several changes in the same
+frame fire one `LOSS_OF_CONTROL_UPDATE`. A
 counterspelled cast, for instance, fires two `ADDED` (the school lockout and,
 with Improved Counterspell, the silence) then an `UPDATE` as each expires.
 See the [LossOfControl](#lossofcontrol) section for the effect data.
@@ -6510,7 +6556,7 @@ any missed transition fires then (see the focus-regain note below).
 local f = CreateFrame("Frame")
 f:RegisterEvent("MODIFIER_STATE_CHANGED")
 f:SetScript("OnEvent", function()
-    -- in vanilla 1.12 OnEvent receives no args; engine sets `event` and
+    -- OnEvent receives no args; the game sets `event` and
     -- `arg1..argN` as globals before invoking the handler.
     if event == "MODIFIER_STATE_CHANGED" and arg1 == "LSHIFT" then
         print("left shift", arg2 == 1 and "down" or "up")
@@ -6518,42 +6564,20 @@ f:SetScript("OnEvent", function()
 end)
 ```
 
-**Implementation notes**
+The event and the L/R query functions keep working after a change of
+the video settings that recreates the game window (for example,
+vertical sync).
 
-L/R modifier distinction doesn't exist anywhere in the engine's
-own state — its `IsShiftKeyDown` chain bottoms out at
-`GetKeyState(VK_SHIFT)` (the merged virtual key, `0x10`), never the
-L/R-aware `VK_LSHIFT` / `VK_RSHIFT`. The OS-level keystate *does* have
-the distinction; we capture it by installing a `WH_GETMESSAGE` Win32
-thread hook on the engine's message-pump thread, decoding each
-`WM_KEY{,SYS}{DOWN,UP}` message (using `MapVirtualKeyA(scancode,
-MAPVK_VSC_TO_VK_EX)` to resolve `VK_SHIFT` to L/R and the `KF_EXTENDED`
-bit in `lParam` for `VK_CONTROL` / `VK_MENU`), and maintaining a
-6-bit cached bitmap that the seven query functions read.
+**Focus-regain reconciliation.** If you release a modifier while WoW is
+in the background (alt-tabbed away), the event fires when WoW gets the
+focus again. `IsLeftShiftKeyDown`, `IsRightShiftKeyDown`, and the other
+L/R functions give the correct state immediately.
 
-The thread-message hook is per-thread, not per-`HWND` — it survives
-renderer-state changes that recreate WoW's main window (e.g. toggling
-vertical sync), where an `SetWindowLongPtr`-style `WNDPROC` subclass
-would be left dangling.
-
-**Focus-regain reconciliation.** `WM_KEY*` messages are only delivered
-while WoW is the foreground window, so a modifier released while WoW is
-in the background (alt-tabbed away) produces no message — the cached bit
-would stay stuck down and the release event would never fire. A second
-thread hook (`WH_CALLWNDPROC`, needed because `WM_ACTIVATEAPP` is *sent*
-rather than *posted* and so is invisible to `WH_GETMESSAGE`) watches for
-app activation; on regaining focus it polls `GetAsyncKeyState` for each
-L/R modifier — which reads global physical key state regardless of focus
-— and fires `MODIFIER_STATE_CHANGED` for any bit that changed while WoW
-was away. So the release surfaces the moment you tab back, and
-`IsLeft/RightShiftKeyDown` etc. read correct state immediately.
-
-> Note: the engine's own `IsShiftKeyDown` / `IsControlKeyDown` /
-> `IsAltKeyDown` bottom out at the synchronous `GetKeyState`, which has
-> the same background-release blind spot and is *not* reconciled by this
-> hook — only ClassicAPI's L/R query functions and the event reflect the
-> corrected state. Prefer `IsModifierKeyDown` / the L/R functions if you
-> need the un-stuck value.
+> Note: the stock `IsShiftKeyDown` / `IsControlKeyDown` /
+> `IsAltKeyDown` do not get this correction. After a release in the
+> background, they can report the key as down. Only ClassicAPI's L/R
+> query functions and the event show the corrected state. Prefer
+> `IsModifierKeyDown` / the L/R functions if you need the un-stuck value.
 
 ### `NAME_PLATE_CREATED` / `NAME_PLATE_UNIT_ADDED` / `NAME_PLATE_UNIT_REMOVED` events
 
@@ -6561,7 +6585,7 @@ Fire when nameplate state actually changes. Payloads:
 
 | Event | `arg1` | Notes |
 |-------|--------|-------|
-| `NAME_PLATE_CREATED` | nameplate **Frame** | Fires once per unique `CGNamePlateFrame` pointer — same frame re-used via pool recycle does NOT refire. |
+| `NAME_PLATE_CREATED` | nameplate **Frame** | Fires once per nameplate frame — a frame that the game uses again for another unit does NOT refire. |
 | `NAME_PLATE_UNIT_ADDED` | `"nameplateN"` **unit token** | Pass straight to `UnitName` / `UnitGUID` / `UnitClass` / etc., or to [`GetNamePlateForUnit`](#c_nameplategetnameplateforunitunittoken) for the frame. The token is positional — see [Unit tokens](#unit-tokens-nameplaten) for ordering semantics. |
 | `NAME_PLATE_UNIT_REMOVED` | `"nameplateN"` **unit token** | Same as above. Computed from the plate's slot *before* it shifts out of the ordered list, so the token still resolves to the leaving unit during the event handler. |
 
@@ -6584,8 +6608,8 @@ end)
 ```
 
 > **CREATED timing with nameplate addons (pfUI / TidyPlates / etc).**
-> The event fires when the *engine* allocates the underlying
-> `CGNamePlateFrame`. Nameplate-mod addons typically decorate the
+> The event fires when the game creates the nameplate frame.
+> Nameplate-mod addons typically decorate the
 > frame on their own per-frame update — so `arg1` at `CREATED` time
 > is a bare frame with no addon-side decorations yet. For
 > unit-specific work after the addon has decorated, use
@@ -6600,20 +6624,13 @@ end)
 > `UnitGUID(arg1)` and store the GUID. See
 > [Unit tokens](#unit-tokens-nameplaten) for the slot rules.
 
-**Implementation notes**
-
-Detected by per-frame polling, not engine hooks. Each world tick we
-walk the object hash for nameplated units and diff against the
-previous tick's snapshot. The engine has no event for "plate state
-changed", so the events are synthesized via diffing. The cost is
+The events fire at most one frame after the change. The cost is
 ~20-50µs/frame even in busy raids — well below noise.
 
-The diff approach absorbs the engine's transient hide/reshow cycle:
-there are ~7 code paths that briefly zero `unit + 0xE60` (z-order
-rebuilds, anchor changes, flag-change re-eval) and the next frame's
-show path re-allocates from the pool. Those transient zeroes never
-become events because the unit appears in both the previous and
-current tick's snapshot.
+The game sometimes hides a plate and shows it again on the next frame.
+This occurs, for example, when the plate order or anchor changes. These
+short hides do not fire `NAME_PLATE_UNIT_REMOVED` or
+`NAME_PLATE_UNIT_ADDED`.
 
 ### `PLAYER_FOCUS_CHANGED` event
 
@@ -6771,7 +6788,7 @@ the 1-based quest log index and the questID. The signature is
 local f = CreateFrame("Frame")
 f:RegisterEvent("QUEST_ACCEPTED")
 f:SetScript("OnEvent", function()
-    -- 1.12: event payload is in `arg1`, `arg2`, ... globals
+    -- the event payload is in the `arg1`, `arg2`, ... globals
     if event == "QUEST_ACCEPTED" then
         local questLogIndex, questID = arg1, arg2
         -- ...
@@ -6842,8 +6859,7 @@ point is not a removal.
 
 ### `QUEST_TURNED_IN` event
 
-Fires when the server confirms a quest turn-in
-(SMSG_QUESTGIVER_QUEST_COMPLETE, opcode `0x191`). Payload is
+Fires when the server confirms a quest turn-in. Payload is
 `(questID, xpReward, moneyReward)` — `xpReward` is the experience
 awarded (0 at max level or for non-XP-bearing quests), `moneyReward`
 is in copper.
@@ -6859,15 +6875,6 @@ f:SetScript("OnEvent", function()
 end)
 ```
 
-Polyfilled by hooking the per-opcode SMSG handler at `FUN_005DC400`
-(found via the CMSG side: `Script_GetQuestReward` →
-`FUN_005015B0` → `FUN_005EADC0` sends opcode `0x18E`
-CMSG_QUESTGIVER_CHOOSE_REWARD; SMSG response is opcode `0x191`).
-The hook saves the packet stream's read cursor (`stream+0x14`),
-peeks the first 4 uint32s of the body (questID, unknown, xp,
-money), restores the cursor, then calls the original — which
-re-reads the same data without seeing our peek. Side-effect-free.
-
 Does NOT fire on quest abandon, on `QUEST_FINISHED` window
 transitions (which fire on Detail → Progress → Reward → Close —
 not a clean turn-in signal), or on server-reject paths (bag-full,
@@ -6875,11 +6882,9 @@ quest invalidated, etc.). Only fires on a real successful turn-in.
 
 > **Why not key off `QUEST_FINISHED`?** The stock `QUEST_FINISHED`
 > fires on every quest-window state transition, including reads,
-> aborts, and player-side close. The SMSG_QUESTGIVER_QUEST_COMPLETE
-> packet, by contrast, is server-authoritative — the server only
-> sends it after committing the turn-in (XP / money / item awards
-> done, quest removed from log). Hooking the packet handler gives
-> us a clean turn-in signal.
+> aborts, and player-side close. `QUEST_TURNED_IN` fires only after
+> the server completes the turn-in (XP / money / item awards done,
+> quest removed from log).
 
 ### `SELF_RES_SPELL_CHANGED` event
 
@@ -6888,6 +6893,22 @@ changes. For example, it fires when the player dies with a Soulstone, and
 again when the player comes back to life. When it fires, read
 [`C_DeathInfo.GetSelfResurrectOptions`](#c_deathinfogetselfresurrectoptions)
 again. A change to an item option does not fire this event.
+
+### `SETTINGS_LOADED` event
+
+Fires one time, when the Settings window has registered all of its
+settings. It has no payload.
+
+### `SETTINGS_PANEL_OPEN` event
+
+Fires when an addon asks the Settings window to open.
+
+```
+SETTINGS_PANEL_OPEN: openToCategoryID, scrollToElementName
+```
+
+- **`openToCategoryID`** (number or string, or nil) — the category to show.
+- **`scrollToElementName`** (string or nil) — the setting to scroll to.
 
 ### `SOUNDKIT_FINISHED` event
 
@@ -7173,10 +7194,9 @@ end)
 
 ### `UNIT_FACTION` event (fire-coverage fix)
 
-`UNIT_FACTION` already exists in the event table — addons can register
-for it — but the engine **never fires it** on several paths where it
-should. We add the missing fires so addons that observe `UNIT_FACTION`
-stop missing state changes.
+`UNIT_FACTION` is a stock event, but the stock client **never fires it**
+for the faction changes below. ClassicAPI fires it in these cases, so
+addons that observe `UNIT_FACTION` see these state changes.
 
 Payload: `arg1` is the unit token string, always `"player"` for these
 paths (you can only toggle / sync rep on the local player).
@@ -7193,46 +7213,25 @@ end)
 
 **Paths that now fire `UNIT_FACTION("player")`:**
 
-| Path | Trigger | Detection |
+| Path | Trigger | Fires when |
 |------|---------|-----------|
-| `FactionToggleAtWar` | Lua call to toggle AT_WAR | Slot's flag byte changed (skips PEACE_FORCED no-ops, looting-blocked attempts, standing-blocked attempts) |
-| `SetFactionInactive` / `SetFactionActive` | Lua call to toggle INACTIVE | Slot's flag byte changed |
-| `SMSG_SET_FACTION_STANDINGS` | Server rep-change push (kills, quest turn-ins, etc.) | Any byte in the 64-entry flag array changed — catches AT_WAR side-effect flips when standing crosses the -3000 threshold |
-| `SMSG_SET_FACTION_ATWAR` | Server force-change of AT_WAR (faction reset, server-side state push) | Unconditional after byte write |
-| `SMSG_INITIALIZE_FACTIONS` | Server initial faction sync at login | Unconditional after table populated |
+| `FactionToggleAtWar` | Lua call to toggle AT_WAR | The faction's flags changed (not for PEACE_FORCED no-ops, looting-blocked attempts, standing-blocked attempts) |
+| `SetFactionInactive` / `SetFactionActive` | Lua call to toggle INACTIVE | The faction's flags changed |
+| Server reputation update | Server rep-change push (kills, quest turn-ins, etc.) | The flags of any faction changed — includes AT_WAR changes when standing crosses the -3000 threshold |
+| Server AT_WAR update | Server force-change of AT_WAR (faction reset, server-side state push) | Always |
+| Login faction sync | Server initial faction sync at login | Always, after the faction list is complete |
 
-The last one fixes the case where addons relying on `UNIT_FACTION`
-(rather than `PLAYER_LOGIN` / `VARIABLES_LOADED`) miss the initial
-load entirely.
+With the last one, addons that use `UNIT_FACTION` (not `PLAYER_LOGIN` /
+`VARIABLES_LOADED`) also see the initial load.
+
+One server update can change many factions. It fires `UNIT_FACTION`
+one time.
 
 **Not yet covered:**
 - Unit-faction-template changes for *non-player* units (mind control,
-  charm, server-side faction scripts). `UNIT_FACTION` should fire on
-  the affected unit token; the broad helper isn't hooked here yet.
+  charm, server-side faction scripts). For these changes, ClassicAPI
+  does not fire `UNIT_FACTION` on the affected unit token.
   Mostly affects nameplate / threat addons in rare encounter mechanics.
-
-**Implementation notes**
-
-`FactionToggleAtWar` / `SetFactionInactive` / `SetFactionActive`'s
-inner setters (`FUN_004D5FD0`, `FUN_004D60F0`) write to the rep slot's
-flag byte and send the corresponding CMSG, but never call the
-engine's "fire UNIT_FACTION on this unit" dispatcher.
-
-Since `FactionToggleAtWar` only ever runs for the player and the only
-unit token resolving to the player is `"player"`, we fire
-`UNIT_FACTION("player")` directly via the engine's printf-style
-dispatcher (`FUN_FIRE_EVENT`) — same observable result without
-re-deriving the broad helper. We resolve `UNIT_FACTION`'s
-event-table slot lazily by name (`Event::Custom::LookupByName`) so we
-stay correct against any DLL combination that reshuffles the table.
-
-For the two SMSG-bound flag-flip paths (`SetFactionStandings`,
-`SetFactionInactive`-but-from-server), we snapshot the 64-entry rep
-slot flag-byte array before the original handler runs and compare
-after — single fire if any byte changed. The bulk snapshot is 64
-byte reads (cheap) and naturally handles the case where one packet
-carries multiple rep updates whose threshold crossings ripple AT_WAR
-state across unrelated slots.
 
 ### `UNIT_IN_RANGE_UPDATE` event
 
@@ -7367,11 +7366,11 @@ units that the client can see.
 
 ### `UPDATE_MOUSEOVER_UNIT` event (loss-fire fix)
 
-`UPDATE_MOUSEOVER_UNIT` exists in the event table and fires when a
-mouseover unit is **gained**, but the engine **never fires it on
-loss** — moving the cursor off a unit clears the mouseover and signals
-nothing. We add the loss fire, so addons observing
-`UnitExists("mouseover")` can react when it becomes false.
+The stock `UPDATE_MOUSEOVER_UNIT` fires when a mouseover unit is
+**gained**, but **never on loss** — moving the cursor off a unit clears
+the mouseover and signals nothing. ClassicAPI also fires it on loss, so
+addons observing `UnitExists("mouseover")` can react when it becomes
+false.
 
 Payload: the event carries no args; handlers read
 `UnitExists("mouseover")`, which is `nil`/false at fire time on the
@@ -7385,7 +7384,7 @@ f:SetScript("OnEvent", function()
         if UnitExists("mouseover") then
             -- gained (or changed to) a mouseover unit
         else
-            -- mouseover unit lost (the vanilla gap this fills)
+            -- mouseover unit lost
         end
     end
 end)
@@ -7398,25 +7397,11 @@ end)
 | unit | nothing | yes | ClassicAPI (stock is silent here) |
 | unit | gameobject | yes | ClassicAPI (mouseover unit genuinely lost) |
 | gameobject | nothing | no | — (never fired a gain; not a unit) |
-| anything | unit | yes | engine's own inline fire (gain / unit→unit) |
+| anything | unit | yes | stock client (gain / unit→unit) |
 
-**Implementation notes**
-
-The mouseover GUID lives in two globals written **only** by the engine's
-mouseover set/clear chokepoint (`0x00492890`), so every gain / loss /
-change flows through it — on a unit gain it fires `UPDATE_MOUSEOVER_UNIT`
-itself, on loss it clears the GUID silently. We co-hook that function:
-resolve whether the mouseover is a *unit* before and after the original,
-and fire on the unit→non-unit transition. Gating on unit *type* (not just
-"GUID present → absent") is load-bearing — the same GUID slot also holds
-gameobjects and items, which never fire a gain, so the type check is what
-keeps moving off a herb node or chest from spuriously firing. The
-`!hasUnit` half prevents a double-fire on any →unit transition the engine
-already covered.
-
-The target is change-gated by its callers (if it ran per-frame the gain
-event would spam while hovering), so it's a cool hook — no per-frame
-overhead.
+Moving the cursor off a herb node, chest, or other game object does not
+fire the event. A transition to a unit fires the event one time, not
+two times.
 
 ### `UPDATE_SHAPESHIFT_FORM` event
 
@@ -7426,9 +7411,9 @@ ghost wolf / etc. No payload; call
 [`GetShapeshiftFormID()`](#getshapeshiftformid) from the handler to
 read the new form.
 
-The engine has only the plural `UPDATE_SHAPESHIFT_FORMS` (fires when the
-*list* of available forms changes — learning a new form, not changing
-into one). This singular event fires when the *current* form changes.
+The stock plural `UPDATE_SHAPESHIFT_FORMS` fires when the *list* of
+available forms changes — learning a new form, not changing into one.
+This singular event fires when the *current* form changes.
 
 ```lua
 local f = CreateFrame("Frame")
@@ -7440,20 +7425,8 @@ f:SetScript("OnEvent", function()
 end)
 ```
 
-**Implementation notes**
-
-Hooks the engine's bonus-action-bar refresh helper at `0x004E4FC0`,
-which the engine calls every time the local player's `UNIT_BYTES_1`
-descriptor field is broadcast and from `FUN_004908C0` at post-login
-init. After the original runs, the post-hook reads byte 2 of
-`UNIT_BYTES_1` (descriptor `+0x212` — the form ID) and fires
-`UPDATE_SHAPESHIFT_FORM` only when the value differs from the last
-seen — filtering out the spurious recomputes for other `UNIT_BYTES_1`
-bytes (standstate, etc.) the engine also routes through this helper.
-
-The cached "last form" sentinel uses `-1` for "player descriptor not
-yet resolvable" so transient resolution failures during early login
-don't get misread as leaving a form.
+The event fires only when the form ID changes. Other changes, such as
+sitting or standing, do not fire it.
 
 ### `UNIT_SPELLCAST_*` events
 
@@ -7465,11 +7438,11 @@ focus:
 
 | Event | Fires when | Units | Args |
 |-------|-----------|-------|------|
-| `UNIT_SPELLCAST_SENT` | `CMSG_CAST_SPELL` leaves the client (earliest point) | player | `unit, target, castGUID, spellID, spellName, rank` |
+| `UNIT_SPELLCAST_SENT` | the cast request leaves the client (earliest point) | player | `unit, target, castGUID, spellID, spellName, rank` |
 | `UNIT_SPELLCAST_START` | a cast-time spell begins | all | `unit, castGUID, spellID, spellName, rank` |
 | `UNIT_SPELLCAST_STOP` | a cast-time spell ends (any reason) | all | same |
 | `UNIT_SPELLCAST_DELAYED` | pushback extends the cast | player | same |
-| `UNIT_SPELLCAST_SUCCEEDED` | the spell goes off (`SMSG_SPELL_GO`) — incl. instants | all | same |
+| `UNIT_SPELLCAST_SUCCEEDED` | the spell goes off — incl. instants | all | same |
 | `UNIT_SPELLCAST_INTERRUPTED` | a started **cast** is interrupted (a kick, or a cancel by moving or jumping) — never for channels | all | same |
 | `UNIT_SPELLCAST_FAILED` | a cast fails with an error shown: it is refused before it starts (range, mana, cooldown, moving), or a started cast fails (line of sight, target died) | player | same |
 | `UNIT_SPELLCAST_FAILED_QUIET` | a cast fails with **no** error shown (spammy retry, reticle cancel, …) | player | same |
@@ -7501,9 +7474,9 @@ they're **best-effort** — driven purely by the packets an observer receives:
 - `DELAYED` / `CHANNEL_UPDATE` never fire (pushback is sent only to the
   caster, so another unit's bar can't stretch/shrink from damage).
 - `FAILED` never fires (a pre-cast requirement failure is client-local).
-- A remote cast/channel only has timing from the moment its
-  `SMSG_SPELL_START` was observed; casters who were already casting when
-  they came into range have no start time.
+- A remote cast/channel only has timing from the moment the client saw
+  it start. Casters who were already casting when they came into range
+  have no start time.
 
 **Channels never fire `INTERRUPTED`.** Only `CHANNEL_STOP` fires when a
 channel ends, whether it completed or was cut short, for both the player and
@@ -7523,8 +7496,8 @@ only argument is the unit token.
 **Reticle events** fire for ground-targeted (AoE) spells only, always for the
 player: `RETICLE_TARGET` when the placement reticle comes up, `RETICLE_CLEAR`
 when it's placed or cancelled. There's no cast yet, so the castGUID slot
-(arg2) is empty — the engine's event dispatcher can't emit a `nil`
-mid-argument-list, so arg2 is `""` here. `unit` (arg1) and `spellID`
+(arg2) is empty. An event argument cannot be `nil` in the middle of the
+list, so arg2 is `""` here. `unit` (arg1) and `spellID`
 (arg3) are exact; arg2 is inconsequential for a reticle.
 
 **castGUID.** A synthesized string of the shape
@@ -7573,9 +7546,8 @@ channel; `CHANNEL_UPDATE` fires on each hit and
 shrink correctly. (The event carries no time — it's a "re-read now" trigger;
 timing is read back from `UnitChannelInfo`.)
 
-Every fire is gated on whether any frame is registered for that event, so
-the whole system costs one pointer-compare per state transition when no
-addon uses it (no arg synthesis, no DBC lookups, no per-token fan-out).
+An event fires only when a frame is registered for it. When no addon
+uses these events, they have almost no cost.
 
 ```lua
 local f = CreateFrame("Frame")
@@ -7584,12 +7556,12 @@ for _, e in ipairs({
     "UNIT_SPELLCAST_SUCCEEDED", "UNIT_SPELLCAST_CHANNEL_START",
 }) do f:RegisterEvent(e) end
 f:SetScript("OnEvent", function()
-    -- vanilla passes event/arg1/... as globals, not function params
+    -- event, arg1, ... arrive as globals, not function params
     if arg1 == "target" then print(event, arg3) end  -- arg3 = spellID
 end)
 ```
 
-> **Additive to the stock `SPELLCAST_*` events.** The engine's own arg-less
+> **Additive to the stock `SPELLCAST_*` events.** The stock arg-less
 > `SPELLCAST_START` / `SPELLCAST_CHANNEL_UPDATE` / … still fire as before;
 > these `UNIT_`-prefixed events sit on top. The empowered-cast events
 > (`UNIT_SPELLCAST_EMPOWER_*`) are not implemented — there are no empowered
@@ -7610,6 +7582,31 @@ f:RegisterEvent("USER_WAYPOINT_UPDATED")
 f:SetScript("OnEvent", function()
     local point = C_Map.GetUserWaypoint()
     -- redraw the pin, or hide it when point is nil
+end)
+```
+
+### `WEAPON_ENCHANT_CHANGED` event
+
+Fires (with no payload) when the temporary enchant on an equipped
+weapon changes: main hand (16), off hand (17), or ranged (18). Poisons,
+oils, sharpening stones, and shaman weapon imbues are temporary
+enchants.
+
+The event fires when an enchant is applied, renewed, or removed, and
+when it loses a charge. A renewal of the same enchant changes only the
+time left. For a renewal, this event is the only event that fires.
+
+The event collapses to one fire per frame. It does not fire when a
+different weapon goes into the slot. `WEAPON_SLOT_CHANGED` fires for
+that change.
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterEvent("WEAPON_ENCHANT_CHANGED")
+f:RegisterEvent("WEAPON_SLOT_CHANGED")
+f:SetScript("OnEvent", function()
+    local hasMain, mainMs = GetWeaponEnchantInfo()
+    -- restart the enchant timer from mainMs
 end)
 ```
 
@@ -7653,7 +7650,7 @@ Returns the live expansion level as a number. Always `0`
 
 ```lua
 if GetClassicExpansionLevel() >= LE_EXPANSION_BURNING_CRUSADE then
-    -- never taken on 1.12
+    -- never taken here
 end
 ```
 
@@ -7668,7 +7665,7 @@ Errors if `expansionLevel` is missing or non-numeric.
 
 ```lua
 if ClassicExpansionAtLeast(LE_EXPANSION_WRATH_OF_THE_LICH_KING) then
-    -- WotLK+ code path; never taken on 1.12
+    -- WotLK+ code path; never taken here
 end
 ```
 
@@ -7777,9 +7774,8 @@ GetFactionParentID(99999)  -- nil
 We expose this as its own getter, since `GetFactionInfo` doesn't
 have the slot.
 
-Reads `Faction.dbc` `ParentFactionID` at record `+0x48` directly —
-no displayed-list dependency, works for any faction in the DBC
-regardless of whether the player has rep with it.
+It works for any faction in `Faction.dbc`, also when the player has no
+reputation with it. It does not use the displayed list.
 
 ### `C_Reputation.GetFactionStandings()`
 
@@ -7799,9 +7795,8 @@ end
 
 Unlike a `GetNumFactions` + `GetFactionInfo` walk, this skips header
 rows entirely and doesn't depend on the player having opened the
-reputation pane recently — it reads straight out of the per-faction
-rep-slot array, which the engine keeps populated for every faction
-the player has rep with.
+reputation pane recently. It includes every faction that the player
+has reputation with.
 
 If you need names instead of IDs, layer `GetFactionInfoByID` on top:
 
@@ -7836,12 +7831,6 @@ if data then
         data.nextReactionThreshold - data.currentReactionThreshold))
 end
 ```
-
-Implementation reads the watched `RepListID` from the player's
-`+0xE68` sub-struct, indexes the per-faction rep slot array at
-`0x00B73290` to recover the factionID, then runs the shared
-`ReadFactionData` chain (Faction.dbc lookup, reaction band, rep slot
-flags, header/collapsed checks).
 
 ### `C_Reputation.GetFactionDataByID(factionID)`
 
@@ -7883,13 +7872,13 @@ Fields:
 | `currentReactionThreshold` | number  | Band min standing value. |
 | `nextReactionThreshold`    | number  | Band max standing value. |
 | `currentStanding`          | number  | Current standing (`base + delta`). |
-| `atWarWith`                | boolean | Rep slot flags bit `0x02`. |
-| `canToggleAtWar`           | boolean | `currentStanding ≥ -3000` AND not peace-forced (flags bit `0x10`). |
+| `atWarWith`                | boolean | The player is at war with the faction. |
+| `canToggleAtWar`           | boolean | `currentStanding ≥ -3000` AND the faction is not peace-forced. |
 | `isHeader`                 | boolean | Faction is a category header in the displayed list. |
 | `isHeaderWithRep`          | boolean | Always `false` — parent factions don't aggregate rep. |
 | `isCollapsed`              | boolean | UI state: user has collapsed this header. |
 | `isWatched`                | boolean | This faction is shown above the XP bar. |
-| `canSetInactive`           | boolean | True when `!isHeader && repListIndex ≥ 0` — i.e. the engine's `SetFactionInactive`/`SetFactionActive` will accept this faction. |
+| `canSetInactive`           | boolean | True when the faction is not a header and has a reputation slot. `SetFactionInactive` / `SetFactionActive` accept this faction. |
 | `isChild`                  | boolean | Always `false` — no parent-child rep here. |
 | `hasBonusRepGain`          | boolean | Always `false`. |
 | `isAccountWide`            | boolean | Always `false`. |
@@ -7902,13 +7891,6 @@ for i = 1, GetNumFactions() do
     end
 end
 ```
-
-Implementation: resolves the 0-based index to a factionID via the
-engine's `FUN_RESOLVE_FACTION_INDEX` at `0x004D5FA0`, then runs the
-shared `ReadFactionData` chain — no Lua-side round-trip through
-`Script_GetFactionInfo`. `isHeader` / `isCollapsed` come from the
-displayed-list header array at `0x00B736C0` (count at `0x00B736B0`)
-and the per-character bitmask at `0x0084A0A4`.
 
 ### `C_Reputation.SetSelectedFactionByID(factionID)`
 
@@ -7954,10 +7936,6 @@ print(GetWatchedFactionInfo())          -- "Stormwind", ...
 C_Reputation.SetWatchedFactionByID(0)   -- clear
 print(GetWatchedFactionInfo())          -- (empty)
 ```
-
-Implementation calls the engine's inner watched-faction setter
-directly, bypassing `Script_SetWatchedFactionIndex`'s
-displayed-index round-trip.
 
 ### `C_Reputation.ToggleFactionAtWarByID(factionID)`
 
@@ -8030,8 +8008,8 @@ currently being fired, or `nil` if called outside that window.
 
 Companion to [`FACTION_STANDING_CHANGED`](#faction_standing_changed-event).
 The triple is the same payload as the event's `arg1, arg2, arg3`, but
-the getter is also live during the engine's
-`CHAT_MSG_COMBAT_FACTION_CHANGE` dispatch on the same hook — useful
+the getter is also live during the
+`CHAT_MSG_COMBAT_FACTION_CHANGE` event for the same change — useful
 for addons that want to enrich the chat line with the factionID
 (which the chat-event payload doesn't carry) without
 double-registering for `FACTION_STANDING_CHANGED`:
@@ -8048,9 +8026,8 @@ f:SetScript("OnEvent", function()
 end)
 ```
 
-Outside the in-flight `FireNotify` hook stack (i.e. anywhere except
-inside a `CHAT_MSG_COMBAT_FACTION_CHANGE` or `FACTION_STANDING_CHANGED`
-handler), returns nothing. There is no "last change" memory — the
+Outside a `CHAT_MSG_COMBAT_FACTION_CHANGE` or `FACTION_STANDING_CHANGED`
+handler, it returns nothing. There is no "last change" memory — the
 state is cleared as soon as the dispatch returns.
 
 This is a ClassicAPI-only call. Addons can otherwise get the factionID
@@ -8145,10 +8122,8 @@ local hp   = UnitHealth("focus")
 local _, class = UnitClass("focus")
 ```
 
-Chains compose through the engine's standard suffix walker:
-`"focustarget"`, `"focustargettarget"`, etc. — same behavior as
-`"targettarget"`, mirrored instruction-for-instruction in our hook
-so addons get the engine semantics they expect.
+Chains such as `"focustarget"` and `"focustargettarget"` work. They
+behave the same as `"targettarget"`.
 
 Returns `nil` cleanly when no focus is set; doesn't raise the
 "Unknown unit name" error.
@@ -8176,12 +8151,10 @@ as `"player"` / `"party*"` / `"raid*"` / `"nameplate*"` / `"target"`.
 
 Region/Frame method backports. Addon ports routinely call these methods
 unconditionally — they're the C-level frame surface addons take for
-granted. This section is that surface. Methods are registered on the
-engine's own per-frame-type method registries
-(`SetSize`/`GetSize` on the Region base, so they resolve on frames,
-buttons, textures and fontstrings alike), and each delegates to the
-engine's own implementations — UI-scale conversion, object resolution
-and type checking are all the engine's code.
+granted. This section is that surface. Methods on the Region base,
+such as `SetSize` and `GetSize`, work on frames, buttons, textures, and
+fontstrings alike. UI-scale conversion and type checks are the same as
+in the stock methods.
 
 ### `region:SetPoint("point")` (one-argument form)
 
@@ -8189,9 +8162,9 @@ The stock `SetPoint` parser accepts every call shape —
 `(point, region)`, `(point, region, relativePoint [, x, y])`,
 `(point, x, y)`, even an explicit `nil` region — **except** the bare
 one-argument form, which raises the usage error (a fully-omitted third
-argument fails its type validation). A co-hook on the engine's
-`Script_SetPoint` normalizes `region:SetPoint("RIGHT")` to
-`(point, 0, 0)` — the parent-relative form (anchor to the parent's same
+argument fails its type validation). ClassicAPI accepts
+`region:SetPoint("RIGHT")` and treats it as `(point, 0, 0)` — the
+parent-relative form (anchor to the parent's same
 point, zero offsets).
 
 ### `region:SetSize(width, height)` / `region:GetSize([ignoreRect])`
@@ -8314,7 +8287,8 @@ local point, relativeTo, relativePoint, x, y = MyFrame:GetPoint(1)
 
 `relativeTo` is nil when the anchor is relative to the screen. A frame with
 no parent gets this anchor from `SetPoint` without a `relativeTo`, and from
-XML anchors without one.
+XML anchors without one. An anchor that has no relative frame at all, not
+even the screen, returns only `point, x, y`.
 
 ### `region:GetPointByName(point)`
 
@@ -8356,9 +8330,7 @@ MyFrame:SetPoint("BOTTOMRIGHT", OtherFrame, "BOTTOMRIGHT")
 
 `true` while the region is the frame currently being moved or resized by
 the mouse — i.e. after `StartMoving`/`StartSizing` and before
-`StopMovingOrSizing` — `false` otherwise. Reads the engine's single global
-drag target (the same slot `StopMovingOrSizing` checks to decide whether
-it owns the active drag). On the Region base; non-frame regions (textures,
+`StopMovingOrSizing` — `false` otherwise. On the Region base; non-frame regions (textures,
 fontstrings) always report `false`, since only frames can be dragged.
 
 ```lua
@@ -8668,6 +8640,30 @@ child:GetFrameLevel()   -- 22
 
 `frame:SetFrameLevel(level)` moves only `frame`. The frames under it keep
 the levels they have.
+
+### A shown frame moved under a visible parent becomes visible
+
+`frame:SetParent(parent)` makes `frame` visible when `frame` is shown and
+`parent` is visible, or when `parent` is `nil`. A frame is shown when its
+own `Show()` is in effect, even while a hidden parent keeps it from being
+visible.
+
+```lua
+local holder = CreateFrame("Frame", nil, UIParent)
+holder:Hide()
+local button = CreateFrame("Button", nil, holder)   -- shown, not visible
+button:SetParent(UIParent)
+button:IsVisible()   -- true
+```
+
+`OnShow` runs when the frame becomes visible.
+
+### `OnShow` and `OnHide` can move frames
+
+When a frame is shown or hidden, its children are shown or hidden one at a
+time, and each child runs its `OnShow` or `OnHide` before the next child.
+These scripts can call `SetParent` on any frame, also on the child itself.
+A child that is no longer under the frame when its turn comes is skipped.
 
 ### A ScrollFrame keeps clipping its content when it moves
 
@@ -9428,11 +9424,13 @@ Does nothing when the box has no history.
   call `editBox:SetFocus()`.
 - Each call runs the script, also when the box is already in that state.
 
-### `slider:Enable()` / `slider:Disable()` / `slider:IsEnabled()`
+### `slider:Enable()` / `slider:Disable()` / `slider:SetEnabled(enabled)` / `slider:IsEnabled()`
 
 `slider:Disable()` stops the mouse from moving the slider and runs its
 `OnDisable` script. `slider:Enable()` lets the mouse move it again and runs
-its `OnEnable` script. `slider:IsEnabled()` returns `true` or `false`.
+its `OnEnable` script. `slider:SetEnabled(enabled)` calls `Enable()` when
+`enabled` is true, and `Disable()` when it is false or nil.
+`slider:IsEnabled()` returns `true` or `false`.
 
 - A disabled slider still runs its `OnMouseDown` and `OnMouseUp` scripts,
   and `slider:SetValue()` still changes its value.
@@ -9864,6 +9862,35 @@ next frame can pass the click on too.
   `false`.
 - In XML, `propagateMouseInput="Clicks"` or `propagateMouseInput="Both"` on
   a frame sets the value to `true`.
+
+### `frame:SetPassThroughButtons(...)`
+
+Sets the mouse buttons that go through the frame.
+
+A click with one of these buttons does not go to the frame. The frame gets
+no `OnMouseDown`, `OnMouseUp` or `OnClick` for it. The click goes to the
+next frame under the cursor that takes clicks. If there is no such frame,
+the click goes to the game world. The frame still gets clicks with all
+other buttons, and it still gets `OnEnter` and `OnLeave`.
+
+- The arguments are button names: `LeftButton`, `RightButton`,
+  `MiddleButton`, `Button4` and `Button5`. Case is not important. The
+  function ignores other names.
+- Each call replaces the list. Call it with no arguments to clear the
+  list.
+- If you press a button while you hold a different button, the click goes
+  to the frame that got the first click.
+- In XML, use the `passThroughButtons` attribute with a list of names:
+
+```xml
+<Frame name="MyPin" enableMouse="true" passThroughButtons="RightButton"/>
+```
+
+```lua
+-- A map pin that shows a tooltip and takes left-clicks.
+-- A right-click goes to the map under the pin.
+pin:SetPassThroughButtons("RightButton")
+```
 
 ### `frame:SetDontSavePosition([dontSave])` / `frame:GetDontSavePosition()`
 
@@ -10486,7 +10513,7 @@ changes fire their `OnAttributeChanged` handlers too.
 
 ### `SetModernScriptArgs(enable)` / `GetModernScriptArgs()`
 
-Global toggle (not a frame method) for **positional script arguments**.
+A ClassicAPI extension. Global toggle (not a frame method) for **positional script arguments**.
 The engine always invokes a frame-script handler with **zero** Lua arguments —
 the handler reads `this` / `arg1..argN` / `event` as globals. With this enabled,
 every handler additionally receives its values as real positional arguments, so
@@ -10520,10 +10547,9 @@ handler. If such a handler misbehaves, disable the feature with
 `SetModernScriptArgs(false)`.
 
 **Default ON.** Positional handler signatures are a core Lua 5.1 feature, so
-ports that use them work with no setup. It reimplements the tail of the engine's
-hottest Lua path (the runner that fires for every `OnUpdate`, every frame); if
-you ever need the exact stock dispatch, `SetModernScriptArgs(false)` turns it off
-and both runners become a straight passthrough.
+ports that use them work with no setup. It changes how every script handler is
+called, including every `OnUpdate` on every frame. If you need the exact stock
+behavior, `SetModernScriptArgs(false)` turns it off.
 
 ```lua
 -- On by default; SetModernScriptArgs(false) would turn it off.
@@ -10644,7 +10670,7 @@ SecureCmdOptionParse("[@focus,harm] a; b")   -- "a", "focus" when focus is hosti
 SecureCmdOptionParse("[nocombat] rest")      -- "rest" out of combat, else nil
 ```
 
-**Supported conditions.** Each maps to real 1.12 state:
+**Supported conditions.** Each maps to real game state:
 
 | Condition | Meaning |
 |---|---|
@@ -10876,12 +10902,12 @@ GetClickFrame("MyButton")     -- the frame named "MyButton", or nil
 ### `C_FriendList.SendWhoQueryByName(name)`
 
 Issues a /who name-filter query for a specific player. Results
-buffer into the engine's WhoList so a normal `WHO_LIST_UPDATE` +
+go into the who list so a normal `WHO_LIST_UPDATE` +
 `GetWhoInfo(i)` flow can read them — no chat output, no
 `"Found N players matching..."` system message.
 
-The engine exposes `SendWho(query)` and `SetWhoToUI(flag)` only as
-separate primitives, so addons that want to silently look up a
+The stock API has `SendWho(query)` and `SetWhoToUI(flag)` only as
+separate functions, so addons that want to silently look up a
 single player's class/level/zone (e.g. to color an unknown name in
 chat) have to manage state, cooldown timing, and friends-panel
 suppression themselves. This collapses the invocation half of that
@@ -10889,17 +10915,17 @@ dance to one call with a clean true/false return.
 
 Returns `true` if the query was sent, `false` if any of:
 
-- the name was empty / nil
+- the name was empty
 - the call is within the 5-second cooldown of a previous send
-- the engine's WhoSystem isn't initialized yet (pre-login)
+- the who system is not ready yet (before login)
 
-A `false` return is a no-op — the engine state isn't touched, no
+A name that is nil or not a string raises a usage error. A `false` return is a no-op — no state changes, no
 pending flag is set, and the cooldown isn't extended. Safe to call
 on every chat line that mentions an unknown player; the call will
 naturally rate-limit.
 
-The cooldown matches the server's: CMSG_WHO is silent-dropped
-server-side at roughly 5-second granularity, so a faster
+The cooldown matches the server's. The server silently drops who
+queries that come faster than about one per 5 seconds, so a faster
 client just wastes queries that won't get a response.
 
 ```lua
@@ -10922,26 +10948,13 @@ _G.FriendsFrame_OnEvent = function()
 end
 ```
 
-(Auto-suppressing the popup from C++ would require hooking the
-engine's `FrameScript_SignalEvent` or the SMSG_WHO opcode handler —
-both high-traffic / high-risk sites. The wrap above is reliable and
-takes 5 lines, so it stays addon-side for now.)
-
-Implementation reads the WhoSystem singleton from `0x00C28168` and
-calls the inner sender at `0x005AEBB0`
-(`__thiscall(this = WhoSystem, queryStr)`), the same chokepoint
-`Script_SendWho` tail-calls. The `whoToUI` flag at `0x00C2A12C` is
-flipped to `1` first so the SMSG_WHO handler routes results into the
-list (`WHO_LIST_UPDATE` path) instead of printing to chat.
-
 ### `C_FriendList.IsWhoQueryPending()`
 
-Returns `true` within ~5 seconds of the most recent
-[`SendWhoQueryByName`](#c_friendlistsendwhoquerybynamename) that
-returned `true`; otherwise `false`. Time-based — the engine doesn't
-expose a "response arrived" hook to C++ yet, so the window is a
-conservative upper bound on the response RTT, which in practice
-lands within a few hundred ms.
+Returns `true` while a query from
+[`SendWhoQueryByName`](#c_friendlistsendwhoquerybynamename) waits for
+its answer; otherwise `false`. The flag clears when the answer arrives,
+usually after a few hundred ms. If an answer is lost, the next
+`SendWhoQueryByName` call clears the flag after 10 seconds.
 
 The intended use is gating an addon-side `FriendsFrame_OnEvent`
 wrap so the user-issued `/who` window still works while addon-
@@ -10950,8 +10963,8 @@ issued silent queries don't pop the panel — see the example under
 
 Concurrent callers see a shared pending flag — if pfUI and another
 addon both call `SendWhoQueryByName` close in time, both queries
-contribute to the same pending window. This is acceptable for the
-"suppress popup for any in-flight DLL-issued query" use case;
+keep the flag set until both answers arrive. This is acceptable for the
+"suppress popup for any in-flight `SendWhoQueryByName` query" use case;
 addons that need per-call tracking should manage their own ticket
 state on top.
 
@@ -11031,8 +11044,7 @@ C_FriendList.IsFriend("0x00000000000ABCDE")
 You can also pass a plain character name, because the friends
 list is keyed by name (`AddFriend(name)`).
 
-The check reads the engine's friends list directly. It matches the
-input GUID against each friend's stored GUID. The server sends that
+The check matches the input GUID against the GUID of each friend. The server sends that
 GUID for both online and offline friends. As a fallback it also
 compares character names, so the answer holds for any friend the
 client saw this session.
@@ -11190,8 +11202,8 @@ AddOrRemoveFriend(UnitName("target"), "met in Stranglethorn")
 ## GameObject
 
 The gameobject analog of [`C_CreatureInfo`](#creature) — reads the
-client-side gameobject cache (`gameobjectcache.wdb`, fed by
-`SMSG_GAMEOBJECT_QUERY_RESPONSE`) by GO entry ID.
+client-side gameobject cache (`gameobjectcache.wdb`) by GO entry ID.
+The cache fills when the server answers a gameobject query.
 
 ### `C_GameObjectInfo.GetGameObjectInfoByID(gameObjectID)`
 
@@ -11204,21 +11216,17 @@ local info = C_GameObjectInfo.GetGameObjectInfoByID(47297)
 ```
 
 `type` is the `GameObjectType` (0=door, 1=button, 3=chest, 5=generic,
-6=trap, 10=goober, …). Field offsets verified against the binary
-(name `[block+0x08]`) and real `gameobjectcache.wdb` rows (Mesa
-Elevator 47297→type 11; Windrunner 176250→type 15 displayID 7087).
+6=trap, 10=goober, …). For example, Mesa Elevator (47297) is type 11,
+and Windrunner (176250) is type 15 with displayID 7087.
 
 ### `C_GameObjectInfo.RequestLoadGameObjectByID(gameObjectID)`
 
-Asynchronously fetches an uncached gameobject — issues
-`SMSG_GAMEOBJECT_QUERY` and fires **`GAMEOBJECT_DATA_LOAD_RESULT(
+Asynchronously fetches an uncached gameobject — asks the server for
+it and fires **`GAMEOBJECT_DATA_LOAD_RESULT(
 gameObjectID, success)`** when it lands, after which
 `GetGameObjectInfoByID` returns its data. Returns `true` if accepted;
 fires synchronously on a cache hit. Same shape as
-[`C_CreatureInfo.RequestLoadCreatureByID`](#c_creatureinforequestloadcreaturebyidcreatureid),
-and rides the same shared `Cache::QueryLoad` dispatcher (the gameobject
-cache is a sibling class of the creature cache with its own
-`_GetRecord`/parser, hooked separately).
+[`C_CreatureInfo.RequestLoadCreatureByID`](#c_creatureinforequestloadcreaturebyidcreatureid).
 
 ```lua
 local f = CreateFrame("Frame")
@@ -11243,8 +11251,8 @@ end
 ```
 
 The game-object counterpart of
-[`ClosestUnitPosition`](#closestunitpositioncreatureid) — same visible-
-object-manager scan, filtered to game objects (GUID prefix `0xF110`).
+[`ClosestUnitPosition`](#closestunitpositioncreatureid). It searches
+the objects that the client currently sees, but only game objects.
 Same caveat: this finds the nearest **currently-visible**
 object of that entry rather than reading a static starting-zone
 database (there is no such database here).
@@ -11264,16 +11272,12 @@ GameTooltip:SetItemByID(6948)  -- Hearthstone
 GameTooltip:Show()
 ```
 
-Implementation: snprintf the hyperlink string and dispatch to the
-existing `Script_GameTooltip_SetHyperlink` (registry slot 12).
-
-> **Item cache caveat.** 1.12 lazy-loads item data into the
-> client-side cache at `0x00C0E2A0` — the cache is fed by
-> `SMSG_ITEM_QUERY_SINGLE_RESPONSE` only when the player encounters
-> an item. For an itemID the player has never seen, the tooltip
-> renders only the name; full data appears once the cache is warm.
+> **Item cache caveat.** The client loads item data into its item
+> cache only when the player encounters an item. For an itemID the
+> player has never seen, the tooltip renders only the name. Full data
+> appears when the cache has the item.
 >
-> The fix is to ensure the item is cached before opening the tooltip:
+> Make sure that the item is cached before you open the tooltip:
 >
 > ```lua
 > if C_Item.IsItemDataCachedByID(itemID) then
@@ -11294,8 +11298,8 @@ existing `Script_GameTooltip_SetHyperlink` (registry slot 12).
 
 Renders the tooltip for a specific item *instance* identified by
 GUID — same string `C_Item.GetItemGUID` returns
-(`"0xHHHHHHHHLLLLLLLL"`). Distinct from `SetItemByID`: this path
-goes through the live CGItem, so the tooltip includes enchant
+(`"0xHHHHHHHHLLLLLLLL"`). Distinct from `SetItemByID`: this shows
+that specific item copy, so the tooltip includes enchant
 lines, random-suffix-decorated name + bonuses, and locked/broken
 state — the same depth `SetBagItem` / `SetInventoryItem` would
 produce for that specific copy.
@@ -11307,27 +11311,23 @@ GameTooltip:SetItemByGUID(guid)
 GameTooltip:Show()
 ```
 
-Resolves through the engine's own `FUN_OBJECT_RESOLVE_BY_GUID`
-(same path `C_Item.GetItemLocation` uses), builds the full
-`item:N:enchant:gem:gem:gem:gem:suffix:unique`-style hyperlink via
-the engine's link builder, then dispatches to
-`Script_GameTooltip_SetHyperlink`. The link round-trip is what
-gives `GameTooltip:GetItem()` the dressed link back when called
-after — same shape `GetInventoryItemLink` / `GetContainerItemLink`
-emit for the same slot.
+After this call, `GameTooltip:GetItem()` returns the full
+`item:N:enchant:gem:gem:gem:gem:suffix:unique`-style link. It has the
+same shape that `GetInventoryItemLink` / `GetContainerItemLink` give
+for the same slot.
 
 Silent no-op when the GUID is malformed, the item isn't currently
 loaded in the client (e.g. items only the server knows about), or
-the GUID resolves to a non-item object (creature/gameobject GUIDs
-go to a different resolver and won't match).
+the GUID belongs to an object that is not an item (a creature or
+gameobject GUID does not match).
 
 ### `GameTooltip:SetUnitAura(unit, index, [filter])`
 
 Unified-aura method. `index` is in the same `HELPFUL` / `HARMFUL` index
 space as `C_UnitAuras.GetAuraDataByIndex`, so an index you got from
 `C_UnitAuras` always opens the matching tooltip. That includes a debuff
-that the server parked in a buff slot. The tooltip itself comes from the
-engine's own `SetUnitBuff` or `SetUnitDebuff`. `filter` defaults to
+that the server parked in a buff slot. The tooltip is the same as the one
+from `SetUnitBuff` or `SetUnitDebuff`. `filter` defaults to
 helpful when omitted. Only its `HELPFUL` or `HARMFUL` token is read, so
 pass an index from the same plain list.
 
@@ -11339,10 +11339,10 @@ GameTooltip:SetUnitAura("player", 1)              -- defaults to HELPFUL
 GameTooltip:Show()
 ```
 
-The engine methods index their own slot ranges, which differ from the
-`C_UnitAuras` index space once a debuff sits in a buff slot. This method
-translates between the two, so you never need to
-without conditionally splitting on filter.
+`SetUnitBuff` and `SetUnitDebuff` index their own slot ranges, which
+differ from the `C_UnitAuras` index space once a debuff sits in a buff
+slot. This method translates between the two, so you do not need to
+split on the filter yourself.
 
 ### `GameTooltip:AddTexture(texture)`
 
@@ -11422,15 +11422,8 @@ currently displaying, or nothing if it isn't showing an item. The
 standard call returns only `(name, link)`; we extend with `itemID` as a third
 return so callers don't have to gsub-extract it from the link.
 
-The engine stashes two fields per Set* item call:
-- `tooltip+0x398` ← itemID (always populated)
-- `tooltip+0x380/+0x384` ← item GUID (only when there's a real
-  CGItem — `SetBagItem`, `SetInventoryItem`, `SetLootItem`,
-  `SetMerchantItem`, etc. Zero for `SetItemByID` / `SetHyperlink`
-  which have no instance.)
-
-Both fields are zeroed by the per-tooltip Clear on Hide / before the
-next Set*.
+The tooltip forgets the item when it hides, and before the next `Set*`
+call.
 
 ```lua
 GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
@@ -11454,24 +11447,24 @@ Two link paths:
 
 | Set* path | Link form | Dressing |
 |---|---|---|
-| `SetBagItem`, `SetInventoryItem`, `SetLootItem`, `SetMerchantItem`, … | Full dressed link via the engine's own builder at `0x0052AE00` | Enchant ID, random-suffix factor, unique ID, suffix-decorated name |
+| `SetBagItem`, `SetInventoryItem`, `SetLootItem`, `SetMerchantItem`, … | Full dressed link | Enchant ID, random-suffix factor, unique ID, suffix-decorated name |
 | `SetItemByID`, `SetHyperlink` (item:N with no instance data) | Basic colored link | itemID + cached quality + cached name only |
 
 The dressed-link path works for items not in player inventory
-(merchant, loot, mailbox, trade window, etc.) — the engine's
-resolver finds any CGItem the client has loaded.
+(merchant, loot, mailbox, trade window, and more). It works for any
+item copy that the client has loaded.
 
-Returns nothing for: non-item tooltip, uncached itemID on the
-no-GUID path (fires a background cache warmup), or empty name.
+Returns nothing for: non-item tooltip, an uncached itemID on the
+basic-link path (the client then asks the server for the item in the
+background), or empty name.
 
 ### `GameTooltip:GetSpell()`
 
 Returns `(name, rank, spellID)` for whichever spell the tooltip is
-currently displaying, or nothing if it isn't showing a spell. The
-engine stashes the spellID on the tooltip frame at `+0x39C` whenever
-any `SetX` spell path runs (`SetSpell`, `SetSpellByID`,
-`SetUnitBuff`/`SetUnitDebuff`, `SetTalent`, etc.) and zeroes it on
-the next `Clear` / `Hide`.
+currently displaying, or nothing if it isn't showing a spell. It works
+after every `SetX` call that shows a spell (`SetSpell`, `SetSpellByID`,
+`SetUnitBuff`/`SetUnitDebuff`, `SetTalent`, and more). The tooltip
+forgets the spell on the next `Clear` / `Hide`.
 
 ```lua
 GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
@@ -11482,8 +11475,8 @@ local name, rank, spellID = GameTooltip:GetSpell()
 -- spellID = 25306
 ```
 
-`rank` is the empty string (not nil) for spells whose Spell.dbc rank
-slot is blank — most racials, talent passives, and proc-triggered
+`rank` is the empty string (not nil) for spells that have no rank
+text — most racials, talent passives, and proc-triggered
 spells. The rank position is always populated.
 
 ### `GameTooltip:HasItem()` / `GameTooltip:HasSpell()`
@@ -11491,8 +11484,7 @@ spells. The rank position is always populated.
 Boolean companions to `GetItem` / `GetSpell`. Return `true` if the
 tooltip is currently displaying an item / spell, `false` otherwise.
 Cheaper than `GetItem` / `GetSpell` when all you need is the
-predicate — single `uint32` read against `OFF_TOOLTIP_ITEM_ID` /
-`OFF_TOOLTIP_SPELL_ID`, no DBC lookup or link-build.
+predicate. They do no lookup and build no link.
 
 ```lua
 if GameTooltip:HasItem() then
@@ -11563,8 +11555,7 @@ sent in the spawn packet. `guid` is the canonical
 `"0xHHHHHHHHLLLLLLLL"` format.
 
 `HasGameObject()` is the boolean companion — returns `true` if the
-tooltip is currently displaying a gameobject (single `uint32` read,
-no resolution work).
+tooltip is currently displaying a gameobject (cheap, no lookup).
 
 ```lua
 -- Mouse over a chest, vein, signpost, etc. then:
@@ -11579,26 +11570,21 @@ end
 ```
 
 There is **no Lua-callable `SetGameObject` method**
-— gameobjects only populate the tooltip via in-world mouseover. The
-engine's hover handler at `FUN_00492890` dispatches to a tooltip
-populator (`0x0052AA20`) that writes the GUID into
-`tooltip+0x370/+0x374`, right between the unit slot (`+0x368`) and
-the item slot (`+0x380`). The shared tooltip-clear zeroes the same
-slot on every subsequent `SetX`, so these methods follow the same
-gating pattern as `HasUnit` / `HasSpell` / `HasItem`.
+— gameobjects only populate the tooltip via in-world mouseover. Every
+later `SetX` call clears the gameobject, the same as for `HasUnit` /
+`HasSpell` / `HasItem`.
 
 Returns nothing for: tooltip not showing a gameobject, or the
-gameobject has left the engine's visibility window (object manager
-evicted it). `HasGameObject()` stays true in the latter case —
-the tooltip-frame slot still has the GUID, even though the live
-object has been freed.
+gameobject is no longer visible to the client. `HasGameObject()` stays
+true in the latter case — the tooltip still holds the GUID after the
+object is gone.
 
 ### `GameTooltip:GetOwner()`
 
 Returns the frame that called `tooltip:SetOwner(frame, anchor)`, or
 `nil` if the tooltip hasn't been owned by anyone since its last
-`Clear` / `Hide`. The engine ships `SetOwner` and `IsOwned` but
-never the matching reader; this adds it.
+`Clear` / `Hide`. The stock API has `SetOwner` and `IsOwned`, but
+no matching reader. This method adds it.
 
 ```lua
 GameTooltip:SetOwner(SomeFrame, "ANCHOR_TOPLEFT")
@@ -11608,8 +11594,7 @@ local owner = GameTooltip:GetOwner()
 
 Returns only the owner frame, not `(owner, anchorPoint)`. The anchor
 string is reachable via the stock
-[`GameTooltip:GetAnchorType()`](https://wowwiki-archive.fandom.com/wiki/API_GameTooltip_GetAnchorType)
-(slot 5 in the GameTooltip method registry).
+[`GameTooltip:GetAnchorType()`](https://wowwiki-archive.fandom.com/wiki/API_GameTooltip_GetAnchorType).
 
 ### `GameTooltip:SetAnchorType(anchorType [, xOffset [, yOffset]])`
 
@@ -11656,18 +11641,15 @@ Two-tier resolution:
 | Player class (rich) | `talentID` belongs to one of the player's loaded tabs | Full talent tooltip — name, "Rank N/M", description, prereqs, "click to learn" prompts |
 | Cross-class (fallback) | `talentID` is from another class | Spell tooltip for the talent's rank-1 spellID — name, cast time, range, mana cost, description |
 
-The fallback exists because the engine only loads the local
-player's class talent data into its per-player TabInfo
-arrays. For other classes, we look up the talent in `Talent.dbc`
-directly and dispatch the rank-1 spell tooltip — functionally
-"what does this talent do?" without the rank counter. Talent name and
-"Rank 0/N" decorations on top of the spell description for cross-class
-are not replicated here yet.
+The fallback exists because the client has full talent data only for
+the player's own class. For other classes, the method shows the rank-1
+spell tooltip of the talent — functionally "what does this talent do?"
+without the rank counter. A cross-class tooltip does not show the
+talent name or the "Rank 0/N" line.
 
-Silent no-op (no tooltip change) when:
-
-- `talentID` doesn't match any record in `Talent.dbc`
-- `talentID` is `nil`, non-numeric, or non-positive
+Silent no-op (no tooltip change) when `talentID` doesn't match any
+record in `Talent.dbc`, or is not positive. A `talentID` that is nil or
+not a number raises a usage error.
 
 ```lua
 -- Player's own class — rich tooltip
@@ -11704,7 +11686,7 @@ Silent no-op if the item isn't currently equipped — fall back to
 When the player has duplicates of the same itemID equipped
 (matched MH/OH weapons, identical rings, identical trinkets), the
 **lower-numbered slot wins** — MAINHAND before OFFHAND, FINGER1
-before FINGER2, TRINKET1 before TRINKET2 (verified empirically).
+before FINGER2, TRINKET1 before TRINKET2.
 
 ```lua
 local _, _, _, _, _, _, _, _, _, _, _, _, _, link = GetItemInfo(itemID)
@@ -11810,7 +11792,7 @@ Returns `true` when the item the tooltip is **currently displaying** is
 equipped in one of the player's character-pane slots (1..19).
 
 Works regardless of how the tooltip was populated — link paths
-(`SetItemByID`, `SetHyperlink`) and CGItem paths (`SetInventoryItem`,
+(`SetItemByID`, `SetHyperlink`) and item-copy paths (`SetInventoryItem`,
 `SetBagItem`, `SetItemByGUID`, …) both resolve to the displayed item.
 Returns `false` for a tooltip that isn't showing an item (e.g. a spell
 tooltip) with no false positives.
@@ -11915,10 +11897,25 @@ frame-script convention — *not* a `self` argument (like every built-in
 script: `OnShow`, `OnEvent`, `OnTooltipCleared`, …). A
 `function(self) self:… end` handler will see `self == nil`; use `this`.
 
+`OnTooltipSetItem` gets one argument, `arg1`: the GUID of the item that
+the tooltip shows (ClassicAPI extension). The GUID is nil when no item
+object is behind the tooltip. This is true for loot, loot rolls, merchant
+items, auctions, mail in the inbox, the trade partner's items, links and
+item IDs. Bag, bank, equipped, buyback, trade and send-mail items have a
+GUID. Give it to `Item:CreateFromItemGUID` or to the `C_Item` functions
+that take an item location.
+
 ```lua
 GameTooltip:HookScript("OnTooltipSetItem", function()
     local name, link, id = this:GetItem()   -- the tooltip is the global `this`
     if id then this:AddLine("ID: " .. id, 0.6, 0.6, 0.6) end
+end)
+
+GameTooltip:HookScript("OnTooltipSetItem", function()
+    local itemGUID = arg1
+    if itemGUID then
+        this:AddLine("Stack: " .. C_Item.GetStackCount(itemGUID), 0.6, 0.6, 0.6)
+    end
 end)
 
 GameTooltip:HookScript("OnTooltipSetUnit", function()
@@ -11928,7 +11925,7 @@ end)
 ```
 
 **Auras don't fire `OnTooltipSetSpell`** — `SetUnitBuff` / `SetUnitDebuff` /
-`SetPlayerBuff` / `SetUnitAura` use a separate aura-tooltip builder, so hovering
+`SetPlayerBuff` / `SetUnitAura` build an aura tooltip, not a spell tooltip, so hovering
 a buff/debuff does not trigger the spell script. Unit auras are a distinct
 tooltip data type rather than a spell.
 
@@ -11936,7 +11933,7 @@ tooltip data type rather than a spell.
 work is fine: reading `this:GetItem()` / `this:GetUnit()`, `this:AddLine(...)`,
 printing, etc. But avoid *re-entrant* tooltip rebuilds from the handler — e.g.
 `GameTooltip_ShowCompareItem()`, or a `Set*` call on another tooltip. Because the
-handler runs mid-build, re-entering the tooltip / FrameScript machinery can
+handler runs mid-build, re-entering the tooltip code can
 collide with other DLLs that hook the same Lua paths (nampower, SuperWoW,
 weirdutils, …) and crash the client. If you need heavy work like that, defer it
 to the next frame:
@@ -12000,13 +11997,12 @@ set 1
   slot 5 ignored
 ```
 
-The GUID is the live handle for items currently in inventory; the
-itemID is the type identifier used when the live `CGItem` isn't
-findable (item sold, mailed, on another character, etc.) — without
-it we couldn't recover the name for missing items. Sets saved
-before the itemID field was added load fine but render their
-missing slots with the count summary `%d missing` instead of named
-lines; re-saving a set repopulates itemIDs.
+The GUID identifies an item copy that is in the inventory now. The
+itemID identifies the item type. It gives the name of an item that
+the client cannot find (sold, mailed, on another character, and more).
+A saved set without itemIDs loads, but shows its missing slots with
+the count summary `%d missing` instead of named lines. Save the set
+again to add the itemIDs.
 
 ### Equipment sets on item tooltips
 
@@ -12085,8 +12081,7 @@ end
 
 The client's interface (TOC) version number — `11200` on this client. This is
 the number the addon loader checks each addon's `## Interface:` line against,
-so it's the right value to compare a required version to. Read from the engine
-and re-published on every `/reload`.
+so it's the right value to compare a required version to.
 
 ```lua
 if INTERFACE_VERSION >= 11200 then ... end
@@ -12431,10 +12426,8 @@ Struct-shaped wrappers around the flat `GetGossipText` /
 `GetGossipOptions` / `GetGossipAvailableQuests` / `GetGossipActiveQuests`
 / `SelectGossipOption` / `SelectGossipAvailableQuest` /
 `SelectGossipActiveQuest` / `CloseGossip` surface. The data is the
-same — these calls just read the engine's two gossip-state arrays
-(`0x00BBBE90` for options, `0x00BB74C0` for quests, both filled by the
-SMSG_GOSSIP_MESSAGE handler at `0x004E26E0`) and shape it into the
-struct-tables that addons expect.
+same. These calls only shape it into the struct-tables that addons
+expect.
 
 **Fields the server simply doesn't send** — and therefore aren't
 in any of the returned tables — include `rewards` and `spellID`,
@@ -12442,7 +12435,7 @@ per-option `status` (Available / Unavailable / Locked / AlreadyComplete
 — the server doesn't compute this), and UX hints like `overrideIconID`
 and `selectOptionWhenOnlyOption`.
 
-The `icon` field is the raw icon-type byte from SMSG_GOSSIP_MESSAGE
+The `icon` field is the raw icon-type byte that the server sends
 (server-extensible — pservers can add custom NPC types past the
 Blizzard 0..10 range). Default Blizzard types resolve to
 `Interface\GossipFrame\<Type>GossipIcon`:
@@ -12458,10 +12451,10 @@ Blizzard 0..10 range). Default Blizzard types resolve to
 
 ### `C_GossipInfo.GetText()`
 
-Returns the gossip greeting string the engine resolved from the NPC's
-referenced `NPC_TEXT.dbc` row. Same value `GetGossipText()` returns;
-provided so addons that prefer the `C_GossipInfo` namespace don't have
-to mix the two surfaces.
+Returns the greeting text of the NPC. For a gossip window it is the
+same value that `GetGossipText()` returns. For a quest greeting window
+(an NPC with several quests and no gossip), it is the greeting of that
+window.
 
 ```lua
 print(C_GossipInfo.GetText())
@@ -12474,9 +12467,9 @@ contains:
 
 | Field            | Type    | Notes |
 |------------------|---------|-------|
-| `gossipOptionID` | number  | The engine's `optionIndex`. The same value `C_GossipInfo.SelectOption` expects; arbitrary integer assigned by the server. |
+| `gossipOptionID` | number  | The option index that the server sends. The same value `C_GossipInfo.SelectOption` expects; arbitrary integer assigned by the server. |
 | `name`           | string  | Option text (locale-applied by the server). |
-| `icon`           | number  | Raw icon-type byte from SMSG_GOSSIP_MESSAGE — passed through unmapped so pserver-added types (anything past the default `0..10` range) survive. See the type table above for the default Blizzard categories and the `Interface\GossipFrame\<Type>GossipIcon` path each one resolves to. |
+| `icon`           | number  | Raw icon-type byte that the server sends — passed through unmapped so pserver-added types (anything past the default `0..10` range) survive. See the type table above for the default Blizzard categories and the `Interface\GossipFrame\<Type>GossipIcon` path each one resolves to. |
 | `flags`          | number  | Bit 0 set = `boxCoded` (the option asks for confirmation text — `Are you sure?` boxes). |
 | `orderIndex`     | number  | 1-based position in the emitted list. Matches the index `SelectGossipOption` (legacy) expects. |
 
@@ -12489,8 +12482,9 @@ end
 ### `C_GossipInfo.GetAvailableQuests()`
 
 Returns an array of deliverable-quest tables (quests the giver is
-offering to start), in display order. Filter mirrors the engine's
-`GetGossipAvailableQuests` — status field at `+0x008` not in `{3, 4}`.
+offering to start), in display order. For a gossip window the list
+holds the same quests as `GetGossipAvailableQuests`. For a quest
+greeting window it holds that window's quests.
 
 | Field        | Type   | Notes |
 |--------------|--------|-------|
@@ -12501,15 +12495,16 @@ offering to start), in display order. Filter mirrors the engine's
 ### `C_GossipInfo.GetActiveQuests()`
 
 Returns an array of active-quest tables (quests the giver wants you
-to turn in, in-progress or complete). Status field at `+0x008` in
-`{3, 4}`.
+to turn in, in-progress or complete). For a gossip window the list
+holds the same quests as `GetGossipActiveQuests`. For a quest greeting
+window it holds that window's quests.
 
 | Field        | Type    | Notes |
 |--------------|---------|-------|
 | `questID`    | number  | Quest.dbc row ID. |
 | `title`      | string  | Localized quest title. |
 | `questLevel` | number  | Quest level. |
-| `isComplete` | boolean | `true` when the engine's status byte is `4` (ready to turn in); `false` when it's `3` (still in progress). |
+| `isComplete` | boolean | `true` when the quest is ready to turn in; `false` when it is still in progress. |
 
 ### `C_GossipInfo.GetNumOptions()` / `GetNumAvailableQuests()` / `GetNumActiveQuests()`
 
@@ -12518,38 +12513,37 @@ above without building the table.
 
 ### `C_GossipInfo.SelectOption(gossipOptionID)` / `SelectOptionByIndex(orderIndex)`
 
-Picks a gossip option. `SelectOption` resolves the
-`gossipOptionID` to the engine's 1-based slot, then tail-calls the
-engine's native `SelectGossipOption`. `SelectOptionByIndex` is a thin
+Picks a gossip option. `SelectOption` finds the 1-based slot of the
+`gossipOptionID`, then selects it the same way as
+`SelectGossipOption`. `SelectOptionByIndex` is a thin
 passthrough for callers that already have the slot index (e.g. from
 `opt.orderIndex` on a `GetOptions()` entry, or from a UI button bound
 directly to the slot).
 
-Both end in the same CMSG; the option-ID variant exists so addons can
+Both send the same request to the server. The option-ID variant exists so addons can
 drive selections off the `gossipOptionID` key without keeping
 their own slot mapping. Returns nothing.
 
-The stock `SelectGossipOption` doesn't accept a confirmation-text
-argument, so for `boxCoded` options the engine's own confirm dialog
-runs as usual — there is no way to send the password from the script.
+`SelectOption` takes an optional second argument, `text`, for
+`boxCoded` options. The text goes to the server with the selection, as
+the password typed into the confirm dialog does.
 
 ### `C_GossipInfo.SelectAvailableQuest(questID)`
 
-Picks a deliverable quest by `questID`. Walks the active-vs-available
-filter the same way `GetAvailableQuests` does, locates the matching
-1-based slot, and tail-calls the engine's `SelectGossipAvailableQuest`.
-Returns nothing.
+Picks a deliverable quest by `questID`. Finds the 1-based slot of the
+quest in the `GetAvailableQuests` list, and selects it the same way as
+`SelectGossipAvailableQuest`. Returns nothing.
 
 ### `C_GossipInfo.SelectActiveQuest(questID)`
 
 Picks an in-progress quest by `questID`. Same shape as
-`SelectAvailableQuest` but walks the active filter and tail-calls
-`SelectGossipActiveQuest`. Returns nothing.
+`SelectAvailableQuest`, but uses the `GetActiveQuests` list and
+selects the quest the same way as `SelectGossipActiveQuest`. Returns
+nothing.
 
 ### `C_GossipInfo.CloseGossip()`
 
-Closes the gossip window. Direct passthrough to the engine's
-`CloseGossip`. Returns nothing.
+Closes the gossip window. Same as `CloseGossip`. Returns nothing.
 
 ### `C_GossipInfo.GetPoiForUiMapID(uiMapID)`
 
@@ -12666,7 +12660,7 @@ Errors:
 
 ## Input
 
-The engine ships `IsShiftKeyDown` / `IsControlKeyDown` / `IsAltKeyDown`
+The stock API has `IsShiftKeyDown` / `IsControlKeyDown` / `IsAltKeyDown`
 but they only report "any shift/ctrl/alt" — there's no built-in way to
 tell left from right. These seven functions add the missing distinction
 plus an `IsModifierKeyDown()` rollup.
@@ -12792,6 +12786,22 @@ button:SetScript("OnClick", function()
 end)
 ```
 
+### `GetCursorDelta()`
+
+Returns how far the cursor moved since the last frame: `deltaX, deltaY`.
+Both are `0` when the cursor did not move. The values are in the units of
+`GetCursorPosition`, so the UI scale does not change them. To get a frame's
+units, divide by `frame:GetEffectiveScale()`. All `OnUpdate` scripts in one
+frame get the same values. The function also works at the login and
+character-select screens.
+
+```lua
+f:SetScript("OnUpdate", function(self)
+    local dx = GetCursorDelta()
+    self.yaw = self.yaw + dx / self:GetEffectiveScale() * 0.01
+end)
+```
+
 ## Instance
 
 ### `GetInstanceInfo()`
@@ -12826,10 +12836,9 @@ dynamicDifficulty, isDynamic, instanceID, instanceGroupSize
 ```
 
 **Caveat on `maxPlayers`.** There is no per-instance cap data
-client-side. The server enforces caps via `SMSG_TRANSFER_ABORTED` when
-entry is denied, but
-that information never reaches the client otherwise. So we return the
-type's canonical max. **Zul'Gurub and AQ20 return `40` instead of
+client-side. The server enforces caps when it denies entry, but the
+client gets no other cap data. So the function returns the type's
+canonical max. **Zul'Gurub and AQ20 return `40` instead of
 their true `20`; non-AV battlegrounds (WSG `10`, AB `15`) return `40`
 instead of their true cap; any custom raid on a private server
 (e.g. Turtle WoW) returns `40` regardless of its real cap.** Addons
@@ -12856,20 +12865,19 @@ end
 
 ### `InterfaceOptionsFrame` and addon option panels
 
-Later clients list addon option panels in the Interface Options window,
-`InterfaceOptionsFrame`. An addon adds its panel with
-`InterfaceOptions_AddCategory(panel)` (Ace3's `AddToBlizOptions` does this
-for every Ace3 addon) and opens it with
-`InterfaceOptionsFrame_OpenToCategory(panel)`. Stock 1.12 has neither, so
-Ace3 addons stop while they initialize.
+Addons add option panels to the Settings window in two ways. Older addons
+call `InterfaceOptions_AddCategory(panel)`. Ace3's `AddToBlizOptions` does
+this for every Ace3 addon. Newer addons call
+`Settings.RegisterCanvasLayoutCategory` and `Settings.RegisterAddOnCategory`.
+Both kinds of panel show in the same window, in its AddOns list.
 
 ```lua
 local panel = CreateFrame("Frame")
 panel.name = "MyAddon"                   -- required: the list entry
-panel.okay = function(self) end          -- optional: Okay pressed
-panel.cancel = function(self) end        -- optional: Cancel pressed
-panel.default = function(self) end       -- optional: Defaults pressed
-panel.refresh = function(self) end       -- optional: panel shown
+panel.okay = function(self) end          -- optional: the window commits
+panel.cancel = function(self) end        -- optional: the window closes without a commit
+panel.default = function(self) end       -- optional: defaults are set
+panel.refresh = function(self) end       -- optional: the window opens, or the panel shows
 InterfaceOptions_AddCategory(panel)
 
 local sub = CreateFrame("Frame")
@@ -12879,21 +12887,51 @@ InterfaceOptions_AddCategory(sub)
 InterfaceOptionsFrame_OpenToCategory(panel)   -- or the category's name
 ```
 
-The window lists addon panels under AddOns; a category with children starts
-collapsed. To open the window, click AddOn Options in the game menu (above
-Key Bindings). When you close a window that you opened from the game menu, the
-game menu opens again. Okay and Cancel call `okay` / `cancel` on every panel.
-Escape does the same as Cancel. Defaults calls `default` on the panel shown.
-`InterfaceOptionsFrame_Show()` toggles the window. The names match later
-clients (`InterfaceOptionsFrameAddOns` with its `buttons`, `buttonHeight` and
-`update` fields, the `InterfaceOptionsFrameAddOnsList` scroll frame,
-`InterfaceOptionsFramePanelContainer.displayedPanel`,
-`InterfaceOptionsListButtonTemplate`, `INTERFACEOPTIONS_ADDONCATEGORIES`),
-because addons and libraries use them directly.
+The name of a panel is also the ID of its category. Thus
+`Settings.GetCategory("MyAddon")` and `Settings.OpenToCategory("MyAddon")`
+find the panel. The `parent` field can name a category that an addon added
+through either API. If the parent is not in the list yet, the panel shows at
+the top level. The list sorts addon categories by name, so the `position`
+argument has no effect.
 
-This is the addon side only. The client's own settings stay in their own
-windows, and the Categories list, which later clients fill with the game's
-settings, exists but stays empty.
+The window calls the panel functions at these times:
+
+- **Close**, **Apply** and Escape commit. Then `okay` runs on every panel.
+- `cancel` runs only when the window closes without a commit. That occurs
+  when you click Exit in the dialog about settings that are not applied, or
+  when an addon clicks `InterfaceOptionsFrameCancel`.
+- **Defaults** opens a dialog. **All Settings** runs `default` on every
+  panel. **These Settings** runs `default` on the panel that shows. On a
+  client whose dialogs have only two buttons, the dialog has no These
+  Settings choice.
+- `refresh` runs when the window opens and each time the panel shows.
+
+The Defaults button shows above a list of settings, not above a panel. After
+the window closes, the game menu opens. A panel can have its own `OnCommit`,
+`OnDefault` or `OnRefresh` method. Then that method runs in place of `okay`,
+`default` or `refresh`.
+
+To open the window, click AddOn Options in the game menu (above Key
+Bindings). `InterfaceOptionsFrame_Show()` opens or closes the window.
+`InterfaceAddOnsList_Update()` builds the list again. The window shows its
+Game and AddOns tabs only when both lists have categories.
+
+The names of the earlier Interface Options window are parts of the Settings
+window, because addons use these names directly:
+
+| Name | Part of the Settings window |
+|------|-----------------------------|
+| `InterfaceOptionsFrame` | `SettingsPanel`, the window |
+| `InterfaceOptionsFrameAddOns`, `InterfaceOptionsFrameCategories` | The category list. Its `buttons` table is empty. Its `update` field builds the list again. |
+| `InterfaceOptionsFrameAddOnsList` | The scroll box of the category list |
+| `InterfaceOptionsFrameAddOnsListScrollBar` | The scroll bar of the category list |
+| `InterfaceOptionsFramePanelContainer` | The frame that holds the panel. Its `displayedPanel` field is the panel that shows. |
+| `InterfaceOptionsFrameOkay` | The Close button |
+| `InterfaceOptionsFrameCancel` | A hidden button. A click closes the window without a commit. |
+| `InterfaceOptionsFrameDefaults` | A hidden button. A click sets the defaults of the category that shows. |
+
+`INTERFACEOPTIONS_ADDONCATEGORIES` lists the panels that
+`InterfaceOptions_AddCategory` added.
 
 ## Item
 
@@ -12909,11 +12947,10 @@ settings, exists but stays empty.
 > "0xHHHHHHHHLLLLLLLL"           -- a GUID string from C_Item.GetItemGUID
 > ```
 >
-> Table forms are O(1) — the engine knows the slot. The GUID-string form
-> is O(~80) — the function walks equipment slots 1..19 and bags 0..4
-> comparing each CGItem's stored GUID against the requested one. Bank and
-> keyring are not walked. Fine for sporadic addon use; avoid for per-frame
-> polling.
+> Table forms name a slot. A GUID string names the item itself, wherever
+> you have it: equipped, in the bags, on the keyring, on the buyback list,
+> or in the bank while the bank window is open. An item that you sold,
+> mailed, traded or destroyed is not found.
 
 ### `C_Item.DoesItemExist(itemLocation)` / `C_Item.DoesItemExistByID(item)`
 
@@ -12941,7 +12978,7 @@ if C_Item.DoesItemExistByID(6948) then ... end
 ### `C_Item.EquipItemByName(item [, dstSlot])`
 
 Equips `item`. With `dstSlot` (a 1-based character-pane slot, 1..19),
-equips to that specific slot; without, the engine auto-picks based on
+equips to that specific slot; without, the game auto-picks based on
 the item's inventory type.
 
 `item` takes either of two forms:
@@ -12962,30 +12999,24 @@ the item's inventory type.
 An `{equipmentSlotIndex = N}` location names an item you are already
 wearing, so it needs a `dstSlot` to move to: that is how you swap rings
 (11 ↔ 12), trinkets (13 ↔ 14) or weapons (16 ↔ 17). Without `dstSlot` there
-is nothing for the engine to pick, and the call does nothing.
+is nothing for the game to pick, and the call does nothing.
 
 Returns nothing. Silently no-ops when:
 
 - the input is `nil`, an empty string, or otherwise unparseable
 - you do not have the item; a reference searches your bags only, so an
   item you are already wearing is only reachable by location
-- the engine refuses the equip — combat, locked item, type mismatch
-  with `dstSlot`, locked equipment slot, etc.
+- the game refuses the equip — combat, locked item, type mismatch
+  with `dstSlot`, locked equipment slot, and more
 
 Two paths based on `dstSlot`:
 
-- **Explicit `dstSlot` (1..19): cursor-free direct swap.** Calls the
-  engine's own `FUN_INVENTORY_SWAP` (`0x005E0C40`) — the same
-  primitive `Script_EquipCursorItem` dispatches to after resolving
-  cursor state. We hand it the source item GUID, source container
-  GUID, source linear slot, and target paperdoll slot; the engine
-  builds and sends the CMSG_SWAP_INV_ITEM (or CMSG_AUTOEQUIP_ITEM
-  for cross-container) packet through its normal pipeline. **The
-  cursor is never read or written.** An item already on the cursor
-  stays on the cursor.
-- **No `dstSlot` (engine auto-picks slot from inventory type):**
-  falls back to the cursor-pickup + `AutoEquipCursorItem` path
-  because the auto-pick logic reads off cursor state.
+- **Explicit `dstSlot` (1..19): cursor-free direct swap.** The item
+  moves straight to the slot. **The cursor is never read or
+  written.** An item already on the cursor stays on the cursor.
+- **No `dstSlot` (the game auto-picks the slot from the inventory
+  type):** this path uses the cursor. It picks the item up, then
+  equips it the same way as `AutoEquipCursorItem`.
 
 Both paths first return anything on the cursor to the slot it came from, so
 a held item is neither clobbered nor left visually locked. The item is
@@ -13011,12 +13042,12 @@ C_Item.EquipItemByName({ equipmentSlotIndex = 16 }, 17)
 
 ### `C_Item.GetCurrentItemLevel(itemLocation)` / `C_Item.GetDetailedItemLevelInfo(item)`
 
-Returns the item's base ilvl from `m_itemLevel` (cache record `+0x38`).
+Returns the item's base item level.
 There is no per-instance scaling (no upgrades, no warforging), so
 "current" and "base" item level are always identical — both APIs
 return the same single value. `GetDetailedItemLevelInfo` is spec'd to
-return `(current, isPreview, base)`; we push only the current level,
-callers that care about the extra returns will see `nil` for them.
+return `(current, isPreview, base)`. It returns only the current
+level, so callers see `nil` for the other two values.
 
 ```lua
 local ilvl = C_Item.GetCurrentItemLevel({equipmentSlotIndex = INVSLOT_HEAD})
@@ -13071,7 +13102,7 @@ C_Item.GetItemCount(linenID, false, true)         -- the stack count (no charges
 ### `C_Item.GetItemData(itemLocation)` / `C_Item.GetItemDataByID(item)`
 
 ClassicAPI-only kitchen-sink reader: returns a single table with every
-field we can extract from the cached `ItemStats_C` record, so addons
+field of the cached item data, so addons
 that need more than a couple of fields don't have to chain a dozen
 `C_Item.*` calls. Saves both stack churn and the cost of redoing the
 cache lookup for every accessor.
@@ -13094,30 +13125,30 @@ Returned table:
 | Key | Type | Source / notes |
 |-----|------|---------------|
 | `itemID` | number | Echoed from input. |
-| `name` | string | `m_name[0]` — localized display name. |
-| `description` | string \| nil | `m_description`. Omitted when empty. |
+| `name` | string | Localized display name. |
+| `description` | string \| nil | Item description text. Omitted when empty. |
 | `icon` | string \| nil | `"Interface\\Icons\\<name>"`. Omitted when no icon. |
-| `displayInfoID` | number | `m_displayInfoID` → `ItemDisplayInfo.dbc` row. |
+| `displayInfoID` | number | `ItemDisplayInfo.dbc` row. |
 | `quality` | number | 0..5 — see `LE_ITEM_QUALITY_*` enum. |
-| `classID` | number | `m_class` — `ItemClass.dbc` row. |
-| `subclassID` | number | `m_subClass` — `ItemSubClass.dbc` row. |
+| `classID` | number | `ItemClass.dbc` row. |
+| `subclassID` | number | `ItemSubClass.dbc` row. |
 | `className` | string | Localized class name (e.g. `"Weapon"`). |
 | `subclassName` | string | Localized subclass name (e.g. `"One-Handed Swords"`). |
-| `inventoryType` | number | `m_inventoryType` — raw integer. |
+| `inventoryType` | number | `Enum.InventoryType` raw integer. |
 | `equipLoc` | string | `"INVTYPE_*"` constant or `""` for non-equippable. |
-| `bindType` | number | `m_bonding` — 0=none, 1=BoP, 2=BoE, 3=BoU, 4=Quest. |
-| `flags` | number | Raw `m_flags` u32. |
+| `bindType` | number | 0=none, 1=BoP, 2=BoE, 3=BoU, 4=Quest. |
+| `flags` | number | Raw item flags (32-bit). |
 | `isConjured` | bool | Flag bit `0x2`. |
 | `isOpenable` | bool | Flag bit `0x4`. |
 | `isLootable` | bool | Flag bit `0x10` — has loot generators (right-click loot). |
 | `isWrapper` | bool | Flag bit `0x200` — gift-wrappable. |
-| `maxStackSize` | number | `m_stackable`. |
-| `maxCount` | number | `m_maxCount` — 0=unlimited, 1=unique, otherwise per-character cap. |
-| `containerSlots` | number | `m_containerSlots` — bag slot count, 0 for non-bags. |
+| `maxStackSize` | number | Max stack size. |
+| `maxCount` | number | 0=unlimited, 1=unique, otherwise per-character cap. |
+| `containerSlots` | number | Bag slot count, 0 for non-bags. |
 | `bagFamily` | number | The bag family bitmask. The same value as [`C_Item.GetItemFamily`](#c_itemgetitemfamilyitem), bags included. |
 | `buyPrice` | number | Vendor buy price in copper. |
 | `sellPrice` | number | Vendor sell price in copper. |
-| `itemLevel` | number | Base ilvl from `ItemSparse`. |
+| `itemLevel` | number | Base item level. |
 | `requiredLevel` | number | Minimum character level. |
 | `requiredSkill` | number | `SkillLine.dbc` row, 0=none. |
 | `requiredSkillRank` | number | Skill rank required. |
@@ -13172,12 +13203,11 @@ local sword = C_Item.GetItemDataByID(2092)  -- Worn Shortsword
 -- sword.stats == {}   (no stat allocations on the starter sword)
 ```
 
-**Cache state.** The function reads the same `DBCache_ItemStats`
-network cache every other `C_Item.*` reader consults. Items already in
-the player's inventory are typically populated by the engine's natural
-prefetch before `PLAYER_ENTERING_WORLD` returns; for other items
-(quest rewards, AH items, link hovers, etc.) the data lands once a
-`SMSG_ITEM_QUERY_SINGLE_RESPONSE` arrives. Use
+**Cache state.** The function reads the same client-side item cache
+as every other `C_Item.*` reader. Items in the player's inventory are
+usually cached before `PLAYER_ENTERING_WORLD` fires. For other items
+(quest rewards, AH items, link hovers, and more), the data arrives when
+the server answers an item query. Use
 `C_Item.RequestLoadItemDataByID` if you specifically need to trigger
 the load.
 
@@ -13249,7 +13279,7 @@ stops at Keys):
 > cooking/gathering bag families (Meat, Fish, Leather, Mining) as
 > `ItemBagFamily.dbc` rows 10–13, rather than reusing the standard later
 > IDs 4 (Leatherworking) / 5 (Inscription), which this client left unused.
-> Because we convert the raw ID straight through `1 << (rawID - 1)`,
+> Because the bitmask is `1 << (rawID - 1)`,
 > these land on bits 9–12 — the same numeric values assigned to
 > **Gem Bag** (`0x200`) and **Mining Bag** (`0x400`) elsewhere. So an addon
 > that hard-codes `family == 0x200` to mean "Gem
@@ -13258,41 +13288,35 @@ stops at Keys):
 > `0x200`, which is all the "does this item fit this bag" test needs) —
 > just don't assume the standard bit meanings for anything above `0x100`.
 
-> **Encoding under the hood.** The engine stores the raw
-> 1-based BagFamily ID (`arrow=1, bullet=2, soul shard=3, herb=6, …`).
-> We convert on the way out via `bitmask = 1 << (rawID - 1)`, so
-> callers see the bitmask encoding they expect — addons
-> can `band(family, FAMILY_BAG_HERB_BAG)` directly.
+> **Bitmask encoding.** The function returns the bitmask form, not the
+> raw 1-based family ID (`arrow=1, bullet=2, soul shard=3, herb=6, …`).
+> Addons can `band(family, FAMILY_BAG_HERB_BAG)` directly.
 
 > **Legacy Blizzard bags derive from `(class, subClass)`.** The stock
-> bags shipped with an empty `m_bagFamily` field — the four
+> bags have no family in their item data — the four
 > profession bags (Soul Bag, Herb Bag, Enchanting Bag, Engineering Bag,
-> all Container class) *and* quivers/ammo pouches (Quiver class). For a
-> bag whose field is `0` we recover the family from its class + subclass
-> — the same signal the `"24 Slot Soul Bag"` tooltip line is built from.
+> all Container class) *and* quivers/ammo pouches (Quiver class). For
+> these bags, the function gets the family from the class and subclass
+> of the bag. This is the same data that gives the `"24 Slot Soul Bag"`
+> tooltip line.
 > A Felcloth Bag reports `0x4` (Soul Shards), a quiver `0x1` (arrows), an
-> ammo pouch `0x2` (bullets) — each matching the items it holds. Keyed on
-> class because subclass numbers repeat across classes (Container
-> subclass 2 = Herb Bag, Quiver subclass 2 = Quiver). This is automatic;
-> you no longer need to read `subClass` yourself. (Turtle's own custom
-> bags — Meat/Fish/Leather/Mining — populate the field directly; a
-> Turtle-specific resolver module supplies their mapping as a safety net,
-> kept separate from the stock table.)
+> ammo pouch `0x2` (bullets) — each matching the items it holds. You do
+> not need to read `subClass` yourself. (Turtle's own custom bags —
+> Meat/Fish/Leather/Mining — also report their family.)
 
-> **`nil` vs `0`.** We return `nil` (not `0`) for items the cache lookup
+> **`nil` vs `0`.** The function returns `nil` (not `0`) for items the cache lookup
 > fails on, so callers can distinguish "item not cached, retry after the
 > event lands" from "item exists but has no family preference." Both are
 > safe to treat as `0` for routing-logic purposes; the distinction helps
 > debugging.
 
 > **Auto-warmup on cache miss.** First call for an uncached item
-> returns `nil` AND triggers the engine's cache fill in the
+> returns `nil` AND asks the server for the item in the
 > background. Listen for `GET_ITEM_INFO_RECEIVED(itemID, success)` and
 > retry once the matching `itemID` arrives — "nil first call, value
-> second call." We fire `GET_ITEM_INFO_RECEIVED` when the cache lands, to
-> stay consistent with our other implicit-warmup paths (`GetItemInfo`,
-> `SetItemByID`). Addons that already listen for that event get the
-> notification for free.
+> second call." `GET_ITEM_INFO_RECEIVED` fires when the data arrives,
+> the same as for `GetItemInfo` and `SetItemByID`. Addons that already
+> listen for that event get the notification for free.
 
 Equivalent to the global `GetItemFamily` and `C_Item.GetItemFamily`.
 
@@ -13309,7 +13333,6 @@ local guid = C_Item.GetItemGUID({equipmentSlotIndex = INVSLOT_HEAD})
 -- "0x40000000000DEFCA"
 ```
 
-Reads CGItem instance block at `+0x08` → GUID qword at `+0x00`.
 The GUID is stable per-character-session and survives moves between
 bags / character pane, so it's the right identifier for "this exact
 item instance" — equipment-set tracking, soulbind matching, or any
@@ -13345,8 +13368,7 @@ names no item, returns nothing.
 
 ### `C_Item.GetItemInfo(itemInfo)`
 
-The full `GetItemInfo` tuple, sourced from the client-side item cache
-plus the class/subclass/inventory-type DBC name lookups. The namespaced
+The full `GetItemInfo` tuple, from the client-side item cache. The namespaced
 counterpart to the stock global `GetItemInfo` (which returns only a
 short tuple); this returns the wide set.
 
@@ -13376,7 +13398,7 @@ Returns 18 values:
 | 18 | `itemDescription` | item flavor/description text (`""` if none) |
 
 **Asynchronous on a cache miss:** if the item isn't cached yet it returns
-nothing (nil) and warms the cache; the value lands on a retry after
+nothing (nil) and asks the server for the item; the value lands on a retry after
 `GET_ITEM_INFO_RECEIVED` fires — same contract as the stock `GetItemInfo`.
 Fields 4–18 are the ones the stock global never returned.
 
@@ -13413,8 +13435,7 @@ yet they're all `nil`, but the call still returns a 7-tuple so the
 positional shape is preserved.
 
 - `itemType` / `itemSubType` are the localized class / subclass names
-  (e.g. `"Weapon"` / `"One-Handed Swords"`), read from `ItemClass.dbc` and
-  `ItemSubClass.dbc`.
+  (e.g. `"Weapon"` / `"One-Handed Swords"`).
 - `itemEquipLoc` is the `"INVTYPE_*"` constant (e.g. `"INVTYPE_HEAD"`), or
   `""` for non-equippable items.
 - `icon` is a path string (`"Interface\\Icons\\..."`), matching what the
@@ -13443,8 +13464,8 @@ there is no Cloth subclass under Trade Goods — Silk Cloth lives at
 > miss. The "Instant" name is contractual — callers that need the
 > cache populated should use
 > [`C_Item.RequestLoadItemDataByID`](#c_itemrequestloaditemdatabyiditem--c_itemrequestloaditemdataitemlocation)
-> explicitly, or just call `GetItemInfo` (which warms via the
-> `Script_GetItemInfo` hook).
+> explicitly, or just call `GetItemInfo` (which asks the server for
+> the item).
 
 ### `C_Item.GetItemInventorySlotInfo(inventorySlot)`
 
@@ -13452,9 +13473,9 @@ Returns the localized display name for an `Enum.InventoryType` value — e.g.
 `C_Item.GetItemInventorySlotInfo(1)` → `"Head"`. Returns `nil` for the
 non-equip slot (`0`) or out-of-range values.
 
-The engine's INVTYPE table stores the equipLoc *key* (`"INVTYPE_HEAD"`); the
-display name is the FrameXML global string of that key (`INVTYPE_HEAD =
-"Head"`), so the result is correctly localized on non-English clients.
+The display name is the global string named by the equipLoc key
+(`INVTYPE_HEAD = "Head"`), so the result is correctly localized on
+non-English clients.
 
 ### `C_Item.GetItemInventorySlotKey(inventorySlot)`
 
@@ -13467,8 +13488,7 @@ into a localized label.
 
 ### `C_Item.GetItemInventoryType(itemLocation)` / `C_Item.GetItemInventoryTypeByID(item)`
 
-Returns the numeric `Enum.InventoryType` straight off the cache
-record's `m_inventoryType` field (`+0x2C`) — the integer sibling of
+Returns the numeric `Enum.InventoryType` of the item — the integer sibling of
 `GetItemInfoInstant`'s 4th return (which gives the `INVTYPE_*` string).
 
 | Value | Constant              | Slot                        |
@@ -13499,7 +13519,7 @@ Returns the fully-decorated per-instance hyperlink for the item at
 the location — same string `GetContainerItemLink(bag, slot)` or
 `GetInventoryItemLink("player", slot)` would return for the same
 slot. Enchant ID, random-suffix, and any other per-instance data
-attached to the CGItem are preserved.
+of that item copy are preserved.
 
 ```lua
 local link = C_Item.GetItemLink({bagID = 0, slotIndex = 1})
@@ -13507,19 +13527,11 @@ local link = C_Item.GetItemLink({bagID = 0, slotIndex = 1})
 --                          ^^^ — enchant ID (Speed +15%) preserved
 ```
 
-Implemented by reading the location table's fields and tail-calling
-the engine's link script function (`Script_GetContainerItemLink` at
-`0x004F9930` for bag locations, `Script_GetInventoryItemLink` at
-`0x004C8C10` for equipment slots). The link string is built by the
-engine off the live CGItem, so it always matches what other
-addons see via the older positional-arg APIs.
-
 ### `C_Item.GetItemLocation(itemGUID)`
 
 Reverse lookup from a GUID string (the format `C_Item.GetItemGUID`
 returns) to an `itemLocation` table identifying the slot currently
-holding that item. Returns `nil` if the GUID isn't resident in the
-walked scope.
+holding that item. Returns `nil` if you do not have the item there.
 
 ```lua
 local guid = C_Item.GetItemGUID({equipmentSlotIndex = INVSLOT_HEAD})
@@ -13529,39 +13541,33 @@ local loc = C_Item.GetItemLocation(guid)
 -- loc might now be { bagID = 1, slotIndex = 4 }, or nil if sold
 ```
 
-We return a plain table with the same field shape every other
+The function returns a plain table with the same field shape every other
 `C_Item.*` API in ClassicAPI accepts as input (`{equipmentSlotIndex=N}`
 or `{bagID=B, slotIndex=S}`), so the result pipes straight into
 `C_Item.GetItemQuality(loc)`, `C_Item.GetItemLink(loc)`, etc.
 
-**Walked scope.** Character-pane equipment (slots 1..19) + backpack
-(bagID 0) + the four equipped bags (bagIDs 1..4). Bank and keyring
-are NOT walked — same scope as the rest of the `C_Container.*`
-family. Worst case is ~80 slot lookups; fine for sporadic use, not
-appropriate for per-frame polling.
+**Scope.** Equipped items and equipped bags (`equipmentSlotIndex`),
+the backpack and bags 1..4, the keyring (bagID -2), and, while the bank
+window is open, the main bank (bagID -1), the bank bags (5..10) and the
+bank bag slots. An item on the buyback list returns `nil`, because no
+location names it.
 
-**Implementation.** We don't go through the engine's typed
-object-by-GUID helper at `0x00468460` (the one used for the auction-
-sell slot) because that path asserts on bad input — stale GUIDs
-from addon-side caching would crash the client. Instead we walk
-equipment + bag slots, read each CGItem's GUID, and compare. Misses
-return nil; hits never need a fallback.
+A stale GUID is safe. It returns `nil`.
 
 ### `C_Item.GetItemMaxStackSize(itemLocation)` / `C_Item.GetItemMaxStackSizeByID(item)`
 
 Returns the item type's max stack size — what you'd find as the 7th
 return of `GetItemInfo(item)`. `1` for non-stackable items; `5`, `20`,
 `200`, etc. for stackables. Different from `C_Item.GetStackCount` /
-the engine's `GetContainerItemInfo`, which return the **current**
+the stock `GetContainerItemInfo`, which return the **current**
 count in a specific slot.
 
 ```lua
 local cap = C_Item.GetItemMaxStackSizeByID(2589)  -- Linen Cloth → 20
 ```
 
-Single `uint32` read at cache record `+0x60` (`m_stackable`). By-ID
-form fires a background cache fill on miss and returns nil; re-call
-after `GET_ITEM_INFO_RECEIVED`.
+On a cache miss, the by-ID form returns nil and asks the server for
+the item. Call it again after `GET_ITEM_INFO_RECEIVED`.
 
 ### `C_Item.GetItemName(itemLocation)` / `C_Item.GetItemNameByID(item)`
 
@@ -13570,21 +13576,19 @@ uncached / invalid inputs.
 
 The **location** form points at a live item instance, so it returns the
 *decorated* name — random suffix included (`"Iridium Chain of the Owl"`,
-not the base `"Iridium Chain"`) — built off the `CGItem` via the engine's
-own name builder, matching the bracketed name in
-[`C_Item.GetItemLink`](#c_itemgetitemlinkitemlocation). (It falls back to
-the base `ItemStats_C.m_name[0]` name if the instance build yields
-nothing.)
+not the base `"Iridium Chain"`) — matching the bracketed name in
+[`C_Item.GetItemLink`](#c_itemgetitemlinkitemlocation). (If the
+decorated name is not available, it returns the base name.)
 
-The **ByID** form has no instance — an itemID can't carry a random suffix
-— so it returns the base `m_name[0]` name only. Cache miss on the `ByID`
-form returns `nil` and fires the cache fill so the next call (after
+The **ByID** form returns the base name for an itemID. For an item link
+with a random suffix, it returns the name with that suffix. Cache miss on the `ByID`
+form returns `nil` and asks the server for the item so the next call (after
 `GET_ITEM_INFO_RECEIVED`) succeeds.
 
 ```lua
 -- location form → decorated name (random suffix included)
 local name = C_Item.GetItemName({equipmentSlotIndex = 2})  -- "Iridium Chain of the Owl"
--- ByID form → base name only (no instance → no suffix)
+-- ByID form with an itemID → base name
 local name = C_Item.GetItemNameByID(6948)                  -- "Hearthstone"
 ```
 
@@ -13592,7 +13596,7 @@ local name = C_Item.GetItemNameByID(6948)                  -- "Hearthstone"
 
 Returns the item's quality as an integer (0=Poor, 1=Common, 2=Uncommon,
 3=Rare, 4=Epic, 5=Legendary), matching the `LE_ITEM_QUALITY_*`
-constants. Single `uint32` read at cache record `+0x1C`.
+constants.
 
 ```lua
 if C_Item.GetItemQualityByID(itemID) >= LE_ITEM_QUALITY_RARE then
@@ -13613,10 +13617,7 @@ local unit = C_Item.GetItemSellPriceByID(2589)   -- Linen Cloth → 25 (copper)
 local stack = unit * C_Item.GetItemMaxStackSizeByID(2589)
 ```
 
-Single `uint32` read at cache record `+0x28` (`m_sellPrice`). Tooltips
-don't surface this — the field is populated on every sellable item but
-the engine's tooltip code never reads it — so this function exposes data
-that's been sitting in the cache unused.
+Item tooltips do not show this value.
 
 ### `C_Item.GetItemSetID(itemLocation)` / `C_Item.GetItemSetIDByID(item)`
 
@@ -13634,9 +13635,8 @@ local chestSet = C_Item.GetItemSetID({ equipmentSlotIndex = 5 })
 ```
 
 This is the 16th return of `GetItemInfo` (the `setID`
-field). Single `uint32` read at cache record `+0x1C0`
-(`m_itemSet`). Same cache-warm pattern as the other `*ByID` getters
-— cache misses return `nil` and fire a background load; call
+field). Same cache-warm pattern as the other `*ByID` getters
+— cache misses return `nil` and ask the server for the item; call
 `C_Item.RequestLoadItemDataByID(itemID)` if you need synchronous-
 after-event resolution.
 
@@ -13668,11 +13668,11 @@ local info = C_Item.GetItemSetInfo(181)
 | `name` | string | Localized set name. |
 | `requiredSkill` | number | Skill line ID required to use the set; `0` if none. |
 | `requiredSkillRank` | number | Required rank in that skill line; `0` if none. |
-| `items` | array | itemIDs in the set. Empty slots filtered, so `#info.items` is the real item count. Order is the engine's own (matches the set's order in the DBC; not necessarily slot-sorted). |
+| `items` | array | itemIDs in the set. Empty slots filtered, so `#info.items` is the real item count. Order is the set's order in `ItemSet.dbc` (not necessarily slot-sorted). |
 | `bonuses` | array | `{ spellID, threshold }` tables for each non-empty set-bonus slot. `threshold` is the number of equipped set pieces required to grant `spellID`. Order is the DBC's; bonuses with the same threshold are not normalized. |
 
-Reads `ItemSet.dbc` directly — no cache warm-up needed (DBCs load at
-boot). Returns `nil` for `setID == 0`, out-of-range IDs, or rows
+The set data is always available, so no cache load is needed.
+Returns `nil` for `setID == 0`, out-of-range IDs, or rows
 that don't exist.
 
 ### `C_Item.GetItemSpell(item)`
@@ -13701,8 +13701,7 @@ C_Item.GetItemSpell(2589)   -- Linen Cloth, no spell
 ```
 
 Returns the **ON_USE** spell only. Items can carry up to 5
-spell entries in their `ItemStats_C` record, each with its own
-trigger code:
+spell entries, each with its own trigger code:
 
 | Trigger | Meaning | Surfaced by `GetItemSpell`? |
 |---|---|---|
@@ -13710,20 +13709,16 @@ trigger code:
 | 1 | `ON_EQUIP` (passive aura on gear) | no |
 | 2 | `CHANCE_ON_HIT` (weapon procs) | no |
 | 4 | `SOULSTONE` (on-death) | no |
-| 5 | `ON_USE_NO_DELAY` | no (TODO: should we add this?) |
+| 5 | `ON_USE_NO_DELAY` | no |
 | 6 | `LEARN_SPELL` (recipes) | no |
 
-`GetItemSpell` reports on-use triggers only. Addons that need the other
-trigger types (proc auras, recipe targets) should reach into the cache
-directly — the spell
-slots are at `ItemStats +0x11C` (5 spell IDs) and `+0x130` (5 trigger
-codes).
+`GetItemSpell` does not report the other trigger types (proc auras,
+recipe targets).
 
 **Auto-warmup on cache miss.** Items not yet in the local cache
-return `nil` and silently kick off an `SMSG_ITEM_QUERY_SINGLE`
-request. A second call after `GET_ITEM_INFO_RECEIVED` lands the
-data. Same warmup pattern as `C_Item.GetItemFamily` and the rest of
-our cache-backed accessors.
+return `nil` and silently ask the server for the item. A second call
+after `GET_ITEM_INFO_RECEIVED` lands the data. Same warmup pattern as
+`C_Item.GetItemFamily` and the other cache-backed accessors.
 
 ### `C_Item.GetItemStatDelta(itemLink1, itemLink2 [, statTable])`
 
@@ -13772,7 +13767,7 @@ what the item actually grants — not just its stored stat slots:
 
 1. **Base record** — the stored attributes, armor, resistances, and (for
    weapons) DPS.
-2. **On-equip spells** (`SpellTrigger == ON_EQUIP`) — the engine stores the
+2. **On-equip spells** (`SpellTrigger == ON_EQUIP`) — the game stores the
    "special" bonuses (crit, attack power, spell power, hit, mp5, defense,
    …) as an equip spell whose aura effect carries the value, not as a
    stat slot. Their auras are decoded into the keys below.
@@ -13808,7 +13803,7 @@ what the item actually grants — not just its stored stat slots:
 | `ITEM_MOD_DODGE_RATING` | Dodge % | `MOD_DODGE_PERCENT` (49) |
 | `ITEM_MOD_PARRY_RATING` | Parry % | `MOD_PARRY_PERCENT` (47) |
 | `ITEM_MOD_BLOCK_RATING` | Block chance % | `MOD_BLOCK_PERCENT` (51) |
-| `ITEM_MOD_BLOCK_VALUE` | Shield block value | record (`m_block`) / `MOD_SHIELD_BLOCKVALUE` (158) |
+| `ITEM_MOD_BLOCK_VALUE` | Shield block value | item block value / `MOD_SHIELD_BLOCKVALUE` (158) |
 
 > **Spell damage and healing are separate.** An item with "+N damage and
 > healing" reports `ITEM_MOD_SPELL_DAMAGE_DONE_SHORT = N` **and**
@@ -13884,21 +13879,21 @@ The two functions have **different signatures**:
 | Field | Source |
 |-------|--------|
 | `limitCategory` | Always `0` — there is no `LimitCategory.dbc`. |
-| `limitMax` | `ItemStats_C.m_maxCount` — `0` = unlimited, `1` = "Unique", higher = inventory cap. |
+| `limitMax` | `0` = unlimited, `1` = "Unique", higher = inventory cap. |
 
 `C_Item.GetItemUniquenessByID(itemID)` returns
 `(isUnique, limitCategoryName, limitCategoryCount, limitCategoryID)`:
 
 | Field | Source |
 |-------|--------|
-| `isUnique` | `m_maxCount > 0` — true for any unique-tagged item. |
+| `isUnique` | True for any unique-tagged item (`limitMax > 0`). |
 | `limitCategoryName` | Always `nil` — no categories here. |
-| `limitCategoryCount` | `m_maxCount` when `isUnique`, else `nil`. |
+| `limitCategoryCount` | The unique limit when `isUnique`, else `nil`. |
 | `limitCategoryID` | Always `nil`. |
 
 Both functions return nothing (zero Lua return values) if the item
-record isn't cached. The by-ID variant fires a background cache fill on
-miss; re-call after `GET_ITEM_INFO_RECEIVED`.
+record isn't cached. On a miss, the by-ID variant asks the server for
+the item; re-call after `GET_ITEM_INFO_RECEIVED`.
 
 ```lua
 local _, max = C_Item.GetItemUniqueness({equipmentSlotIndex = 13})
@@ -13923,9 +13918,7 @@ local n = C_Item.GetStackCount({bagID = 0, slotIndex = 1})
 -- 13 (the bag's first slot has 13 of whatever item)
 ```
 
-Reads `ITEM_FIELD_STACK_COUNT` directly off the item's
-`m_objectFields` — same field `GetContainerItemInfo` returns as
-`itemCount`. Returns `0` for empty / unresolvable locations.
+Same value that `GetContainerItemInfo` returns as `itemCount`. Returns `0` for empty / unresolvable locations.
 
 ### `C_Item.GetWeaponEnchantInfo()`
 
@@ -13958,9 +13951,9 @@ charge count as well as a time.
 These values come from the **temporary** enchant: oils, sharpening
 stones, poisons, and shaman weapon imbues.
 
-The permanent enchant (Crusader, Mongoose, etc., in slot 0 at
-`+0x40`) is **not** reported here — that's a separate field and
-`GetWeaponEnchantInfo` doesn't expose it either. Get the
+The permanent enchant (Crusader, Mongoose, etc.) is **not** reported
+here — that's a separate field and `GetWeaponEnchantInfo` doesn't
+expose it either. Get the
 permanent enchant ID by parsing `GetInventoryItemLink("player",
 slot)` (the link includes it as the 2nd numeric field).
 
@@ -14060,13 +14053,8 @@ sharpening stones).
 Returns `nil` for a non-numeric / non-positive id, an out-of-range
 id, or a record with no name.
 
-Reads `SpellItemEnchantment.dbc` (records `0x00C0D7D8`, count
-`0x00C0D7DC`) — the 24-column table every enchant ID indexes:
-`Type[3]@+0x04`, `Amount[3]@+0x10`, `EffectArg[3]@+0x28`,
-`Name[8]@+0x34` (locale-indexed). The layout was verified by parsing
-the on-disk DBC against known records (Crusader 1900 → type 1, arg
-20007; Sharpened +3 → type 2, amount 3). Fully resident from boot, so
-it answers for any enchant ID with no caching or round-trip.
+The enchant ID is a `SpellItemEnchantment.dbc` ID. The function answers
+for any enchant ID at once, with no cache and no server query.
 
 Lives in `C_Item` (not `C_Spell`) because the id originates from
 `C_Item.GetWeaponEnchantInfo` and the concept is an item enchantment —
@@ -14081,9 +14069,8 @@ Lives in `C_Item` (not `C_Spell`) because the id originates from
 ### `C_Item.IsBound(itemLocation)`
 
 Returns `true` if the item at the given location is soulbound, `false` otherwise
-(including when the slot is empty or the location is malformed). The client
-tracks the soulbound bit on each item instance directly; previously
-the only way to read it from Lua was a scan-tooltip hack
+(including when the slot is empty or the location is malformed). Without
+this call, the only way to read it from Lua is a scan-tooltip hack
 (`SetBagItem` + string-compare against the localized `ITEM_SOULBOUND`
 constant) — slow, locale-fragile, and one of the hottest paths during bag
 updates.
@@ -14335,7 +14322,7 @@ cover the bank, use `C_Item.GetItemCount(itemID, true) > 0` instead.
 ### `C_Item.ItemHasRange(item)` / `ItemHasRange(item)`
 
 Whether the item has a range restriction — i.e. its on-use spell
-reports a nonzero min or max range through the engine's own resolver.
+reports a nonzero min or max range.
 Items with no on-use spell, or whose spell is rangeless (potions, food,
 self-buff trinkets, hearthstone), have none.
 
@@ -14344,7 +14331,7 @@ self-buff trinkets, hearthstone), have none.
 items read as having no range and fire no load.
 
 The two forms return different types. `ItemHasRange` returns `1` or
-`nil`, like 3.3.5. `C_Item.ItemHasRange` returns `true` or `false`.
+`nil`. `C_Item.ItemHasRange` returns `true` or `false`.
 
 ```lua
 ItemHasRange(1251)               -- Linen Bandage → 1 (has a range)
@@ -14399,14 +14386,13 @@ Returns two values: `(isOpenable, canOpen)`.
   picked it sees `(true, true)`. A wrapped gift is always
   `(true, true)`.
 
-Both values are `nil` when the item data isn't cached yet (background
-`SMSG_ITEM_QUERY_SINGLE` fired) or when the location is empty /
+Both values are `nil` when the item data isn't cached yet (the client
+then asks the server for it in the background) or when the location is empty /
 invalid. Lets callers distinguish "data unknown" from "definitely
 not openable".
 
-There's no `ByID` variant — the `canOpen` check depends on a specific
-instance's `ITEM_FIELD_FLAGS`, which you can only have via an
-itemLocation. If you only have an itemID, use
+There's no `ByID` variant — the `canOpen` check depends on the state of
+one specific item copy, which you can only name via an itemLocation. If you only have an itemID, use
 `C_Item.GetItemInfoInstant` to inspect the item type instead.
 
 ```lua
@@ -14429,9 +14415,7 @@ end
 
 Returns `true` if the item is in the client-side "in-transaction"
 lock state — picked up onto the cursor, mail-attached, trade-attached,
-mid-swap, etc. Reads the per-CGItem instance flag at `+0x314` bit 0
-(not the `ITEM_FIELD_FLAGS` descriptor field — the actual lock
-is on the instance, not in `m_objectFields`).
+mid-swap, etc.
 
 ```lua
 if C_Item.IsLocked({bagID = 0, slotIndex = 1}) then
@@ -14441,22 +14425,21 @@ end
 
 The lock is **client-managed, server-confirmed**:
 
-- Engine sets the bit *optimistically* in pickup/equip/attach paths,
-  before the transaction packet goes to the server. UI greys
-  immediately, no round-trip wait.
-- Engine clears the bit when the matching `SMSG_UPDATE_OBJECT`
-  confirms the transaction.
+- The client sets the lock *optimistically* when you pick up, equip,
+  or attach the item, before it sends the request to the server. UI
+  greys immediately, no round-trip wait.
+- The client clears the lock when the server confirms the
+  transaction.
 
-Listen for the engine's `ITEM_LOCK_CHANGED` event (no payload —
-the engine fires it on every set/clear and addons re-poll the items
-they care about) to react without timed polling.
+Listen for the `ITEM_LOCK_CHANGED` event (no payload — it fires on
+every set and clear, and addons re-poll the items they care about) to
+react without timed polling.
 
 ### `C_Item.LockItem(itemLocation)`
 
-Set the client-side lock on a single item by location. Calls the same
-engine primitive (`FUN_ITEM_LOCK_BY_GUID = 0x004953E0`) the engine
-itself uses optimistically before sending pickup/equip transactions.
-Fires `ITEM_LOCK_CHANGED` the same way.
+Set the client-side lock on a single item by location. This is the
+same lock that the client sets before it sends a pickup or equip
+request. Fires `ITEM_LOCK_CHANGED` the same way.
 
 ```lua
 C_Item.LockItem({bagID = 0, slotIndex = 1})
@@ -14470,18 +14453,17 @@ C_Item.LockItem({bagID = 0, slotIndex = 1})
 > etc.), not real transaction state.
 >
 > The lock stays until you call `UnlockItem` / `UnlockAllItems`, OR
-> the engine receives an SMSG_UPDATE_OBJECT for the item from the
-> server, which clears it as a side effect.
+> the server sends an update for the item, which clears it as a side
+> effect.
 
 ### `C_Item.LockItemByGUID(itemGUID)`
 
 Same as [`LockItem`](#c_itemlockitemitemlocation) but takes a GUID
 string in the canonical `"0xHHHHHHHHLLLLLLLL"` format
-[`C_Item.GetItemGUID`](#c_itemgetitemguiditemlocation) returns. The
-engine resolves through the object manager, so this can mark items
-the player doesn't currently have in bags/equipment — trade window
-contents, mail attachments, freshly looted but not yet bagged — as
-long as the CGItem is loaded.
+[`C_Item.GetItemGUID`](#c_itemgetitemguiditemlocation) returns. This
+can mark items the player doesn't currently have in bags/equipment —
+trade window contents, mail attachments, freshly looted but not yet
+bagged — as long as the client has the item loaded.
 
 ```lua
 local guid = C_Item.GetItemGUID({equipmentSlotIndex = INVSLOT_HEAD})
@@ -14489,12 +14471,12 @@ C_Item.LockItemByGUID(guid)
 ```
 
 Same caveats as `LockItem` — purely client-side, doesn't affect any
-real engine transaction state.
+real transaction state.
 
 ### `C_Item.PickupItem(itemInfo)`
 
 Finds the item matching `itemInfo` and picks it up onto the cursor —
-the C-side equivalent of clicking it. From there the held item can be
+the equivalent of clicking it. From there the held item can be
 dropped into a bag/equipment slot, deleted (`DeleteCursorItem`), sold
 at a merchant, etc.
 
@@ -14514,11 +14496,9 @@ Returns nothing. Silently no-ops when:
 - the cursor is already holding something (`CursorHasItem()` is true)
 - the matched item is locked (mid-transaction)
 
-Drives the engine's cursor primitives directly — the paperdoll-slot
-pickup (`FUN_004C7300`) for an equipped match, the container pickup
-(`FUN_00494B60` + client-side item lock) for a bag match — not the Lua
-`PickupInventoryItem` / `PickupContainerItem` globals. Same shared
-`Item::Cursor` wrappers `EquipItemByName`'s auto-slot path uses.
+The function does not call the Lua `PickupInventoryItem` /
+`PickupContainerItem` globals, so a hook on those globals does not run.
+A picked-up bag item gets the client-side lock, the same as with a click.
 
 ```lua
 -- Pick up a bagged item by name, then drop it into the off-hand slot:
@@ -14534,22 +14514,19 @@ C_Item.PickupItem(itemLink)
 
 ### `C_Item.RequestLoadItemDataByID(item)` / `C_Item.RequestLoadItemData(itemLocation)`
 
-Asks the engine to fetch the item's data from the server if not already
-cached. Returns `true` if the request was initiated (or the input was
-parseable to an itemID), `false` for malformed input. Fire-and-forget —
-the engine handles the round-trip; the data lands in the cache when the
-server responds.
+Asks the server for the item's data if it is not already cached.
+Returns `true` if the request was initiated (or the input was
+parseable to an itemID). Returns `false` for malformed input, and when
+512 requests already wait for an answer. Fire-and-forget —
+the data lands in the cache when the server responds.
 
 Fires `ITEM_DATA_LOAD_RESULT(itemID, success)` when the data lands in
 the cache. Synchronously fired when the item
 was already cached (so polling code paths still work), asynchronously
-fired when the engine's SMSG response handler completes a network
-fetch.
+fired when the server answers.
 
-> **`success` is `1` or `nil`.** The engine's printf-style event
-> dispatcher has no `%b` token, so we encode the boolean as `1` for
-> success / `nil` for failure (leaning on `lua_pushstring(NULL)` →
-> `lua_pushnil`). `if success then …` distinguishes them correctly —
+> **`success` is `1` or `nil`.** The event gives `1` for success and
+> `nil` for failure. `if success then …` distinguishes them correctly —
 > `nil` is falsy, `1` is truthy. Same encoding as `GET_ITEM_INFO_RECEIVED`
 > and `QUEST_DATA_LOAD_RESULT`.
 
@@ -14557,7 +14534,7 @@ fetch.
 local f = CreateFrame("Frame")
 f:RegisterEvent("ITEM_DATA_LOAD_RESULT")
 f:SetScript("OnEvent", function()
-    -- vanilla 1.12: event payload is in `arg1`, `arg2`, ... globals
+    -- event payload is in `arg1`, `arg2`, ... globals
     if event == "ITEM_DATA_LOAD_RESULT" and arg2 then
         local _, type = C_Item.GetItemInfoInstant(arg1)
         -- ...
@@ -14566,25 +14543,18 @@ end)
 C_Item.RequestLoadItemDataByID(2589)
 ```
 
-> **Engine-aligned cache strategy.** `RequestLoadItemData` does NOT
-> eagerly create a cache entry. Empirically (e.g. pfQuest calling it
-> at addon-load / PLAYER_ENTERING_WORLD against a cleared WDB), pre-
-> creating the entry races the engine's natural inventory prefetch
-> and can leave the item permanently pending — the engine sees the
-> entry exists and skips its own `SMSG_ITEM_QUERY_SINGLE`, while our
-> early query gets dropped. Instead we track the itemID and hook the
-> engine's `SMSG_ITEM_QUERY_SINGLE_RESPONSE` handler at `0x0055BDB0`:
-> when the engine fills any entry, we sweep tracked items and fire
-> `ITEM_DATA_LOAD_RESULT` for matches. For items the engine doesn't
-> prefetch (quest rewards, AH browse targets, etc.) we escalate after
-> ~60 ticks by calling `CacheFetch` ourselves — by then engine state
-> has settled and our query goes through normally. Hard timeout at
-> ~1200 ticks (~20–40s) fires `ITEM_DATA_LOAD_RESULT(itemID, nil)`.
+> **Timing.** You can call `RequestLoadItemData` at addon load or at
+> `PLAYER_ENTERING_WORLD`, also with an empty item cache. When the
+> client loads the item by itself (for example an item in your
+> inventory), the event fires when that data arrives. For other items
+> (quest rewards, AH browse targets, and more), the request goes to the
+> server after a short delay. If no data arrives in about 20–40 seconds,
+> `ITEM_DATA_LOAD_RESULT(itemID, nil)` fires.
 
 ### `C_Item.UnlockAllItems()`
 
-Sweep clear of every CGItem the engine knows about — same primitive
-the engine itself runs on `PLAYER_LEAVING_WORLD`. One
+Clears the lock on every item that the client has loaded. The client
+does the same clear on `PLAYER_LEAVING_WORLD`. One
 `ITEM_LOCK_CHANGED` fires at the end.
 
 ```lua
@@ -14606,8 +14576,7 @@ C_Item.UnlockItem({bagID = 0, slotIndex = 1})
 
 Useful when a transaction packet was sent but the server's
 confirmation never arrived: the item stays visually greyed
-indefinitely (the only built-in trigger for the unlock-all
-sweep is logout). This call gives you an in-session escape hatch.
+indefinitely (the client clears all locks only at logout). This call gives you an in-session escape hatch.
 
 > **Cursor / server state isn't touched.** Unlocking doesn't tell the
 > server "cancel my transaction" — it only clears the local visual
@@ -14709,7 +14678,7 @@ Uses `item`. Returns nothing; silently no-ops when:
 
 - the input is `nil`, an empty string, or otherwise unparseable
 - the player does not have the item
-- the engine refuses the use — cooldown, locked item, level
+- the game refuses the use — cooldown, locked item, level
   requirement, etc.
 
 `item` takes either of two forms:
@@ -14729,9 +14698,8 @@ Uses `item`. Returns nothing; silently no-ops when:
 The optional `unit` argument is a unit token (`"player"`, `"target"`,
 `"focus"`, `"partyN"`, `"raidN"`, `"nameplateN"`, …) used as the cast
 target for items that fire a spell (scrolls, traps, on-use targeted
-effects). For self-use items (hearthstone, potions, food) the engine
-overwrites the target with the item's own GUID before dispatch, so
-passing a `unit` to those is harmless and has no effect. Unrecognized
+effects). For self-use items (hearthstone, potions, food) the `unit`
+argument has no effect, so passing one is harmless. Unrecognized
 strings are treated as "no target" rather than raising, matching the
 silently-no-op contract of `item`.
 
@@ -14743,34 +14711,29 @@ C_Item.UseItemByName("Scroll of Stamina IV", "target")    -- buff your tank
 C_Item.UseItemByName({ bagID = 0, slotIndex = 1 })        -- that exact slot
 ```
 
-Locates the item directly, then hands the `CGItem *` to the engine's
-by-pointer use primitive at `0x005D8D00`. That primitive dispatches internally based
-on item type (food, potion, on-use spell, scroll, quiver, ...) so a
-single call covers every item category. We skip
-`Script_UseContainerItem` entirely — its branches for repair vendor,
-spell-cast targeting, and drop-on-bag cursor modes don't apply to an
-addon-issued call from a clean cursor.
+A single call covers every item category (food, potion, on-use spell,
+scroll, quiver, and more). Unlike `UseContainerItem`, the call ignores
+the merchant, repair, spell-targeting, and drop-on-bag cursor modes.
+It always uses the item.
 
 ### `Get*ItemID` — companions to the engine's `Get*ItemLink` family
 
-The engine ships ~14 `Get*ItemLink` functions covering every
+The stock API has ~14 `Get*ItemLink` functions covering every
 frame that lets you mouse over an item (loot, merchant, quests,
 auction, trade, mail, tradeskill, craft). To get the itemID, the
 standard pattern is to call the `Link` function and scrape the
-number out of the returned string with `gsub` / `match`. Direct-ID
-accessors exist for only a handful of these (`GetLootSlotItemID`,
-`GetInboxItemID`, `GetQuestItemID`, `GetMerchantItemID`, …).
+number out of the returned string with `gsub` / `match`.
 
 These add the missing ID companions, so the whole `Get*ItemLink`
-family has a 1-to-1 ID companion. Each reads the same itemID the
-engine reads when building the link, with no string parsing required.
+family has a 1-to-1 ID companion. Each returns the same itemID that
+the link holds, with no string parsing required.
 
 All return `nil` for an empty slot, an out-of-range index, or when
 the relevant UI frame isn't open.
 
 | Function | Companion to | Notes |
 |----------|--------------|-------|
-| `GetLootRollItemID(rollID)` | `GetLootRollItemLink` | Group-loot roll ID (from `START_LOOT_ROLL`). Walks the engine's in-progress roll list. |
+| `GetLootRollItemID(rollID)` | `GetLootRollItemLink` | Group-loot roll ID (from `START_LOOT_ROLL`). Covers the rolls in progress. |
 | `GetLootSlotItemID(slot)` | `GetLootSlotLink` | 1-based slot. Returns `nil` for coin slots. |
 | `GetMerchantItemID(index)` | `GetMerchantItemLink` | 1-based; the active merchant's inventory. |
 | `GetQuestItemID(type, index)` | `GetQuestItemLink` | `type` is `"reward"` or `"choice"`; active quest-offer / completion UI. |
@@ -14876,40 +14839,33 @@ local cur, max = GetInventoryItemDurability(INVSLOT_FINGER1)
 ```
 
 > **Player-only.** `GetInventoryItemDurability` takes only the slot, no
-> unit token. Inspect targets / party members' equipment durability
-> isn't broadcast, so we couldn't expose it for other units even if we
-> wanted to.
+> unit token. The server does not send the equipment durability of
+> inspect targets or party members, so no function can return it for
+> other units.
 
 > **`(0, max)` vs nothing.** Items that have a durability concept but
 > are currently broken (`current == 0`, `max > 0`) still return
 > `(0, max)`. The "nothing" return is reserved for items that have no
 > durability fields populated at all — `max` is the discriminator,
-> matching the engine's own `GetInventoryItemBroken` logic.
-
-Reads ITEM_FIELD_DURABILITY (+0xA0) and ITEM_FIELD_MAXDURABILITY
-(+0xA4) directly off the CGItem's m_objectFields descriptor at `+0x114`
-— same descriptor [`C_Item.IsBound`](#c_itemisbounditemlocation) reads
-FLAGS from. No DBC indirection.
+> the same rule as `GetInventoryItemBroken`.
 
 ### `GetInventoryItemID(unit, slot)`
 
 Returns the itemID of the item equipped at `slot` (1-based) on `unit`,
 or `nil` if the slot is empty / the unit isn't valid / the unit doesn't
-expose its equipment to the local client. Same arg shape as 1.12's
+expose its equipment to the local client. Same arg shape as
 `GetInventoryItemLink(unit, slot)` — drop-in for code that just needs
 the ID and would otherwise have to parse the link string.
 
 - For `"player"` (and any token resolving to the local player, e.g.
-  `"target"` when self-targeted): walks the private inventory manager.
-  Supports the full slot range (equipment 1..19, bag slots 20..23,
-  bank slots, etc.) — same range `GetItemBySlot` accepts internally.
-- For other player-controlled units (`"target"`, `"party1"..party4"`,
-  inspect targets): reads the unit's broadcast visible-items array.
+  `"target"` when self-targeted): supports the full slot range
+  (equipment 1..19, bag slots 20..23, bank slots, and more).
+- For other players (`"target"`, `"party1"..party4"`, inspect
+  targets): uses the equipment that the server shows for the unit.
   Equipment slots 1..19 only.
-- For NPCs / creatures: returns `nil`. The visible-items array isn't
-  populated for non-player-controlled units in 1.12, so we gate this
-  on `UnitPlayerControlled` to avoid the engine crash that
-  `GetInventoryItemLink` itself would trigger on the same input.
+- For NPCs, creatures, pets, and totems: returns `nil`. The client has
+  no equipment data for units that are not players. `GetInventoryItemLink`
+  can crash the client on the same input. This function does not.
 
 ```lua
 local id = GetInventoryItemID("player", INVSLOT_HEAD)
@@ -14941,42 +14897,31 @@ end
 
 Returns `0` for slots that are empty, items without a durability
 concept, fully-repaired items, or items whose stats aren't cached yet
-(rare — happens briefly after login before SMSG_ITEM_QUERY_RESPONSE
-arrives for newly-seen items). The "no return" path is reserved for
-invalid input (non-numeric slot).
+(rare — happens briefly after login, before the server sends the data
+for newly-seen items). A slot that is not a number raises a usage
+error.
 
 > **Player-only**, same constraint as
 > [`GetInventoryItemDurability`](#getinventoryitemdurabilityinvslot)
-> — other units' durability isn't broadcast in 1.12.
+> — other units' durability isn't broadcast.
 
 > **Discount is vendor-context-dependent.** The faction-rep + PvP
 > rank discount is only applied when the player has a merchant
-> window open (i.e. has received `SMSG_LIST_INVENTORY`). Called from
-> anywhere else, you get the raw, undiscounted base cost.
->
-> The engine tracks the current merchant via globals
-> `DAT_00BDDFA0/A4` (the merchant's GUID), set when the merchant
-> frame opens and zeroed when it closes. The helper short-circuits
-> the discount path when those globals are zero.
+> window open. Called from anywhere else, you get the raw,
+> undiscounted base cost.
 >
 > For consistent "what will I pay" semantics inside addons, only
 > trust this value when `MerchantFrame:IsShown()` is true — or call
 > it once per merchant-visit and cache.
 
-Calls the engine's own per-item repair-cost helper at `0x004FAF30`,
-which is the same function `Script_GameTooltip_SetInventoryItem`
-calls for its repairCost return. The raw cost comes from
-`DurabilityCosts.dbc` (indexed by item subclass and slot type) ×
-`DurabilityQuality.dbc` (indexed by item quality); the discount —
-when applicable — stacks faction reputation with the merchant
+The raw cost depends on the item subclass, the slot type, and the
+item quality. The discount — when applicable — stacks faction reputation with the merchant
 (Friendly+ unlocks a base 5%) and PvP rank (Sergeant Major+ adds
 another 5%, Knight-Lieutenant+ stacks one more).
 
 This is a ClassicAPI addition — there is no standalone Lua function for
 per-item repair cost otherwise; the only other way to read it is the
-tooltip's third return value. We expose it directly because the
-underlying calculation is already in the engine and a Lua function
-is the natural surface.
+tooltip's third return value.
 
 ### `GetInventoryItemsForSlot(slot, returnTable [, transmogrify])`
 
@@ -15007,8 +14952,7 @@ end
 | 5 CHEST | INVTYPE_CHEST (5), INVTYPE_ROBE (20) |
 | 19 TABARD | INVTYPE_TABARD (19) |
 
-Compatibility check is a single bitwise AND against a static
-`invType → slotMask` table, with two adjustments:
+The table has two adjustments:
 
 - 2H weapons (`INVTYPE_2HWEAPON`) confined to the mainhand slot
   only. There is no titanic-grip mechanic, and the server would
@@ -15023,11 +14967,8 @@ regular equip check here. Private servers like Turtle WoW layer
 their own transmog systems on top; this function doesn't
 currently plumb the flag through to any of them.
 
-> **Bank items aren't included.** The engine's `GetItemBySlot` gates
-> bank slots on a banker GUID that's only set while the bank window
-> is open (bank shows up only when the bank UI is open). We don't walk
-> bank slots — addons that want bank inclusion need their own bank scan
-> with the bank UI open.
+> **Bank items aren't included.** Addons that want bank items need
+> their own bank scan with the bank UI open.
 
 ### `SetInventoryPortraitTexture(texture, unit, slot)`
 
@@ -15071,7 +15012,7 @@ local path = C_Item.GetItemIconByID("|cff...|Hitem:6948:0:0:0|h[Hearthstone]|h|r
 > elsewhere. There is no fileID system here — same situation as
 > [`C_Spell.GetSpellTexture`](#c_spellgetspelltexturespellid) and
 > [`C_Spell.GetSpellInfo`](#c_spellgetspellinfospellid)'s `iconID` field.
-> We surface the path string everywhere for consistency.
+> These functions return the path string everywhere for consistency.
 
 Equivalent to the global `GetItemIcon` and the `C_Item.GetItemIcon` /
 `GetItemIconByID` family.
@@ -15579,21 +15520,20 @@ end
 
 The interact-range check matches what the engine uses for the
 hover-to-loot cursor — slightly tighter than melee range, looser than
-"on top of." Server still enforces real range on the resulting
-`CMSG_LOOT`; in-client OOR requests just silently get no response.
+"on top of." The server still checks the real range. If the corpse is
+out of range, the server does not answer and nothing happens.
 
 ### `C_Loot.LootUnit(guid)`
 
 Opens a loot session against the given corpse. The loot window
-appears asynchronously via the normal `LOOT_OPENED` event once
-`SMSG_LOOT_RESPONSE` arrives — same flow as right-clicking the
-corpse, just dispatched programmatically.
+appears later, through the normal `LOOT_OPENED` event, when the server
+answers. The result is the same as a right-click on the corpse.
 
 No return value. Silent no-op when:
-- The object manager is NULL (glue / character-select).
+- You are not in the world (glue screens, character select).
 - The GUID doesn't resolve to a visible unit (out of render range,
-  despawned, wrong typemask).
-- The local player pointer can't be resolved.
+  despawned, or not a unit).
+- Your character is not loaded.
 - You are mounted. A right-click on a corpse also does nothing while
   you are mounted.
 
@@ -15608,23 +15548,22 @@ for _, unit in ipairs(C_Loot.GetNearbyLootableUnits()) do
 end
 ```
 
-`useDistanceCheck` is hardcoded off — the engine won't try to
-auto-walk the player toward a corpse just out of range. That'd be a
-surprise side effect for an AoE-loot loop.
+The function does not move your character toward a corpse that is just
+out of range.
 
 ### `C_Loot.LootUnitItem(guid, itemID)`
 
 Takes a specific item from a specific corpse without using the
-visible loot frame's slot list. Dispatches `CMSG_LOOT_ITEM` directly.
+visible loot frame's slot list.
 
 Two paths, picked automatically:
 
 1. **Fast path** — the corpse's loot window is already open for the
    requested target. Synchronously finds the slot, sends the take
-   packet, returns `true` if the slot was found / `false` if not.
-2. **Async path** — opens the corpse's window first (same wire as
-   `C_Loot.LootUnit`), waits for the response, then sends the take
-   packet automatically. Returns `true` once the request is queued.
+   request, returns `true` if the slot was found / `false` if not.
+2. **Async path** — opens the corpse's window first (like
+   `C_Loot.LootUnit`), waits for the server to answer, then sends the
+   take request automatically. Returns `true` once the request is queued.
    No "did it succeed" event; observe `BAG_UPDATE` / `ITEM_PUSH` to
    confirm.
 
@@ -15678,7 +15617,7 @@ end)
 C_Loot.ScanNearbyLoot()
 ```
 
-Per-corpse step timeout is ~3-6 seconds (180 WorldTick frames) so a
+Per-corpse step timeout is ~3-6 seconds (180 frames) so a
 single dropped server response doesn't hang the whole scan. Failed
 corpses simply don't appear in the results. A corpse that gets no
 response does not block looting after the scan.
@@ -15687,15 +15626,14 @@ response does not block looting after the scan.
 
 Loots **every** nearby lootable corpse in sequence — the same corpse
 walk as [`ScanNearbyLoot`](#c_lootscannearbyloot), but it actually takes
-the loot: coin (`CMSG_LOOT_MONEY`) plus every item slot (`CMSG_LOOT_ITEM`)
+the loot: the coin plus every item slot
 from each window before releasing and advancing to the next corpse. The
 optional `max` caps how many corpses are visited (default: all in range).
 
 Returns `true` if the loot walk was queued, `false` if a walk (this or
 `ScanNearbyLoot`) is already in progress, the world isn't loaded, or you
-are mounted — the
-two share one state machine, so [`IsScanInProgress`](#c_lootisscaninprogress)
-reports either, and only one runs at a time.
+are mounted. Only one of the two runs at a time, and
+[`IsScanInProgress`](#c_lootisscaninprogress) reports either.
 
 Like the scan, the walk is **silent**: `LOOT_OPENED` / `LOOT_CLOSED` are
 suppressed so `LootFrame` never flickers open per corpse. The normal
@@ -15766,9 +15704,10 @@ Returns the most-recent completed-scan results as a 1-indexed array:
 }
 ```
 
-Empty table before the first scan completes. Replaced wholesale by
-each new scan — re-read after `LOOT_SCAN_COMPLETED` rather than
-caching the table.
+Empty table before the first scan. A new scan clears the results when it
+starts. Then it adds each corpse when it reads that corpse. As a result,
+during a scan the array holds only the corpses that the scan has read.
+Read the table again after `LOOT_SCAN_COMPLETED`. Do not keep the old table.
 
 The `link` field is the engine's full hyperlink (color + payload +
 display name + reset). Random-suffix items like "Stringy Wolf Meat
@@ -15825,7 +15764,8 @@ Returns nothing when `itemIndex` is out of range.
 ### `C_LootHistory.GetPlayerInfo(itemIndex, playerIndex)`
 
 Both indexes start at `1`. Returns `name, class, rollType, roll, isWinner, isMe`:
-- `name` — the name of the player.
+- `name` — the name of the player. `nil` when the name was not known at
+  the time of the roll.
 - `class` — the class token (`"WARRIOR"`, `"MAGE"`, and more) for
   `RAID_CLASS_COLORS`. `nil` when the class is not known.
 - `rollType` — `0` = pass, `1` = need, `2` = greed.
@@ -15846,10 +15786,9 @@ the empty history.
 ## LossOfControl
 
 `C_LossOfControl` — the active crowd-control / interrupt effects on
-the **local player**. There is no such aggregation layer, so it's
-synthesized: CC types from the player's debuffs, and the
-school-interrupt lockout from the `SMSG_SPELL_COOLDOWN` the server sends on a
-Counterspell / Kick.
+the **local player**. The CC types come from the player's debuffs. The
+school-interrupt lockout comes from the lockout that the server sends after a
+Counterspell or Kick.
 
 ### `C_LossOfControl.GetActiveLossOfControlDataCount()`
 
@@ -15871,7 +15810,7 @@ end
 | Field | Type | Notes |
 |---|---|---|
 | `locType` | string | `"STUN"`, `"FEAR"`, `"ROOT"`, `"CONFUSE"`, `"CHARM"`, `"POSSESS"`, `"SILENCE"`, `"PACIFY"`, `"PACIFYSILENCE"`, `"DISARM"`, or `"SCHOOL_INTERRUPT"`. |
-| `spellID` | number | The spell causing the effect. `0` for `SCHOOL_INTERRUPT` (the interrupting spell isn't in the lockout packet). |
+| `spellID` | number | The spell causing the effect. `0` for `SCHOOL_INTERRUPT` (the server does not send the interrupting spell). |
 | `displayText` | string | Effect name — the spell name for CC, `"Interrupted"` for `SCHOOL_INTERRUPT`. |
 | `iconTexture` | string | The spell's icon path (there are no FileDataIDs here; the path is the functional equivalent). `""` for `SCHOOL_INTERRUPT`. |
 | `startTime` | number? | `GetTime()`-epoch seconds. `nil` when the effect has no timer. |
@@ -15883,11 +15822,10 @@ end
 
 Fidelity notes:
 
-- **`SCHOOL_INTERRUPT`** is derived from the server's own lockout packet
-  (`Player::ProhibitSpellSchool` sends a single `SMSG_SPELL_COOLDOWN` listing
-  every spell of the interrupted school at one uniform duration), so the school
-  and duration are authoritative. The interrupting spell itself isn't
-  transmitted, hence `spellID = 0` and `displayText = "Interrupted"`.
+- **`SCHOOL_INTERRUPT`** comes from the lockout that the server sends. The
+  server locks every spell of the interrupted school for the same duration, so
+  the school and duration are exact. The server does not send the interrupting
+  spell, so `spellID = 0` and `displayText = "Interrupted"`.
 - **CC timing** comes from the server's timer for your debuff, the same timer
   `GetPlayerBuffTimeLeft` uses. It includes diminishing returns and the
   caster's talents. `startTime` / `timeRemaining` / `duration` are `nil` when
@@ -15923,7 +15861,7 @@ end
 `filterMask` narrows the scan to those schools, so one school's own remaining
 time is `GetSchoolLockout(1 << schoolIndex)`. Omitted or `0` means all schools.
 
-Two schools can be locked at the same time — each `SMSG_SPELL_COOLDOWN` batch
+Two schools can be locked at the same time — each interrupt
 locks one, so being kicked on fire and then on frost leaves both active. That is
 why this returns a mask rather than a single school, and why walking the list
 above and stopping at the first `SCHOOL_INTERRUPT` entry is wrong.
@@ -15953,7 +15891,7 @@ just the 5.0→5.1 renames — `string.gmatch`←`gfind`, `math.fmod`←`math.mo
 
 ### Lua 5.1 syntax
 
-1.12 runs Lua 5.0. It cannot compile five pieces of Lua 5.1 syntax that
+The game runs Lua 5.0. It cannot compile five pieces of Lua 5.1 syntax that
 many addons use. These are the length operator `#`, the modulo operator
 `%`, `...` used as an expression, `0x` hexadecimal number literals, and
 leveled long brackets (`[=[ ... ]=]`). ClassicAPI rewrites addon source to
@@ -15996,8 +15934,7 @@ table from the file arguments:
 local addonName, addonTable = ...
 ```
 
-Stock 1.12 never passed these to an addon file. ClassicAPI supplies them to
-any file under `Interface\AddOns\` that reads `...`. `addonName` is the
+ClassicAPI supplies these values to any file under `Interface\AddOns\` that reads `...`. `addonName` is the
 folder name. `addonTable` is one table shared by every file of that addon.
 To read another addon's table, use
 [`C_AddOns.GetAddOnLocalTable`](#c_addonsgetaddonlocaltablename), which
@@ -16073,8 +16010,8 @@ on every client.
 ### String methods (`s:upper()`, `s:format(...)`)
 
 In Lua 5.1, every string value accepts method calls: `s:method(...)`
-resolves through the `string` table. Lua 5.0 has no string methods — on
-stock 1.12, any `s:upper()` fails with `attempt to index a string value`.
+resolves through the `string` table. Lua 5.0 has no string methods. Without
+ClassicAPI, any `s:upper()` fails with `attempt to index a string value`.
 ClassicAPI restores the 5.1 behavior:
 
 ```lua
@@ -16109,7 +16046,7 @@ link:sub(1, 5)
   inside coroutines.
 - To turn method resolution off for diagnosis, call
   `_classicapi_SetStringMethods(false)`. Strings then have no metatable
-  and error on index, the stock 1.12 behavior. Use it only to answer "is this backport breaking
+  and error on index, as they do in Lua 5.0. Use it only to answer "is this backport breaking
   this addon?".
 
 ### `getfenv` / `setfenv` environment protection
@@ -16138,7 +16075,7 @@ returns nothing.
 
 ### `select(index, ...)`
 
-The Lua 5.1 vararg helper, backported to 1.12's Lua 5.0. Two forms:
+The Lua 5.1 vararg helper, added to the game's Lua 5.0. Two forms:
 
 - `select('#', ...)` → the number of extra arguments passed after the
   index.
@@ -16474,7 +16411,7 @@ guard.
 
 ### `string.match` / `string.gmatch`
 
-The Lua 5.1 pattern helpers, backported to 1.12's Lua 5.0 (which ships only
+The Lua 5.1 pattern helpers, added to the game's Lua 5.0 (which ships only
 `find` / `gfind` / `gsub`).
 
 - **`string.match(s, pattern [, init])`** — returns the captures of the
@@ -16495,7 +16432,7 @@ for word in string.gmatch("a,bb,ccc", "[^,]+") do print(word) end -- a / bb / cc
 
 Both call forms work: `string.match(s, p)` and `s:match(p)`. See
 [String methods](#string-methods-supper-sformat). `string.match` is also the
-global `strmatch`, as on 3.x clients, alongside 1.12's own `strfind`, `strsub`
+global `strmatch`, alongside the game's own `strfind`, `strsub`
 and the other globals for the 5.0 string functions. `string.gmatch` is also the
 global `gmatch`.
 
@@ -16712,7 +16649,7 @@ math.fmod(5.5, 2)   -- 1.5
 
 Returns `(integral, fractional)` — the integral part truncated toward zero
 and the fractional part carrying `x`'s sign. Lua 5.1 function, genuinely
-missing from 1.12's math library (not just renamed like `fmod`).
+missing from the Lua 5.0 math library (not just renamed like `fmod`).
 
 ```lua
 math.modf(3.7)    -- 3, 0.7
@@ -16883,9 +16820,8 @@ end)
 `coroutine.yield(n)` returns `n` to the scheduler, which schedules
 the next `step` after that many seconds. `yield(0)` is the
 "resume on the next frame" form (since `C_Timer.After(0, ...)`
-fires on the next OnUpdate tick). `RunNextFrame(cb)` in
-[`src/embed/AddOns/!!!ClassicAPI/Util/FunctionUtil.lua`](../src/embed/AddOns/!!!ClassicAPI/Util/FunctionUtil.lua)
-wraps the same primitive for the non-coroutine case.
+fires on the next OnUpdate tick). `RunNextFrame(cb)` wraps the same
+primitive for the non-coroutine case.
 
 ## Macros
 
@@ -17234,13 +17170,14 @@ Pure-numeric input is now accepted anywhere a spell name would be:
 CastSpellByName("5019")        -- same effect from Lua / /run / chat
 ```
 
-The spellID is resolved through `Spell.dbc` to the locale-resolved
-name, then handed to the engine's existing name resolver — so all the
-normal downstream behavior applies: the spellbook lookup gates on
-"player knows this spell," action-bar UI sees the cast as if it had
-been named, macros containing `/cast 5019` get tagged with the right
-spellID in the engine's spell-state cache (so `IsCurrentAction(slot)`
-and `IsAutoRepeatAction(slot)` work for the macro slot).
+The spell ID changes to the spell name in your client's language. Then the
+cast works the same as a cast by name:
+
+- You must know the spell.
+- Action-bar UIs see the cast as if you had typed the name.
+- Macros that contain `/cast 5019` get tagged with the right spellID, so
+  `IsCurrentAction(slot)` and `IsAutoRepeatAction(slot)` work for the
+  macro slot.
 
 | Input        | Outcome                                                |
 |--------------|--------------------------------------------------------|
@@ -17249,11 +17186,9 @@ and `IsAutoRepeatAction(slot)` work for the macro slot).
 | `/cast Shoot`| Unchanged — names still work                           |
 | `/cast 5019(Rank 1)` | Falls through — rank suffix with a numeric stem isn't supported (use the name form if you need a specific rank) |
 
-Implemented as a single hook on the engine's name → spellbook-slot
-resolver at `0x004B3950` — covers `/cast`, `/castsequence` aliases,
-`CastSpellByName`, the macro parser's tagging path, and anywhere
-else the engine resolves a spell name. Numeric input with garbage
-trailing characters falls through unchanged.
+Numeric IDs work everywhere the game accepts a spell name: `/cast`,
+`/castsequence` aliases, `CastSpellByName`, and macro tagging. Input with
+other characters after the number is treated as a normal name.
 
 ### `CastSpellNoToggle` as a macro cast line
 
@@ -17280,9 +17215,8 @@ The engine's first-match-wins rule still applies — if your macro is:
 CastSpellNoToggle("Shoot")
 ```
 
-…the macro is tagged with Wand (the engine recognized `/cast Wand`
-on line 1; our additional pattern is only consulted when the engine
-didn't find any of its own patterns).
+…the macro is tagged with Wand. A `CastSpellNoToggle` line counts only
+when the macro has no other cast line.
 
 Macro tagging happens at macro edit/save time. Existing macros need
 to be opened in the Macro UI and re-saved once after dropping in the
@@ -17408,17 +17342,16 @@ GetMacroSpell(3)
 -- (no returns)
 ```
 
-`CastSpellNoToggle("<name>")` macros are also recognized — the
-parser hook from the [`CastSpellNoToggle`](#castspellnotoggle-as-a-macro-cast-line)
-section tags them with the same spellID a `/cast` line would, so
+`CastSpellNoToggle("<name>")` macros are also recognized. As the
+[`CastSpellNoToggle`](#castspellnotoggle-as-a-macro-cast-line) section
+describes, they get the same spellID that a `/cast` line gets, so
 `GetMacroSpell` sees them too.
 
 > **Re-save existing macros once after dropping in the DLL.** The
 > spellID cache is populated at edit time. Macros that existed
 > before ClassicAPI loaded (or that use `CastSpellNoToggle` and were
-> last edited under stock 1.12) will have a stale `0` cache —
-> opening them in the Macro UI and clicking Okay re-runs the parser
-> and the new behavior takes effect.
+> last edited without ClassicAPI) have a stale `0` cache. Open them
+> in the Macro UI and click Okay to update the cache.
 
 ### `GetMacroItem(macroSlot)`
 
@@ -17673,8 +17606,8 @@ arg, even though only one attachment per message is supported here —
 pass-through compatibility. Any `attachmentIndex` other than `1` is
 treated as no-op.
 
-Both functions return `(link, itemID)`. `itemID` is cheap to surface at
-the same lookup site and saves callers a `string.match` on the link.
+Both functions return `(link, itemID)`. The `itemID` saves callers a
+`string.match` on the link.
 
 ### `GetSendMailItemLink([attachmentIndex])`
 
@@ -17682,15 +17615,12 @@ Returns the **fully-decorated per-instance** hyperlink for the item
 currently attached to the outgoing-mail slot, plus that item's
 `itemID`. Same enchant / random-suffix / unique-ID decoration as
 `GetContainerItemLink` would return for the same item back in the
-player's bag — the attached item still exists as a live CGItem until
-the mail is sent, so the link builder has full instance state to
-draw from.
+player's bag.
 
 Returns nothing when:
 - No item is attached.
 - `attachmentIndex` is anything other than `nil` or `1`.
-- The attachment's CGItem can't be resolved (shouldn't normally
-  happen — engine writes the GUID on attach and clears it on detach).
+- The game cannot find the attached item. This does not normally occur.
 
 ```lua
 local link, itemID = GetSendMailItemLink()
@@ -17705,16 +17635,10 @@ Returns the **basic itemID-only** hyperlink (`|cff…|Hitem:N:0:0:0|h[Name]|h|r`
 for the item attached to inbox message `messageIndex` (1-based),
 plus the `itemID`.
 
-**Why basic-link instead of per-instance:** inbox entries do
-store per-instance modifiers inline (enchant at `+0x12C`, suffix
-factor at `+0x134`, random property at `+0x138` — the same fields
-`GameTooltip:SetInboxItem` copies onto the tooltip to render a fully-
-decorated preview). We intentionally ignore them in the link: the
-itemID-only link builder (`FUN_0061E290(itemID)`) ignores the
-per-instance fields. Per-instance data only fully manifests on the
-client side once the player takes the item out of the mail and the
-engine spawns a real CGItem; the inbox-entry fields are display-only
-hints used by the tooltip builder.
+**Why basic-link instead of per-instance:** the tooltip from
+`GameTooltip:SetInboxItem` shows the enchant and the random suffix, but
+the link does not include them. The full item data exists only after the
+player takes the item out of the mail.
 
 Errors on missing or non-numeric `messageIndex`. Returns nothing when:
 - `messageIndex` is out of range (`< 1` or `> GetInboxNumItems()`).
@@ -17799,18 +17723,16 @@ active locale — no locale/rename drift vs a scraped table.
 ### `C_Map.GetBestMapForUnit(unitToken)`
 
 Returns the `AreaTable.dbc` area ID the given unit is currently in,
-or `nil` if the unit isn't trackable. There is no UiMap.db2 concept
-here, so the closest equivalent to a "best map" is the zone-level
-AreaTable ID — exactly what the engine itself tracks for the local
-player (`GetRealZoneText` reads it) and what gets broadcast for
-party/raid members via `SMSG_PARTY_MEMBER_STATS_FULL`.
+or `nil` if the unit isn't trackable. The ID is the zone-level
+AreaTable ID. For the player, it is the zone that `GetRealZoneText`
+shows. For party and raid members, it is the zone that the server sends
+for them.
 
 Coverage:
 
 - `"player"` — always works.
 - `"party1".."party4"` — works even for members in other zones / on
-  other continents (slot-indexed GUID table stays populated regardless
-  of local CGUnit availability).
+  other continents, because the member does not have to be near you.
 - `"raid1".."raid40"` — same; covers the full raid roster.
 - `"target"`, `"mouseover"`, `"focus"` and any other token that
   resolves to the player or a group member — works.
@@ -17836,7 +17758,7 @@ ClassicAPI extension. Returns `{ [mapName] = areaID, … }` — each
 `WorldMapArea.dbc` map's name (the dir the engine uses for its map
 textures) mapped to its `AreaTable` areaID.
 
-The stock client has no `GetCurrentMapAreaID`, and `GetMapZones()` enumerates
+`GetMapZones()` enumerates
 only a continent's *outdoor* zones — so a browsed **city or instance map**
 (Orgrimmar, Undercity, Alterac Valley) can't be resolved to a zone id, which
 means addons can't match zone-keyed content (a flight master, a POI) to it.
@@ -17911,7 +17833,7 @@ A row may be **texture-less** — a clickable subzone region with no distinct
 art. It still appears, with `textureName == ""`, zero `textureWidth`/
 `textureHeight`, and an empty `tiles` table (so `ipairs(ov.tiles)` iterates
 zero times), carrying its `areaID`/`areaIDs` + `hitRect*`. Filter art
-consumers on `ov.textureName ~= ""`. (Stock 1.12 and Octo happen to give
+consumers on `ov.textureName ~= ""`. (The stock and Turtle WoW data give
 every overlay a texture, but the schema permits texture-less rows.)
 
 Each `tiles` entry: `file` (texture path including the tile number,
@@ -17935,7 +17857,7 @@ end
 
 > **Why `tiles` exists (don't derive the grid yourself).** The
 > canonical layout is `ceil(w/256) × ceil(h/256)` tiles numbered
-> row-major, and on stock 1.12 data that's always right — but Octo's
+> row-major, and on the stock data that's always right — but Turtle WoW's
 > shipped data breaks it in three distinct ways: DBC rects that round
 > away a narrow sliver column (Icepoint's Kaneq'nuun has a real 8px
 > third column; trusting `ceil` shears the whole overlay into
@@ -17985,7 +17907,7 @@ Returns a map's details table, or `nil` for an id that names no map:
 | `mapID` | the id you passed |
 | `name` | localized map name |
 | `mapType` | `Enum.UIMapType`: `1` world, `2` continent, `3` zone, `4` dungeon |
-| `parentMapID` | the map one level up, or `0` at the top |
+| `parentMapID` | the map one level up. `0` for the world map and for dungeon maps |
 | `flags` | always `0` |
 
 **What a `uiMapID` is.** Maps form a three-level tree:
@@ -18151,9 +18073,7 @@ local x, y = pos:GetXY()   -- e.g. 0.595, 0.600
 
 Works for the player and any unit whose object is loaded (in range or
 targeted). Other units return `nil`. An unknown unit token raises an
-error, the same as `UnitHealth` and the other unit functions. In a city or
-subzone, `GetBestMapForUnit` can return a subzone id that has no world
-rect — pass a zone-level id for those.
+error, the same as `UnitHealth` and the other unit functions.
 
 ### `C_Map.GetWorldPosFromMapPos(uiMapID, mapPosition)`
 
@@ -18206,10 +18126,12 @@ rect.
 
 `uiMapID` is the zone. `topUiMapID` is the map to measure against, normally
 the zone's continent (see [`C_Map.GetMapInfo`](#c_mapgetmapinfouimapid)).
-When `topUiMapID` names no usable map, the zone's own continent is used.
+When `topUiMapID` is `0` or names no map, the call uses the continent of
+the zone. When `topUiMapID` names a map that has no world rect, the call
+returns `nil`.
 
 ```lua
-local minX, maxX, minY, maxY = C_Map.GetMapRectOnMap(14, 1)  -- Durotar on Kalimdor
+local minX, maxX, minY, maxY = C_Map.GetMapRectOnMap(14, -13)  -- Durotar on Kalimdor
 ```
 
 A zone placed off the edge of the standard continent map can return values
@@ -18471,9 +18393,7 @@ if info then
 end
 ```
 
-Reads directly from the 28-byte merchant entry at
-`VAR_MERCHANT_ITEMS + (slot-1) * MERCHANT_STRIDE` (the same flat
-array `Script_GetMerchantItemInfo` walks). Compared to the existing
+Compared to the existing
 [`GetMerchantItemID`](#getitemid--companions-to-the-engines-getitemlink-family),
 this returns the wider struct shape in one call.
 
@@ -18520,21 +18440,17 @@ if junk > 0 then
 end
 ```
 
-Quality is read from each item's `ItemStats` cache record at the
-`m_quality` field (`OFF_ITEMSTATS_QUALITY = 0x1C`). Items with
-unloaded cache records (rare for items in your own bags) are
-skipped — same conservative behavior the sell path uses.
+Items that the client has no item data for yet (rare for items in
+your own bags) are skipped. `SellAllJunkItems` skips them too.
 
 ### `C_MerchantFrame.SellAllJunkItems()`
 
 Sells every quality-0 item in the player's bags to the open
 merchant. No-op when no merchant frame is open.
 
-Sells are dispatched **one per frame** via the shared
-`WorldTick` subscriber, not in a tight loop within the call —
-the network path drops packets when CMSG_SELL_ITEM is
-flooded (a 10-item burst consistently lost the 2nd-to-last sell
-in testing). Calling pace matches click-by-click selling. For
+Sells go out **one per frame**, not all at once inside the call. A
+fast burst of sells loses some of them, so the pace matches
+click-by-click selling. For
 10 junk items, expect the queue to drain in ~10 frames (~150ms
 at 60fps).
 
@@ -18546,13 +18462,10 @@ If the player closes the merchant frame or opens a different
 vendor mid-drain, the remaining queue is discarded rather than
 mis-routed to the new merchant.
 
-Each sell is delivered via the engine's internal
-`MerchantSellItem` helper (`FUN_MERCHANT_SELL_ITEM`, opcode
-`CMSG_SELL_ITEM`/`0x1A0`) called with `count = 0` ("sell whole
-stack"). Bypasses `Script_UseContainerItem` entirely — addons
-hooking `UseContainerItem` will not see these sells, and there's
-no risk of the use-not-sell dispatch branch firing if the merchant
-state changes mid-loop.
+Each sell sells the whole stack. The sells do not go through
+`UseContainerItem`, so addons that hook `UseContainerItem` do not see
+them. If the merchant state changes during the queue, no item is used
+instead of sold.
 
 ### `C_MerchantFrame.IsMerchantItemRefundable(slot)`
 
@@ -18953,10 +18866,2023 @@ DressUpModel:TryOn(2077)         -- only the staff
 Returns the value of the last `SetAutoDress` call on the frame. Before the
 first call, it returns `true`.
 
+### `DressUpModel:GetItemTransmogInfo(slot)` / `DressUpModel:GetItemTransmogInfoList()`
+
+These return what a `DressUpModel` wears, as `ItemTransmogInfoMixin` tables.
+The tables have the same fields as the tables of the ModelScene actor (see
+[`actor:GetItemTransmogInfo`](#actorgetitemtransmoginfoslot--actorgetitemtransmoginfolist)):
+`appearanceID` is the item ID, and `illusionID` is the enchant glow on a
+weapon.
+
+`GetItemTransmogInfo` returns the table for one inventory slot, from `1`
+(head) to `19` (tabard). It returns nothing for a frame that shows no model,
+or for a slot number outside this range. `GetItemTransmogInfoList` returns a
+list of 19 tables, one for each inventory slot, in slot order.
+
+A frame that shows a player (`SetUnit`, `Dress`) starts with the items that
+the player wears. A helm or a cloak that the player hides is `0`. The neck,
+the rings, the trinkets, and the ranged slot are always `0`. An NPC starts
+with all slots at `0`. `TryOn`, `UndressSlot`, and `Undress` change the
+values.
+
+### `DressUpModel:SetItemTransmogInfo(info [, slot, ignoreChildItems])`
+
+Puts the item `info.appearanceID` on the frame, as `TryOn` does. A weapon
+shows the glow of the enchant `info.illusionID`. It returns the same
+`Enum.ItemTryOnReason` values as `TryOn`. These are the differences:
+
+- It shows no error message. The caller shows `ERR_NOT_EQUIPPABLE` when the
+  result is not `Success`.
+- A `slot` of `16` or `17` selects the hand that holds a weapon. With all
+  other values, the item goes into its own slot.
+- An `appearanceID` of `0` changes nothing and returns `NotEquippable`.
+  `UndressSlot` empties a slot.
+- `ignoreChildItems` has no effect.
+
+```lua
+-- Copy the outfit of the dressing room to a second frame.
+for slot, info in ipairs(DressUpModel:GetItemTransmogInfoList()) do
+  if info.appearanceID == Constants.Transmog.NoTransmogID then
+    OtherModel:UndressSlot(slot)
+  else
+    OtherModel:SetItemTransmogInfo(info, slot)
+  end
+end
+```
+
+### `DressUpModel:IsSlotAllowed(slot)` / `DressUpModel:IsSlotVisible(slot)`
+
+`IsSlotAllowed` returns `true` when the frame can wear an item in the
+inventory slot:
+
+- The hands (`16` and `17`) are allowed on all models.
+- The armor slots are allowed when `TryOn` can put armor on the frame. A
+  shapeshifted player, or a creature without a character model, has no armor
+  slots.
+- The neck, the rings, the trinkets, and the ranged slot are not allowed. A
+  ranged weapon that `TryOn` puts on goes into a hand.
+
+It returns `false` for a frame that shows no model. `IsSlotVisible` returns
+the same value, because an item in an allowed slot always shows.
+
 ### `Model:SetGlow(value)`
 
 This method exists on every `Model` frame, for code from later clients. It
 has no effect in the game.
+
+## ModelScene
+
+A `ModelScene` frame shows many models in one 3D scene. Each model is an
+*actor*. The scene has one camera, one light and fog. You move the camera
+and the actors in scene coordinates: `z` is up, and distances are in yards.
+The scene can also show a WMO, for example a dungeon, around the actors.
+
+### `CreateFrame("ModelScene" [, name, parent, template])`
+
+Makes a `ModelScene` frame. In XML, use the `<ModelScene>` element.
+`GetObjectType()` returns `"ModelScene"`. `IsObjectType("Model")` returns
+`false`: a scene does not have the `Model` methods.
+
+A new scene has these settings:
+
+| Setting | Value |
+|---|---|
+| Camera | At `(0, 0, 0)`, looking along `+x` |
+| Field of view | `0.9424778` radians |
+| Near clip / far clip | `0.2` / `100` |
+| Light | Directional, along `(0, 1, 0)`, on |
+| Ambient color | `(0.698, 0.698, 0.698)` |
+| Diffuse color | `(0.8, 0.8, 0.639)` |
+| Fog | Near `10000000`, far `100000000`, white, so no fog shows |
+| Draw layer | `ARTWORK` |
+
+The XML element takes these attributes and children, in addition to the
+attributes of a frame:
+
+| XML | Effect |
+|---|---|
+| `drawLayer="OVERLAY"` | `SetDrawLayer` |
+| `fogNear="10"` / `fogFar="40"` | `SetFogNear` / `SetFogFar`. A negative value becomes `0`. |
+| `<FogColor r="1" g="0" b="0"/>` | `SetFogColor` |
+| `<ViewInsets left="0" right="0" top="50" bottom="0"/>` | `SetViewInsets` |
+
+```lua
+local scene = CreateFrame("ModelScene", nil, UIParent)
+scene:SetWidth(300)
+scene:SetHeight(300)
+scene:SetPoint("CENTER", 0, 0)
+scene:SetCameraPosition(-6, 0, 1)
+
+local horse = scene:CreateActor()
+horse:SetModelByCreatureDisplayID(2404)   -- a brown horse
+```
+
+### `scene:CreateActor([name, template])`
+
+Adds an actor to the scene and returns it. `name` gives the actor a global
+name. In `name`, `$parent` stands for the name of the scene. `template` is
+the name of a virtual `<Actor>` element. The actor gets the template's
+mixins, scripts and key values, and then its `OnLoad` runs.
+
+### `scene:GetNumActors()` / `scene:GetActorAtIndex(index)`
+
+`GetNumActors` returns the number of actors in the scene.
+`GetActorAtIndex` returns one actor. Index `1` is the first actor that the
+scene made.
+
+### `scene:SetCameraPosition(x, y, z)` / `scene:GetCameraPosition()`
+
+Sets or returns the position of the camera.
+
+### `scene:SetCameraOrientationByYawPitchRoll(yaw, pitch, roll)`
+
+Turns the camera. All three angles are in radians. `yaw` turns about the up
+axis, a positive `pitch` looks down, and `roll` turns about the direction
+that the camera looks.
+
+### `scene:SetCameraOrientationByAxisVectors(forwardX, forwardY, forwardZ, rightX, rightY, rightZ, upX, upY, upZ)`
+
+Turns the camera so that it looks along the forward vector, with the right
+and up vectors as its sides.
+
+### `scene:GetCameraForward()` / `scene:GetCameraRight()` / `scene:GetCameraUp()`
+
+Each one returns three numbers: one axis of the camera.
+
+### `scene:SetCameraFieldOfView(fov)` / `scene:GetCameraFieldOfView()`
+
+Sets or returns the vertical field of view of the camera, in radians.
+
+### `scene:SetCameraNearClip(nearClip)` / `scene:SetCameraFarClip(farClip)`
+
+Sets the nearest and the farthest distance that the camera draws.
+`GetCameraNearClip()` and `GetCameraFarClip()` return them.
+
+### `scene:SetViewInsets(left, right, top, bottom)` / `scene:GetViewInsets()`
+
+Puts the picture of the camera in a smaller part of the scene. The camera
+draws the scene as if the frame were smaller by these insets, in the
+frame's units. The picture still stops at the edges of the frame, and a
+negative inset makes the picture larger than the frame. All four are `0` by
+default.
+
+For example, `SetViewInsets(100, 0, 0, 0)` moves the picture 50 units to
+the right, and the picture gets smaller for the narrower shape.
+
+### `scene:SetViewTranslation(x, y)` / `scene:GetViewTranslation()`
+
+Moves the picture of the camera by `x` and `y`, in the frame's units. A
+positive `y` moves the picture up. The size of the picture does not change,
+and the picture still stops at the edges of the frame.
+
+### `scene:Project3DPointTo2D(x, y, z)`
+
+Returns where a point of the scene shows on the frame: `x2D, y2D, depth`.
+
+- `x2D` and `y2D` are measured from the bottom-left corner of the frame, in
+  the frame's units multiplied by its effective scale.
+- `depth` is `1` at the near clip and `0` at the far clip.
+- A point behind the camera also gets a position.
+- The function returns nothing until the frame has a size. It also returns
+  nothing for a point in the plane through the camera, at a right angle to
+  the direction that the camera looks.
+
+`SetViewInsets` and `SetViewTranslation` do not change the result.
+
+### Follow camera
+
+The camera type `"FollowCamera"` follows an actor, as the camera of the
+world follows your character. It has all the methods of the orbit camera
+(`OrbitCameraMixin`) and these two:
+
+- `camera:SetFollowActor([actor])` sets the actor that the camera follows.
+  Without an actor, the camera is an orbit camera.
+- `camera:GetFollowActor()` returns that actor.
+
+While the camera follows an actor:
+
+- It looks at a point above the feet of the actor. The height of this
+  point is the result of
+  [`actor:GetCameraPivotHeight`](#actorgetcamerapivotheightdistance).
+- When that height changes, the camera moves to the new height smoothly.
+  The CVar `cameraHeightSmoothSpeed` sets the speed, in yards a second.
+  The first height applies at once.
+- It stops in front of a wall of the WMO between the actor and the camera,
+  1/9 yard from the wall.
+- It does not move until the model of the actor has loaded.
+
+The camera does not turn by itself. Set its yaw, its pitch and its zoom as
+you set those of the orbit camera.
+
+A scene made from `ModelSceneMixinTemplate` has the methods that add a
+camera. Add the follow camera next to the camera of the scene, with the
+same settings, then make it the active camera. This is a ClassicAPI
+extension.
+
+```lua
+local _, cameraIDs = C_ModelInfo.GetModelSceneInfoByID(modelSceneID)
+local camera = scene:AddCamera(CameraRegistry:CreateCameraByType("FollowCamera"))
+camera:ApplyFromModelSceneCameraInfo(C_ModelInfo.GetModelSceneCameraInfoByID(cameraIDs[1]),
+    CAMERA_TRANSITION_TYPE_IMMEDIATE, CAMERA_MODIFICATION_TYPE_DISCARD)
+camera:SetFollowActor(runner)
+scene:SetActiveCamera(camera)
+```
+
+### `scene:SetLightType(lightType)` / `scene:GetLightType()`
+
+`0` makes a directional light, and `1` makes a point light.
+
+### `scene:SetLightVisible([visible])` / `scene:IsLightVisible()`
+
+Turns the light on or off.
+
+### `scene:SetLightDirection(x, y, z)` / `scene:SetLightPosition(x, y, z)`
+
+Sets the direction of a directional light, or the position of a point
+light. `GetLightDirection()` and `GetLightPosition()` return them.
+
+### `scene:SetLightAmbientColor(r, g, b)` / `scene:SetLightDiffuseColor(r, g, b)`
+
+Sets the colors of the light, from `0` to `1`. `GetLightAmbientColor()` and
+`GetLightDiffuseColor()` return them.
+
+### `scene:SetFogColor(r, g, b)` / `scene:GetFogColor()`
+
+Sets the color of the fog and turns the fog on.
+
+### `scene:SetFogNear(near)` / `scene:SetFogFar(far)`
+
+Sets the distance where the fog starts and the distance where it is full.
+`GetFogNear()` and `GetFogFar()` return them.
+
+### `scene:ClearFog()`
+
+Turns the fog off.
+
+### `scene:SetDrawLayer(layer)` / `scene:GetDrawLayer()`
+
+Sets the draw layer of the scene, for example `"ARTWORK"` or `"OVERLAY"`.
+`GetDrawLayer` returns the layer and `0`.
+
+### `scene:SetPaused(paused [, affectsGlobalPause])`
+
+`true` stops the animations of all the actors. Each actor stays at its
+current frame. `false` starts the animations again from the same frame.
+`affectsGlobalPause` has no effect. To pause one actor, use
+[`actor:SetPaused`](#actorsetpausedpaused--affectsglobalpause--actorgetpaused).
+
+These also stop with the animations:
+
+- The clock of the scene ([`scene:GetSceneTime`](#scenegetscenetime)) and
+  the timers of the scene.
+- The movement of all the actors: walking, running, jumping, falling,
+  swimming and `MoveTo`. A movement command that you give while the scene is
+  paused starts when the scene starts again.
+- The spell visuals of `PlaySpellVisual`, missiles in flight and chain
+  bolts. The flight sounds of the missiles stop.
+- The shards of a spell ground area (`actor:SetModelBySpellArea`). The
+  sound of the area stops.
+- The click-to-move marker of `scene:SetMoveMarker`.
+
+When the scene starts again, each of these continues from where it stopped.
+The `OnUpdate` scripts of the actors continue to run while the scene is
+paused.
+
+### `scene:GetSceneTime()`
+
+Returns the time on the clock of the scene, in seconds. The clock starts
+at 0 when the scene is made. The actors animate and move by this clock.
+
+The clock stops while the scene is paused (`scene:SetPaused`) and while
+the scene is hidden. This is a ClassicAPI extension.
+
+### `scene:After(seconds, callback)` / `scene:NewTimer(seconds, callback)` / `scene:NewTicker(seconds, callback [, iterations])`
+
+These functions are the same as
+[`C_Timer.After`](#c_timerafterseconds-callback),
+[`C_Timer.NewTimer`](#c_timernewtimerseconds-callback) and
+[`C_Timer.NewTicker`](#c_timernewtickerseconds-callback-iterations), but
+they use the clock of the scene. Time does not pass for these timers while
+the scene is paused or hidden. Thus the timers stay in step with the
+animations of the actors.
+
+The scene runs its timers when its clock moves, before the actors update.
+A ticker runs one time in each frame at most. A `/reload` cancels all the
+timers. This is a ClassicAPI extension.
+
+```lua
+-- The warrior swings every 2 seconds on the clock of the scene.
+local ticker = scene:NewTicker(2, function()
+    warrior:SetAnimation(17) -- Attack1H
+end)
+
+-- Later, to stop the swings:
+ticker:Cancel()
+```
+
+### `scene:SetAllowOverlappedModels(allow)` / `scene:GetAllowOverlappedModels()`
+
+Stores a flag. It is `false` by default. The flag has no effect: a scene
+always draws, also when another model frame covers it.
+
+### `scene:SetGroundTerrain([terrainTypeID])` / `scene:GetGroundTerrain()`
+
+Sets the ground that the actors of the scene stand on. The ground selects
+the sounds of their footsteps and death thuds (see
+[`actor:SetPlayAnimationSounds`](#actorsetplayanimationsoundsenabled--actorgetplayanimationsounds)).
+`terrainTypeID` is a row of `TerrainType.dbc`:
+
+| ID | Ground |
+|---|---|
+| `0` | Dirt |
+| `1` | Metallic |
+| `2` | Stone |
+| `3` | Snow |
+| `4` | Wood |
+| `5` | Grass |
+| `6` | Leaves |
+| `7` | Sand |
+| `8` | Soggy |
+| `9` | Dusty grass |
+
+Without `terrainTypeID`, an actor stands on the floor of the WMO of the scene
+([`scene:SetWorldModel`](#scenesetworldmodelpath--x-y-z--yaw--doodadset--mapid))
+or on its ground
+([`scene:SetWorldTerrain`](#scenesetworldterrainmapid-x-y--radius)),
+whichever is nearer under it, as in the world. The material of the WMO floor,
+or the main texture of the ground at that point, selects the sounds. An actor
+with no floor and no ground under it makes no footsteps and no death thuds.
+This is the default. A ground that you set replaces both for all actors. `scene:GetGroundTerrain()` returns the ID that you
+set, or nothing. This is a ClassicAPI extension.
+
+### `scene:SetWorldModel(path [, x, y, z [, yaw [, doodadSet [, mapID]]]])`
+
+Shows a WMO (a world map object, for example a building or a dungeon)
+around the actors, and returns `true`. `path` is a `.wmo` file. The WMO
+stands at `(x, y, z)` and turns by `yaw` radians about `z`. The defaults are
+`(0, 0, 0)` and `0`. `mapID` is the row of `Map.dbc` for the map that the
+WMO stands on. Give it with the position of the WMO on that map, so that
+the positions in the scene are the positions on the map. It sets the color
+of the outdoor water (see below).
+
+The scene shows the WMO as the world shows it:
+
+- The data of the WMO lights and colors it. On the outdoor parts of the
+  WMO, the light of the scene is the sun.
+- A WMO with two or more fogs uses its own fog while the camera is above
+  an indoor part of the WMO. Other WMOs use the fog of the scene.
+- When the camera goes into or out of the WMO, the fog changes gradually
+  from one fog to the other in 4 seconds, as in the world. When the scene
+  first shows the WMO, the fog is already the fog for the position of the
+  camera.
+- Some WMOs have more fogs around some points. As the camera comes near
+  such a point, its fog blends in.
+- If the scene has no fog, the fog of the WMO comes in from the far clip of
+  the camera.
+- When the camera goes into the water of the WMO, the fog becomes the
+  underwater fog of the WMO. Small motes drift in the liquid around the
+  camera, with the `waterParticulates` setting. In lava or slime, the fog becomes the fog of
+  the map for that liquid, unless the WMO has a fog for that liquid.
+  Without `mapID`, the fog of the scene takes the place of the fog of the
+  map.
+- The WMO shows its props, for example torches, furniture and bones. The
+  props of doodad set `0` always show. `doodadSet` adds the props of one
+  more set. The props animate, and the lights of the WMO light them.
+- Props fade out with the distance from the camera, as in the world.
+  Small props fade first. A prop that is larger than 7 yards does not fade.
+- The water, lava and slime of the WMO show, and their textures animate.
+- Outdoor water takes its colors from the light of the map at the position
+  of the camera and at the time of day of the world, as in the world. The
+  light of a zone near the camera blends in. Without `mapID`, outdoor water
+  takes its colors from the place where the player is.
+- The parts of the WMO show when their files have loaded.
+
+The WMO replaces the previous WMO of the scene.
+
+The WMO also lights the actors, as the world lights a creature that stands
+in it:
+
+- An actor indoors takes the color of the floor under it, from the data of
+  the WMO. An actor outdoors, or with no floor of the WMO under it, takes
+  the light of the scene.
+- The lights of the part of the WMO that an actor stands on light it, for
+  example torches.
+- An indoor actor has the same fog as the WMO.
+- The floor under an actor selects the sounds of its footsteps and death
+  thud (see
+  [`scene:SetGroundTerrain`](#scenesetgroundterrainterraintypeid--scenegetgroundterrain)).
+- The shadow of an actor lies on the floor of the WMO (see
+  [`actor:SetShadowShown`](#actorsetshadowshownshown--actorisshadowshown)).
+- When an actor moves into a part of the WMO with a different light, its
+  light changes during a short time, as in the world.
+- A seated rider and an actor that hangs on another actor take the light
+  of that other actor.
+- The missiles and impact effects of
+  [`actor:PlaySpellVisual`](#actorplayspellvisualspellid--target--casttimems--channeltimems)
+  take the light of the place where they are. An arrow in a bow or in a
+  target takes the light of the actor that holds it.
+
+The far clip of the camera (`100` yards by default) also
+cuts the WMO. For a large WMO, increase the far clip with
+`scene:SetCameraFarClip`. `scene:GetActorAtCursor` does not return the WMO
+or its props.
+
+The function returns `false` and shows no WMO when the file is missing,
+when the file is not a WMO, or when the client cannot read the file. This
+is a ClassicAPI extension.
+
+```lua
+scene:SetWorldModel("World\\wmo\\Dungeon\\LD_Stratholme\\FrostWyrm_Final01.wmo",
+    3589.27, -5204, 252.46, -1.77151)
+scene:SetCameraFarClip(500)
+```
+
+### `scene:SetWorldModelByMapID(mapID)`
+
+Shows the WMO of a map that is only one WMO, for example a dungeon, and
+returns `true`. `mapID` is a row of `Map.dbc`. The WMO stands where the map
+puts it and uses the doodad set of the map. Thus the positions in the scene
+are the positions on the map: an actor at the position of a creature in the
+world stands where that creature stands. Outdoor water takes its colors
+from the light of that map.
+
+All the other rules of
+[`scene:SetWorldModel`](#scenesetworldmodelpath--x-y-z--yaw--doodadset--mapid) apply.
+The function returns `false` and shows no WMO for a map that is not one WMO.
+This is a ClassicAPI extension.
+
+```lua
+scene:SetWorldModelByMapID(249) -- Onyxia's Lair
+scene:SetCameraFarClip(500)
+onyxia:SetPosition(0.7, -211.97, -86.08) -- her place in the lair
+```
+
+### `scene:ClearWorldModel()`
+
+Removes the WMO of the scene and its props. This is a ClassicAPI extension.
+
+### `scene:SetWorldTerrain(mapID, x, y [, radius])`
+
+Shows the ground of a map around a point and returns `true`. `mapID` is a
+row of `Map.dbc`, for example `0` for Eastern Kingdoms. `x` and `y` are a
+position on that map, so the positions in the scene are the positions on
+the map. The scene shows each part of the ground that is less than
+`radius` yards from the point. The default radius is 533.33 yards, the
+width of one map tile.
+
+The ground looks as it does in the world: the same textures, the same
+shadows and the same level of detail. The light of the scene stands in for
+the sun, and the fog of the scene stands in for the fog of the zone. In a
+scene without a WMO, the sky of the map shows behind the ground: its
+colors, the sun and the moons, the stars, the clouds and the skybox, in the
+light of the map at the camera and at the time of day of the world. The
+sky hides the background of the scene. A WMO from
+[`scene:SetWorldModel`](#scenesetworldmodelpath--x-y-z--yaw--doodadset--mapid)
+stands on the ground when you give it its position on the same map.
+
+The function returns `false` and shows no ground when the map has no
+ground within the radius. A new call replaces the ground of the scene.
+
+Actors stand, walk and fall on the ground as on the floor of a WMO (see
+[`actor:SetMovementEnabled`](#actorsetmovementenabledenabled--actorismovementenabled)),
+and
+[`scene:TraceSegment`](#scenetracesegmentstartx-starty-startz-endx-endy-endz--camera)
+and
+[`scene:SweepCollider`](#scenesweepcolliderfeetx-feety-feetz-radius-height-movex-movey-movez)
+find it. Past the radius there is no ground.
+
+The props of the map on that ground, for example trees, plants and rocks,
+show as in the world. They fade with distance, and actors collide with them.
+They play their sounds when
+[`scene:SetPlayWorldModelSounds`](#scenesetplayworldmodelsoundsenabled--scenegetplayworldmodelsounds)
+is on. Near the camera, the ground shows its grass and small clutter, as
+in the world, with the density of the ground clutter setting. The water and
+lava of the map show, and their textures animate. The water takes its colors
+from the light of the map at the camera. Actors swim in this water, and
+[`scene:GetLiquidAtPoint`](#scenegetliquidatpointx-y-z) finds it. When the
+camera goes into the water or the lava of the map, the fog becomes the fog
+of the map for that liquid, as in the world. Small motes drift in the
+liquid around the camera, with the `waterParticulates` setting. This is a ClassicAPI
+extension.
+
+```lua
+-- The Gurubashi Arena: the arena WMO where the map puts it, on its ground.
+scene:SetWorldModel("World\\wmo\\Azeroth\\Collidable Doodads\\Stranglethorn\\StranglethornArena\\StrangleGladiatorArena.wmo",
+    -13205.914, 271.832, 20.280, math.rad(64) + math.pi, 0, 0)
+scene:SetWorldTerrain(0, -13205.914, 271.832, 250)
+scene:SetCameraFarClip(500)
+```
+
+### `scene:ClearWorldTerrain()`
+
+Removes the ground of the scene. This is a ClassicAPI extension.
+
+### `scene:SetPlayWorldModelSounds(enabled)` / `scene:GetPlayWorldModelSounds()`
+
+Sets whether the props of the WMO play their sounds, for example the
+crackle of a torch. It is `false` by default. You hear the sounds from the
+camera of the scene (see [Scene sounds](#scene-sounds)). As in the world, a
+prop plays its looping sound only when it is near enough.
+
+The sounds play only in the world. On the login screen and the character
+screen, the props play no sounds. When the scene hides, the looping sounds
+stop. When the scene shows again, each looping sound starts again a short
+time later. This is a ClassicAPI extension.
+
+### `scene:TraceSegment(startX, startY, startZ, endX, endY, endZ [, camera])`
+
+Returns the first face of the WMO or of the ground on the segment from the
+start to the end. The positions are scene positions. The function tests the
+faces that the line of sight of the world tests: the walls, floors and
+roofs of the WMO, and the ground of
+[`scene:SetWorldTerrain`](#scenesetworldterrainmapid-x-y--radius). It does
+not test small details or the props of the WMO.
+
+The function returns `hitX, hitY, hitZ, normalX, normalY, normalZ, fraction`:
+
+- `hitX, hitY, hitZ` is the point where the segment meets the face.
+- `normalX, normalY, normalZ` is the unit normal of the face, on the side
+  of the start.
+- `fraction` is the position of the hit on the segment: 0 at the start, 1
+  at the end.
+
+When `camera` is `true`, the function tests the faces that the camera of
+the world collides with. Small details count, and the faces that let the
+camera through do not count. Use it for a camera that stops in front of a
+wall.
+
+The function returns nothing in these cases:
+
+- The segment hits no face.
+- The scene has no WMO and no ground.
+- The part of the WMO on the segment has not loaded.
+
+This is a ClassicAPI extension.
+
+```lua
+-- The floor under a point.
+local _, _, floorZ = scene:TraceSegment(x, y, z + 2, x, y, z - 50)
+```
+
+### `scene:GetLiquidAtPoint(x, y, z)`
+
+Returns the liquid of the WMO or of the terrain
+([`scene:SetWorldTerrain`](#scenesetworldterrainmapid-x-y--radius)) at a
+scene point, as the world finds it for a unit that stands at the point. The
+liquid of the WMO comes first. The function returns `liquidType, surfaceZ`:
+
+- `liquidType` is `0` for water, `1` for ocean, `2` for magma and `3` for
+  slime.
+- `surfaceZ` is the height of the surface above the point. It is `nil`
+  when that part of the WMO is full of the liquid from the bottom to the
+  top.
+
+The function returns nothing in these cases:
+
+- The point is above the surface, or it is not in a liquid.
+- The part of the WMO at the point has not loaded.
+
+This is a ClassicAPI extension.
+
+### `scene:SweepCollider(feetX, feetY, feetZ, radius, height, moveX, moveY, moveZ)`
+
+Moves a body in a straight line until it touches the WMO, one of its
+props, or the ground of
+[`scene:SetWorldTerrain`](#scenesetworldterrainmapid-x-y--radius). The
+world moves a character into a wall or onto a floor in the same way. The body
+has the shape of a character in the world: a square box over a downward
+point at the feet. `radius` is half the width of the box, and `height` is
+the height of the box. `moveX, moveY, moveZ` is the full movement.
+
+The function returns `feetX, feetY, feetZ, normalX, normalY, normalZ`. The
+feet are the position where the body stops. The normal is the unit normal
+of the face that the body touched. It points to the side that the face
+blocks. When the body touched no face, the function returns only the feet.
+
+A face blocks the body only from its front side. Without a WMO or ground,
+the body moves the full distance. While a part of the WMO in the way loads, the body
+does not move. The function does not slide the body along a wall or step
+it up a ledge. For that movement, use
+[`actor:SetMovementEnabled`](#actorsetmovementenabledenabled--actorismovementenabled).
+This is a ClassicAPI extension.
+
+### Scene sounds
+
+You hear all the sounds of a scene from the camera of the scene, or from
+the actor that
+[`scene:SetSoundListenerActor`](#scenesetsoundlisteneractoractor--scenegetsoundlisteneractor)
+sets. These are the sounds of `actor:PlaySpellVisual`, of
+`actor:SetPlayAnimationSounds`, of `scene:SetPlayWorldModelSounds`, and of
+`actor:PlaySound`. Each sound plays as if you stand at the camera of the
+scene:
+
+- A sound that is far from the camera is quieter. A sound that is farther
+  than its range does not play. The range and the volume of each sound are
+  the same as in the world.
+- A sound on the right of the camera comes from the right.
+- The sound of a missile in flight moves with the missile and with the
+  camera. A short sound stays at the position where it started.
+
+### `scene:SetSoundListenerActor([actor])` / `scene:GetSoundListenerActor()`
+
+Sets the actor that hears the sounds of the scene, as you hear the world at
+your character. The actor hears at the top of its model, and it faces the
+way that the actor faces. `actor` is an actor of this scene. This applies
+while the `SoundListenerAtCharacter` cvar is on. When the cvar is off, or
+without an actor, the camera of the scene hears the sounds.
+`GetSoundListenerActor` returns the actor that you set, or nothing. This is
+a ClassicAPI extension.
+
+```lua
+scene:SetSoundListenerActor(hero) -- you hear the fight where the hero stands
+```
+
+### `scene:GetActorAtCursor()`
+
+Returns the actor under the cursor, or nothing. The test uses the triangles
+that the scene draws for each shown actor: its model, its held items and
+its spell visual kit effects. A space between the arms of a model is not
+part of the model. When actors overlap, the function returns the actor
+that is nearest to the camera. A seated rider is its own actor, not part of
+its mount. Missiles and impact models of `PlaySpellVisual` are not part of
+an actor.
+
+The function returns nothing when the cursor is outside the frame, when
+the frame is hidden, and before the scene draws the actor for the first
+time. This is a ClassicAPI extension.
+
+### `scene:GetCursorRay()`
+
+Returns the line through the cursor, in scene coordinates:
+`nearX, nearY, nearZ, farX, farY, farZ`. The first point is under the
+cursor on the near clip, and the second point is under the cursor on the
+far clip. The line goes the same way as the line of sight of the camera
+through that point of the picture.
+
+The function returns nothing when the cursor is not over the picture of
+the scene, and when the frame is hidden. This is a ClassicAPI extension.
+
+To find the point of the WMO under the cursor, give the line to
+[`scene:TraceSegment`](#scenetracesegmentstartx-starty-startz-endx-endy-endz--camera).
+The world finds the point of a mouse click in the same way.
+
+```lua
+-- A right click sends the runner to the floor under the cursor.
+scene:HookScript("OnMouseUp", function(self, button)
+    if button ~= "RightButton" then
+        return
+    end
+    local nearX, nearY, nearZ, farX, farY, farZ = self:GetCursorRay()
+    if nearX then
+        local x, y, z = self:TraceSegment(nearX, nearY, nearZ, farX, farY, farZ)
+        if x then
+            runner:MoveTo(x, y, z)
+        end
+    end
+end)
+```
+
+### `scene:GetActorsInRadius(x, y, z, radius)`
+
+Returns a table of the actors near a point, in scene coordinates. The
+table holds each shown actor with a model that is not more than `radius`
+yards from the point. The distance includes the height.
+
+The nearest actor is first. Actors at the same distance keep the order in
+which the scene created them. When no actor is near the point, the table
+is empty.
+
+The function uses the position that `actor:GetPosition` returns. The size
+of the model does not change the result. This is a ClassicAPI extension.
+
+```lua
+-- A cleave hits each actor within 5 yards of the warrior.
+local x, y, z = warrior:GetPosition()
+for _, actor in ipairs(scene:GetActorsInRadius(x, y, z, 5)) do
+    if actor ~= warrior then
+        Hit(actor)
+    end
+end
+```
+
+### `scene:SetMoveMarker(x, y, z)` / `scene:ClearMoveMarker()` / `scene:GetMoveMarker()`
+
+Shows the click-to-move marker at a point, in scene coordinates. It is the
+same pulsing yellow mark that the world shows where you click to move. The
+scene shows one marker. A new call moves it to the new point.
+
+- In a scene with a WMO or ground
+  ([`scene:SetWorldTerrain`](#scenesetworldterrainmapid-x-y--radius)), the
+  marker lies on their faces near the point. In a scene with neither, it
+  lies flat at the height of the point.
+- The marker pulses between 0.5 and 0.75 yards in size, two times each
+  second. It stops while the scene is paused.
+- The marker stays until you call `ClearMoveMarker`. It does not go away
+  when an actor gets to the point.
+
+`GetMoveMarker` returns `x, y, z`, or nothing when the scene shows no
+marker. This is a ClassicAPI extension.
+
+```lua
+-- The marker shows where the runner goes, until it gets there.
+scene:HookScript("OnMouseUp", function(self, button)
+    if button ~= "RightButton" then
+        return
+    end
+    local nearX, nearY, nearZ, farX, farY, farZ = self:GetCursorRay()
+    if nearX then
+        local x, y, z = self:TraceSegment(nearX, nearY, nearZ, farX, farY, farZ)
+        if x then
+            runner:MoveTo(x, y, z)
+            self:SetMoveMarker(x, y, z)
+        end
+    end
+end)
+runner:HookScript("OnMoveFinished", function()
+    scene:ClearMoveMarker()
+end)
+```
+
+### `OnActorEnter` / `OnActorLeave`
+
+Scripts of the scene, with the arguments `(self, actor)`. When the actor
+under the cursor changes, `OnActorLeave` runs for the old actor, then
+`OnActorEnter` runs for the new actor. The actor under the cursor is the
+one that `GetActorAtCursor` returns. Set the scripts with `SetScript`,
+`HookScript`, or the elements `<OnActorEnter>` and `<OnActorLeave>` in
+`<Scripts>`:
+
+```lua
+scene:EnableMouse(true)
+scene:SetScript("OnActorEnter", function(self, actor)
+    print("enter", actor:GetModelPath())
+end)
+scene:SetScript("OnActorLeave", function(self, actor)
+    print("leave", actor:GetModelPath())
+end)
+```
+
+The scripts run only while the scene is the frame under the mouse (see
+`GetMouseFocus`). Thus the scene must take mouse input, for example with
+`EnableMouse(true)`. When the cursor leaves the scene, `OnActorLeave` runs
+for the last actor. While the scene is hidden, no script runs. When it
+shows again, the scripts tell of the changes. This is a ClassicAPI
+extension.
+
+### `actor:SetModelByCreatureDisplayID(displayID [, useActivePlayerCustomizations])`
+
+Shows a creature by its display ID (a `CreatureDisplayInfo` ID) and returns
+`true`. It returns `false` and shows nothing for an ID that is not a
+display. A display of a character model is dressed in the clothes of its
+NPC. `useActivePlayerCustomizations` has no effect.
+
+### `actor:SetModelByPath(path [, useMips])`
+
+Shows a model file, for example `"Creature\\Wolf\\Wolf.mdx"`, and returns
+`true`. It returns `false` when the path does not give a model. `useMips`
+has no effect.
+
+### `actor:SetModelBySpellArea(spellID, radius)`
+
+Shows the ground area of a spell on the actor, as the world shows the area
+that a spell such as Blizzard, Rain of Fire or Consecration leaves on the
+ground. `radius` is the radius of the area in yards. It must be more than 0.
+Returns `true`, or `false` when the spell has no ground area.
+
+- When the model loads, it gets the size of `radius`. Its animation repeats.
+- For a spell such as Blizzard or Rain of Fire, shards of ice or fire fall
+  on the area. They fall from 16.67 yards above the area to the floor, and
+  more of them land near the centre. At the lower spell detail levels,
+  fewer shards fall.
+- In a scene with a WMO, the shards land on its floor and stop below a
+  ceiling. In a scene with no WMO, they land at the height of the actor.
+- The sound of the area repeats at the position of the actor, and some
+  of the shards make a sound when they land.
+- When you hide the actor or change its model, the area stops. No more
+  shards fall, and the sound fades out in 3 seconds. Shards that are in the
+  air land first. When you show the actor again, the area starts again.
+- While the scene or the actor is paused, the shards stop where they are
+  and the sound stops. When the pause ends, they continue.
+
+This is a ClassicAPI extension.
+
+```lua
+local storm = scene:CreateActor()
+storm:SetPosition(x, y, z)
+storm:SetModelBySpellArea(10, 8) -- Blizzard, 8 yards
+storm:SetGroundReticle(8)
+```
+
+### `actor:SetModelByUnit(unit [, sheatheWeapons, autoDress, hideWeapons, usePlayerNativeForm, holdBowString, customRaceID])`
+
+Shows a copy of a unit, with the items that it wears and holds, and returns
+`true`. It returns `false` when the unit does not exist.
+
+| Argument | Default | Effect |
+|---|---|---|
+| `sheatheWeapons` | `false` | `true` puts the weapons in their sheaths. |
+| `autoDress` | `true` | `false` shows the unit with nothing on. |
+| `hideWeapons` | `false` | `true` hides the weapons. |
+| `usePlayerNativeForm`, `holdBowString`, `customRaceID` | | No effect. A unit in a shapeshift form shows in that form. |
+
+The actor also takes the ranged weapon of the unit. The ranged weapon shows
+only while the actor shoots (see
+[`actor:TryOn`](#actortryonitem--handslotname-spellenchantid)).
+
+### `actor:SetModelByUnitCreatureDisplayID(unit)`
+
+Shows the display that the unit shows now, the same as
+`SetModelByCreatureDisplayID`, and returns `true`. It does not copy the
+unit. A player shows with the bare model of its race, and a pet or an NPC
+shows its own display. It returns `false` when the unit does not exist.
+
+### `actor:GetModelUnitGUID()`
+
+Returns the GUID of the unit that `SetModelByUnit` shows. It returns
+nothing for an actor that does not show a unit.
+
+### `actor:Dress()` / `actor:Undress([includeWeapons])` / `actor:UndressSlot(slot)`
+
+These work on an actor that shows a unit. `Dress` puts on everything that
+the unit wears. `Undress` takes everything off. With `includeWeapons` set to
+`false`, the weapons stay, the ranged weapon too. `UndressSlot` takes off the
+item in one inventory slot, from `1` (head) to `19` (tabard). Slot `18` is
+the ranged slot.
+
+### `actor:TryOn(item [, handSlotName, spellEnchantID])`
+
+Puts an item on the actor. The arguments are the same as the arguments of
+[`DressUpModel:TryOn`](#dressupmodeltryonitem--handslotname-spellenchantid).
+
+The model of the actor sets which items it can wear:
+
+- Weapons, shields, and off-hand items go on all models. A model that has no
+  hands holds nothing, but `TryOn` returns `Success`.
+- A ranged weapon (a bow, a gun, a crossbow, a wand or a thrown weapon) goes
+  into the ranged slot (`18`), not into a hand. `handSlotName` has no effect
+  on it. The actor can hold two melee weapons and a ranged weapon together.
+  As in the world, the ranged weapon shows only while the actor shoots with
+  [`actor:PlaySpellVisual`](#actorplayspellvisualspellid--target--casttimems--channeltimems).
+  This is a ClassicAPI extension.
+- Armor goes on an actor that shows a unit (`SetModelByUnit`), or on a
+  display of a character model. A creature display takes no armor. A unit in
+  a shapeshift form takes no armor.
+- Ammo (arrows and bullets) goes on all models. The actor holds nothing new,
+  but it shoots the ammo with a ranged spell of
+  [`actor:PlaySpellVisual`](#actorplayspellvisualspellid--target--casttimems--channeltimems).
+  This is a ClassicAPI extension.
+
+The actor holds the weapons as `SetSheathed` sets. An actor that shows a
+creature display or a model file can hold two one-hand weapons, as the world
+shows the weapons of a creature. A second one-hand weapon then goes into the
+off hand. An actor that shows a unit holds two one-hand weapons only when
+the unit is your character and you can dual wield.
+
+If the model is not loaded yet, the actor wears the item when the model loads.
+`TryOn` then returns `Success`. If the item is not in the item cache, `TryOn`
+returns `DataPending`. The actor wears the item when the data arrives, in the
+hand and with the enchant glow that you gave.
+
+`TryOn` returns `NotEquippable` for an item that the model cannot wear. The
+next `SetModelBy...` call or `ClearModel` removes the items.
+
+```lua
+-- A creature display with a staff on its back.
+actor:SetModelByCreatureDisplayID(2510)
+actor:SetSheathed(true)
+actor:TryOn(18842)
+
+-- A hunter with a sword, a bow and arrows. The sword is in the hand until
+-- the hunter shoots.
+hunter:TryOn(18832) -- Brutality Blade
+hunter:TryOn(17069) -- Striker's Mark
+hunter:TryOn(19316) -- Ice Threaded Arrow
+```
+
+### `actor:DressPlayerSlot(slot)`
+
+Puts back the item that the unit of the actor wears in one inventory slot,
+from `1` (head) to `19` (tabard). This undoes a `TryOn` or an `UndressSlot`
+on that slot. If the unit wears nothing in the slot, the slot becomes empty.
+A helm or a cloak that the unit hides stays off.
+
+It works on an actor that shows a unit (`SetModelByUnit`), while the unit is
+near enough for your client to see it. A hand slot changes only that hand.
+Slot `18` puts back the ranged weapon of the unit. For example, after a two-hand weapon goes on with `TryOn`, `DressPlayerSlot(17)`
+puts the off-hand item of the unit back next to it.
+
+### `actor:IsSlotAllowed(slot)` / `actor:IsSlotVisible(slot)`
+
+`IsSlotAllowed` returns `true` when the actor can wear an item in the
+inventory slot:
+
+- The hands (`16` and `17`) and the ranged slot (`18`) are allowed on all
+  models.
+- The armor slots are allowed when `TryOn` can put armor on the actor.
+- The neck, the rings, and the trinkets are not allowed.
+
+It returns `false` for an actor that shows no model. `IsSlotVisible` returns
+the same value. An item in an allowed slot shows, but a ranged weapon shows
+only while the actor shoots.
+
+### `actor:GetItemTransmogInfo(slot)` / `actor:GetItemTransmogInfoList()`
+
+These return what the actor wears, as `ItemTransmogInfoMixin` tables. Each
+table has three fields:
+
+| Field | Value |
+|-------|-------|
+| `appearanceID` | The item ID, or `0` for an empty slot. |
+| `secondaryAppearanceID` | Always `0` (`Constants.Transmog.NoTransmogID`). |
+| `illusionID` | On a weapon, the SpellItemEnchantment ID of the enchant glow that the weapon shows. Else `0`. |
+
+`GetItemTransmogInfo` returns the table for one inventory slot, from `1`
+(head) to `19` (tabard). It returns nothing for an actor that shows no model,
+or for a slot number outside this range. `GetItemTransmogInfoList` returns a
+list of 19 tables, one for each inventory slot, in slot order.
+
+An actor that shows a player (`SetModelByUnit`) starts with the items that
+the player wears. A helm or a cloak that the player hides is `0`. The neck,
+the rings, and the trinkets are always `0`. An NPC or a creature display starts with all slots at `0`, also when its model wears
+items. `TryOn`, `UndressSlot`, `Undress`, and `DressPlayerSlot` change the
+values.
+
+`Constants.Transmog` holds the values that these fields use:
+
+| Field | Value |
+|-------|-------|
+| `NoTransmogID` | `0` |
+| `MainHandTransmogIsIndividualWeapon` | `-1` |
+| `MainHandTransmogIsPairedWeapon` | `0` |
+
+### `actor:SetItemTransmogInfo(info [, slot, ignoreChildItems])`
+
+Puts the item `info.appearanceID` on the actor, as `TryOn` does. A weapon
+shows the glow of the enchant `info.illusionID`. It returns the same
+`Enum.ItemTryOnReason` values as `TryOn`. These are the differences:
+
+- It shows no error message. The caller shows `ERR_NOT_EQUIPPABLE` when the
+  result is not `Success`.
+- A `slot` of `16` or `17` selects the hand that holds a weapon. With all
+  other values, the item goes into its own slot.
+- An `appearanceID` of `0` changes nothing and returns `NotEquippable`.
+  `UndressSlot` empties a slot.
+- `ignoreChildItems` has no effect.
+
+```lua
+-- Keep the outfit, try on an item, then put the outfit back.
+local saved = actor:GetItemTransmogInfoList()
+actor:TryOn(19019)
+for slot, info in ipairs(saved) do
+  if info.appearanceID == Constants.Transmog.NoTransmogID then
+    actor:UndressSlot(slot)
+  else
+    actor:SetItemTransmogInfo(info, slot)
+  end
+end
+```
+
+### `actor:SetSheathed(sheathed [, hidden])` / `actor:GetSheathed()`
+
+Puts the weapons of the actor in its hands or in their sheaths. `hidden`
+set to `true` hides them. The setting also applies to items that `TryOn`
+puts on later. After a ranged shot, the call also puts the ranged weapon
+away.
+
+### `actor:SetSheathedCategory(slot, category)`
+
+Sets where the item in a hand hangs while the actor's weapons are sheathed.
+`slot` is `16` (main hand) or `17` (off hand). Other slots change nothing.
+A ranged weapon has no sheath place. `category` is an
+`Enum.TransmogOutfitSlotOptionSheatheCategory` value:
+
+| Value | Name | Sheathed item |
+|---|---|---|
+| `0` | `Default` | At the place of the item. |
+| `1` | `Back` | A one-handed weapon from the hip goes on the back, as a two-handed weapon does. |
+| `2` | `Side` | A weapon from the back goes on the hip. |
+| `3` | `Hide` | Not shown. |
+
+A shield, and an item that has no sheath place, stay at their own place with
+`Back` and `Side`. The category stays with the hand: items that `TryOn`,
+`SetModelByUnit`, and `DressPlayerSlot` put in that hand later use it too.
+The category has no effect on an item in the hand while the weapons are not
+sheathed.
+
+```lua
+actor:SetSheathed(true)
+actor:SetSheathedCategory(16, Enum.TransmogOutfitSlotOptionSheatheCategory.Side)
+```
+
+### `actor:UseUnitSheatheCategory(useCategory)`
+
+`useCategory` set to `true` puts each sheathed item at its own place. The
+`SetSheathedCategory` categories have no effect until a call with `false`.
+Units do not keep a sheath category, so the place of the item is the place
+of the unit. The default is `false`.
+
+### `actor:SetAutoDress(autoDress)` / `actor:GetAutoDress()`
+
+Sets whether the next `SetModelByUnit` call dresses the actor.
+
+### `actor:IsGeoReady()`
+
+Returns `true` when the model and the item models on it have loaded.
+
+### `actor:ClearModel()` / `actor:IsLoaded()` / `actor:GetModelPath()`
+
+`ClearModel` removes the model. `IsLoaded` returns `true` after the model
+has loaded and `OnModelLoaded` has run. `GetModelPath` returns the file of
+the model, or `""` for a unit copy.
+
+### `actor:SetPosition(x, y, z)` / `actor:GetPosition()`
+
+Moves the actor in the scene.
+
+### `actor:SetYaw(yaw)` / `actor:SetPitch(pitch)` / `actor:SetRoll(roll)`
+
+Turns the actor, in radians. A model faces `+x` at yaw `0`, and a positive
+yaw turns it to the left. `GetYaw()`, `GetPitch()` and `GetRoll()` return
+the angles.
+
+### `actor:SetScale(scale)` / `actor:GetScale()`
+
+Sets the size of the actor. `1` is the size of the model file.
+
+### `actor:SetUseCenterForOrigin([x, y, z])` / `actor:IsUsingCenterForOrigin()`
+
+For each axis set to `true`, the center of the model stands at the position
+of the actor. For each axis set to `false`, the origin of the model file
+stands there. For example, `SetUseCenterForOrigin(false, false, true)`
+moves a model up or down so that its middle is at the actor's height.
+
+### `actor:GetActiveBoundingBox()` / `actor:GetMaxBoundingBox()`
+
+Each one returns six numbers: the bottom corner `x, y, z` and then the top
+corner `x, y, z`, in the coordinates of the model file.
+`GetActiveBoundingBox` gives the box of the current animation, and
+`GetMaxBoundingBox` gives the box of the whole model. Both return nothing
+until the model has loaded.
+
+### `actor:Show()` / `actor:Hide()` / `actor:SetShown(shown)`
+
+Shows or hides the actor. `IsShown()` returns whether the actor is set to
+show. `IsVisible()` also checks that the scene is visible.
+
+### `actor:FadeOut()` / `actor:IsFadingOut()`
+
+Fades the actor out over 2 seconds, as the world fades out a unit that goes
+away, for example a corpse. Then the actor hides: `IsShown()` returns
+`false`.
+
+- The fade starts from the alpha that the actor shows and slows at the end.
+- When the actor shows less than 1/100 alpha, or its model has not loaded,
+  it hides at once.
+- While the scene is paused, the fade stops where it is.
+- `actor:Show`, `actor:Hide` and `actor:SetShown` end the fade. Then the
+  actor shows at its alpha again, or hides.
+- `actor:GetAlpha` returns the alpha that you set. The fade does not change
+  it.
+
+`IsFadingOut` returns `true` while the actor fades out. This is a
+ClassicAPI extension.
+
+```lua
+-- A dead whelp lies for 1.5 seconds, then fades out.
+scene:After(1.5, function()
+    whelp:FadeOut()
+end)
+```
+
+### `actor:SetAlpha(alpha)` / `actor:GetAlpha()`
+
+Sets the opacity of the actor, from `0` to `1`. The alpha of the scene
+frame multiplies it.
+
+### `actor:SetAnimation(animation [, variation, animSpeed, animOffsetSeconds])`
+
+Plays an animation (an `AnimationData` ID, for example `0` for stand and
+`5` for run). When the animation ends, it plays again and `OnAnimFinished`
+runs. Use `OnAnimFinished` to go on to the next animation.
+
+| Argument | Default | Effect |
+|---|---|---|
+| `variation` | `nil` | One variation of the animation. `nil` plays any variation. |
+| `animSpeed` | `1` | The speed. `2` plays at double speed. |
+| `animOffsetSeconds` | `0` | Starts this many seconds into the animation. |
+
+`GetAnimation()` returns the animation. `GetAnimationVariation()` returns
+the variation, or `4294967295` when any variation plays.
+
+### `actor:SetAnimationBlendOperation(blendOperation)` / `actor:GetAnimationBlendOperation()`
+
+Sets how the next animation starts. `Enum.ModelBlendOperation.Anim` (`1`,
+the default) blends from the animation that plays.
+`Enum.ModelBlendOperation.None` (`0`) starts the new animation at once.
+
+### `actor:SetPaused(paused [, affectsGlobalPause])` / `actor:GetPaused()`
+
+Stops the animation of one actor at its current frame. The other actors
+continue. The actor still moves, turns and fades when you change it, and
+its animation does not end, so `OnAnimFinished` does not run. The flight
+sounds of its missiles and the sound of its spell ground area stop. When
+you unpause it, the animation continues from the same frame, and the
+sounds start again.
+
+The actor has two pause flags. `GetPaused` returns both: `paused,
+globalPaused`. `SetPaused(paused)` sets both flags. `SetPaused(paused,
+false)` sets only the first flag. The actor stops when either flag is
+`true`.
+
+### `actor:SetSpellVisualKit([spellVisualKitID, oneShot])` / `actor:GetSpellVisualKit()`
+
+Shows the effects of a spell visual kit (a `SpellVisualKit` ID) on the
+model, for example the glow in the hands of a caster. A new kit removes the
+effects of the old kit. `0` or `nil` removes the kit. With `oneShot` set to
+`true`, each effect plays one time. Without it, the effects last until the
+kit changes: an effect that has a lasting state shows it after it starts,
+for example the ice of Frost Nova after it forms, and the other effects
+loop. The kit
+does not play its animation or its sound: use `SetAnimation` for the
+animation.
+
+Most effects of a kit hang on a point of the model, for example a hand. A
+kit can also have one effect that stands on the ground where the actor is,
+for example the ice of Frost Nova's state kit (285). This effect stays at
+the place where the actor stood when the kit started. It does not move with
+the actor.
+
+```lua
+-- Cast a Fireball: hold the precast glow, then release it.
+caster:SetAnimation(51)            -- ReadySpellDirected
+caster:SetSpellVisualKit(30)       -- Fireball precast
+-- ...later:
+caster:SetAnimation(53)            -- SpellCastDirected
+caster:SetSpellVisualKit(38, true) -- Fireball cast
+target:SetSpellVisualKit(286, true) -- Fireball impact
+```
+
+### `actor:ApplySpellVisualKit(spellVisualKitID [, oneShot])`
+
+Adds the effects of a spell visual kit to the model. The kits that the model
+already shows stay: those of `SetSpellVisualKit`, of `PlaySpellVisual`, and
+of earlier calls of this method. With `oneShot` set to `true`, each effect
+plays one time. Without it, the effects stay until the model changes. As
+with `SetSpellVisualKit`, the kit does not play its animation or its sound.
+If the model has not loaded, the kit shows when it loads. This is a
+ClassicAPI extension.
+
+```lua
+target:ApplySpellVisualKit(286, true) -- a Fireball impact, the old kit stays
+```
+
+### `actor:PlayAnimationKit(animationKit [, isLooping])` / `actor:StopAnimationKit()`
+
+These have no effect. There are no animation kits in this game.
+
+### `actor:AttachToMount(rider, animation [, spellKitVisualID])`
+
+Seats another actor of the same scene on this actor, and returns `true`.
+The rider plays `animation` (`91` is the mount animation for most mounts).
+With `spellKitVisualID`, the rider also shows that spell visual kit. A
+rider that sits on another mount moves to this one. It returns `false` when
+either actor shows no model, when the rider is in another scene, or when
+the rider is this actor or the actor that this actor hangs on.
+
+The rider's position, turn and scale then count from the seat. To make the
+rider fit the mount, use `rider:SetScale(1 / mount:CalculateMountScale(rider))`.
+
+### `actor:DetachFromMount(rider)`
+
+Takes the rider off this actor, and returns `true`. The rider keeps its
+animation. It returns `false` when the rider does not sit on this actor.
+
+### `actor:CalculateMountScale(rider)`
+
+Returns the scale of this mount's creature display. A rider at a scale of
+`1` divided by this number has the same size as a player on that mount.
+
+### `actor:GetAttachmentPosition(attachmentID)`
+
+Returns the `x`, `y` and `z` of a point on the model, in the coordinates of
+`actor:SetPosition`. A missile, for example, can start at a hand. The point
+is where the model was in the last frame that the scene drew. It returns
+nothing until the model and the actor that it hangs on have loaded. It also
+returns nothing when the model does not have the point.
+
+These are some of the points: `1` is the right hand, `2` is the left hand,
+and `0` is the seat of a mount. This is a ClassicAPI extension.
+
+```lua
+local x, y, z = mage:GetAttachmentPosition(1)
+if x then
+  missile:SetPosition(x, y, z)
+end
+```
+
+### `actor:AttachToActor(parent, attachmentID)`
+
+Hangs this actor on a point of another actor of the same scene, and returns
+`true`. The actor then moves with that point: it follows the parent's
+position, turn and animation. The actor's own position, turn and scale then
+count from the point. If the parent's model does not have the point, the
+actor hangs at the parent's origin. An actor that hangs on another actor
+moves to the new parent.
+
+It returns `false` when either actor shows no model, when the parent is in
+another scene, or when the parent is this actor or hangs on this actor. This
+is a ClassicAPI extension.
+
+```lua
+-- A fireball in the mage's right hand.
+fireball:SetModelByPath("Spells\\Fireball_Missile_Low.mdx")
+fireball:AttachToActor(mage, 1)
+```
+
+### `actor:DetachFromActor()`
+
+Takes this actor off the actor that it hangs on, and returns `true`. The
+actor's position, turn and scale then count from the scene again. It returns
+`false` when the actor hangs on no actor. This also takes a rider off its
+mount. This is a ClassicAPI extension.
+
+### `actor:SetPlayAnimationSounds(enabled)` / `actor:GetPlayAnimationSounds()`
+
+Sets whether the animations of the model play their sounds, as the
+animations of a creature or a player do in the world. It is `false` by
+default. When it is `true`, the animations play these sounds:
+
+- The wing flaps and wing glides of flying creatures.
+- The fidget sounds and the stand voice of the creature. The stand voice
+  does not play every time, and all actors together play it at most once
+  every 10 seconds. A copy of your own character does not play it.
+- Footsteps and the death thud. These need a ground: the floor of the WMO
+  of the scene, its ground from
+  [`scene:SetWorldTerrain`](#scenesetworldterrainmapid-x-y--radius), or a
+  ground that you set with
+  [`scene:SetGroundTerrain`](#scenesetgroundterrainterraintypeid--scenegetgroundterrain).
+  Footsteps also need the `FootstepSounds` setting. At the surface of
+  water, footsteps splash.
+- The splash of the race of the unit, when the movement of the actor takes
+  it into or out of water that is deeper than two fifths of its height, or
+  when it starts to swim. Only an actor that shows a unit
+  ([`actor:SetModelByUnit`](#actorsetmodelbyunitunit--sheatheweapons-autodress-hideweapons-useplayernativeform-holdbowstring-customraceid))
+  has a race.
+- The sounds that some animations carry, with the `EmoteSounds` setting.
+- During the preparation of
+  [`actor:PlaySpellVisual`](#actorplayspellvisualspellid--target--casttimems--channeltimems),
+  the preparation sound of some spells.
+
+The sounds come from the creature display that the actor shows. An actor
+that shows a model file has only the sounds that its animations carry. The
+sounds play at the actor, and you hear them from the camera of the scene
+(see [Scene sounds](#scene-sounds)). Attacks play no weapon sounds, because
+an actor does not hit anything. To play a weapon sound or a voice, use
+[`actor:PlaySound`](#actorplaysoundsoundkitid). This is a ClassicAPI
+extension.
+
+```lua
+scene:SetGroundTerrain(5) -- grass
+wolf:SetPlayAnimationSounds(true)
+wolf:SetAnimation(5)      -- run
+```
+
+### `actor:SetShadowShown(shown)` / `actor:IsShadowShown()`
+
+Shows or hides a blob shadow under the model. It is the same dark blob that
+units have on the ground in the world. The default is off.
+
+- In a scene with a WMO
+  ([`scene:SetWorldModel`](#scenesetworldmodelpath--x-y-z--yaw--doodadset--mapid))
+  or ground
+  ([`scene:SetWorldTerrain`](#scenesetworldterrainmapid-x-y--radius)), the
+  shadow lies on the floor under the actor, as on the ground in the world.
+  It follows slopes and steps, and it fades with the height of the actor
+  above the floor. An actor with no floor under it shows no shadow.
+- In a scene with no WMO and no ground, the shadow lies flat on the plane of
+  the actor's position, below its feet.
+- The size of the shadow comes from the bounds of the model and from the
+  scale of the actor. The shadow turns with the yaw of the actor.
+- The shadow darkens what is behind it. It fades with the alpha of the
+  actor.
+- The model draws over its shadow, and over the shadows of the other
+  actors.
+- The shadow shows only while the `shadowLOD` cvar is `1`, as in the world.
+  This is the default value.
+- A hidden actor shows no shadow. An actor that hangs on another actor (a
+  seated rider, or an actor of `AttachToActor`) shows no shadow of its own.
+
+This is a ClassicAPI extension.
+
+### `actor:SetHighlight(kind, highlighted)` / `actor:IsHighlighted([kind])`
+
+Makes the model glow, as a unit in the world glows when it is your target or
+when it is under the cursor. `kind` is `"target"` or `"mouseover"`. The two
+kinds are separate: the actor glows while one or both are on. Both are off
+by default.
+
+- The colour of the glow is the ambient colour of the scene light at the
+  time that a kind goes on. A later change to the light does not change a
+  glow that is on.
+- The glow stays when the actor gets a new model.
+
+`IsHighlighted(kind)` returns `true` when that kind is on. With no `kind`,
+it returns `true` when one of the two is on. This is a ClassicAPI extension.
+
+```lua
+scene:SetScript("OnActorEnter", function(self, actor)
+    actor:SetHighlight("mouseover", true)
+end)
+scene:SetScript("OnActorLeave", function(self, actor)
+    actor:SetHighlight("mouseover", false)
+end)
+```
+
+### `actor:SetSelectionCircle(r, g, b [, a])` / `actor:ClearSelectionCircle()` / `actor:GetSelectionCircle()`
+
+Shows a selection circle under the feet of the actor. It is the same circle
+that the world shows under your target. The colour values are from 0 to 1,
+and `a` is 1 by default. An actor has no circle by default.
+
+- In a scene with a WMO or ground, the circle lies on the floor under the
+  actor. In a scene with neither, it lies flat at the height of the actor's
+  position.
+- The size of the circle comes from the bounds of the model and from the
+  scale of the actor, as for a unit in the world.
+- The circle adds its colour to what is behind it, so `a` sets how bright
+  it is. A dark colour shows less than a bright colour.
+- The shadow of the actor draws over its circle, as in the world.
+- The circle shows only while the `ObjectSelectionCircle` cvar is `1`, as in
+  the world. This is the default value.
+- A hidden actor, an actor with no model, and an actor that hangs on another
+  actor show no circle.
+
+`GetSelectionCircle` returns `r, g, b, a`, or nothing when the actor has no
+circle. This is a ClassicAPI extension.
+
+```lua
+-- A left click targets the actor under the cursor.
+local target
+scene:HookScript("OnMouseUp", function(self, button)
+    if button ~= "LeftButton" then
+        return
+    end
+    if target then
+        target:SetHighlight("target", false)
+        target:ClearSelectionCircle()
+    end
+    target = self:GetActorAtCursor()
+    if target then
+        target:SetHighlight("target", true)
+        target:SetSelectionCircle(1, 0, 0)
+    end
+end)
+```
+
+```lua
+mount:SetShadowShown(true)
+```
+
+### `actor:SetGroundReticle(radius [, valid])` / `actor:ClearGroundReticle()` / `actor:GetGroundReticle()`
+
+Shows the ground-target reticle at the position of the actor. It is the
+same circle that the world shows when you aim a spell such as Blizzard at
+the ground. `radius` is the radius in yards, and 0 gives a reticle of 1.39
+yards. With `valid` set to `false`, it shows the reticle that the world
+shows out of range. `valid` is `true` by default. An actor has no reticle
+by default.
+
+- In a scene with a WMO or ground, the reticle lies on the floor, up to 2
+  yards above or below the position of the actor. In a scene with neither,
+  it lies flat at the height of the actor's position.
+- An actor with no model shows its reticle too, so an empty actor can mark
+  a point on the ground.
+- A hidden actor shows no reticle.
+- At the login and character screens, no reticle shows.
+
+`GetGroundReticle` returns `radius, valid`, or nothing when the actor has no
+reticle. This is a ClassicAPI extension.
+
+```lua
+-- Marks where a storm lands, then shows the storm.
+marker:SetPosition(x, y, z)
+marker:SetGroundReticle(6)
+marker:Show()
+scene:After(0.6, function()
+    marker:ClearGroundReticle()
+    storm:SetPosition(x, y, z)
+    storm:SetModelBySpellArea(10, 6)
+end)
+```
+
+### `actor:SetNameText(text [, r, g, b])` / `actor:ClearNameText()` / `actor:GetNameText()`
+
+Shows a name over the head of the actor. It looks the same as the name of a
+unit in the world: the same font, at the same point over the head. The
+colour values are from 0 to 1, and the colour is white by default. An actor
+has no name by default.
+
+- The name sits at the point that
+  [`actor:GetNamePosition`](#actorgetnameposition) returns, and turns to
+  face the camera.
+- The name is larger over a tall model, as in the world.
+- A new line (`\n`) in the text starts a second line, as the guild line of
+  a player. The name moves up for each line that you add.
+- The name shows and hides with the model.
+- An empty text removes the name, as `ClearNameText` does.
+- A call with the same text and a new colour changes only the colour.
+- The names show only in the world. At the login and character screens the
+  actors show no name.
+
+`GetNameText` returns `text, r, g, b`, or nothing when the actor has no
+name. This is a ClassicAPI extension.
+
+```lua
+local onyxia = scene:AcquireActor()
+onyxia:SetModelByCreatureDisplayID(8570)
+onyxia:SetNameText("Onyxia", 1, 0, 0)
+
+local player = scene:AcquireActor()
+player:SetModelByUnit("player")
+player:SetNameText(UnitName("player"))
+```
+
+### `actor:GetNamePosition()`
+
+Returns the point over the head of the actor where a unit's name sits, in
+scene coordinates: `x, y, z`. The world uses the same rules:
+
+- The name point of the model, when the model has one.
+- For a rider on a mount (`AttachToMount`), the rider name point of the
+  mount.
+- Else, a point over the feet that is 1.25 times the height of the model.
+
+The point moves with the animation of the model. The function returns
+nothing until the model has loaded. This is a ClassicAPI extension.
+
+To put a frame over the head, for example a health bar, give the point to
+[`scene:Project3DPointTo2D`](#sceneproject3dpointto2dx-y-z). Its
+result is in the frame's units multiplied by its effective scale, so divide
+it by the scale first.
+
+```lua
+-- A health bar follows the actor's head. The scene runs the script, so
+-- the bar can hide itself.
+scene:HookScript("OnUpdate", function()
+    local x, y, z = actor:GetNamePosition()
+    if not x then
+        bar:Hide()
+        return
+    end
+    local sx, sy = scene:Project3DPointTo2D(x, y, z)
+    local scale = scene:GetEffectiveScale()
+    bar:ClearAllPoints()
+    bar:SetPoint("BOTTOM", scene, "BOTTOMLEFT", sx / scale, sy / scale + 12)
+    bar:Show()
+end)
+```
+
+### `actor:PlaySpellVisual(spellID [, target [, castTimeMs [, channelTimeMs]]])`
+
+Plays the visual of a spell that this actor casts at `target`, and returns
+a cast ID. `target` is another actor of the same scene. Without a target, the
+spell is cast on this actor.
+
+`target` can also be a table of actors, for a spell that hits several
+targets at once, such as a volley. That is one cast: the preparation, the
+cast animation and their sounds play one time, and each target gets its own
+missile (or, for a spell without a missile, its own impact). The script
+`OnSpellVisualImpact` runs one time for each target, with the same cast ID.
+Actors of other scenes in the table are skipped.
+
+The visual plays in these steps, as it does in the world:
+
+1. The preparation: the effects and the animation of the preparation
+   repeat, and its sound plays. This step lasts `castTimeMs` milliseconds. Without `castTimeMs`,
+   it lasts the cast time of the spell. An instant spell has no
+   preparation.
+2. The cast: the actor does the cast animation, with its effects and its
+   sound.
+3. The missile, for a spell that has one: it leaves the hand during the
+   cast animation and flies to the target at the speed of the spell, with
+   its flight sound. It follows the target if the target moves.
+4. The impact: the target flinches when a missile hits it. Then the impact
+   effects, animation and sound play on the target.
+5. The channel, for a channeled spell such as Drain Life, Mind Flay or
+   Hellfire: after the cast, the channel effects of the spell stay on the
+   actor and its channel animation repeats. A beam goes from the hand of
+   the actor to the target and follows them, for example the green beam of
+   Drain Life. The channel lasts `channelTimeMs` milliseconds. Without
+   `channelTimeMs`, it lasts the duration of the spell. A spell that lasts
+   until it is cancelled channels until `StopSpellVisual`.
+
+When the spell reaches its target, the `OnSpellVisualImpact` script of
+this actor runs with `(self, spellID, target, castID)`. `target` is the
+actor that the spell hit. For a spell cast on itself, `target` is this
+actor. `castID` is the value that `PlaySpellVisual` returned, so you can
+find the cast when several casts are on their way. The script runs when the
+missile arrives. For a spell without a missile, it runs at the cast, during
+the next update of the actor. An interrupted spell does not reach its
+target, so the script does not run for it. Use this script to apply the
+result of the spell at the moment that the impact shows.
+
+You hear the sounds from the camera of the scene (see
+[Scene sounds](#scene-sounds)). The sounds of the caster play at the
+caster, the sounds of the impact play at the target, and the flight sound
+moves with the missile. While the scene or the caster is paused, the flight
+sound stops. It starts again when the pause ends.
+
+Some spells shake the camera of the scene, as they shake the camera in the
+world. For example, Thunder Clap and War Stomp shake it when they are cast,
+and Knockdown shakes it at the impact. The camera moves, but it does not
+turn. A shake is strongest within 9 yards of the camera, weaker farther
+away, and gone past 80 yards. While the scene is paused, its shakes stop.
+The auras of `AddAuraVisual`, the kits of `SetSpellVisualKit` and
+`ApplySpellVisualKit`, and the ground areas of `SetModelBySpellArea` shake
+the camera in the same way.
+
+A spell with a chain effect, for example Chain Lightning, also shows a bolt
+of lightning at the cast. The bolt goes from the hand of the caster to the
+target, and it follows the two actors when they move. It lasts as long as
+the effect of the spell gives, 1 second for Chain Lightning. When the caster
+or the target is hidden, the bolt does not show. The bolt goes to the one
+target only. For a chain that jumps from target to target, play the spell
+again from each target.
+
+A ranged spell (for example Auto Shot, Aimed Shot or Throw) uses the ranged
+weapon of the actor, as in the world. Put the weapon on with `actor:TryOn`:
+a bow, a gun, a crossbow, a wand or a thrown weapon goes into the ranged
+slot.
+
+- The weapon gives the parts of the visual that the spell does not have,
+  for example the draw, the shot animation and the flight sound. Auto Shot
+  has no visual of its own, so all of its visual comes from the weapon.
+- When the spell has no missile model, the missile is the ammo of the actor
+  (`actor:TryOn` of arrows or bullets). Without ammo, a bow or a crossbow
+  shoots a plain arrow, and a gun shoots a bullet. A thrown weapon throws
+  itself.
+- A bullet does not show in flight, as in the world.
+- A spell with its own missile, for example Aimed Shot, keeps its missile.
+- When the spell starts, the melee weapons of the actor go to their
+  sheaths and the ranged weapon comes into a hand: a bow or a crossbow into
+  the left hand, a gun, a wand or a thrown weapon into the right hand. The
+  weapons stay so until the next `actor:SetSheathed`. Before the first
+  ranged spell, the ranged weapon does not show.
+- While the spell prepares, the actor holds an arrow in its hand. When the
+  animation of the actor draws the bow, the bow pulls and the arrow goes on
+  the string. When the actor shoots, the bow releases. A gun or a crossbow
+  keeps the ammo off the string.
+- A bow has a string. The string pulls back to the hand with the arrow,
+  and it is straight again when the bow releases.
+- An instant shot plays only the shot animation, so the bow does not draw.
+- An arrow or a thrown weapon that hits stays in the target for 5 seconds,
+  at the point that it flew to. A bullet does not stay.
+- An actor that plays a death animation shows no animation of a spell over
+  it, for example a wound from a missile that arrives late.
+
+A second call ends a preparation that has not finished. Missiles that are
+in flight go on, and so do channels: use `StopSpellVisual` to end a
+channel. A paused actor (`actor:SetPaused`) holds its spells where
+they are. It returns `nil` when the spell has no visual, when this actor
+shows no model, or when the target is in another scene. A ranged spell
+without a visual of its own also needs a ranged weapon. This is a ClassicAPI
+extension, and so is `OnSpellVisualImpact`.
+
+```lua
+mage:PlaySpellVisual(133, dragon) -- Fireball
+priest:PlaySpellVisual(2061)      -- Flash Heal on itself
+hunter:PlaySpellVisual(75, dragon) -- Auto Shot, with the bow and arrows of the actor
+
+local damage = {}
+mage:SetScript("OnSpellVisualImpact", function(self, spellID, target, castID)
+    print("hit for", damage[castID])
+    damage[castID] = nil
+end)
+local castID = mage:PlaySpellVisual(133, dragon)
+if castID then
+    damage[castID] = 40
+end
+```
+
+### `actor:PlaySpellVisualAtPoint(spellID, x, y, z [, castTimeMs [, channelTimeMs]])`
+
+Plays the visual of a spell that this actor casts at a point on the ground,
+and returns a cast ID. `x`, `y` and `z` are the point, in the coordinates of
+the scene. The preparation, the cast and the channel are the same as for
+[`actor:PlaySpellVisual`](#actorplayspellvisualspellid--target--casttimems--channeltimems).
+The ground point changes these steps:
+
+- A spell without a missile, for example Inferno, shows its ground effect at
+  the point when it is cast. The effect turns with the facing of this actor
+  and grows with its scale. It plays one time, then it goes, and its
+  particles go when their time ends. The sounds of the effect play at the
+  point.
+- A spell with a missile flies the missile to the point. The impact effect
+  of the spell stays at the point until its particles go.
+- No actor is hit, so no impact animation plays.
+
+The `OnSpellVisualImpact` script of this actor runs with `nil` as the
+target: at the cast for a spell without a missile, or when the missile
+arrives. `StopSpellVisual` stops these casts as it stops the others. It
+returns `nil` when the spell has no visual or this actor shows no model.
+This is a ClassicAPI extension.
+
+```lua
+-- Inferno: the meteor falls where the dragon stands.
+local x, y, z = dragon:GetPosition()
+warlock:PlaySpellVisualAtPoint(1122, x, y, z)
+```
+
+### `actor:StopSpellVisual([castID])`
+
+Interrupts the spells that this actor still prepares with
+[`actor:PlaySpellVisual`](#actorplayspellvisualspellid--target--casttimems--channeltimems),
+and ends its channels: their effects, animation and beams stop. With
+`castID` (a value that `PlaySpellVisual` returned), it stops only that
+cast.
+The effects, the color and the animation of the preparation stop. A drawn
+bow comes down, and the arrow leaves the hand. A spell that is already cast
+goes on, and its missile flies to the target. Use it when an actor dies or
+stops in the middle of a cast. This is a ClassicAPI extension.
+
+```lua
+boss:StopSpellVisual()
+boss:SetAnimation(1) -- death
+```
+
+### `actor:AddAuraVisual(spellID)`
+
+Shows the aura of a spell on this actor, as a unit in the world shows an
+aura that it carries. It returns `true`, or `false` when the spell has no
+aura visual. The effects of the aura stay on the actor until
+`RemoveAuraVisual`. For example, the orbs of Lightning Shield circle the
+actor. Some auras also leave an effect on the ground where the actor
+stands. The ground effect of a spell that roots, for example the ice of
+Frost Nova, moves with the actor. Some auras also change the color of the
+actor. The sound of the aura plays when it shows, from the actor. A few
+auras repeat their sound until they end. A sound that does not play twice
+at once in the world, for example the crack of Frost Nova's ice, plays one
+time when many actors get the aura together.
+
+Some auras also have an animation, for example the stun of a stun aura.
+While the actor does not move, it plays the animation of its newest aura
+with one, in place of its own animation, and a death replaces it. When the
+actor moves, it plays its own animation again. After the aura ends, the
+animation finishes its cycle, then the actor's own animation plays.
+
+An actor shows any number of auras at the same time, and they show next to
+the kit of `SetSpellVisualKit`. A spell shows one time: when you add the
+same spell again, nothing changes. The auras stay when the actor gets a new
+model, and they show again when the new model has loaded. `ClearModel`
+removes them. This is a ClassicAPI extension.
+
+```lua
+hero:AddAuraVisual(324)  -- Lightning Shield
+hero:AddAuraVisual(17)   -- Power Word: Shield, at the same time
+```
+
+### `actor:RemoveAuraVisual([spellID])`
+
+Removes the aura of a spell from this actor. Without `spellID`, it removes
+every aura. The effects end as they do in the world: some fade out, the
+others stop, and their particles go when their time ends. The color that
+the aura gave goes too. This is a ClassicAPI extension.
+
+```lua
+hero:RemoveAuraVisual(324)
+```
+
+### `actor:PlayLevelUpEffect()`
+
+Plays the glow that the world shows on a unit that gains a level. The glow
+rises from the feet of the actor one time, with the level-up sound. The
+model of the actor must be loaded. When you call the function again before
+the glow ends, a second glow plays over the first. This is a ClassicAPI
+extension.
+
+```lua
+hero:PlayLevelUpEffect()
+```
+
+### `actor:PlaySound(soundKitID)`
+
+Plays a sound one time at the position of the actor. `soundKitID` is a row
+of `SoundEntries.dbc`, as for `PlaySound`. You hear the sound from the
+camera of the scene (see [Scene sounds](#scene-sounds)). Use it for the
+sounds that come from combat in the world, for example voices and weapon
+swings.
+
+The function returns `willPlay, soundHandle`, as `PlaySound` does.
+`willPlay` is `false` when the sound does not play. This also occurs when
+the actor is farther from the camera than the range of the sound.
+`StopSound(soundHandle)` stops the sound. The sound stays at the position
+where it started. It does not move with the actor. This is a ClassicAPI
+extension.
+
+```lua
+warrior:PlaySound(2941) -- the attack voice of a human male
+```
+
+### `actor:SetMovementEnabled(enabled)` / `actor:IsMovementEnabled()`
+
+Sets whether the actor moves as a character moves in the world. The default
+is off. The actor moves on the WMO of the scene
+([`scene:SetWorldModel`](#scenesetworldmodelpath--x-y-z--yaw--doodadset--mapid)):
+
+- It walks and runs on the floors, and it steps up and down small ledges.
+- It slides along walls and props.
+- It falls where the floor ends, and it jumps.
+- It swims in the liquids of the WMO and of the terrain.
+- In shallow water it leaves foam rings, and wakes when it moves, as a
+  character does in the world, with the `waterRipples` setting.
+
+The actor moves at the speeds of a character: it runs 7 yards a second,
+walks 2.5, backs up 4.5, swims 4.72 and swims backward 2.5. It turns half a
+circle each second. To change these speeds, use
+[`actor:SetMovementSpeed`](#actorsetmovementspeedspeedtype-speed--actorgetmovementspeedspeedtype).
+The size of its body comes from the model data of its
+creature display, at the scale of the actor. An actor with no creature
+display has a body 2/3 yard wide and 2.03 yards tall.
+
+When you turn the movement on, and when you call `actor:SetPosition` while
+it is on, the actor falls to the floor below its position. While the
+movement is on, the position, the yaw and the pitch of the actor follow the
+movement:
+
+- `actor:GetPosition` and `actor:GetYaw` give the position and the facing
+  that the movement gives.
+- `actor:SetYaw` turns the actor at once.
+- The actor tilts up or down only while it swims forward or backward.
+- The body of the model turns toward the side that the actor strafes to.
+  When the actor stands, its shoulders and its head turn first, and its
+  body follows after a quarter turn.
+
+While the movement is on, the actor also plays the movement animations of a
+character. It walks, runs, backs up, shuffles when it turns in place,
+swims, jumps, falls and lands as a character does. Its move animations play
+at the speed that it moves. An animation that you set with
+`actor:SetAnimation` plays until it ends or until the movement changes.
+Then the actor plays its movement animation again. An actor that plays a
+death animation keeps it. When Death (1) ends, the actor lies Dead (6), and
+when Drown (131) ends, it lies Drowned (132), as a dead unit does in the
+world.
+
+Without a loaded WMO, the actor does not move. While a part of the WMO in
+the way loads, the actor waits. This is a ClassicAPI extension.
+
+```lua
+hero:SetPosition(x, y, z)
+hero:SetMovementEnabled(true) -- the hero falls to the floor below
+hero:StartMovingForward()
+```
+
+### Movement commands
+
+These actor methods control an actor while
+[`actor:SetMovementEnabled`](#actorsetmovementenabledenabled--actorismovementenabled)
+is on. Each one returns `applied`, which is `false` when the actor refused
+the command or keeps it until it lands. Without the movement, the methods
+do nothing and return nothing.
+
+| Method | Effect |
+|---|---|
+| `StartMovingForward()` | Starts the actor moving forward. It runs, or it walks while `SetWalking` is on. |
+| `StartMovingBackward()` | Starts the actor walking backward. |
+| `StopMoving()` | Stops the actor moving forward or backward. |
+| `StartStrafingLeft()` / `StartStrafingRight()` | Starts the actor moving to its left or to its right. |
+| `StopStrafing()` | Stops the actor moving to the side. |
+| `StartTurningLeft()` / `StartTurningRight()` | Starts the actor turning to its left or to its right. |
+| `StopTurning()` | Stops the actor turning. |
+| `Jump()` | Makes the actor jump. `false` when the actor is already in the air. |
+| `StartPitchingUp()` / `StartPitchingDown()` | Starts the actor turning its swim up or down. `false` when the actor does not swim. |
+| `StopPitching()` | Stops the actor turning its swim up or down. The actor keeps the angle that it reached. `false` when it did not turn up or down. |
+
+A moving actor goes on until you stop it. In the air, the actor keeps the
+way that it jumped or fell. A command to move or to stop takes effect when
+the actor lands. Each command ends a move of
+[`actor:MoveTo`](#actormovetox-y-z--facing).
+
+```lua
+hero:StartMovingForward()
+hero:StartTurningLeft() -- the hero runs in a circle
+hero:Jump()
+```
+
+### `actor:IsFalling()`
+
+Returns `falling, verticalSpeed`. `falling` is `true` while the actor is in
+the air: when it jumps and when it falls. `verticalSpeed` is the speed in
+yards a second, up positive. It is there only while the actor is in the
+air. Without the movement, the function returns `false`. This is a
+ClassicAPI extension.
+
+### `actor:IsSwimming()`
+
+Returns whether the actor swims. An actor swims when the liquid over its
+feet is deeper than three quarters of its height. It stays level in the
+water unless it swims up or down. It stops swimming when it leaves the
+water or rises near the surface. This is a ClassicAPI extension.
+
+### `actor:MoveTo(x, y, z [, facing])`
+
+Moves the actor to a point of the scene along the ground, as the server
+moves a creature in the world. The movement of the actor must be on
+([`actor:SetMovementEnabled`](#actorsetmovementenabledenabled--actorismovementenabled)).
+
+- The actor goes in a straight line to the point, at its own speed. It
+  runs, or it walks while `SetWalking` is on. In the water it swims.
+- It follows the floor, and it falls where the floor ends.
+- A wall does not stop the move. When the actor is 3 yards or more from
+  its position on the line, it goes to that position at once.
+- When the actor arrives, it stops. If you give `facing`, the actor turns
+  to that yaw.
+- Then the `OnMoveFinished` script of the actor runs, with `(self)`.
+
+When the point is 1/6 yard away or less, the actor stops where it stands.
+Then `OnMoveFinished` runs at the next update of the actor.
+
+Another `MoveTo`, a [movement command](#movement-commands),
+`actor:SetWalking`, `actor:SetPosition` and `actor:SetYaw` end the move.
+Then `OnMoveFinished` does not run for it. This is a ClassicAPI extension,
+and so is `OnMoveFinished`.
+
+```lua
+-- A guard that walks between two points.
+local route = { {10, 0, 0}, {-10, 0, 0} }
+local leg = 1
+guard:SetWalking(true)
+guard:SetScript("OnMoveFinished", function(self)
+    leg = 3 - leg
+    self:MoveTo(unpack(route[leg]))
+end)
+guard:MoveTo(unpack(route[leg]))
+```
+
+### `actor:KnockBack(fromX, fromY, horizontalSpeed, verticalSpeed)`
+
+Throws the actor away from the point (`fromX`, `fromY`), as a knockback
+spell throws a character in the world. The movement of the actor must be on
+([`actor:SetMovementEnabled`](#actorsetmovementenabledenabled--actorismovementenabled)).
+Returns `true`, or `false` while the movement is off.
+
+- The actor flies away from the point at `horizontalSpeed` yards a second
+  along the ground. A negative `horizontalSpeed` pulls it toward the point.
+- It goes up at `verticalSpeed` yards a second at the start. Then it falls
+  as a jump falls.
+- When the actor stands on the point, it flies backward from the way that
+  it faces.
+- The direction does not change in the air. When the actor lands, it stops.
+- Walls and props block the flight, as they block any movement.
+- The actor plays its fall animation. When it lands, it plays its landing
+  animation. An actor that plays a death animation keeps it, so a dead
+  actor flies in its death pose.
+- A swimming actor stops swimming.
+
+`KnockBack` ends a move of
+[`actor:MoveTo`](#actormovetox-y-z--facing). Then `OnMoveFinished` does not
+run for it. It also stops the spells that the actor prepares, as
+[`actor:StopSpellVisual`](#actorstopspellvisualcastid) does. A
+[movement command](#movement-commands) that you give in the air takes effect
+when the actor lands, as after a jump. Give a new `MoveTo` only after the
+actor lands, when [`actor:IsFalling`](#actorisfalling) returns `false`. This
+is a ClassicAPI extension.
+
+```lua
+-- An explosion at (x, y) throws the actors near it.
+for _, actor in ipairs(nearby) do
+    actor:KnockBack(x, y, 12, 8)
+end
+```
+
+### `actor:SetWalking(walking)` / `actor:IsWalking()`
+
+Sets whether the actor walks instead of running, when it moves forward and
+when it moves with `actor:MoveTo`. The default is off. A change while the
+actor moves changes its speed and its animation. In the air, the speed
+changes when the actor lands. `SetWalking` ends a move of `actor:MoveTo`. This is a ClassicAPI extension.
+
+### `actor:SetMovementSpeed(speedType, speed)` / `actor:GetMovementSpeed(speedType)`
+
+Sets one of the speeds of the actor, as the server changes the speed of a
+creature in the world. `speedType` is one of these:
+
+| `speedType` | The speed | Default |
+|---|---|---|
+| `"walk"` | Walking, in yards a second | 2.5 |
+| `"run"` | Running, in yards a second | 7 |
+| `"runBack"` | Moving backward, in yards a second | 4.5 |
+| `"swim"` | Swimming, in yards a second | 4.72 |
+| `"swimBack"` | Swimming backward, in yards a second | 2.5 |
+| `"turn"` | Turning, in radians a second | 3.14 |
+
+`speed` must be more than 0.
+
+- When the actor moves, it changes to the new speed at once. Its movement
+  animation and the speed of the animation change with it.
+- A move of `actor:MoveTo` keeps the speed that it started with. The next
+  `MoveTo` uses the new speed.
+- The speeds apply only while the movement of the actor is on
+  ([`actor:SetMovementEnabled`](#actorsetmovementenabledenabled--actorismovementenabled)).
+  While it is off, `SetMovementSpeed` does nothing. When you turn the
+  movement off, the speeds go back to the defaults.
+
+`GetMovementSpeed` returns the speed, or nothing while the movement is off.
+This is a ClassicAPI extension.
+
+```lua
+whelp:SetMovementEnabled(true)
+whelp:SetMovementSpeed("run", 4.4) -- slower than a character
+whelp:MoveTo(x, y, z)
+```
+
+### `actor:GetCameraPivotHeight(distance)`
+
+Returns the height above the feet of the actor that the camera of the
+world looks at for a character like this actor. `distance` is the
+distance from the camera to the actor, in yards. The
+[follow camera](#follow-camera) uses this height.
+
+The height comes from the model and the scale of the actor:
+
+- It is the height of the mouth of the model, plus 7/72 yard. A model
+  without a mouth gives 0.9 of the height of its collision box.
+- When `distance` is less than 1.8315 yards, the height is lower while the
+  actor plays one of these animations: 97 (SitGround), 100 (Sleep), 102,
+  103 and 104 (on a chair), 6 (Dead) and 115 (KneelLoop). When the CVar
+  `cameraHeightIgnoreStandState` is on, these animations do not change
+  the height.
+- While the actor swims, the height is lower when the swim animation of
+  the model is lower than its stand animation.
+- The height is always from 5/6 to 15 yards.
+
+The function returns nothing until the model has loaded. This is a
+ClassicAPI extension.
+
+### Actor scripts
+
+Set them with `actor:SetScript`, `actor:HookScript` or the `<Scripts>`
+element of an `<Actor>` template. `actor:GetScript` and `actor:HasScript`
+work as they do on frames.
+
+| Script | Runs |
+|---|---|
+| `OnLoad` | After `CreateActor` has applied the template. |
+| `OnUpdate(self, elapsed)` | Each frame while the scene shows. |
+| `OnModelLoading` | When the actor gets a new model. |
+| `OnModelLoaded` | When the model and its clothes have loaded. |
+| `OnModelCleared` | When the actor loses its model. |
+| `OnAnimFinished` | Each time the animation ends. |
+| `OnSpellVisualImpact(self, spellID, target, castID)` | When a spell of `actor:PlaySpellVisual` reaches its target. |
+| `OnMoveFinished` | When the actor arrives at the point of `actor:MoveTo`. |
+
+An actor also has `GetObjectType()` (`"ModelSceneActor"`),
+`IsObjectType(type)`, `GetName()` and `GetParent()` (the scene).
+
+### `<Actor>` templates
+
+A virtual `<Actor>` element is a template for `CreateActor`:
+
+```xml
+<Actor name="MyHorseActorTemplate" mixin="MyHorseMixin" virtual="true" scale="1.5">
+    <Scripts>
+        <OnLoad method="OnLoad"/>
+        <OnModelLoaded method="OnModelLoaded"/>
+    </Scripts>
+</Actor>
+```
+
+It takes `inherits`, `mixin`, `parentKey`, `parentArray`, `alpha`, `scale`
+and `file` (a model path), and the `<Scripts>` and `<KeyValues>` children.
+`parentKey` and `parentArray` put the actor on the scene.
+
+### `C_ModelInfo.GetModelSceneInfoByID(modelSceneID)`
+
+Returns four values for a model scene: `modelSceneType`, a table of the
+camera IDs, a table of the actor IDs, and `flags`. Model scenes `4` (mounts),
+`44` (the Qiraji battle tanks) and `596` are available. For other IDs, the
+function returns nothing.
+
+### `C_ModelInfo.GetModelSceneCameraInfoByID(modelSceneCameraID)`
+
+Returns a table with the settings of a scene camera: `modelSceneCameraID`,
+`scriptTag`, `cameraType` (`"OrbitCamera"`), `target`, `yaw`, `pitch`,
+`roll`, `zoomDistance`, `minZoomDistance`, `maxZoomDistance`,
+`zoomedTargetOffset`, `zoomedYawOffset`, `zoomedPitchOffset`,
+`zoomedRollOffset` and `flags`. `target` and `zoomedTargetOffset` are
+`Vector3DMixin` objects.
+
+### `C_ModelInfo.GetModelSceneActorInfoByID(modelActorID)`
+
+Returns a table with the settings of a scene actor: `modelActorID`,
+`scriptTag`, `position` (a `Vector3DMixin` object), `yaw`, `pitch`, `roll`,
+`normalizeScaleAggressiveness`, `useCenterForOriginX`,
+`useCenterForOriginY`, `useCenterForOriginZ` and `modelActorDisplayID`.
+
+### `C_ModelInfo.GetModelSceneActorDisplayInfoByID(modelActorDisplayID)`
+
+Returns a table with the animation, alpha and scale that a scene actor
+starts with: `animation`, `animationVariation`, `animSpeed`,
+`animationKitID`, `spellVisualKitID`, `alpha` and `scale`.
 
 ## Mount
 
@@ -18980,6 +20906,19 @@ C_MountJournal.GetMountFromSpell(133)   -- nil (Fireball)
 On Turtle WoW, a mount item does not have its mount spell. Each mount item
 has the spell "Add Mount to Collection" (46499), and this spell is not a
 mount. Only the mount spell in the spellbook gives a mount ID.
+
+### `C_MountJournal.GetMountFromItem(itemID)`
+
+Returns the mount ID of an item that summons a mount. The mount ID is the
+ID of the item's use spell. For an item that does not summon a mount, the
+function returns `nil`.
+
+`itemID` can be an item ID or an item link. When the game does not have
+the data for the item yet, the function returns `nil` and requests the
+data. Call the function again after the item data has arrived.
+
+On Turtle WoW, a mount item has the spell "Add Mount to Collection" (46499)
+in place of its mount spell. So the function returns `nil` for it.
 
 ### `C_MountJournal.GetMountInfoExtraByID(mountID)`
 
@@ -19024,21 +20963,19 @@ ShowMount(MyModel, 23219) -- shows display 14332 when the data is ready
 
 ## NameCache
 
-GUID-keyed cache of player names and classes. The engine itself
-maintains an in-memory `NameCache` at `0x00C0E228`, populated by
-`SMSG_NAME_QUERY_RESPONSE` — but it isn't exposed to Lua,
-and it doesn't survive `/reload`. This module surfaces it as
-`GetPlayerInfoByGUID` and adds an opt-in **persistent** layer that
-survives `/reload` and full client restarts.
+GUID-keyed cache of player names and classes. The game keeps in memory
+every player name that the server sends, and empties that cache each
+time you enter the world. `GetPlayerInfoByGUID` reads it. An opt-in
+**persistent** cache survives `/reload` and full client restarts.
 
 **`C_PlayerCache.SetEnabled`** turns on the on-disk cache. It is off
-by default. Without it, the module only reads the engine's in-memory
+by default. Without it, the functions read only the game's in-memory
 cache.
 
 Three sources feed the cache when it is on:
 
-1. **Name-query responses.** Every `SMSG_NAME_QUERY_RESPONSE` the
-   engine processes is copied to the cache. This covers chat,
+1. **Name-query responses.** Every player name that the server sends
+   is copied to the cache. This covers chat,
    group and raid sync, guild updates, and every player you can
    see — anything the engine queries a name for.
 2. **`C_PlayerCache.RememberPlayer`** (no-op when the cache is off).
@@ -19093,34 +21030,26 @@ Returns:
 | 2 `englishClass`   | `"WARRIOR"` (uppercase tag, the same value `UnitClass` returns as its 2nd return) — `ChrClasses.dbc` filename field. |
 | 3 `localizedRace`  | `"Human"` / `"Mensch"` / `"Humain"` etc. — from `ChrRaces.dbc` indexed by locale. |
 | 4 `englishRace`    | `"Human"`, `"Orc"`, `"Dwarf"`, `"NightElf"`, `"Scourge"` (the filename for what addons call Undead), `"Tauren"`, `"Gnome"`, `"Troll"` — from `ChrRaces.dbc` filename field. |
-| 5 `sex`            | `2` = male, `3` = female. Matches `UnitSex` convention (the cache stores `0`/`1`; we add `2`). |
+| 5 `sex`            | `2` = male, `3` = female. Matches `UnitSex` convention. |
 | 6 `name`           | Character name. |
 | 7 `realm`          | The realm that the server sends with the player's name, or `""` when the server sends no realm. |
 
-**Cache coverage**: the engine populates entries from
-`SMSG_NAME_QUERY_RESPONSE`. Anything the client has already seen
+**Cache coverage**: the game adds an entry each time the server sends
+a player's name. Anything the client has already seen
 populates the cache: chat (whispers, says, party chat), raid/group
 events, guild updates, visible objects (target, party, raid in
 zone). Names of offline friends never seen in chat are *not*
 cached — `GetPlayerInfoByGUID` returns `nil` for them until the
-client does something that triggers a name query. This module
-deliberately does not trigger queries from a passive getter; a
-future `C_PlayerInfo.RequestLoadPlayerByID` would do that
-explicitly and fire a load-result event.
+client does something that triggers a name query. This function
+does not send a name query.
 
 **Persistent fallback**: when
 [`C_PlayerCache.SetEnabled(true)`](#c_playercachesetenabledenabled)
 has been opted into, a per-realm on-disk cache extends coverage
-across sessions. If the engine cache does not have the player,
+across sessions. If the in-memory cache does not have the player,
 `GetPlayerInfoByGUID` uses the persistent cache. It returns `name`,
 `realm`, `class`, `race`, and `sex` from storage.
-Returns `nil` only when both the engine and persistent caches miss.
-
-**Implementation**: calls the engine's get-or-fetch primitive at
-`0x0055F080` with a NULL callback (pure cache read). The cache
-instance lives at `0x00C0E228`; entry layout (name, realm, race,
-sex, class) was reverse-engineered from the
-`SMSG_NAME_QUERY_RESPONSE` write path at `0x0055F310`.
+Returns `nil` only when both the in-memory and persistent caches miss.
 
 ### `UnitNameFromGUID(guid)`
 
@@ -19134,7 +21063,7 @@ It tries four sources in order:
 2. Your friends list — it keeps name and GUID for online and offline
    friends, so a friend resolves even when not synced and never seen
    in chat. Always on.
-3. The engine name cache — every player name that the client got in
+3. The in-memory name cache — every player name that the client got in
    this session, in range or not.
 4. The persistent on-disk name cache, when you have enabled it.
 
@@ -19154,8 +21083,8 @@ from your friends list. It is never `nil`, so you can test
 `realm == ""`.
 
 Doesn't trigger a network query on miss. To populate an unknown
-GUID, either let the engine receive a `SMSG_NAME_QUERY_RESPONSE`
-through normal chat/target interaction, or call
+GUID, either let the game get the player's name through normal
+chat/target interaction, or call
 [`C_PlayerCache.RememberPlayer`](#c_playercacherememberplayerguid-name-classtoken)
 explicitly.
 
@@ -19209,20 +21138,18 @@ Returns (vs. `GetPlayerInfoByGUID`):
 ### `C_PlayerCache.RememberPlayer(guid, name, classToken)`
 
 Adds a `(guid → name, classID, raceID, sex)` entry to the persistent
-name cache. For the engine-driven coverage (chat / group / guild /
-visible objects), no addon-side feeding is needed — those flow into
-the cache automatically through the engine's
-`SMSG_NAME_QUERY_RESPONSE` write path. This call exists for the
-*other* sources libunitscan-style addons harvest from but the engine
-NameCache doesn't see directly: `/who` results, mouseover, target
-snapshots, etc.
+name cache. The game adds players to the cache when it learns about them
+through chat, your group, your guild, or nearby units. This call is for the
+other sources that addons collect players from, such as `/who` results,
+mouseover, and target snapshots.
 
 ```
 C_PlayerCache.RememberPlayer(guid, name, classToken [, raceToken [, sex]])
 ```
 
-Returns `true` on success, `false` if the persistent cache isn't
-enabled or the required args are malformed.
+Returns `true` on success. Returns `false` when the persistent cache is
+off, or when `guid` or `name` is not valid. When the cache is on, a
+missing `guid`, `name`, or `classToken` raises an error.
 
 When the game already has the player's data from the server in this
 session, the call keeps the server's data. It still returns `true`.
@@ -19242,8 +21169,7 @@ session, the call keeps the server's data. It still returns `true`.
   `"SCOURGE"` (the filename for Undead). Same resolution as
   classToken, against `ChrRaces.dbc`. Omitted/unknown → leaves
   prior race alone.
-- `sex` *(optional)* — `0` (male) or `1` (female), matching the
-  wire-format convention the engine cache stores. `UnitSex`
+- `sex` *(optional)* — `0` (male) or `1` (female). `UnitSex`
   uses `2`/`3`; pass `UnitSex - 2` if you're forwarding
   that value. Omitted/`0` → leaves prior sex alone (so this call
   can't be used to flip a stored value back to male). The server's
@@ -19284,7 +21210,7 @@ client restarts.
 
 When enabled:
 
-- Every `SMSG_NAME_QUERY_RESPONSE` the engine processes is also
+- Every player name that the server sends is also
   written to `WTF\ClassicAPI\NameCache-<realm>@<realmList>.txt`.
 - Lua-side `C_PlayerCache.RememberPlayer` calls become effective
   (they're no-ops when the cache is disabled).
@@ -19319,15 +21245,12 @@ end
 ## NamePlate
 
 `C_NamePlate.*` returns nameplate `Frame` objects keyed off unit data.
-The engine doesn't ship the API, but the underlying data (per-unit
-nameplate pointer at `CGUnit + 0xE60`) exists. We enumerate visible
-units via the local-player-anchored object hash table, filter by
-`TYPEMASK_UNIT`, and return matches.
+The functions cover every visible unit that has a nameplate.
 
 The `"nameplateN"` unit-token family is also supported — see
 [Unit tokens](#unit-tokens-nameplaten) below. `NAME_PLATE_UNIT_ADDED`
-/ `_REMOVED` / `_CREATED` events fire via a per-tick visible-plate
-diff (see [the events section](#name_plate_created--name_plate_unit_added--name_plate_unit_removed-events)).
+/ `_REMOVED` / `_CREATED` events fire on the frame where the set of
+visible plates changes (see [the events section](#name_plate_created--name_plate_unit_added--name_plate_unit_removed-events)).
 
 ### `nameplateNotSelectedAlpha`
 
@@ -19354,7 +21277,7 @@ their own settings.
 ### `C_NamePlate.GetNamePlates()`
 
 Returns a 1-based table of nameplate `Frame` objects — one per
-CGUnit that currently has an allocated **Lua-registered** nameplate.
+unit that currently has an allocated **Lua-registered** nameplate.
 The frames are real Lua tables with methods (`:GetName()`,
 `:GetWidth()`, `:SetAlpha()`, etc.) and any addon-added decorations
 on them.
@@ -19408,9 +21331,9 @@ addon built, not this one.
 
 ### `C_NamePlate.GetNamePlateForUnit(unitToken)`
 
-Returns the nameplate Frame for a single unit (resolved via the
-engine's token-to-GUID path, so out-of-range party/raid members
-work too), or `nil` if the unit has no allocated nameplate.
+Returns the nameplate Frame for a single unit, or `nil` if the unit
+has no allocated nameplate. Any unit token works, including group
+tokens such as `party1` and `raid5`.
 
 ```lua
 local plate = C_NamePlate.GetNamePlateForUnit("target")
@@ -19426,7 +21349,7 @@ range. The engine can give that frame to a different unit.
 
 ### `C_NamePlate.GetNamePlateForGUID(guidString)`
 
-Same as `GetNamePlateForUnit` but takes the `"0xHHHHHHHHHHHHHHHH"`
+A ClassicAPI extension. Same as `GetNamePlateForUnit` but takes the `"0xHHHHHHHHHHHHHHHH"`
 GUID-string form. Useful when you've stored a unit GUID across
 events (e.g., converted the positional `"nameplateN"` token to a
 GUID via `UnitGUID(arg1)` at `NAME_PLATE_UNIT_ADDED` time) and need
@@ -19445,12 +21368,12 @@ end)
 ```
 
 Returns `nil` if the GUID doesn't parse, doesn't resolve to a
-visible CGUnit, or the unit has no allocated nameplate.
+visible unit, or the unit has no allocated nameplate.
 
 ### `C_NamePlate.GetNamePlateGUIDs()`
 
-Returns a 1-based table of GUID strings
-(`"0xHHHHHHHHHHHHHHHH"` format) — one per CGUnit with an allocated
+A ClassicAPI extension. Returns a 1-based table of GUID strings
+(`"0xHHHHHHHHHHHHHHHH"` format) — one per unit with an allocated
 nameplate, **regardless** of whether the frame has been registered
 with Lua. Catches default engine nameplates that
 [`GetNamePlates`](#c_nameplategetnameplates) can't surface as
@@ -19461,11 +21384,8 @@ frames.
 -- { "0xF13000C36C26FD02", "0xF130000009276912", ... }
 ```
 
-Walks the local-player-anchored object hash table for `TYPEMASK_UNIT`
-entries, filters by `*(unit + 0xE60) != nullptr`. The per-unit
-nameplate pointer is set by `FUN_006086E0`'s "show nameplate" path
-regardless of which nameplate system rendered it. Order follows
-hash-bucket iteration and isn't stable across calls.
+The list includes a plate no matter which nameplate system draws it.
+The order is not stable across calls.
 
 ### Unit tokens (`nameplateN`)
 
@@ -19495,10 +21415,9 @@ returns `false` for a currently-free slot. Stable for the lifetime of a
 single plate; no reordering, ever.
 
 Token chains work too — `"nameplate1target"`, `"nameplate1targettarget"`,
-etc. — by mirroring the engine's own `targettarget`-style suffix
-walker (read `UNIT_FIELD_TARGET` off `m_objectFields`, loop). Other
-suffixes (`pet`, `master`) aren't supported by the engine's
-own walker either, so they don't compose.
+etc. — the same way as `targettarget`. Other suffixes (`pet`,
+`master`) do not chain. They do not chain after the stock tokens
+either.
 
 Out-of-range indices return `nil` cleanly without raising "Unknown
 unit name" — `UnitExists("nameplate99")` just returns `false`.
@@ -19508,15 +21427,6 @@ unit name" — `UnitExists("nameplate99")` just returns `false`.
 party token. This includes `UNIT_HEALTH`, `UNIT_AURA`, `UNIT_COMBAT`, and
 `UNIT_NAME_UPDATE`. The events start after `NAME_PLATE_UNIT_ADDED` and stop
 after `NAME_PLATE_UNIT_REMOVED`.
-
-**Implementation note.** We hook `FUN_TOKEN_TO_GUID` (the central
-token→GUID resolver) so the entire `Script_Unit*` surface gains the
-new token form transparently. The hook is gated by an `SStrCmpI`
-prefix check against `"nameplate"`; non-nameplate tokens
-(`"player"`, `"target"`, `"partyN"`, etc.) fall straight through to
-the unmodified resolver. The ordered list is maintained alongside
-the existing `NAME_PLATE_UNIT_ADDED` / `_REMOVED` diff in the
-per-tick nameplate walker.
 
 ### Unit tokens (`markN`)
 
@@ -19534,8 +21444,8 @@ end
 `UnitExists("markN")` returns `false` when that marker is unset, when the
 marked unit is out of range / not synced, or when the marker is on a
 non-unit (a marked corpse, gameobject, or loot). Token chains compose —
-`"mark1target"`, `"mark1targettarget"` — via the same suffix walker as the
-other families.
+`"mark1target"`, `"mark1targettarget"` — the same as for the other token
+families.
 
 **Unit events fire for `"markN"`.** Every unit event fires with
 `arg1 == "markN"` for the marked unit, as it does for `"target"`. This
@@ -19808,9 +21718,8 @@ level-40 item at level 20" (RequiredLevel), and class/race-restricted gear.
 
 `itemID` is a number (item links are also accepted). Checks performed:
 
-1. **Proficiency** — for weapons/armor, the engine keeps a per-item-class
-   subclass-proficiency bitmask (fed by `SMSG_SET_PROFICIENCY`); the item's
-   subclass bit must be set. Item classes with no proficiency concept
+1. **Proficiency** — for weapons and armor, the player must have the
+   proficiency for the item's subclass. Item classes with no proficiency concept
    (consumables, trade goods, …) are unrestricted.
 2. **RequiredLevel** ≤ player level.
 3. **AllowableClass / AllowableRace** masks include the player.
@@ -19839,7 +21748,7 @@ C_PlayerInfo.CanUseItem(12717)  -- Plans: Lionheart Helm → false without the A
 
 ### `C_PlayerInfo.GUIDIsPlayer(guid)` / `GUIDIsCreature` / `GUIDIsPet` / `GUIDIsGameObject`
 
-Type checks on the raw 1.12 GUID format. GUIDs encode the
+Type checks on the raw GUID format. GUIDs encode the
 entity type in the high 16 bits of the qword — players have
 `0x0000` (low dword = player ID), creatures `0xF130xxxx`, pets
 `0xF140xxxx`, game objects (herbs / chests / etc.) `0xF110xxxx`,
@@ -19882,7 +21791,7 @@ these resolve it to a unit and return the requested attribute.
 | `C_PlayerInfo.GetName(playerLocation)` | `name` |
 | `C_PlayerInfo.GetClass(playerLocation)` | `className, classFilename, classID` |
 | `C_PlayerInfo.GetRace(playerLocation)` | `raceID` |
-| `C_PlayerInfo.GetSex(playerLocation)` | `sex` (1 neutral / 2 male / 3 female) |
+| `C_PlayerInfo.GetSex(playerLocation)` | `sex` (2 male / 3 female) |
 | `C_PlayerInfo.IsConnected([playerLocation])` | `isConnected` |
 
 ```lua
@@ -19893,18 +21802,15 @@ local raceID = C_PlayerInfo.GetRace(loc)          -- feed into C_CreatureInfo.Ge
 local sex = C_PlayerInfo.GetSex(loc)
 ```
 
-- **Supported location kinds: `unit` and `guid`.** Unit locations use their
-  token directly; GUID locations resolve only while the GUID maps to a
-  currently-visible unit (target, party/raid member, someone in range). The
-  chat-line / who / battlefield-score / community / voice kinds have no
-  client-side unit resolution in 1.12 and return nil.
-- Everything is read straight from the engine's own data — no `Unit*` Lua
-  wrappers are called. `GetName` uses the polymorphic object name getter (the
-  same path as `UnitNameFromGUID`); `GetSex` reads the `UNIT_FIELD_BYTES_0`
-  gender byte and reports it as `UnitSex`'s 2/3; `IsConnected` treats a
-  currently-synced object as online and otherwise consults the group-member
-  roster's online bit, exactly as `UnitIsConnected` does. `IsConnected` with
-  no argument defaults to the local player.
+- **Supported location kinds: `unit` and `guid`.** `GetName`, `GetClass`,
+  `GetRace`, and `GetSex` return nil unless the player is a visible unit
+  (your target, a party or raid member nearby, someone in range). This is
+  true for unit locations as well as GUID locations. The local player always
+  works. The chat-line, who, battlefield-score, community, and voice kinds
+  are not supported and return nil.
+- `GetSex` reports `2` / `3`, the same as `UnitSex`. `IsConnected` gives the
+  same answer as `UnitIsConnected`, so it also works for group members who
+  are not in range. With no argument, `IsConnected` checks the local player.
 - **`GetRace` / `GetClass`** return the numeric ids that
   `UnitRace` / `UnitClass` don't (those give only names). `classID` round-trips
   with [`C_CreatureInfo.GetClassInfo`](#c_creatureinfogetclassinfoclassid) and
@@ -19912,8 +21818,7 @@ local sex = C_PlayerInfo.GetSex(loc)
   `GetClass`'s `className` / `classFilename` are the same localized name +
   non-localized token (`"WARRIOR"`) those return.
 - An unresolvable or unsupported location returns nil. A malformed unit token
-  raises (the engine's token→GUID resolver rejects it), same as passing it to
-  `UnitName`/`UnitClass` directly.
+  raises an error, the same as passing it to `UnitName` or `UnitClass`.
 
 ## Profiling
 
@@ -20146,8 +22051,7 @@ in its third value.
 ### `C_QuestLog.GetQuestIDForLogIndex(index)`
 
 Returns the questID (Quest.dbc row ID) for the entry at the given 1-based
-quest log index. The stock `GetQuestLogTitle` doesn't return it, even
-though the engine has it internally.
+quest log index. The stock `GetQuestLogTitle` doesn't return it.
 
 - Returns the questID for real quests.
 - Returns `0` for header rows (zone / category dividers).
@@ -20195,35 +22099,31 @@ end
 
 ### `C_QuestLog.RequestLoadQuestByID(questID)`
 
-Asks the engine to fetch the static data for `questID` (title, description,
+Asks the game to fetch the static data for `questID` (title, description,
 objectives, reward text) from the server if not already cached. Returns no
 values — fire-and-forget.
 
 Fires `QUEST_DATA_LOAD_RESULT(questID, success)` when the data lands in the
 cache. Synchronously fired when the data was already cached
-(so polling code paths still work), asynchronously fired after
-`SMSG_QUEST_QUERY_RESPONSE` lands when the engine had to round-trip to the
-server.
+(so polling code paths still work), asynchronously fired after the server
+answers when the data was not cached.
 
-> **`success` is `1` or `nil`.** The engine's printf-style event
-> dispatcher has no `%b` token, so we encode the boolean as `1` for
-> success / `nil` for failure. `if success then ...` works as expected
+> **`success` is `1` or `nil`.** The value is `1` for success and `nil`
+> for failure. `if success then ...` works as expected
 > (`nil` falsy, `1` truthy). Same encoding as `ITEM_DATA_LOAD_RESULT`
 > and `GET_ITEM_INFO_RECEIVED`.
 
 > **Server limitation:** for *invalid* questIDs (ones the server doesn't
 > have), the server silently drops the query — it doesn't send a
-> "not found" response packet. The engine's pending callback never
-> resolves, so `QUEST_DATA_LOAD_RESULT` doesn't fire with `success=0`
-> either. Addons that need to handle
-> "request timed out" should use their own timer (the Lua polyfill at
-> `!!!ClassicAPI/Util/QuestUtil.lua` uses a 180-second wait).
+> "not found" response packet. As a result, `QUEST_DATA_LOAD_RESULT` does
+> not fire for these questIDs. If an addon must handle "request timed
+> out", use a timer in the addon.
 
 ```lua
 local f = CreateFrame("Frame")
 f:RegisterEvent("QUEST_DATA_LOAD_RESULT")
 f:SetScript("OnEvent", function()
-    -- vanilla 1.12: event payload is in `arg1`, `arg2`, ... globals
+    -- the event payload is in the `arg1`, `arg2`, ... globals
     if event == "QUEST_DATA_LOAD_RESULT" and arg2 == 1 then
         local questID = arg1
         -- title/description/objectives are now in the engine's quest cache
@@ -20245,12 +22145,7 @@ if C_QuestLog.IsOnQuest(215) then
 end
 ```
 
-Walks the same `VAR_QUEST_LOG_ENTRIES` array
-[`C_QuestLog.GetQuestIDForLogIndex`](#c_questloggetquestidforlogindexindex)
-reads and matches against each real entry's questID, skipping the
-zone/category header rows.
-
-Cheaper than the engine's `IsUnitOnQuest(logIndex, unit)`, which
+Cheaper than the stock `IsUnitOnQuest(logIndex, unit)`, which
 requires the addon to walk the log to find the matching index first
 and resolves a unit token even when the answer is just about the
 player. Same answer in a single call.
@@ -20269,27 +22164,23 @@ end
 
 For `unit == "player"` equivalent to
 [`C_QuestLog.IsOnQuest(questID)`](#c_questlogisonquestquestid). For
-other tokens (party/raid members, target), the unit must be in the
-engine's sync range — the data comes from `SMSG_QUESTGIVER_QUEST_DETAILS`
-broadcasts, which only reach you while the other player is within
-the client's sync window. Returns `false` for NPCs, units out of
+other tokens (party/raid members, target), the unit must be near you.
+The client gets the quest list of another player only while that player
+is near you. Returns `false` for NPCs, units out of
 range, and units that haven't synced their quest list yet.
 
-Returns `false` (no `lua_error`) for invalid input: non-string unit,
+Returns `false` (no Lua error) for invalid input: non-string unit,
 non-number / non-positive questID, unresolvable token, or unit that's
-not player-controlled (i.e., a creature). The
-`UNIT_FLAG_PLAYER_CONTROLLED` gate is mandatory — without it the
-`+0xE68` deref would AV on any NPC.
+not player-controlled (i.e., a creature).
 
 ### `C_QuestLog.GetTitleForQuestID(questID)`
 
-Returns the title (string) for `questID` from the engine's quest static-info
-cache, or `nil` if the data isn't loaded. Doesn't require the quest to be
+Returns the title (string) for `questID` from the quest cache, or `nil` if the data isn't loaded. Doesn't require the quest to be
 in the player's quest log — works for any questID once its data has been
 fetched. Header rows are excluded (their titles live in `QuestSort.dbc`,
 not in this cache); for those you'd use the existing `GetQuestLogTitle`.
 
-The cache is populated lazily — by the engine's own quest-log path when
+The cache is populated lazily — by the game when
 the player has the quest, or explicitly by
 `C_QuestLog.RequestLoadQuestByID`. If the title isn't there yet, queue a
 load and read on the event:
@@ -20310,8 +22201,8 @@ C_QuestLog.RequestLoadQuestByID(215)
 
 ### `C_QuestLog.GetQuestDetails(questID)`
 
-Returns a table with every field we know how to read from the engine's
-quest static-info cache for `questID`, or `nil` if the data isn't
+Returns a table with the static quest data for `questID` from the
+quest cache, or `nil` if the data isn't
 loaded. One round-trip alternative to calling
 `GetTitleForQuestID` / `GetQuestLogRewardMoney` / etc. across each of
 its individual accessors. Quest-helper-style addons that want
@@ -20334,7 +22225,7 @@ Like `GetTitleForQuestID`, this is a pure cache probe — pair it with
 | `rewardMoneyAtMaxLevel` | number | The level-60 reward bonus. Added to `rewardMoney` when the player is level 60; populated even on low-level quests. |
 | `rewardSpellID` | number | `spellID` of a spell *taught* on completion (e.g. profession recipes), or `0` for no learned spell reward. |
 | `srcItemID` | number | `itemID` the questgiver hands the player on accept (e.g. the sigil in *"Verdant Sigil"* — given on accept, read by the player, then turned back in). `0` = no source item. Same as the quest's `requirements[].id` for "give-then-return" quests. |
-| `questFlags` | number | Raw `QUEST_FLAGS_*` bitfield — only bit `0x08` (sharable) is positively confirmed-tested by the engine; other bits are presumed-stored but unverified. |
+| `questFlags` | number | Raw `QUEST_FLAGS_*` bitfield. Only bit `0x08` (sharable) has a known meaning. |
 | `isSharable` | boolean | Convenience extraction of bit `0x08` from `questFlags`. |
 | `description` | string | The questgiver's narrative text. Raw — printf-style `$N` (player name), `$C` (class), `$R` (race) tokens are **not** substituted; use `string.gsub` if you need runtime values. |
 | `objectives` | string | The "what you must do" summary text, same raw / un-substituted format as `description`. |
@@ -20344,14 +22235,13 @@ Like `GetTitleForQuestID`, this is a pure cache probe — pair it with
 | `choiceItems` | array of `{id, count}` | "Pick one" reward items. Empty when none. |
 | `requirements` | array of `{kind, id, count, text}` | Objectives. `kind` is `"monster"` (creature), `"object"` (gameobject), or `"item"` (collect / interact). `text` is the questgiver's per-objective override (e.g. `"Investigate the cave"` instead of the auto-generated `"Mor'shan Bear: 0/8"`); empty string means use the auto-format. Order: NPC/GO objectives first, then item objectives, both 1-indexed. Only non-empty slots included. |
 
-> **Not included** — race, class, skill, time limit, and suggested-player count. The `SMSG_QUEST_QUERY_RESPONSE` packet doesn't ship those fields; the server enforces them and filters quests *before* broadcasting, so the client only ever sees quests it could accept and never receives the static restriction values. Verified empirically: a race-restricted starter (`3120` Verdant Sigil — Night Elf Druid only), a dungeon quest (`914`), and a timed delivery (`3364` Scalding Mornbrew — 5-min authored timer) all have those cache slots zero-filled in memory. **Addons that need that data must source it from an external scraped database** like pfQuest's.
+> **Not included** — race, class, skill, time limit, and suggested-player count. The server does not send these fields to the client. The server enforces them and filters quests before it sends them. Thus the client only sees quests that the player can accept. **Addons that need that data must source it from an external scraped database** like pfQuest's.
 >
-> **Field reliability:** everything currently returned is either confirmed-correct via the engine's own `Script_GetQuestLog*` accessors or empirically verified against in-game quest semantics. The `poi` field is the only remaining hypothesis — its offsets are confirmed but no test quest has yet exercised it.
+> **Field reliability:** the `poi` field is not tested. No tested quest has a `poi` value.
 
-XP rewards aren't exposed — there is no `GetQuestLogRewardXP`,
-and per emulator-decoded packet structure, the server doesn't include
-an XP field in `SMSG_QUEST_QUERY_RESPONSE`. XP is computed
-server-side at turn-in from level-scaling tables.
+XP rewards aren't exposed — there is no `GetQuestLogRewardXP`.
+The server does not send the XP reward to the client. The server
+calculates the XP at turn-in from level-scaling tables.
 
 #### Example
 
@@ -20425,15 +22315,13 @@ end
 
 Companion to the stock `GetQuestLogLeaderBoard` — returns `(id, kind)`
 for the same objective the existing call formats text for. `id` is
-always positive (the raw `RequiredNPCOrGo` field is signed, but the
-sign is folded into `kind` instead); `kind` is one of `"monster"`,
+always positive; `kind` is one of `"monster"`,
 `"object"`, or `"item"`. Returns nothing for: out-of-range
 `objectiveIndex`, header rows, quests whose static data hasn't been
 cached yet, or event-text-only objectives that have no entry ID.
 
-Arg shape matches the engine's actual `Script_GetQuestLogLeaderBoard`
-(its usage string says `(index)` but the function also accepts the
-2-arg form): with `questIndex` provided, looks up the entry at
+The arguments are the same as for the stock `GetQuestLogLeaderBoard`,
+which also accepts a second argument: with `questIndex` provided, looks up the entry at
 that 1-based quest-log slot; without it, falls back to whichever
 quest is currently selected via `SelectQuestLogEntry`.
 
@@ -20457,22 +22345,12 @@ The ID is the same key `creaturecache.wdb` / `gameobjectcache.wdb` /
 or creature caches is direct — no localized-text parsing required.
 
 Why not just expose this on `GetQuestLogLeaderBoard` itself? Modifying
-the engine's existing return tuple would silently break addons that
+the existing return tuple would silently break addons that
 destructure positionally (`local text, type, done = GetQuestLogLeaderBoard(...)`).
 A separate function keeps the existing call wire-compatible.
 
-> **Source**: the cached quest record (returned by `Quest::Cache::Peek`)
-> carries the SMSG_QUEST_QUERY_RESPONSE objective arrays inline at
-> fixed offsets:
-> - `+0x149C` — `int32 RequiredNPCOrGo[4]` (positive = creature entry,
->   negative = gameobject entry)
-> - `+0x14AC` — `uint32 RequiredNPCOrGoCount[4]`
-> - `+0x14BC` — `uint32 RequiredItem[4]`
-> - `+0x14CC` — `uint32 RequiredItemCount[4]`
->
-> Iteration mirrors the engine at `0x004E0110`: walk the NPC/GO array
-> first, skip zero slots, then the item array. 1-based `objectiveIndex`
-> counts only non-empty slots.
+The 1-based `objectiveIndex` counts creature and game object objectives
+first, then item objectives. It counts only objectives that exist.
 
 ### `GetQuestLogCompletionText([questLogIndex])`
 
@@ -20577,11 +22455,9 @@ follows it. If the client does not yet have the quest's data, the line
 comes when the data arrives: after the experience and money lines, and
 after `QUEST_TURNED_IN`. Do not depend on the order.
 
-Vanilla prints the line only for a quest with no follow-up. When the
-quest's data names a next quest in its chain, the client leaves the line
-out, so a turn-in in the middle of a chain prints only "Experience gained"
-and "Received". Addons that follow turn-ins through the line, such as Zygor
-Guides Viewer 2.0 and its 3.3.5a port, missed every quest with a follow-up.
+The line also prints for a quest that has a next quest in its chain.
+Thus addons that follow turn-ins through the line, such as Zygor Guides
+Viewer 2.0, see each quest in a chain.
 
 ```lua
 local pattern = "^" .. string.gsub(ERR_QUEST_COMPLETE_S, "%%s", "(.+)")
@@ -20594,6 +22470,26 @@ f:SetScript("OnEvent", function()
     end
 end)
 ```
+
+## SettingsUtil
+
+### `C_SettingsUtil.OpenSettingsPanel([openToCategoryID [, scrollToElementName]])`
+
+Opens the Settings window. With a category ID, the window shows that
+category. With `scrollToElementName` too, the list of settings scrolls to
+the setting of that name. `Settings.OpenToCategory` calls this function.
+
+The function fires `SETTINGS_PANEL_OPEN` with its two arguments, and the
+window opens on that event. A category ID is the number that the category
+gets, or the value that an addon puts in the `ID` field of the category.
+Many addons set `ID` to the name of the category. Then the name opens the
+category.
+
+### `C_SettingsUtil.NotifySettingsLoaded()`
+
+Fires `SETTINGS_LOADED`. The Settings window calls this function one time,
+after `VARIABLES_LOADED` and `PLAYER_ENTERING_WORLD`. At that time, every
+function that addons gave to `SettingsRegistrar:AddRegistrant` has run.
 
 ## Sound
 
@@ -20804,8 +22700,9 @@ A mute applies to the file, so it covers every sound that uses it, whoever
 starts it. `MuteSoundFile` returns `true` when the path is now muted.
 `UnmuteSoundFile` returns `true` when the path had been muted.
 
-Mutes last until you log out or reload. To keep them, save your list and
-apply it again on login.
+Mutes last until you exit the game. A reload or a logout does not remove
+them. The game does not save them. To keep them for the next session, save
+your list and apply it again on login.
 
 ### `C_Sound.GetRecentSoundFiles()`
 
@@ -20845,10 +22742,8 @@ Opening a bag or taking a step puts a file in it.
 > - **`|Hspell:N|h` hyperlink** — extracted by parsing for the
 >   embedded `spell:N` payload, so
 >   `C_Spell.X(GetSpellLink(id))` round-trips cleanly.
-> - **spell name** — case-sensitive lookup through the engine's name
->   resolver (`FUN_RESOLVE_SPELL_NAME_TO_BOOK_ID`, the same chain
->   `CastSpellByName` uses). Tolerates `(Rank N)` suffixes via the
->   engine's parser. Bounded to spells in the **player's known
+> - **spell name** — case-sensitive lookup, with the same name rules as
+>   `CastSpellByName`. Accepts `(Rank N)` suffixes. Bounded to spells in the **player's known
 >   spellbook** — not arbitrary Spell.dbc rows.
 >
 > Unrecognized identifiers (garbage strings, nil, tables, etc.) return
@@ -20912,7 +22807,7 @@ C_Spell.RequestLoadSpellData(133)  -- prints "Fireball"
 ### `C_Spell.GetSchoolString(schoolMask)`
 
 Returns the localized name for a damage-school bitmask. Resolves
-single-bit masks via the engine's `SPELL_SCHOOL<n>_CAP` global
+single-bit masks to the `SPELL_SCHOOL<n>_CAP` global
 strings (`SPELL_SCHOOL0_CAP` = "Physical", `SPELL_SCHOOL2_CAP` =
 "Fire", etc.).
 
@@ -20942,11 +22837,7 @@ returns `"Unknown"`, the documented fallback for unnamed combinations.
 ### `GetSpellInfo(spellID)` / `GetSpellInfo(slot, bookType)`
 
 Returns nine values, **plus a 10th value: `spellID`**, for **any** spell
-ID — including spells the player has not learned. The stock client has no
-`GetSpellInfo` Lua function at all (only `GetSpellName`/`GetSpellTexture`,
-both of which take a spellbook *slot* rather than an ID), so addons that
-need spell metadata for arbitrary IDs (raid frames, debuff trackers, aura
-libraries) currently can't get it.
+ID — including spells the player has not learned.
 
 Returns `name, rank, icon, cost, isFunnel, powerType, castTime,
 minRange, maxRange, spellID`. Returns `nil` if the spell ID is out of
@@ -20969,8 +22860,8 @@ Four input forms are accepted:
 - **`GetSpellInfo(spellID)`** — direct DBC lookup by ID.
 - **`GetSpellInfo(slot, bookType)`** — same shape as the stock
   `GetSpellName(slot, bookType)`. `slot` is 1-based, `bookType` is
-  `"spell"` (player) or `"pet"`. The slot is resolved to a spellID via
-  the engine's spellbook array, then the same DBC reads run. Returns
+  `"spell"` (player) or `"pet"`. The function gives the values of the
+  spell in that slot. Returns
   `nil` for empty / out-of-range slots.
 - **`GetSpellInfo("name")`** — looks the name up in the player's, then
   the pet's, spellbook and returns the highest rank you know. The match
@@ -21062,8 +22953,7 @@ local name = C_Spell.GetSpellName(133)  -- "Fireball"
 
 ### `C_Spell.GetSpellTexture(spellID)`
 
-Returns the icon path string for `spellID` (read from `SpellIcon.dbc`
-via the spell's `SpellIconID` field), or `nil` if the spell ID is out
+Returns the icon path string for `spellID`, or `nil` if the spell ID is out
 of range or the icon record is empty.
 
 > **Path string, not fileID.** This value can be a `fileID:number`
@@ -21085,12 +22975,10 @@ link, spellID = GetSpellLink(spellID)
               = GetSpellLink(slot, bookType)
 ```
 
-Format is `|cff71d5ff|Hspell:ID:0|h[Name]|h|r` — the standard 1.12
+Format is `|cff71d5ff|Hspell:ID:0|h[Name]|h|r` — the standard
 spell-link wrapper. The trailing `:0` after the spellID matches the
-extended hyperlink shape (where the field is a sub-data slot for
-pet-spellbook flags etc.); the engine ignores it during link parsing, but
-addons grepping with `|Hspell:(%d+):` patterns will pick it up
-correctly.
+extended hyperlink shape. The game ignores it when it reads a link.
+Addon patterns such as `|Hspell:(%d+):` match it correctly.
 
 Two input forms, mirroring [`GetSpellInfo`](#getspellinfospellid--getspellinfoslot-booktype):
 
@@ -21134,12 +23022,8 @@ appear as actual numbers (e.g. `"14 to 22 Fire damage"`, not
 `"$s1 to $s2 Fire damage"`). Returns `nil` if the spell ID is out of
 range or has no description in the current locale.
 
-The 1.12 client doesn't expose this from Lua at all — the only existing
-path is the scan-tooltip hack (set a hidden tooltip via
-`SetHyperlink("spell:"..ID)` and read each `TextLeftN:GetText()` line).
-That's slow, GC-heavy, and shares the global scan tooltip with every
-other addon. This function calls the engine's own description formatter
-directly — same code path the in-game tooltip uses, no UI side effects.
+The text is the same as the in-game tooltip shows. The function has no
+UI side effects, and it does not use a scan tooltip.
 
 ```lua
 local desc = C_Spell.GetSpellDescription(133)  -- Fireball Rank 1
@@ -21190,15 +23074,12 @@ C_Spell.GetSpellMechanicByID(339)  -- Entangling Roots  → 7,  "rooted"
 C_Spell.GetSpellMechanicByID(133)  -- Fireball          → 0,  nil
 ```
 
-This reads `Spell.dbc`'s `Mechanic` field and resolves the name from
-`SpellMechanic.dbc` directly — both DBCs are resident from boot, so the
-call is synchronous with no caching or network round-trip (unlike item
-data). It replaces hand-maintained `spellID → mechanic` lookup tables that
-addons otherwise keep because there is no Lua reader for the field
-— e.g. crowd-control macro conditionals (`[cc:stun]`, `[cc:fear]`) that
-need to know which mechanic a debuff applies.
+The call is synchronous. Unlike item data, it does not wait for the
+server. It replaces hand-maintained `spellID → mechanic` lookup tables
+in addons — e.g. crowd-control macro conditionals (`[cc:stun]`,
+`[cc:fear]`) that need to know which mechanic a debuff applies.
 
-The complete `SpellMechanic.dbc` set on 1.12 — all 27 rows (the `name`
+The complete `SpellMechanic.dbc` set — all 27 rows (the `name`
 column is exactly what this function returns):
 
 | ID | name | ID | name | ID | name |
@@ -21276,14 +23157,13 @@ gear modifiers, and the extra level scaling some spells are flagged for.
 Expect it to match a tooltip for a plain aura and to fall short for a
 damage or healing figure.
 
-Reads `Spell.dbc` directly, so it covers every spell the client knows,
-not just the player's spellbook, with no caching or waiting on the
-server.
+It covers every spell the client knows, not just the player's
+spellbook, with no caching or waiting on the server.
 
 ### `C_Spell.GetSpellEffectMechanics(spellID)`
 
-Returns the spell's three per-effect `SpellMechanic` ids (`Spell.dbc`
-`EffectMechanic[3]`) as a 1-based array table, or `nil` for an invalid /
+Returns the spell's three per-effect `SpellMechanic` ids as a 1-based
+array table, or `nil` for an invalid /
 out-of-range spell ID. Each entry uses the same numbering as
 [`GetSpellMechanicByID`](#c_spellgetspellmechanicbyidspellid) (`0` = that
 effect carries no mechanic).
@@ -21295,11 +23175,11 @@ C_Spell.GetSpellEffectMechanics(133)   -- Fireball → { 0, 0, 0 }
 ```
 
 Complements [`GetSpellMechanicByID`](#c_spellgetspellmechanicbyidspellid),
-which reads only the **spell-level** `Mechanic` field (`+0x14`). A spell's
+which returns only the **spell-level** mechanic. A spell's
 mechanic is frequently stored on an **effect** instead — periodic
 damage such as bleeds is the common case. Garrote/Rupture/Rend/Rip tag
 `bleeding` (15) at the spell level, but **Rake** has spell-level `0` and
-`EffectMechanic[2] = 15`, so effect-mechanic-aware callers (e.g. bleed
+`15` on its second effect, so effect-mechanic-aware callers (e.g. bleed
 classification for immunity tracking) need this array:
 
 ```lua
@@ -21311,8 +23191,7 @@ local function IsBleed(spellID)
 end
 ```
 
-Reads `Spell.dbc` directly (`EffectMechanic[3]` at `+0x13C`), so it covers
-every spell the client knows — not just the player's spellbook — with no
+It covers every spell the client knows — not just the player's spellbook — with no
 caching or network round-trip.
 
 ### `C_Spell.GetSpellDispelType(spellID)`
@@ -21336,7 +23215,7 @@ Returns `(baseRadius, modifiedRadius)` — the spell's AOE radius in yards,
 or `nil` for a non-AOE spell (no effect carries a radius). Works for any
 spell, not just ones the player has learned.
 
-- **`baseRadius`** — the raw `SpellRadius.dbc` value; caster-independent,
+- **`baseRadius`** — the unmodified radius; caster-independent,
   what an AOE tracker watching other units wants.
 - **`modifiedRadius`** — `baseRadius` with the **local player's** talent /
   item modifiers applied (e.g. a Mage's Arctic Reach). Equal to
@@ -21356,19 +23235,14 @@ the `(slot, bookType)` spellbook position, where `bookType`
 follows the `GetSpellName` convention — `"pet"` → pet book, `"spell"`
 (or any non-pet / omitted value) → player book.
 
-`baseRadius` reads `Spell.dbc`'s per-effect `EffectRadiusIndex[3]`
-(`+0x160`) and resolves each into `SpellRadius.dbc`; since a spell's
-effects can each carry their own radius, the **largest** base radius
-across the three effects is returned.
+Each effect of a spell can have its own radius. `baseRadius` is the
+**largest** base radius of the three effects.
 
-> **No caster-level scaling.** The engine's internal radius helper also
-> adds `radiusPerLevel * casterLevel`, but that needs a unit context;
-> this reports the base value. Talent/item
-> modifiers (the `modifiedRadius` return) **are** applied, via the
-> engine's SpellMod system — but only the **local player's**, since the
-> client tracks spell mods for the player alone (there's no way to know
-> another caster's talents). All DBCs / mod tables are resident from
-> boot, so the call is synchronous with no caching.
+> **No caster-level scaling.** Some radii also increase with the level
+> of the caster. This function reports the base value without that
+> increase. Talent/item modifiers (the `modifiedRadius` return) **are**
+> applied, but only the **local player's**. The client has no data on
+> the talents of other casters. The call is synchronous with no caching.
 
 ### `C_Spell.GetSpellPowerCost(spellIdentifier)`
 
@@ -21395,17 +23269,13 @@ C_Spell.GetSpellPowerCost(10187)   -- Blizzard, Mage with 3/3 Frost Channeling
 | `requiredAuraID` | `0` (no form/aura-conditional costs) |
 | `hasRequiredAura` | `false` |
 
-`cost` is the value the engine actually charges — base + level scaling +
-`ManaCostPercent`-of-resource + descriptor power-cost mods + the cost
-SpellMod (talents like Frost Channeling). It comes from the engine's own
-cost helper (`FUN_006e31b0`), so it stays in lockstep with what casting
-the spell deducts.
+`cost` is the amount that a cast of the spell takes from the player. It
+includes level scaling, the percent-of-resource cost, and the cost
+modifiers of the player, such as talents like Frost Channeling.
 
-> **Effective vs. base.** This returns the player-modified cost.
-> [`C_Spell.GetSpellInfo`](#c_spellgetspellinfospellid)'s `cost` field is
-> the **base** `ManaCost` (intrinsic spell data, caster-independent) —
-> same base/modified split as
-> [`GetSpellRadius`](#c_spellgetspellradiusspellid--getspellradiusslot-booktype).
+> **Effective cost.** This returns the player-modified cost, the same
+> value as the `cost` field of
+> [`C_Spell.GetSpellInfo`](#c_spellgetspellinfospellid).
 
 ### `C_Spell.GetSpellReagents(spellID)`
 
@@ -21423,12 +23293,8 @@ local list = C_Spell.GetSpellReagents(2538)
 -- Cooking-style: { { itemID = ..., count = ... }, ... }
 ```
 
-Reads directly from `Spell.dbc` at the documented reagent offsets
-(`+0xA8` for itemIDs, `+0xC8` for counts — verified empirically
-from the engine's tooltip-builder; the CMaNGOS-style schema
-documented in some emulator sources places these at `+0x110` /
-`+0x130`, which is wrong for 1.12.1). Iteration stops at the first
-empty slot, matching how the engine walks its own reagent loop.
+The list stops at the first empty reagent slot, as the game's own
+spell tooltip does.
 
 ### `C_Spell.GetSpellCastCount(spellIdentifier)`
 
@@ -21452,8 +23318,7 @@ bank do not count, because a cast cannot use them.
 
 Returns the localized "Rank N" / "Passive" / "Racial Passive" /
 similar string that appears below the spell's name in the
-spellbook. Read directly from `Spell.dbc.Rank[9]` at record `+0x204`
-(same locale array shape as `Name[9]` two fields prior).
+spellbook.
 
 Accepts the full `SpellIdentifier` shape — `spellID`, name, name
 with rank (`"Fireball(Rank 3)"`), or `|Hspell:N|h` hyperlink. Returns
@@ -21471,9 +23336,8 @@ Returns `true` if the spell is passive (no cast bar — applies its effect
 as soon as it's learned/equipped), `false` otherwise. Returns `nil` for
 invalid spell IDs / out-of-range slots.
 
-Reads `Attributes` bit 6 (`SPELL_ATTR_PASSIVE = 0x40`) directly off the
-`Spell.dbc` record. Used by aura libraries and talent code to decide
-whether a spell needs cast-bar tracking.
+Aura libraries and talent code use it to decide whether a spell needs
+cast-bar tracking.
 
 ```lua
 IsPassiveSpell(6603)   -- true  (Auto Attack)
@@ -21496,14 +23360,14 @@ C_Spell.IsSpellPassive(6603)   -- true (Auto Attack)
 ### `IsPlayerSpell(spellID)`
 
 Returns `true` if the player currently knows the given spellID, `false`
-otherwise. Covers everything granted by `SMSG_LEARNED_SPELL`:
+otherwise. Covers every spell that the server teaches the player:
 
 - Trained class abilities (the obvious case)
 - Racial abilities
 - Talent passives the player has invested in
 - **Profession recipes** — including ones from vendors / discovered
   via tradeskill — without needing to have the trade skill window open
-- Anything else the engine considers "known"
+- Anything else the game considers "known"
 
 ```lua
 IsPlayerSpell(133)     -- true if you have Fireball
@@ -21518,15 +23382,11 @@ IsPlayerSpell(2963)    -- true for a tailor who knows Bolt of Linen
 > `IsPlayerSpell(14791)` (rank 5) as true but rank 4 / rank 3 / etc. as
 > false.
 >
-> This is by design — the engine's spell-knowledge bitmap stores one
-> bit per spellID, and the highest-rank spellID is the one set when
-> you train up. To check "do I have at least rank N", use the
-> rank-N spellID specifically.
+> This is by design. When you train a new rank, the game marks only
+> the new rank's spellID as known. To check "do I have at least rank N",
+> use the rank-N spellID specifically.
 
-Reads a single bit from the engine's spell-knowledge bitmap at
-`[0x00B710FC]` — `(bitmap[spellID >> 5] & (1 << (spellID & 31))) != 0`.
-The same lookup the engine itself does internally. No spellbook walk,
-no talent walk, no profession-window dependency.
+The lookup is fast. It does not need the profession window.
 
 ### `CanDualWield()`
 
@@ -21568,10 +23428,6 @@ IsSpellKnown(133)          -- false on a Priest (Fireball is a Mage spell)
 > use `IsSpellKnown` for "is this in my spellbook so I can put it on
 > an action bar".
 
-Implementation walks `VAR_PLAYER_SPELLBOOK` (`0x00B700F0`) when
-`isPet=false` or `VAR_PET_SPELLBOOK` (`0x00B6F098`) when `isPet=true` —
-a direct spellbook walk.
-
 ### `GetSpellBonusDamage(school)`
 
 Returns the local player's flat spell-damage bonus (spell power) for a
@@ -21595,30 +23451,27 @@ GetSpellBonusHealing()   -- your +Healing
 
 > **Damage is an exact field read; healing is derived.**
 >
-> `GetSpellBonusDamage` reads the client's fully-computed value directly
-> from the CGPlayer sub-struct (`PLAYER_FIELD_MOD_DAMAGE_DONE_POS − _NEG`
-> per school). That field isn't in the *broadcast* descriptor — the
-> server never sends it there, which is why it looks absent — but
-> the client keeps a computed copy for its own use, with gear, enchants,
-> buffs, talents, and set bonuses all baked in. So the value is exact and
-> complete. (Same source nampower's `GetSpellPower` reads.)
+> `GetSpellBonusDamage` returns the value that the client calculates
+> itself, with gear, enchants, buffs, talents, and set bonuses included.
+> Thus the value is exact and complete. It is the same value that
+> nampower's `GetSpellPower` returns.
 >
-> `GetSpellBonusHealing` has no such field — there is no
-> healing-done field at all (confirmed in-game: toggling a pure +healing
-> item moved no field in the player struct) — so it's **derived** in two
-> parts, both from `Spell.dbc`: (1) flat healing = the sum of every
-> `SPELL_AURA_MOD_HEALING_DONE` off gear equip-effects, item enchants
-> (permanent + weapon oils), random suffixes, and active buffs; plus (2)
-> talent/buff stat-conversions, mirroring the server's own
-> `SpellBaseHealingBonusDone` — the sum of `SPELL_AURA_MOD_SPELL_HEALING_OF`
-> `_STAT_PERCENT` (aura 175) × total Spirit / 100 over your passive talents
-> (Priest *Spiritual Guidance*) and active buffs. Part 2 reads the talent
-> percent directly, so it's **generic** (any aura-175 talent/buff, including
-> Turtle customs) and exact — e.g. Spiritual Guidance 5/5 with 182 Spirit
-> adds `int(182 × 25 / 100) = 45`.
+> The client keeps no healing-bonus value. Thus `GetSpellBonusHealing`
+> **derives** the value in two parts:
 >
-> Residual: assumes talent ranks supersede (only the learned rank is known)
-> and misses set-bonus healing granted via a set-completion spell.
+> 1. Flat healing: the sum of the healing-bonus effects on gear, item
+>    enchants (permanent + weapon oils), random suffixes, and active buffs.
+> 2. Spirit conversion: the Spirit-to-healing percent (aura 175) of your
+>    passive talents (Priest *Spiritual Guidance*) and active buffs, times
+>    your total Spirit / 100. This part works for each talent or buff with
+>    aura 175, including Turtle customs, and is exact — e.g. Spiritual
+>    Guidance 5/5 with 182 Spirit adds `int(182 × 25 / 100) = 45`.
+>
+> Set bonuses count: a bonus whose piece count your equipped gear meets
+> (for example Lawbringer's 3-piece +31 Healing) is included.
+>
+> Limits: the calculation counts only the learned rank of a talent. It
+> ignores the profession-skill requirement of a set bonus.
 
 ### `GetCritChance()` / `GetRangedCritChance()`
 
@@ -21837,16 +23690,13 @@ C_Spell.IsCurrentSpell(GetSpellLink(7620)) -- true while channeling Fishing
 
 Useful for action-bar addons that want to highlight the active /
 queued button — action bars gate the "currently casting" glow
-on this. Reads three engine slots and returns true on any match:
+on this. The function returns `true` in each of these cases:
 
-- `VAR_CURRENT_CAST_SPELL` (`0x00CECA88`) — cast-bar spellID. Written
-  by `FUN_006E4AD0` when a new cast begins; cleared on cast end.
-- `VAR_QUEUED_CAST_SPELL` (`0x00CECAA8`) — spell that was active when
-  a new cast superseded it mid-GCD. Restored to current when the new
-  cast ends, so checking it here covers the "queued to cast next"
-  half of the documented semantics.
-- `UNIT_FIELD_CHANNEL_SPELL` (descriptor `+0x228`) on the player —
-  covers channeled abilities (Fishing, Drain Soul, Ritual of
+- The player is casting the spell (the spell on the cast bar).
+- The spell was active when a new cast replaced it mid-GCD. The spell
+  becomes current again when the new cast ends. This covers the
+  "queued to cast next" half of the documented semantics.
+- The player is channeling the spell (Fishing, Drain Soul, Ritual of
   Summoning, etc.).
 
 ### `C_Spell.IsSelfBuff(spellID)`
@@ -21862,8 +23712,7 @@ C_Spell.IsSelfBuff(1459)   -- Arcane Intellect  → false (targets friendly)
 C_Spell.IsSelfBuff(133)    -- Fireball          → false (targets enemy)
 ```
 
-Walks `Spell.dbc.EffectImplicitTargetA[3]` and
-`EffectImplicitTargetB[3]`. Spells with no active effects (a
+Spells with no active effects (a
 degenerate case for normal content) return `false`.
 
 ### `C_Spell.SpellHasRange(spellIdentifier)` / `SpellHasRange(slot, bookType)`
@@ -21904,11 +23753,10 @@ C_Spell.IsSpellInRange("Fireball", "target")
 C_Spell.IsSpellInRange(1006, "target")     -- Inner Fire (self) → nil
 ```
 
-Uses the engine's own geometric range core (the same one the action
-button range-out coloring uses via `IsActionInRange`): it derives the
-spell's min/max range — folding in the target's bounding radius — and
-compares center-to-center distance, so the boundary matches the
-client exactly, melee and min-range ("too close") spells included.
+The range check is the same one that `IsActionInRange` uses for the
+range color of action buttons. It includes the target's bounding radius
+in the spell's min/max range and measures center-to-center distance.
+Thus the boundary matches the client exactly, melee and min-range ("too close") spells included.
 
 The target must be one that the spell can be cast on. If it is not,
 the result is `nil`. For example, a heal on an enemy, a damage spell on
@@ -21952,12 +23800,11 @@ C_Spell.IsRangedAutoAttackSpell(5019)        -- true (Shoot wand)
 C_Spell.IsRangedAutoAttackSpell(6603)        -- false (melee)
 ```
 
-Tests the auto-repeat flag in `Spell.dbc.AttributesEx2` (bit `0x20`).
-Only Auto Shot and Shoot carry it. The on-cast ranged abilities —
-Aimed Shot and Multi-Shot — set the general `RANGED` bit but not the
-auto-repeat flag, so they return `false`. The flag also covers any
-future auto-repeating spell a private server adds. Verified against
-`Spell.dbc`.
+The function tests the auto-repeat flag of the spell. Only Auto Shot
+and Shoot carry it. The on-cast ranged abilities — Aimed Shot and
+Multi-Shot — are ranged but not auto-repeat, so they return `false`.
+The flag also covers any future auto-repeating spell a private server
+adds.
 
 See [`C_SpellBook.IsRangedAutoAttackSpellBookItem`](#c_spellbookisrangedautoattackspellbookitemslot-booktype)
 for the spellbook-slot variant.
@@ -21974,9 +23821,6 @@ C_Spell.IsNextMeleeSpell(6807)   -- Maul → true
 C_Spell.IsNextMeleeSpell(116)    -- Frostbolt → false
 ```
 
-Tests the two on-next-swing bits in `Spell.dbc.Attributes`
-(`0x04` and `0x400`).
-
 ### `C_Spell.ResetsMeleeSwing(spellID)`
 
 Returns `true` if casting the spell resets your melee swing timer.
@@ -21990,11 +23834,9 @@ C_Spell.ResetsMeleeSwing(1752)   -- Sinister Strike → false
 C_Spell.ResetsMeleeSwing(1464)   -- Slam → false (flagged "no reset")
 ```
 
-Mirrors the server's `IsMeleeAttackResetSpell`: `true` when the
-spell's `InterruptFlags` has the auto-attack bit (`0x08`) and its
-`AttributesEx2` does not have the "no reset auto actions" bit
-(`0x20000`). Both fields come from `Spell.dbc`. Slam carries that
-second bit, so it keeps its swing.
+The result follows the server's rule. A spell resets the swing when an
+auto-attack interrupts its cast, unless the spell has the "no reset"
+flag. Slam has that flag, so it keeps its swing.
 
 ### `IsHarmfulSpell(spell)` / `IsHelpfulSpell(spell)`
 
@@ -22019,11 +23861,10 @@ IsHelpfulSpell(1243)    -- true  (Power Word: Fortitude)
 IsHarmfulSpell(2061)    -- false
 ```
 
-Reads `Spell.dbc.AttributesEx` (record `+0x1C`) bit `0x80` — the
-same `SPELL_ATTR_EX_NEGATIVE` bit CMaNGOS uses to mark spells as
-debuffs server-side. `IsHarmfulSpell` is true iff that bit is set;
-`IsHelpfulSpell` is true iff the spell exists and the bit is NOT
-set. Both return `false` for invalid spellIDs.
+`IsHarmfulSpell` is true when the spell has the "negative" flag that
+the server uses to mark debuffs. `IsHelpfulSpell` is true when the
+spell exists and does NOT have that flag. Both return `false` for
+invalid spellIDs.
 
 > There is no dedicated "positive" flag, so the helpful side is the
 > rough complement of harmful. For utility spells with no clear
@@ -22062,9 +23903,8 @@ English name.
 | 6 | `"Shadow"` |
 | 7 | `"Arcane"` |
 
-Reads directly from `Spell.dbc` record `+0x04`. School is stored as a
-single 0-based integer (no multi-school `SchoolMask` combinations), so a
-spell belongs to exactly one school.
+Each spell belongs to exactly one school. There are no multi-school
+combinations.
 
 Returns `nil` for invalid spellIDs (out of range or unpopulated
 `Spell.dbc` slot).
@@ -22123,18 +23963,16 @@ already-active spell. This is what a
 [`/cast !Name`](#cast-and-use) line calls. Covers both kinds of toggle
 abilities:
 
-- **Auto-repeat** — Shoot, Auto-Shot, Wand. Tracked via the engine's
-  active-auto-repeat global.
+- **Auto-repeat** — Shoot, Auto-Shot, Wand.
 - **Self-aura toggles** — shapeshift (Cat/Bear/Travel/Moonkin/
   Shadowform), stance (Battle/Defensive/Berserker), aspect (Hunter),
-  seal (Paladin), blessing-on-self, etc. Tracked via the unit
-  descriptor's aura array.
+  seal (Paladin), blessing-on-self, etc.
 
 If either toggle is already on for the requested spell, the call is
 a no-op — exactly what `/cast !SpellName` does, but expressed as a
 Lua call.
 
-| Engine state                  | Behavior            | Return  |
+| State                         | Behavior            | Return  |
 |-------------------------------|---------------------|---------|
 | Nothing toggled               | Starts the cast     | `true` if the spell is now active, else `false` |
 | This spell already auto-repeating | No-op           | `true`  |
@@ -22197,7 +24035,7 @@ CastSpellNoToggle("Auto Shot", "focus", false)
 
 The toggle gates run first, so the unit only matters when the spell
 actually casts. If the spell is already toggled on, the call stays a
-no-op and ignores the unit. An unknown unit token raises the engine's
+no-op and ignores the unit. An unknown unit token raises the
 standard "Unknown unit" error, the same as `UnitHealth`.
 
 String input matches case-insensitively and tolerates a trailing
@@ -22206,13 +24044,9 @@ String input matches case-insensitively and tolerates a trailing
 already auto-repeating. A leading `!` is accepted and dropped, so the
 macro form and the Lua form read the same.
 
-Reads `[VAR_ACTIVE_AUTO_REPEAT_SPELL]` (`0x00CEAC30`) for the auto-
-repeat check, and the engine's `FUN_SPELL_IS_TOGGLE_AURA_ACTIVE`
-(`0x004B36F0`) for the aura-active check. Delegates to
-`Script_CastSpellByName` (`0x004B4AB0`) for the actual cast — same
-resolution semantics (rank picking, target rules, and more) as the
-engine's own global. With a unit argument, it dispatches through the
-same cast-at-unit path as `C_Spell.CastAtUnit` instead.
+Without a unit argument, the cast works as `CastSpellByName`: the same
+rank picking, target rules, and more. With a unit argument, the cast
+works as `C_Spell.CastAtUnit`.
 
 Using this from inside a macro action slot? See
 [`CastSpellNoToggle` as a macro cast line](#castspellnotoggle-as-a-macro-cast-line) below for the additional
@@ -22272,7 +24106,7 @@ analog of `/cast [@unit] Spell`:
 Works with any unit token (`"target"`, `"player"`, `"mouseover"`,
 `"party1"`, `"raid7"`, …). Returns `true` when the spell was cast at the
 unit (fired or placed); `false` for a spell not in your spellbook, a unit
-with no resolvable position, or a unit the engine won't accept as a target
+with no resolvable position, or a unit the game won't accept as a target
 for that spell (wrong faction, out of range).
 
 The first argument takes a spellID or a spell name, with the same
@@ -22314,8 +24148,7 @@ The companion item version is
 ### `C_Spell.CancelSpellByID(spellID)` / `CancelSpellByName(name)`
 
 Cancel a buff on the player by spellID or by spell name. Both are
-player-only (the server only accepts `CMSG_CANCEL_AURA` for the
-local player's own auras).
+player-only (the server cancels only the local player's own auras).
 
 ```lua
 C_Spell.CancelSpellByID(2378)      -- Cancel "Find Herbs"
@@ -22324,21 +24157,17 @@ CancelSpellByName("Cat Form")       -- Drop shapeshift
 
 | Function | Arg | Behavior |
 |----------|-----|----------|
-| `C_Spell.CancelSpellByID(spellID)` | spellID (number) | Sends `CMSG_CANCEL_AURA` for `spellID` directly. No client-side check that the buff is actually present — server validates and silently no-ops if not. |
-| `CancelSpellByName(name)` | name (string, case-insensitive) | Walks the player's buff range (`UnitBuff` slots 0..31) for the first aura whose Spell.dbc localized name matches, then cancels by its spellID. Buff-only — debuffs are skipped. |
+| `C_Spell.CancelSpellByID(spellID)` | spellID (number) | Sends a cancel request for `spellID` to the server. No client-side check that the buff is actually present — server validates and silently no-ops if not. |
+| `CancelSpellByName(name)` | name (string, case-insensitive) | Finds the first buff on the player whose localized name matches, then cancels by its spellID. Buff-only — debuffs are skipped. |
 
-Calls `FUN_006E7040` (`0x006E7040`) directly with the spellID. This
-**bypasses** `Script_CancelPlayerBuff`'s client-side gates — the
-per-buff cancelable flag at `[entry+0x0A] & 0x01` and the fallback
-`AttributesEx & 0x04` check on the spell record. Trade-off: the server
-is now the sole authority on what's cancelable. Non-cancelable auras
-(proc-buffs, certain world buffs) still get rejected — just server-side
-instead of client-side.
+Neither function tests on the client whether the aura can be
+cancelled, as `CancelPlayerBuff` does. The server decides. The server
+still rejects non-cancelable auras (proc-buffs, certain world buffs).
 
-For invalid input (non-positive spellID, OOR, or a Spell.dbc empty
-slot), both functions silently no-op. No `lua_error`, no event fired.
+For invalid input (non-positive spellID, out of range, or an ID with no
+spell), both functions silently no-op. No Lua error, no event fired.
 
-Spell name matching is case-insensitive via `_stricmp`. Rank-suffixed
+Spell name matching is case-insensitive. Rank-suffixed
 input (e.g. `"Power Word: Fortitude(Rank 4)"`) is **not** parsed —
 pass the plain name. Multi-rank buffs match on first-found; if you
 have multiple ranks of the same buff active (unusual but possible with
@@ -22377,15 +24206,10 @@ Returns the unit's in-progress **regular cast** (not a channel), or
 `nil` if it isn't casting. `C_Spell.CastingInfo()` is
 `C_Spell.UnitCastingInfo("player")` without the unit-token lookup.
 
-> **Under `C_Spell`, not the global `UnitCastingInfo`.** A global here
-> would clobber addons that
-> ship their own cast-tracking via the `_G.UnitCastingInfo or
-> <fallback>` idiom — e.g. ShaguTweaks' `libcast` scrapes the combat
-> log for **remote/enemy** casts the engine never exposes. If we
-> occupied the global, those addons would adopt our player-only version
-> and lose their (superior, for that case) fallback. So we cede the
-> global names and register under `C_Spell` instead. Same for
-> `UnitChannelInfo`/`ChannelInfo`.
+> **Under `C_Spell` only.** ClassicAPI does not define the globals
+> `UnitCastingInfo`, `CastingInfo`, `UnitChannelInfo`, or `ChannelInfo`.
+> Addons that test `_G.UnitCastingInfo` and supply their own version
+> (for example, ShaguTweaks' `libcast`) keep working as before.
 
 ```
 name, displayName, textureID, startTimeMs, endTimeMs, isTradeskill,
@@ -22403,49 +24227,38 @@ C_Spell.UnitCastingInfo("player")
 `startTimeMs`/`endTimeMs` share `GetTime()`'s epoch (`GetTime()*1000`),
 so progress is `(GetTime()*1000 - startTimeMs) / (endTimeMs - startTimeMs)`.
 
-> **Works for any unit.** The CGUnit stores no cast times (the cast bar
-> is Lua-driven off `SPELLCAST_START`), so we source them two ways: the
-> **local player** is self-tracked on a
-> per-frame tick (`VAR_CURRENT_CAST_SPELL`, stamping `startTimeMs = now`,
-> `endTimeMs = now + effective cast time`); **other units** come from a
-> co-hook on `SMSG_SPELL_START` (`Spell::Cast`), the one packet carrying
-> another unit's cast with a server-authoritative cast time, cached per
-> caster GUID. So `C_Spell.UnitCastingInfo("target")` now backs
+> **Works for any unit.** `C_Spell.UnitCastingInfo("target")` can back
 > enemy/target/focus/nameplate cast bars. Instant casts return `nil` (no
-> cast bar). Aborted remote casts (interrupt, death, movement, cancel)
-> clear the same tick — a co-hook on the engine's own
-> `CGUnit_C::ClearCastingSpell` (the choke point every "unit stopped
-> casting" path funnels through) evicts the cached cast the moment the
-> engine stops the unit's cast visual, backstopped by co-hooks on the
-> `SMSG_SPELL_FAILURE` / `SMSG_SPELL_FAILED_OTHER` packets for servers
-> that broadcast them (Turtle's core doesn't — its interrupt propagation
-> reaches observers through SuperWoW, which the choke-point hook catches
-> too). Verified: Kick / Earth Shock / Counterspell each clear the
-> victim's bar, while non-interrupting damage doesn't false-clear it.
-> Best-effort for remote units, in three ways: only casts that began while
-> the unit was in range are seen; the remote `startTimeMs`/`endTimeMs` are
-> shifted later by roughly your latency (`SMSG_SPELL_START` carries
-> only a single `castTime`, so we stamp `start = now, end = now + castTime`
-> on receipt — the packet has no field to recover `elapsed` from, so the
-> skew can't be removed); and remote
-> **pushback is invisible** — the server sends `SMSG_SPELL_DELAYED` only
-> to the affected caster, so another unit's bar can't stretch when they
-> take damage. The **local player is unaffected** by all of this — its
-> cast is detected client-side at the moment of cast, no packet involved,
-> and its pushback is tracked.
+> cast bar). A remote cast that stops (interrupt, death, movement,
+> cancel) clears at once. This also works on Turtle WoW, where interrupts
+> of other units reach you through SuperWoW. Kick, Earth Shock and
+> Counterspell each clear the bar of the victim. Damage that does not
+> interrupt does not clear it.
 >
-> `isTradeskill` is real — the spell's `SPELL_ATTR_TRADESPELL` flag, so
-> profession recipe casts (smelting, cooking/enchanting recipes, …)
-> return `true` while regular spells return `false`. `endTimeMs` reflects
-> the **effective** cast time (the engine's own cast-time helper: base +
-> level scaling + cast-time talents like Improved Frostbolt + the
-> haste/cast-speed multiplier), so it matches the in-game cast bar — e.g.
+> Remote units are best-effort, in three ways:
+>
+> - Only casts that began while the unit was in range are seen.
+> - The remote `startTimeMs`/`endTimeMs` are later than the real times by
+>   about your latency. The server sends only the cast time, so this
+>   error cannot be removed.
+> - Remote **pushback is invisible**. The server sends pushback only to
+>   the caster, so the bar of another unit does not stretch when that
+>   unit takes damage.
+>
+> The **local player is unaffected** by these limits. Its cast is found
+> at the moment of cast, and its pushback is tracked.
+>
+> `isTradeskill` is `true` for profession recipe casts (smelting,
+> cooking/enchanting recipes, …) and `false` for regular spells.
+> `endTimeMs` reflects the **effective** cast time (with level scaling,
+> cast-time talents like Improved Frostbolt, and the haste/cast-speed
+> multiplier), so it matches the in-game cast bar — e.g.
 > a Mage's talented Frostbolt reads 2.5s, not the 3.0s base. `castID` is
 > the cast's **castGUID** — the exact string the
 > [`UNIT_SPELLCAST_*`](#unit_spellcast_-events) events carry for this cast,
 > so you can correlate the polled info with the events (works for the player
 > and other units). `delayTimeMs` is the pushback the cast has taken so far,
-> in milliseconds. `castBarID` has no source here and is always `nil`.
+> in milliseconds. `castBarID` is always `nil`.
 >
 > `notInterruptible` is `true` when no interrupt or silence that **you**
 > know can stop the cast. The value is relative to your own abilities, so a
@@ -22479,14 +24292,11 @@ C_Spell.ChannelInfo()
 --  907894314, 907902314, false, false, 10187
 ```
 
-The channeled spellID **is** broadcast for every unit
-(`UNIT_FIELD_CHANNEL_SPELL`), so `C_Spell.UnitChannelInfo("target")` works
-on other units. Timing now comes from the same `SMSG_SPELL_START` co-hook
-as casts: when we observed the channel begin, the remote unit returns full
-**start/end times** (validated against the live `UNIT_FIELD_CHANNEL_SPELL`
-so a stale cache entry never applies to a different/ended channel);
-otherwise it falls back to `name`/`displayName`/`textureID`/`spellID` with
-**`nil` times**. The player path is unchanged (full timing).
+`C_Spell.UnitChannelInfo("target")` works on other units. If you saw
+the channel begin, the remote unit returns full **start/end times**.
+Otherwise it returns `name`/`displayName`/`textureID`/`spellID` with
+**`nil` times**. The times never come from a different or ended
+channel. The player always gets full timing.
 `notInterruptible` follows the same rules as in `C_Spell.UnitCastingInfo`.
 
 ### `UnitCastingDuration(unit)` / `UnitChannelDuration(unit)`
@@ -22551,18 +24361,17 @@ GetSpellRequiredTargetLevel(10060)   -- 0    (Power Infusion — single rank)
 GetSpellRequiredTargetLevel(133)     -- 0    (Fireball — damage, not a buff)
 ```
 
-Mirrors the server's `SelectAuraRankForLevel` rule: a **ranked beneficial
+The rule is the same as on the server: a **ranked beneficial
 aura** is castable when `targetLevel + 10 >= spellLevel`, so the minimum
 target level is `spellLevel - 10`. The restriction is applied only when the
 spell is a ranked positive aura — `spellLevel > 10`, not passive, part of a
-rank chain, and applying an aura to a friendly/party/raid target (or an
-`APPLY_AREA_AURA_PARTY` effect). Below the minimum, the lowest rank fails
+rank chain, and applying an aura to a friendly/party/raid target (or a
+party-wide aura effect). Below the minimum, the lowest rank fails
 with `SPELL_FAILED_LOWLEVEL`; higher ranks auto-downrank.
 
-> The explicit `MinTargetLevel` / `MaxTargetLevel` spell fields the server
-> also enforces are **server-only** columns — they aren't present in the
-> 1.12 client's `Spell.dbc`, so the `spellLevel` rule is the only
-> client-readable target-level mechanism.
+> The server also enforces explicit minimum and maximum target levels.
+> The client does not get these values. Thus the `spellLevel` rule is
+> the only target-level rule that the client can read.
 
 ### Stand, dismount and form settings (`autoStand`, `autoDismount`, `autoUnshift`)
 
@@ -22579,7 +24388,8 @@ the usual error.
 Each action occurs only when nothing else blocks the cast. For example, if the
 spell needs a target and you have none, you stay mounted. If the spell shows
 the targeting cursor, the action occurs when you select the target. `autoDismount`
-and `autoUnshift` do nothing on a flight path.
+and `autoUnshift` do nothing on a flight path. `autoUnshift` never removes
+Spirit of Redemption.
 
 When `autoUnshift` is `1`, an action button stays usable in a form that the
 cast can leave. For example, Healing Touch in Bear Form and Renew in
@@ -22685,7 +24495,7 @@ is the spellbook-as-a-collection layer.
 
 ### `FindSpellBookSlotByID(spellID)`
 
-Inverse of 1.12's `GetSpellName(slot, bookType)`. Given a spellID,
+Inverse of `GetSpellName(slot, bookType)`. Given a spellID,
 returns the 1-based slot it occupies in the player or pet spellbook,
 along with the matching bookType so the result feeds directly into
 slot-and-bookType APIs (`GetSpellName`, `GetSpellTexture`,
@@ -22856,9 +24666,8 @@ Returns `true` when the player knows a spell that disenchants items
 
 ### `C_SpellBook.GetSpellLevelLearned(spellID)`
 
-Returns the level at which a spell becomes available — the
-`BaseLevel` field in `Spell.dbc` (record `+0x70`). Direct read off
-the cached record; no class/race filtering.
+Returns the level at which a spell becomes available. There is no
+class/race filtering.
 
 ```lua
 C_SpellBook.GetSpellLevelLearned(133)    -- Fireball rank 1 → 4
@@ -22867,7 +24676,7 @@ C_SpellBook.GetSpellLevelLearned(2061)   -- Flash Heal rank 1 → 20
 ```
 
 Returns `0` for invalid spellIDs, spells with no level requirement
-(most non-class utility spells), or records the engine hasn't
+(most non-class utility spells), or records the game hasn't
 cached. Unknown / utility spells return 0 rather than nil.
 
 ### `C_SpellBook.GetCurrentLevelSpells([level])`
@@ -22882,12 +24691,9 @@ C_SpellBook.GetCurrentLevelSpells(20)  -- preview what's available at 20
 C_SpellBook.GetCurrentLevelSpells(60)  -- preview at 60
 ```
 
-Walks `SkillLineAbility.dbc` filtering by the player's class bit
-(`1 << (classID - 1)`) and race bit, respecting both the include
-masks (entries with mask = 0 are "all classes"/"all races", which
-also pass) and the exclude masks. For each surviving entry, looks
-up the spell's `BaseLevel` and includes it if it matches the
-queried level.
+The table holds each spell that the player's class and race can learn
+and whose level is the queried level. Spells for all classes or all
+races are included. Spells that exclude the class or race are not.
 
 > **Spell learning is trainer-driven.** Elsewhere `GetCurrentLevelSpells`
 > returns *auto-learned* spells. Here you must visit a trainer to
@@ -22898,7 +24704,7 @@ queried level.
 Class/race come from the local player — there's no
 `(class, race, level)` form because there's no
 clean class-string→classID lookup. Returns an empty table at
-character select / pre-login (no CGPlayer yet) and for levels
+character select / pre-login and for levels
 where no class/race spells match.
 
 ### `C_SpellBook.GetPlayerSpellsByAura(auraName)`
@@ -22957,8 +24763,8 @@ an added source shows up without a code change.
 ### `C_SpellBook.GetSkillLineName(skillLineID)`
 
 Returns the localized `SkillLine.dbc` name for a skill-line id — the
-id → name half of the bridge addons build by hand. A pure DBC read: it
-answers for any valid skill line (`182` = Herbalism, `186` = Mining, the
+id → name half of the bridge addons build by hand. It answers for any
+valid skill line (`182` = Herbalism, `186` = Mining, the
 weapon/defense lines, profession lines) whether or not the player has
 learned it. `nil` for non-numeric / non-positive input or an id with no
 `SkillLine.dbc` row.
@@ -22992,17 +24798,14 @@ The stock `GetSkillLineInfo(index)` only walks the skill window by
 position and returns skills by *name*, so an addon starting from a
 SkillLine.dbc id (a quest's `requiredSkill`) has to map id → localized
 name and then string-match every skill line to recover the rank. This
-reads the player's live skill list keyed by id directly — the returned
-ranks are the same values `GetSkillLineInfo` reports. Resolves the id to
-the player's skill slot via `FUN_SKILL_LINE_TO_SLOT`, then reads the
-CGPlayer skill table (the same storage `C_Item.IsEquippableItem`'s
-require-skill gate uses). `nil` when the line isn't learned, for bad
-input, or before the player object is resident (character select).
+function looks up the player's skill by id directly — the returned
+ranks are the same values `GetSkillLineInfo` reports. `nil` when the
+line isn't learned, for bad input, or at character select.
 
 ### `C_SpellBook.GetSpellSkillLine(spellID)`
 
 Returns `(name, skillID)` — the SkillLine.dbc row that the given spell
-belongs to. The name is the user-facing skill/tab string in the engine's
+belongs to. The name is the user-facing skill/tab string in the client's
 current locale: spellbook tab names for class spells (`"Protection"`,
 `"Fire"`, `"Holy"`), profession headers (`"Tailoring"`, `"Engineering"`),
 weapon-skill rows (`"Swords"`, `"Bows"`), etc.
@@ -23015,11 +24818,9 @@ C_SpellBook.GetSpellSkillLine(2480)   -- "Bows", 45       (Shoot Bow)
 C_SpellBook.GetSpellSkillLine(3273)   -- "First Aid", 129 (Anesthetic)
 ```
 
-Walks `SkillLineAbility.dbc` for any row whose `spellID` matches, then
-reads the localized `Name[locale]` field at offset `+0x0C` of the
-referenced `SkillLine.dbc` record. For spells with multiple SLA rows
-(race-locked variants, Turtle WoW's faction-specific entries) the
-lookup prefers a row whose class/race masks match the local player —
+Some spells have more than one `SkillLineAbility.dbc` row (race-locked
+variants, Turtle WoW's faction-specific entries). For these, the
+function prefers a row for the class and race of the local player —
 so the result reflects "what tab is this spell in *for me*" when one
 exists. Falls back to the first matching row otherwise, so the
 function still answers for spells the local player can't actually use
@@ -23036,7 +24837,7 @@ The stock `GetSpellTabInfo(tabIndex)` enumerates spellbook tabs by
 1-based index — it can't answer "what tab is *this spellID* in".
 Addons that need a spellID→tab mapping have historically had to walk
 every tab's slot range and string-match against `GetSpellName`. This
-function reads it directly off the DBC for any spellID, including
+function answers directly for any spellID, including
 spells the player hasn't learned.
 
 ### `C_SpellBook.IsAutoAttackSpellBookItem(slot, bookType)`
@@ -23064,19 +24865,11 @@ C_SpellBook.IsRangedAutoAttackSpellBookItem(10, "spell")
 
 ## State
 
-Player movement / visibility state queries, as no-arg globals. The
-stock client doesn't bind them to Lua despite the engine tracking the
-underlying state — broadcast in UpdateFields for some
-(mount, stealth visibility), local-only for others (falling,
-swimming).
+Player movement / visibility state queries, as no-arg globals.
 
 ### `IsMounted()`
 
 Returns `true` if the player is currently mounted, `false` otherwise.
-
-Reads `UNIT_FIELD_MOUNTDISPLAYID` from the player's broadcast
-descriptor. The field holds a creature display ID (the model the
-engine renders under the player) when mounted, and `0` otherwise.
 
 ```lua
 if not IsMounted() then
@@ -23093,10 +24886,9 @@ player isn't mounted.
 if IsMounted() then Dismount() end
 ```
 
-Walks the player's buff range for an aura whose `Spell.dbc` effects
-include `SPELL_AURA_MOUNTED` (`78`), then sends `CMSG_CANCEL_AURA` for
-that spellID via the same direct sender [`C_Spell.CancelSpellByID`](#c_spellcancelspellbyidspellid--cancelspellbynamename) uses. By the
-time the server processes the cancel, `IsMounted()` will return
+The function finds the mount aura (aura `78`) on the player and cancels
+it, as [`C_Spell.CancelSpellByID`](#c_spellcancelspellbyidspellid--cancelspellbynamename)
+does. After the server processes the cancel, `IsMounted()` returns
 `false`.
 
 ### `IsStealthed()`
@@ -23104,12 +24896,9 @@ time the server processes the cancel, `IsMounted()` will return
 Returns `true` if the player is currently in Stealth (Rogue) or
 Prowl (Druid), `false` otherwise.
 
-Reads bit `0x02` of the player visibility byte at descriptor
-`+0x17C` and AND-gates with `MountDisplayID == 0` to disambiguate
-mount (which sets the same bit). Untested for Druid shapeshift
-forms — if you find a false-positive there, file an issue and we'll
-switch to walking the player's aura array for the actual stealth
-spell.
+A mounted player is never reported as stealthed. The function is not
+tested in Druid shapeshift forms. If you find a false positive there,
+file an issue.
 
 ```lua
 if IsStealthed() then
@@ -23120,13 +24909,7 @@ end
 ### `IsFalling()`
 
 Returns `true` if the player is currently mid-jump or falling,
-`false` otherwise.
-
-Reads the local CGPlayer movement-flags word at `+0x9E8` and tests
-`MOVEFLAG_FALLING | MOVEFLAG_FALLING_FAR` (`0x2000 | 0x4000`). This
-is client-side state (outbound `MSG_MOVE_*` data, never visible for
-remote units), so the function only meaningfully applies to the
-local player.
+`false` otherwise. Local-player only.
 
 ```lua
 if not IsFalling() then
@@ -23139,8 +24922,7 @@ end
 Returns `true` if the player is currently swimming (in liquid, with
 the swim animation/movement set), `false` otherwise.
 
-Same movement-flags word as `IsFalling`, testing `MOVEFLAG_SWIMMING`
-(`0x200000`). Local-player only.
+Local-player only.
 
 ```lua
 if IsSwimming() then
@@ -23154,7 +24936,7 @@ Returns `1` if the local player is under a WMO roof — inside a building,
 cave, or instance interior — and `nil` otherwise. `nil` before the player
 object exists (pre-world).
 
-Recomputed live from the engine's WMO geometry query, so it flips as you
+Recomputed live, so it flips as you
 cross an interior threshold rather than tracking the current zone/area —
 you can be indoors and outdoors within the same subzone. Returns `1`/`nil`
 (not `true`/`false`) to match the historical contract and
@@ -23187,27 +24969,15 @@ UI, where movement breaks the channel), `false` otherwise.
 
 This is distinct from spell channeling: the function fires for
 *participants* who clicked the portal, not the warlock who cast
-Ritual of Summoning. There is no stock Lua surface for this state —
-the engine's `SPELLCAST_CHANNEL_*` events don't fire and
-`C_Spell.CastingInfo()` returns nothing — so addons that want to react to
-the player being committed to a ritual (e.g. suppress autorun
-toggles, hide nameplate clicks, warn before movement) have no other
-way to detect it.
+Ritual of Summoning. The default cast bar does not show this channel,
+and `C_Spell.CastingInfo()` returns nothing. Addons that want to react
+to the player being committed to a ritual (for example, to warn before
+movement) use this function.
 
-Detection uses two state slots:
+The function returns `false` for the warlock who channels the ritual,
+and for mining and other casts on game objects.
 
-- `UNIT_CHANNEL_SPELL` (descriptor `+0x228`) — the warlock's channel
-  spell ID (698) is mirrored onto every clicker for the duration
-  of the ritual.
-- A CGPlayer-local pointer at `+0xB4` — the engine's "current spell
-  cast target GameObject" slot, set to the portal GO while the
-  clicker is engaged.
-
-Either signal alone is ambiguous (the warlock channeling matches
-the first; mining and other GO-targeted casts match the second);
-the conjunction is portal-clicker-specific.
-
-The engine fires `SPELLCAST_CHANNEL_START` / `SPELLCAST_CHANNEL_STOP`
+The game fires `SPELLCAST_CHANNEL_START` / `SPELLCAST_CHANNEL_STOP`
 on the portal click, even though there's no castbar — Blizzard's
 castbar UI filters out spell ID 698 (Ritual of Summoning),
 but the events themselves fire normally. Combine them with this
@@ -23226,10 +24996,9 @@ frame:SetScript("OnEvent", function()
 end)
 ```
 
-Local-player only — the `+0xB4` pointer lives on the CGPlayer
-object, not in the broadcast descriptor, so the function can't
-report state for `target` / `party*` / etc. Returns `false` when
-called before the player object is initialized (login screen).
+Local-player only. The function can't report state for `target` /
+`party*` / etc. Returns `false` when called before the player is in
+the world (login screen).
 
 ### `IsInGroup()`
 
@@ -23374,16 +25143,11 @@ if GetShapeshiftFormID() == 0 then
 end
 ```
 
-Reads byte 2 of `UNIT_BYTES_1` (descriptor `+0x212`) on the local
-player — the same byte the engine's `Script_GetShapeshiftFormInfo`
-compares against each form-spell's effect-encoded form ID to answer
-"is this form active". The engine updates the byte from
-`SMSG_UPDATE_OBJECT` aura/form packets, so the value is live without
-needing an event listener.
+The value is live, so you do not need an event listener.
 
-The stock client has only `GetShapeshiftFormInfo(index)` (1-based bar
-index); `GetShapeshiftFormID` exposes the DBC ID directly so callers
-can write `if formID == CAT_FORM` without iterating the bar.
+`GetShapeshiftFormInfo(index)` takes a 1-based bar index.
+`GetShapeshiftFormID` gives the form ID directly, so callers can write
+`if formID == CAT_FORM` without iterating the bar.
 
 ### `CancelShapeshiftForm()`
 
@@ -23399,28 +25163,15 @@ end
 
 Covers druid forms (Cat / Bear / Travel / Aquatic / Moonkin / Dire
 Bear / Tree of Life), shaman Ghost Wolf, priest Shadowform / Spirit of
-Redemption, and rogue Stealth. No form table hardcoding — the
-implementation finds whichever buff currently provides the active form
-by scanning `Spell.dbc` effects.
+Redemption, and rogue Stealth. There is no fixed list of forms. The
+function cancels whichever buff gives the active form.
 
 > **Does not cover warrior stances.** Warriors are *always* in a
-> stance — the engine has no "no stance" state and
+> stance — the game has no "no stance" state and
 > right-clicking the active stance in the stance bar does nothing. The
-> server rejects the cancel packet for stances, so this function is a
+> server rejects the cancel for stances, so this function is a
 > no-op when called as a warrior. Switch stances with the normal stance
 > spells instead.
-
-**Implementation**: reads the current form byte (descriptor `+0x212`,
-same source as [`GetShapeshiftFormID()`](#getshapeshiftformid)), walks
-the player's buff slots (0..31), looks up each spell's
-`Spell.dbc[spellID]` effect arrays, and on the first effect whose
-`EffectApplyAuraName` is `SPELL_AURA_MOD_SHAPESHIFT` (`36`) and whose
-`EffectMiscValue` matches the current form ID, sends `CMSG_CANCEL_AURA`
-via the engine's direct sender at [`FUN_006E7040`](../src/Offsets.h#L428).
-
-Does an effect-array scan + form-id match before issuing its cancel
-packet. The engine has the machinery; it just lacks the public Lua
-surface.
 
 ### `GetSheathState()`
 
@@ -23433,7 +25184,7 @@ The value is 1-based:
 | `2` | A melee weapon is drawn. |
 | `3` | A ranged weapon is drawn. |
 
-Returns `1` before the player object exists (out of world).
+Returns `1` before the player is in the world.
 
 ```lua
 if GetSheathState() == 3 then
@@ -23441,9 +25192,8 @@ if GetSheathState() == 3 then
 end
 ```
 
-The engine has `ToggleSheath()` but no matching getter. `GetSheathState`
-adds the query, with 1-based values. To change the state, use the
-built-in `ToggleSheath()`.
+`GetSheathState` is the query that matches the built-in
+`ToggleSheath()`. To change the state, use `ToggleSheath()`.
 
 ### `IsLoggingOut()`
 
@@ -23536,9 +25286,8 @@ The ClassicAPI addon supplies the `PixelUtil` table (`PixelUtil.SetPoint`,
 ### `CopyToClipboard(text [, removeMarkup])`
 
 Copies `text` to the Windows clipboard and returns the number of bytes
-copied. There is no stock clipboard access, so this is a ClassicAPI
-addition backed by the Win32 clipboard API. Available on both the in-game
-and login/character-select screens.
+copied. Available on both the in-game and login/character-select
+screens.
 
 - `text` — the string to copy (numbers are coerced, like Lua does).
 - `removeMarkup` — optional; when truthy, strip WoW UI escape sequences
@@ -23551,8 +25300,8 @@ and login/character-select screens.
   - unknown `|x` sequences are left verbatim, so real text that merely
     contains a pipe survives
 - returns the byte length of the copied (possibly stripped) string —
-  consistent with Lua's `#s`. `0` for an empty string or if the clipboard
-  couldn't be opened.
+  consistent with Lua's `#s`. `0` for an empty string, or when the
+  clipboard could not be written.
 
 ```lua
 CopyToClipboard("hello world")                              -- 11
@@ -23561,8 +25310,7 @@ CopyToClipboard(link, true)                                 -- 3   (clipboard ge
 CopyToClipboard(link)                                       -- 15  (raw escapes copied)
 ```
 
-> The string is treated as UTF-8 (matching the credential and TTS modules)
-> and written as `CF_UNICODETEXT`; Windows synthesizes `CF_TEXT` for legacy
+> The string is treated as UTF-8 and written as `CF_UNICODETEXT`; Windows synthesizes `CF_TEXT` for legacy
 > consumers.
 >
 > Note when testing from the chat box: the edit box escapes every typed `|`
@@ -23572,8 +25320,8 @@ CopyToClipboard(link)                                       -- 15  (raw escapes 
 
 ### `FlashClientIcon([briefly])`
 
-Flashes the client's taskbar button to get the player's attention (a
-retail backport). Does nothing while WoW is the foreground window, and
+Flashes the client's taskbar button to get the player's attention.
+Does nothing while WoW is the foreground window, and
 returns nothing.
 
 - `briefly` — optional, default `false`. When falsy, flashes until the
@@ -23591,9 +25339,9 @@ FlashClientIcon(true)   -- brief flash
 
 Returns the spellID for the talent at the given `(tabIndex, talentIndex)`
 and rank, or `nil` if the talent index is out of range or the rank slot
-is empty. 1.12's `GetTalentInfo` returns `(name, icon, tier, column,
-currentRank, maxRank, ...)` with no spellID; this fills the gap so
-addons can chain into the spell APIs without maintaining their own
+is empty. `GetTalentInfo` returns `(name, icon, tier, column,
+currentRank, maxRank, ...)` with no spellID. This function gives the
+spellID, so addons can chain into the spell APIs without maintaining their own
 `(class, tab, idx) → spellID` lookup tables.
 
 ```lua
@@ -23609,10 +25357,8 @@ print(C_Spell.GetSpellName(GetTalentSpellID(1, 9)))  -- "Inner Focus"
 ```
 
 `rank` is optional. When omitted, defaults to the player's currentRank
-by delegating to the engine's existing `GetTalentInfo` (5th return) —
-that's the same player-state derivation the engine uses for talent UI
-rendering, including the spell-knowledge checks that account for
-talent-granted abilities. If currentRank is 0 (no points spent), falls
+— the 5th return of `GetTalentInfo`, the same rank the talent UI
+shows. If currentRank is 0 (no points spent), falls
 back to rank 1 so the function still produces the talent's canonical
 spellID for unallocated talents.
 
@@ -23622,10 +25368,9 @@ scenarios where you want to preview "what rank 5 would do" without
 respec'ing.
 
 `classID` is optional (4th arg; pass `rank` as nil to keep the default)
-and queries any class's talent tree via `Talent.dbc` / `TalentTab.dbc` —
-the same cross-class path as
-[`GetTalentIDByIndex`](#gettalentidbyindextabindex-talentindex-classid),
-with identical `(tab, idx)` ordering. Because there's no "currentRank"
+and queries any class's talent tree, with the same `(tab, idx)`
+ordering as
+[`GetTalentIDByIndex`](#gettalentidbyindextabindex-talentindex-classid). Because there's no "currentRank"
 for a class you aren't, a cross-class query with no explicit `rank`
 defaults to **rank 1** (rather than the player-currentRank default of
 the same-class path).
@@ -23638,19 +25383,12 @@ Returns `nil` for:
   for rank 5 on a 1-rank talent like Inner Focus
 - a `classID` that matches no class
 
-Without `classID`, reads the engine's per-tab talent arrays at
-`[0x00BDCD28]` (populated at login from `Talent.dbc` filtered by the
-player's class); with it, reads the `Talent.dbc` flat array directly.
-Either way the `SpellRank[]` array lives at offset `+0x10` of each
-record (stride `0x54`), one spellID per rank — the engine populates
-indices 0..4 (ranks 1..5), the higher slots stay zero.
-
 Equivalent to one of `GetTalentInfo`'s extended returns — the talent's
 spellID.
 
 ### `GetTalentIDByIndex(tabIndex, talentIndex[, classID])`
 
-Returns the engine's hidden talentID — the primary key of the
+Returns the hidden talentID — the primary key of the
 `Talent.dbc` row — for the talent at the given (tab, idx). Returns
 `nil` for out-of-range indices.
 
@@ -23671,18 +25409,10 @@ class's talent tree, not just the local player's — useful for
 talent-build tooling and previewing other specs. When omitted or nil,
 it falls back to the player's own class.
 
-- **Without `classID`** — reads `TalentEntry+0x00` from the per-tab
-  talent arrays at `[0x00BDCD28]` (the engine's runtime state for the
-  local player's class). Same struct walk as `GetTalentSpellID`.
-- **With `classID`** — reads the `Talent.dbc` / `TalentTab.dbc` flat
-  arrays directly, replicating the engine's tree builder
-  (`FUN_004f2c00`): tabs in DBC row order filtered by class-mask, then
-  talents in DBC row order within each tab. This is the *same* ordering
-  the runtime arrays are built from, so `GetTalentIDByIndex(t, i)` and
-  `GetTalentIDByIndex(t, i, <player's class>)` return identical values.
-
-Equivalent to the talentID return slot of `GetTalentInfo` (which the
-stock client doesn't expose).
+With or without `classID`, the order is the order of the talent UI:
+the tabs of the class in DBC row order, then the talents in DBC row
+order in each tab. Thus `GetTalentIDByIndex(t, i)` and
+`GetTalentIDByIndex(t, i, <player's class>)` return identical values.
 
 ## Targeting
 
@@ -24073,7 +25803,7 @@ Each entry:
 | `name` | localized node name (`"Stormwind, Elwynn Forest"`) |
 | `faction` | `Enum.FlightPathFaction` — Alliance-mount-only → `Alliance`, Horde-only → `Horde`, both → `Neutral` |
 | `reachable` | *(ext)* a flight path leads *to* this node (in-degree > 0). `false` = departure-only, reachable only by other means (druid Teleport → "Nighthaven, Moonglade"; a boat dock → "Stormwind Harbor") |
-| `position` | `{x, y}` 0–1 on the continent map |
+| `position` | vector (`position.x`, `position.y`, `position:GetXY()`), 0–1 on the continent map |
 | `mapID` | *(ext)* continent `Map.dbc` id |
 | `x` / `y` / `z` | *(ext)* raw continent world coords |
 | `areaID` | *(ext)* the `AreaTable` zone, from the node's own name — its **location** if that's a mapped city ("Orgrimmar" → Orgrimmar city), else the **zone** suffix ("…, Western Plaguelands" → WPL). Authoritative; absent if unresolved |
@@ -24089,10 +25819,9 @@ the city map), otherwise the zone suffix ("Chillwind Camp, Western
 Plaguelands" → WPL). Each candidate is accepted only if its map rect
 contains the node, so this is right at borders a purely geometric guess
 gets wrong (Chillwind → WPL, not the Alterac box it sits in). Nodes
-whose name resolves to no containing zone fall back to the geometric
-landmass resolver. `isUndiscovered` is not wired (the client's
-known-node bitfield isn't read) — every node is returned regardless of
-discovery.
+whose name resolves to no containing zone fall back to a geometric
+guess. `isUndiscovered` is not set — every node is returned regardless
+of discovery.
 
 ```lua
 for _, n in ipairs(C_TaxiMap.GetTaxiNodesForMap(0)) do
@@ -24122,7 +25851,7 @@ Each entry:
 |---|---|
 | `slotIndex` | the legacy `1..NumTaxiNodes()` index — pass to `TakeTaxiNode(slotIndex)` to fly |
 | `name` | node name |
-| `position` | `{x, y}` 0–1 on the flight-map image |
+| `position` | vector (`position.x`, `position.y`, `position:GetXY()`), 0–1 on the flight-map image |
 | `state` | `Enum.FlightPathState` — `CURRENT`→`Current`, `REACHABLE`→`Reachable`, `DISTANT`/none→`Unreachable` |
 | `nodeID` | `TaxiNodes.dbc` id (resolved from the slot's node record; `0` if absent) |
 
@@ -24204,8 +25933,8 @@ local route = C_TaxiMap.GetTaxiRoute(slotIndex)
 ```
 
 This is the exact chain `TakeTaxiNode(slotIndex)` would send to the server —
-mirrors the client's own routing decision: a single direct hop when a `TaxiPath`
-edge exists (`{ current, dest }`), otherwise the client's precomputed multi-hop
+the same route the client chooses: a single direct hop when a direct flight
+path exists (`{ current, dest }`), otherwise the client's precomputed multi-hop
 route (which, per character, may detour around flight points you haven't
 discovered). Returns nothing when the map is closed, the slot is out of range,
 it's the current node, or no route exists.
@@ -24297,6 +26026,7 @@ A ClassicAPI extension. Adds an atlas name that points at your own art, so
 - `file` — texture path, without the file extension.
 - `width`, `height` — size of the art in pixels, used by `useAtlasSize`.
 - `left`, `right`, `top`, `bottom` — the rectangle inside the file, from 0 to 1.
+  Each one is optional; together they default to the whole file (0, 1, 0, 1).
 
 Registering a name a second time replaces its definition and keeps its ids, so a
 caller that stored an id keeps a valid one. Returns `true`.
@@ -24370,8 +26100,7 @@ SetPortraitTextureFromCreatureDisplayID(portrait, 3254)
 ### `GetServerTime()`
 
 Returns the current server clock as a Unix epoch timestamp (seconds since
-1970-01-01 UTC), or `nil` before login (while the engine's game-time
-struct is still BSS-zero).
+1970-01-01 UTC), or `nil` before login.
 
 ```lua
 local now = GetServerTime()
@@ -24404,14 +26133,14 @@ To print the realm's clock digits rather than the instant, use
 ### `GetTimeCached()`
 
 Returns the same value as [`GetTime()`](https://warcraft.wiki.gg/wiki/API_GetTime)
-— seconds on the engine's uptime clock — but **frame-stable**: every call
+— seconds on the client's uptime clock — but **frame-stable**: every call
 within a single frame returns the identical value, refreshed once per
 frame. Same epoch as `GetTime()`, so the two are directly comparable.
 
 Provides a frame-stable `GetTime()` (sampled once per frame in the main
 loop) under a distinct name, leaving the stock
-`GetTime()` untouched — `GetTime()` is *live*, recomputing the OS
-tick on every call, so two same-frame `GetTime()` calls can differ.
+`GetTime()` untouched — `GetTime()` is *live*, reading the clock on
+every call, so two same-frame `GetTime()` calls can differ.
 
 ```lua
 -- Frame-stable: consistent timestamps across a frame's work
@@ -24422,8 +26151,7 @@ if now - lastFire >= interval then
 end
 ```
 
-> **Not a performance feature.** The underlying tick source is cheap
-> (`GetTickCount`, a user-mode shared-page read, or `rdtsc`), and
+> **Not a performance feature.** The underlying clock read is cheap, and
 > both functions pay the same Lua→C call overhead, which dominates. So
 > `GetTimeCached()` is not meaningfully faster than `GetTime()` — its
 > only advantage is the frame-stable semantics. To actually cut cost in a
@@ -24431,8 +26159,7 @@ end
 > (`local now = GetTime()`) and reuse it; that removes the per-call Lua
 > dispatch, which a cached C function cannot.
 
-The cache is refreshed from the shared once-per-frame `Tick::WorldTick`
-hook; before the first world tick (pre-login / glue) it falls back to a
+Before the first frame in the world (pre-login / glue), it returns a
 live sample, so it never returns 0.
 
 ### `GetTickTime()`
@@ -24453,15 +26180,13 @@ local elapsed = GetTickTime()
 ### `C_Timer.After(seconds, callback)`
 
 Schedules `callback` to fire once after `seconds`. Returns nothing.
-`C_Timer.After` as an engine binding — a `Script_*` C function, not Lua.
 
 ```lua
 C_Timer.After(0.5, function() print("half a second later") end)
 C_Timer.After(0, function() print("next frame") end)
 ```
 
-Errors in the callback are caught (via `lua_pcall`) and silently
-swallowed. One broken timer doesn't
+Errors in the callback are caught and silently swallowed. One broken timer doesn't
 poison other timers on the same tick.
 
 ### `C_Timer.NewTimer(seconds, callback)`
@@ -24479,11 +26204,20 @@ or was previously cancelled is a no-op. `IsCancelled()` returns
 `true` after `Cancel()`, after natural expiry, or for an unknown
 timer ID. Both methods take no arguments other than `self`.
 
+`callback` receives the handle as its one argument.
+
 ### `C_Timer.NewTicker(seconds, callback, [iterations])`
 
 Recurring variant. `callback` fires every `seconds` until cancelled
 or until `iterations` fires have happened. `iterations` is optional;
-omitted or non-numeric means forever.
+omitted or non-numeric means forever. `callback` receives the handle
+as its one argument, so a ticker can cancel itself:
+
+```lua
+C_Timer.NewTicker(1, function(ticker)
+  if done() then ticker:Cancel() end
+end)
+```
 
 ```lua
 local h = C_Timer.NewTicker(1, function() print("each second") end)
@@ -24498,19 +26232,13 @@ Minimum period is clamped to `0.0001` to prevent tight loops.
 Returns the same kind of cancel handle as `NewTimer`. The handle
 auto-cancels itself when the iteration count exhausts.
 
-Implementation notes (apply to all three functions):
+Notes (apply to all three functions):
 
-- One unified timer queue walked once per frame from
-  `FUN_WORLD_TICK`'s subscription. Same hook the
-  `BAG_UPDATE_DELAYED` flusher uses, so there's no per-feature hook
-  overhead.
 - Resolution is one frame (~16ms at 60fps). A timer scheduled for
   `0.001` seconds will fire on the next tick, same as one
   scheduled for `0`.
-- The timer queue uses a monotonic clock (`QueryPerformanceCounter`),
-  so timers don't drift if the system clock changes mid-session.
-- Callbacks are pinned in the Lua registry under per-timer string
-  keys so they survive GC between scheduling and firing.
+- Timers use a monotonic clock, so they don't drift if the system
+  clock changes mid-session.
 
 ### `C_DateAndTime` overview
 
@@ -24562,14 +26290,13 @@ local t = C_DateAndTime.GetCurrentCalendarTime()
 ### `C_DateAndTime.GetCalendarTimeFromEpoch(epoch)`
 
 Converts a Unix epoch (seconds since 1970-01-01 UTC) to a
-CalendarTime table. Pure `gmtime`; no engine state touched.
+CalendarTime table. Uses no game state.
 
 ### `C_DateAndTime.AdjustTimeByDays(date, days)` / `AdjustTimeByMinutes(date, minutes)`
 
 Returns a new CalendarTime offset from the input by the given number
 of days (or minutes). Negative deltas walk backwards. Out-of-range
-inputs (`month=13`, `monthDay=32`) normalize via the underlying
-`_mkgmtime` / `gmtime` round-trip.
+inputs (`month=13`, `monthDay=32`) are normalized.
 
 ```lua
 local today = C_DateAndTime.GetCurrentCalendarTime()
@@ -24579,8 +26306,9 @@ local yesterday = C_DateAndTime.AdjustTimeByDays(today, -1)
 
 ### `C_DateAndTime.CompareCalendarTime(lhs, rhs)`
 
-Returns `-1` if `lhs < rhs`, `0` if equal, `1` if `lhs > rhs`.
-Compares by epoch conversion so denormalized inputs sort
+Returns `1` if `lhs` is earlier than `rhs`, `0` if they are equal, and
+`-1` if `lhs` is later. The sign tells you where `rhs` is in relation
+to `lhs`. Compares by epoch conversion so denormalized inputs sort
 consistently.
 
 ### `C_DateAndTime.GetServerTimeLocal()`
@@ -24593,12 +26321,9 @@ returns the epoch for 14:30 UTC, so `date("!%H:%M", t)` prints
 
 ### `C_DateAndTime.GetSecondsUntilDailyReset()`
 
-Returns seconds until the next server midnight (00:00:00 in server
-wall-clock time). Returns 0 if called before login.
-
-> See the overview's "Daily reset semantics" note — this uses server
-> midnight, not UTC midnight (though they happen to coincide for
-> Turtle WoW since the server reports UTC-aligned components).
+Returns seconds until the next UTC midnight, where the realm's day
+boundary sits. Returns nothing if called before login. See the overview's
+"Daily reset semantics" note.
 
 ## Totem
 
@@ -24705,13 +26430,13 @@ the same as for [`GetTotemInfo`](#gettoteminfoslot).
 
 ## Tracking
 
-The engine stores only the tracking spell that is active now. It does
+The game stores only the tracking spell that is active now. It does
 not keep a list of the tracking spells you know. These globals add that
 list. A minimap addon can then build a tracking menu without a hardcoded
 spell table.
 
 A tracking spell is a spell in your spellbook that finds creatures,
-resources, or hidden units. This is the same test the engine uses to find
+resources, or hidden units. This is the same test the game uses to find
 the active tracker. The list covers Find Herbs, Find Minerals, Find
 Treasure, the Hunter Track spells, Sense Undead, Sense Demons, and Track
 Humanoids. It also covers server-added trackers, such as Turtle's Find
@@ -24955,11 +26680,9 @@ directly:
 ITEM_EPIC_COLOR_CODE .. "Legendary" .. "|r"
 ```
 
-There is no `GlobalColor.dbc` here, so the data comes from a snapshot
-embedded in the DLL (see [`src/ui/ColorData.h`](../src/ui/ColorData.h)).
-Duplicate `baseTag`s in the source DBC (`PURE_RED_COLOR`,
-`INVASION_*`, etc.) are deduplicated keeping the higher-ID entry,
-matching what `ipairs(DBColors)` ends up assigning. Colors for
+The data comes from a fixed snapshot. When the source data has
+duplicate `baseTag`s (`PURE_RED_COLOR`, `INVASION_*`, etc.), the entry
+with the higher ID wins, as `ipairs(DBColors)` assigns them. Colors for
 Death Knight runes, Mythic+ medals, healing
 absorbs, glyphs, and the objective tracker aren't in the snapshot and so
 aren't surfaced — none have a use case here anyway.
@@ -24989,12 +26712,9 @@ The returned string is itself accepted as a unit token — `UnitName(guid)`,
 `UnitHealth(guid)`, etc. all work — so a GUID round-trips as a stable
 handle. See [Unit tokens (GUID literals)](#unit-tokens-guid-literals).
 
-**Works for OOR party / raid members.** Earlier versions of this
-function returned nil for `"partyN"` / `"raidN"` when the member's
-CGObject wasn't currently active in the client (e.g. on another
-continent, in a different zone phase). We now read from the engine's
-parallel group-roster GUID array (populated by `SMSG_GROUP_LIST`),
-which is independent of unit visibility.
+**Works for OOR party / raid members.** `"partyN"` / `"raidN"` return
+the GUID also when the client cannot see the member (e.g. on another
+continent, in a different zone phase).
 
 > **GUID format.** GUIDs here are plain 64-bit integers — there's no
 > `"Player-RealmID-CharacterID"` / `"Creature-0-0-MapID-..."` prefix
@@ -25004,22 +26724,21 @@ which is independent of unit visibility.
 > **Errors on invalid unit tokens.** Same behavior as the other
 > unit-token functions (`UnitAffectingCombat`, `UnitName`, etc.) —
 > passing a string that doesn't match a known unit ID raises a Lua
-> error rather than returning nil. We match the engine's existing
-> convention here. Unit tokens that
+> error rather than returning nil. Unit tokens that
 > resolve to "no current unit" (like `"target"` with nothing
-> targeted) return nil cleanly via the GUID = 0 check.
+> targeted) return nil cleanly.
 
 ### `UnitTokenFromGUID(guid)`
 
 Best-effort reverse lookup: given a GUID string in the
-`"0xHHHHHHHHLLLLLLLL"` format `UnitGUID` returns, walk the engine's
+`"0xHHHHHHHHLLLLLLLL"` format `UnitGUID` returns, walk the
 known unit tokens and return the first one currently mapped to that
 GUID, or `nil` if none of them point at it.
 
-The search order omits tokens the engine's resolver doesn't recognize
+The search order omits tokens that the client does not recognize
 (`vehicle`, `arenaN`, `arenapetN`, `bossN`). `nameplateN`, `focus`,
-`softenemy`, `softfriend` and `softinteract` are included — we hook the resolver so the engine recognizes these token
-forms. As with the other positional tokens, a returned
+`softenemy`, `softfriend` and `softinteract` are included, because
+ClassicAPI adds these token forms. As with the other positional tokens, a returned
 `"nameplate3"` result is only valid at that instant; the slot may
 shift to a different unit between calls, so re-verify with
 `UnitGUID(token)` before reusing.
@@ -25041,7 +26760,7 @@ end
 > **The return is inherently unstable.** Multiple tokens can map to
 > the same GUID at once (your target IS your party1, your pet IS
 > your raidpet5 if you're in a raid), and the mapping changes every
-> time `SMSG_GROUP_LIST` fires, the player tabs target, or a party
+> time the group roster changes, the player tabs target, or a party
 > member loads in. If you cache a
 > result, re-verify with `UnitGUID(token) == originalGuid` before
 > reusing it.
@@ -25049,7 +26768,7 @@ end
 > Returns `nil` for malformed GUID strings, zero GUIDs, and GUIDs
 > that don't match any currently-resolvable token — including
 > ex-targets, ex-mouseover units, distant players seen in the chat
-> log, etc. The engine simply doesn't address those by token.
+> log, etc. The client has no token for those.
 
 ### `UnitTokenFromName(name [, exactMatch])`
 
@@ -25115,17 +26834,17 @@ end
 
 `UnitFactionGroup("player")` answers while addons load (at file scope,
 `ADDON_LOADED` and `VARIABLES_LOADED`), as `UnitName`, `UnitRace` and
-`UnitClass` already do and as later clients do. Stock 1.12 returns `nil`
-until `PLAYER_LOGIN`, and AceDB-3.0 builds its `"<faction> - <realm>"`
+`UnitClass` already do and as later clients do. The stock function
+returns `nil` until `PLAYER_LOGIN`, and AceDB-3.0 builds its `"<faction> - <realm>"`
 profile key from it at file scope.
 
 ```lua
 -- at file scope, on a Human character
-UnitFactionGroup("player")   -- "Alliance", "Alliance" (stock 1.12: nil)
+UnitFactionGroup("player")   -- "Alliance", "Alliance" (stock function: nil)
 ```
 
 Before you enter the world, the answer comes from the character's race. The
-engine uses the same race-to-faction chain for a player it cannot see, and
+game uses the same race-to-faction rule for a player it cannot see, and
 [`C_CreatureInfo.GetFactionInfo`](#c_creatureinfogetfactioninforaceid)
 uses it for a race. After you enter the world, the result is the same as
 stock, `nil` included. Results for other units do not change.
@@ -25147,13 +26866,13 @@ NPCs, and NPCs with no subtitle.
 The stock `UnitName` returns only one value, leaving no
 direct route to the subtitle. Addons that wanted it had to scrape
 `GameTooltip` text, which is fragile and required the unit to be
-hovered. `UnitSubName` reads it straight off the engine's creature
-cache (`[unit + 0xB30] → [+0x10]`), no tooltip round-trip.
+hovered. `UnitSubName` reads it from the creature cache, with no
+tooltip round-trip.
 
 Coverage caveat: the creature cache row is populated when an NPC
-becomes visible to the client AND the server has sent its
-`CMSG_CREATURE_QUERY_RESPONSE`. The first time a fresh NPC appears
-the row may be briefly NULL — usually only one or two frames.
+becomes visible to the client AND the server has answered the
+creature query. The first time a fresh NPC appears the row may be
+briefly empty — usually only one or two frames.
 Subsequent calls succeed once the response lands.
 
 ### `UnitSelectionColor(unit [, useExtendedColors])` / `UnitSelectionType(unit [, useExtendedColors])`
@@ -25204,13 +26923,11 @@ when it has no family (players, non-beast NPCs, unsynced NPCs).
 Stock `UnitCreatureFamily(unit)` returns only the *localized name*
 (`"Wolf"`, `"Chat"`) — awkward to compare and locale-dependent. This
 extension exposes the raw id addons actually want for stable checks
-(tameable-pet filtering, family-specific ability tables). It's the same
-id the engine's `UnitCreatureFamily` resolves internally
-(`[unit + 0xB30] → [+0x1C]`) before mapping it through
-`CreatureFamily.dbc` for the display name — this just stops at the id.
+(tameable-pet filtering, family-specific ability tables). It is the id
+behind the name that `UnitCreatureFamily` returns.
 `nil` semantics match `UnitCreatureFamily` (both return nothing for a
 family of 0), and it shares `UnitSubName`'s creature-cache coverage
-caveat (a fresh NPC's row may be briefly NULL for a frame or two).
+caveat (a fresh NPC's row may be briefly empty for a frame or two).
 
 ### `UnitCreatureTypeID(unit)`
 
@@ -25225,9 +26942,9 @@ it has no resolvable type. The raw-id twin of `UnitCreatureFamilyID`.
 
 Stock `UnitCreatureType(unit)` returns only the *localized name*
 (`"Humanoid"`, `"Humanoïde"`) — awkward to compare and locale-dependent.
-This exposes the id addons want for stable checks. It calls the same inner
-resolver the engine's `UnitCreatureType` uses, which handles every unit kind
-(NPCs via the creature cache, players via their race → Humanoid). Pair with
+This exposes the id addons want for stable checks. It covers the same
+units as `UnitCreatureType`: NPCs, and players by their race (→ Humanoid).
+Pair with
 [`C_CreatureInfo.GetCreatureTypeInfo`](#c_creatureinfogetcreaturetypeinfocreaturetypeid)
 to get the localized name back from the id.
 
@@ -25271,26 +26988,18 @@ local current, run, _, swim = GetUnitSpeed("player")
 --      reflects the modifier; swim ignores mount)
 ```
 
-- **`currentSpeed`** — speed the engine would apply to this frame's
+- **`currentSpeed`** — speed the game applies to this frame's
   movement step. `0` when stationary; otherwise the walk/run/swim/
-  backward variant the unit is actually moving with. Read via the
-  engine's own selector at `0x007C4C90` so movement-flag handling
-  (walking, swimming, taxi paths) matches the engine exactly.
-- **`runSpeed`** — raw forward-run speed from MovementInfo `+0x8C`.
-  Includes mount / buff / debuff multipliers — the engine maintains
-  this field as the post-modifier value, updated by
-  `SMSG_FORCE_RUN_SPEED_CHANGE` and friends.
+  backward variant the unit is actually moving with. Walking,
+  swimming and taxi paths are handled exactly as the game does.
+- **`runSpeed`** — forward-run speed. Includes mount / buff / debuff
+  multipliers.
 - **`flightSpeed`** — always `0`.
-- **`swimSpeed`** — raw forward-swim speed from MovementInfo `+0x94`.
+- **`swimSpeed`** — forward-swim speed.
 
-All four returns are `0` if the token doesn't resolve to a live
-CGUnit — empty `"target"`, out-of-range party member, etc. Pushes
+All four returns are `0` if the token doesn't resolve to a visible
+unit — empty `"target"`, out-of-range party member, etc. Returns
 `0.0` rather than nil for non-visible units.
-
-Reads `[CGUnit + 0x118]` to get the MovementInfo pointer, then
-reads speed fields directly. Field offsets verified via the
-movement-prediction loop (`FUN_005FC350` and the sprint-jump
-calculator at `0x00511920` both reach into the same struct).
 
 ### `UnitIsAFK(unit)`
 
@@ -25305,12 +27014,6 @@ UnitIsAFK("target")   -- true if the targeted player is AFK
 UnitIsAFK("party1")   -- true if party member 1 is AFK
 UnitIsAFK("npc")      -- always false
 ```
-
-> **How it works under the hood.** PLAYER_FLAGS isn't broadcast as a
-> UpdateField here, but every nearby player's CGPlayer-side info struct
-> at `[unit + 0xE68]` carries it at byte +0x08. Same struct the
-> engine reads when rendering the `<AFK>` prefix above a player's
-> head. Verified against the in-game nameplate behavior.
 
 ### `UnitIsDND(unit)`
 
@@ -25344,40 +27047,25 @@ UnitIsInMyGuild("party1")    -- 1 if party member 1 is a guildmate
 UnitIsInMyGuild("Bob")       -- 1 if there's a guildmate named Bob
 ```
 
-Resolution strategy:
+How the function finds the answer:
 
-1. Calls `UnitName(input)` via `lua_pcall` to canonicalize the input.
-   Tokens resolve cleanly; literal names hit the engine's "Unknown
-   unit name" error which `pcall` swallows.
-2. For valid tokens, attempts a fast direct comparison against the
-   player's guild-key field at `[unit + 0xE68 + 0x0C]` — same field
-   `GetGuildInfo` reads, populated immediately on guild join for the
-   local player and for any synced player-controlled unit. No roster
-   fetch needed for nearby/loaded units.
-3. Falls back to walking the engine's guild roster array (same
-   backing storage `GetGuildRosterInfo` reads) by name. Required for
-   out-of-range party members, distant raid members, and literal
-   name input — needs `GuildRoster()` to have been called and the
-   server's response to have arrived.
+1. For a unit token of a nearby player, it compares the guild of that
+   unit directly, as `GetGuildInfo` does. No roster fetch is needed.
+2. For out-of-range party members, distant raid members, and literal
+   name input, it searches the guild roster by name. This needs a
+   `GuildRoster()` call first, and the server's answer must have
+   arrived.
 
 Return convention is `1.0` / `nil`, not boolean. Both
 work for `if UnitIsInMyGuild(x) then` checks.
 
-The slow path reads the engine's full roster count
-(`[0x00B73118]`, the same value `GetNumGuildMembers(true)` returns),
-not the online-only count, so offline guildmates resolve too — the
-"show offline" toggle doesn't affect lookup. The only requirement
-is that `GuildRoster()` has been called and the server's
-SMSG_GUILD_ROSTER response has arrived.
+The roster search includes offline guildmates. The "show offline"
+toggle has no effect on it.
 
 ### `UnitIsPossessed(unit)`
 
 Returns `true` if the unit is currently possessed (priest's `Mind
-Control`, warlock's `Subjugate Demon`). Reads `UNIT_FIELD_FLAGS` bit
-24 (`0x01000000`) — the standard `UNIT_FLAG_POSSESSED` per
-emulator sources — directly off the unit's m_objectFields descriptor.
-Works for any unit token since UNIT_FIELD_FLAGS is broadcast in
-object updates.
+Control`, warlock's `Subjugate Demon`). Works for any unit token.
 
 ```lua
 UnitIsPossessed("target")   -- true if mind-controlled
@@ -25391,15 +27079,15 @@ specific spell-driven take-over effect.
 
 Returns `true` if `unit` is a **minion of a player** — a pet, guardian,
 totem, or charmed creature — `false` otherwise. Primarily owner-based: the
-unit's owner GUID (SummonedBy / CreatedBy / CharmedBy) must resolve to a
-player, with "player-controlled but not itself a player" as a fallback.
-Owner-based is needed because summoned **guardians** (shown as "X's
-Minion") carry an owner but not the `PLAYER_CONTROLLED` flag, so a
-flag-only check would miss them. Players, NPCs, and world creatures return
+unit's owner (summoner, creator, or charmer) must be a player, with
+"player-controlled but not itself a player" as a fallback. Owner-based is
+needed because summoned **guardians** (shown as "X's Minion") have an
+owner but are not marked player-controlled, so a flag-only check would
+miss them. Players, NPCs, and world creatures return
 `false`.
 
-Built from the engine's own primitives. A bad or unresolved unit token
-returns `false`.
+A unit token that names no unit, or an argument that is not a string, returns
+`false`. A string that is not a unit token raises an error.
 
 ```lua
 UnitIsMinion("pet")     -- your pet → true
@@ -25411,17 +27099,17 @@ UnitIsMinion("target")  -- another player's felhunter → true; a boar → false
 
 Returns `true` if `unit` is a **pet** of a player (as opposed to a
 guardian/totem "minion"), `false` otherwise — the pet↔minion
-discriminator. Uses the engine's own classifier: owned by a player **and**
-the family-based pet/minion test that drives the `UNITNAME_TITLE_PET` vs
-`UNITNAME_TITLE_MINION` tooltip label. Neither the GUID (pets and guardians
-share the `0xF14…` prefix on this client) nor `UNIT_FLAG_PLAYER_CONTROLLED`
-(a "Minion" can carry it) reliably separates them, so the creature-family
-classifier is the correct signal; the owner-is-player gate also excludes
-wild tameable beasts of the same family.
+discriminator. The unit must have a player owner **and** pass the same
+family-based pet/minion test that picks the `UNITNAME_TITLE_PET` vs
+`UNITNAME_TITLE_MINION` tooltip label. The GUID does not separate pets
+from guardians (both have the `0xF14…` prefix), and a "Minion" can also
+be player-controlled. The player-owner rule also excludes wild tameable
+beasts of the same family.
 
 `UnitIsMinion` is the umbrella (pet + guardian + totem); `UnitIsPet` is the
-controllable subset. A ClassicAPI extension, not a stock WoW global. A bad
-or unresolved unit token returns `false`.
+controllable subset. A ClassicAPI extension, not a stock WoW global.
+A unit token that names no unit, or an argument that is not a string, returns
+`false`. A string that is not a unit token raises an error.
 
 ```lua
 UnitIsPet("pet")                 -- your pet → true
@@ -25433,11 +27121,11 @@ UnitIsPet("pet")                 -- your pet → true
 
 Returns `true` if `unit` is a minion (pet, guardian, totem, or charmed
 creature) whose owner is a player **other than you**, `false` otherwise.
-Owner-based: it reads the unit's owner GUID (SummonedBy / CreatedBy /
-CharmedBy), requires that owner to be a player, and requires it to differ
-from you. World creatures and
+Owner-based: the unit's owner (summoner, creator, or charmer) must be a
+player other than you. World creatures and
 players (no owner) return `false`; your own minions (owner is you) return
-`false`. A bad or unresolved unit token returns `false`.
+`false`. A unit token that names no unit, or an argument that is not a string, returns
+`false`. A string that is not a unit token raises an error.
 
 ```lua
 UnitIsOtherPlayersPet("target")  -- a party member's pet → true; your own pet → false
@@ -25454,8 +27142,8 @@ local owner = UnitOwnerGUID("pettarget")   -- e.g. the enemy hunter's GUID
 if owner == UnitGUID("player") then ... end  -- is it my minion?
 ```
 
-Reads the same owner field the pet predicates use (`CharmedBy`, else
-`CreatedBy` in the unit's `m_objectFields`).
+The owner is the same one that the pet functions above use: the charmer
+if there is one, else the creator.
 
 ### `UnitCreatedBySpell(unit)`
 
@@ -25494,11 +27182,9 @@ Returns the unit's standstate as an integer, matching the
 | `7` | DEAD |
 | `8` | KNEELING |
 
-Reads the low byte of `UNIT_BYTES_1` (descriptor `+0x210`), a
-broadcast UpdateField — works for any synced unit (player, target,
-party*, raid*, mouseover, etc.). Returns `0` (STANDING) for
-unresolvable units (empty `party*` slot, no current target, etc.)
-returning a safe default.
+Works for any visible unit (player, target, party*, raid*, mouseover,
+etc.). Returns `0` (STANDING) as a safe default for unresolvable units
+(empty `party*` slot, no current target, etc.).
 
 ```lua
 UnitStandState("player")    -- 0 standing, 1 sitting, 5 chair-sit, …
@@ -25506,9 +27192,8 @@ UnitStandState("target")    -- works for any visible unit
 UnitStandState("party1")    -- 0 if the slot is empty
 ```
 
-The stock client has `IsSitOrStanding()` (local-player boolean) but no
-unit-token form; `UnitStandState` fills the gap and exposes the
-full enum.
+`IsSitOrStanding()` gives only a boolean for the local player.
+`UnitStandState` takes a unit token and gives the full enum.
 
 ### `UnitInRange(unit)`
 
@@ -25532,33 +27217,26 @@ end
 | `inRange` | `true` if the unit is within a 40-yard heal's reach of the player. `false` if out of range OR if `checkedRange` is `false`. |
 | `checkedRange` | `true` when a position-based range check was performed. `false` when the unit's position isn't available — either the token didn't resolve (empty `partyN` slot, no target, raid member in a different zone, etc.) or `unit == "player"` (see below). |
 
-Reads the world position via the `CGObject::GetPosition` vtable
-virtual (slot 5, offset `+0x14`) — same path
-`CheckInteractDistance` uses.
-
 **Reach-aware.** The threshold is not a flat 40 yards on the raw
-center-to-center distance — it's `40 + playerReach + targetReach`,
-mirroring the engine's own spell-range formula (`FUN_006e3480`), where
-each unit's reach is the bounding-radius float at `[m_objectFields +
-0x1F0]` (the same size factor the interact-distance and loot-range
-checks add). A 40-yard heal lands on a target whose *center* is up to
+center-to-center distance — it's `40 + playerReach + targetReach`, the
+same formula the game uses for spell range. Each unit's reach is its
+bounding radius. A 40-yard heal lands on a target whose *center* is up to
 `40 + reach` yards away, so a bare center-distance cap of 40 wrongly
 reports out-of-range for a target the client can actually heal (on a
-large target the reach gap is 2–3 yards). If a unit's descriptor isn't
-populated yet the reach term is 0 and the check degrades to a plain
+large target the reach gap is 2–3 yards). If the size of a unit is not
+known yet, the reach term is 0 and the check degrades to a plain
 40-yard cap. Note this is the one difference from `UnitDistanceSquared`,
 which stays raw center-to-center.
 
 > **`UnitInRange("player")` returns `(false, false)`** by design.
 > The function is meant for healing-frame "is *another* unit in range"
 > checks; querying yourself is
-> meaningless. We short-circuit before the position read so the
-> result is unambiguous (`checkedRange=false`).
+> meaningless. The result is always `checkedRange=false`, so it is
+> unambiguous.
 
-Works for any synced unit (party/raid members in your zone, target,
+Works for any visible unit (party/raid members in your zone, target,
 mouseover, etc.). For raid members in a different zone or otherwise
-not in the engine's sync window, the position virtual returns null
-and the function reports `(false, false)`.
+not visible to the client, the function reports `(false, false)`.
 
 ### `UnitDistanceSquared(unit)`
 
@@ -25576,7 +27254,7 @@ end
 | Return | Meaning |
 |--------|---------|
 | `distanceSquared` | Squared distance player→unit. `0` when `checkedPosition` is `false` (a placeholder — an "always a number" shape). |
-| `checkedPosition` | `true` when both positions were read. `false` when `unit`'s position isn't available (empty `partyN` slot, no target, raid member outside the sync window, etc.). |
+| `checkedPosition` | `true` when both positions were read. `false` when `unit`'s position isn't available (empty `partyN` slot, no target, raid member out of view, etc.). |
 
 The value is **squared** on purpose: nearly all distance logic is a
 threshold compare (`distSq <= range * range`) or a nearest-unit sort,
@@ -25585,13 +27263,10 @@ squared form is exposed, never a plain `UnitDistance`. Take
 `math.sqrt(distanceSquared)` only when you need a yard number to show a
 human.
 
-Reads world positions via the `CGObject::GetPosition` vtable virtual
-(slot 5, offset `+0x14`) — the same path `UnitInRange` /
-`CheckInteractDistance` and our own [`UnitPosition`](#unitpositionunit)
-use. **Center-to-center**, not reach-aware (that edge-to-edge nicety is
-UnitXP_SP3's niche); the value equals what you'd compute from the raw
-`UnitPosition` coordinates, and it's self-contained (no sibling-DLL
-dependency).
+**Center-to-center**, not reach-aware (that edge-to-edge nicety is
+UnitXP_SP3's niche). The value equals what you'd compute from the
+[`UnitPosition`](#unitpositionunit) coordinates. It does not need
+another DLL.
 
 > No self-quirk (unlike `UnitInRange`): `UnitDistanceSquared("player")`
 > returns a legitimate `(0, true)`. Because a real `0` (self, or two
@@ -25623,22 +27298,25 @@ long-standing convention.)
 
 **Not group-restricted.** The standard `UnitPosition` returns `nil` for
 units outside your party/raid (a privacy guard that doesn't exist here).
-This backport
+This version
 reads any *visible* unit — `"target"`, `"mouseover"`, nameplate tokens,
-arbitrary party/raid members in sync range — so it's strictly more
+arbitrary party/raid members in view — so it's strictly more
 permissive, closer to SuperWoW's unit-position access. Units the client
 can't currently see (out of range, another zone) have no position → `nil`.
 
-Reads through the same `CGObject::GetPosition` virtual as
-[`UnitDistanceSquared`](#unitdistancesquaredunit); the two are consistent
-(the squared delta of two `UnitPosition` reads equals
-`UnitDistanceSquared`).
+The values are consistent with
+[`UnitDistanceSquared`](#unitdistancesquaredunit): the squared delta of
+two `UnitPosition` reads equals `UnitDistanceSquared`.
 
 > **SuperWoW interaction.** SuperWoW also defines a global `UnitPosition`
-> with a different return shape. Both register on the same Lua state, so
-> if SuperWoW is loaded the last registrant wins — install order decides
+> with a different return shape. If SuperWoW is loaded, the version that
+> loads last wins — install order decides
 > which shape is live. Without SuperWoW, this version is the
 > one you get.
+
+`C_PlayerInfo.UnitPosition(unit)` is the same function under
+`C_PlayerInfo`. A mod that replaces the global
+`UnitPosition` does not change it.
 
 ### `UnitFacing(unit)`
 
@@ -25682,8 +27360,7 @@ Notes and limits:
 - **Center/eye-line**, not a volume — a sliver of a unit peeking past a
   corner reads as blocked if the eye-line itself is occluded.
 - Pairs beyond ~150 yards report `false` (a guard against a
-  long-segment crash in the underlying trace); such units are usually
-  outside the client's object sync window anyway.
+  long-segment crash); such units are usually out of view anyway.
 - `UnitInLineOfSight("player")` is `true` (you always see yourself).
 
 ### `UnitClassBase(unit)`
@@ -25765,9 +27442,8 @@ end
   [`C_CreatureInfo.GetCreatureID(guid)`](#c_creatureinfogetcreatureidguid)
   returns, and the entry packed into a creature's GUID).
 
-Walks the client's visible-object manager, matches creatures whose GUID
-encodes `creatureID` (bits 24–47), and returns the closest one's position
-+ center-to-center distance.
+The function searches the creatures that the client can see. It returns
+the position and the center-to-center distance of the closest match.
 
 > **Behavior note.** A `ClosestUnitPosition` that reads a static
 > client-side spawn database only works for starting-zone mobs. There is
@@ -25781,7 +27457,7 @@ encodes `creatureID` (bits 24–47), and returns the closest one's position
 
 The health deficit — `UnitHealthMax(unit) - UnitHealth(unit)` — in one call.
 A convenience for healing addons (overheal math, "missing health" bars) that
-would otherwise call both engine functions and subtract in Lua every frame.
+would otherwise call both functions and subtract in Lua every frame.
 
 ```lua
 local missing = UnitHealthMissing("player")   -- 0 at full health
@@ -25791,17 +27467,14 @@ Returns `0` at full health and for a valid-but-absent unit (e.g. `"target"`
 with nothing targeted), matching `UnitHealth`'s 0-for-missing convention;
 clamped so a transient `current > max` never returns negative.
 
-Tracks the engine's own `UnitHealth` / `UnitHealthMax` exactly, including
+Tracks `UnitHealth` / `UnitHealthMax` exactly, including
 the percentage form for non-grouped units (where `UnitHealthMax` is
 `100`): a target at `85/100` reports `15`.
 
-Direct descriptor reads — `desc[+0x40]` (HEALTH), `desc[+0x58]` (MAXHEALTH).
-No engine call, no Lua-stack roundtrip.
-
 ### `UnitPower(unit [, powerType [, unmodified]])` / `UnitPowerMax(unit [, powerType [, unmodified]])`
 
-Multi-power-type getters. The stock client only ships
-`UnitMana(unit)` / `UnitManaMax(unit)` which return whichever
+Multi-power-type getters. The stock
+`UnitMana(unit)` / `UnitManaMax(unit)` return whichever
 primary power the unit happens to have (mana for casters, energy
 for rogues, rage for warriors, etc.); these add the explicit
 `powerType` arg so addons can read a specific power slot without
@@ -25829,18 +27502,15 @@ alongside — `UnitPower("player", Enum.PowerType.Mana)` is the
 idiomatic shape.
 
 Omitting `powerType` (or passing `-1` / any out-of-range value)
-falls back to the unit's primary power, read from
-`UNIT_FIELD_BYTES_0` byte 3 (descriptor `+0x7B`) — the same source the
-engine uses internally.
+falls back to the unit's primary power.
 
 Returns `0` for invalid units, unresolvable tokens, or power types
-outside the 0..4 range (Runes / Runic Power have no descriptor slots in
-the unit layout).
+outside the 0..4 range (Runes / Runic Power do not exist on a unit
+here).
 
 Display-divisor applied. Some power types are stored at a
-scaled value internally and divided before being exposed through
-Lua — same trick `Script_UnitMana` (`0x00517670`) uses, reading
-the divisor table at `0x0086F978`:
+scaled value internally and divided before Lua sees them, as
+`UnitMana` does:
 
 | type | divisor |
 |---|---|
@@ -25856,10 +27526,6 @@ So a fresh warrior reads `UnitPower("player", 1)` = `0..100`, not
 Pass a truthy `unmodified` (third arg) to bypass the divisor and get the raw
 internal value — `UnitPower("player", 1, true)` returns rage as `0..1000`.
 The same third argument `UnitPower` / `UnitPowerMax` take.
-
-Direct descriptor reads — `desc[+0x44 + type*4]` for current power,
-`desc[+0x5C + type*4]` for max, divided by the table entry for the
-type. No engine call, no Lua-stack roundtrip.
 
 [`UNIT_POWER_UPDATE` and `UNIT_MAXPOWER`](#unit_power_update--unit_power_frequent--unit_maxpower-events)
 fire when these values change.
@@ -25909,14 +27575,12 @@ Token strings:
 | `5` | `"RUNES"` |
 | `6` | `"RUNIC_POWER"` |
 
-5/6 are power types that can't appear on a unit's descriptor here;
+5/6 are power types that can't appear on a unit here;
 they're included in the table for symmetry in case a private server
 pushes one through.
 
-Chains to the engine's original `Script_UnitPowerType` at
-`0x00517940` to preserve its full unit-resolution flow (object-
-manager lookup with pet / totem / vehicle fallbacks), then reads
-the just-pushed integer and appends the token string.
+Unit resolution is the same as in the stock `UnitPowerType`, with its
+pet / totem / vehicle fallbacks.
 
 ### `UnitSpellHaste(unit)`
 
@@ -25925,12 +27589,11 @@ Returns the spell haste **percentage**: `0` for an unhasted unit, positive
 when casting is sped up, negative when slowed (Curse of Tongues).
 
 ```lua
-local haste = UnitSpellHaste("player")   -- 0 for most vanilla casters
+local haste = UnitSpellHaste("player")   -- 0 for most casters
 ```
 
-Reads `UNIT_MOD_CAST_SPEED` — the cast-time multiplier at descriptor `+0x22c`
-that the server folds into `SpellEntry::GetCastTime`
-(`castTime *= modCastSpeed`) — and converts it to a percentage:
+The value comes from the unit's cast-time multiplier
+(`castTime *= modCastSpeed`), converted to a percentage:
 `haste% = (1 / modCastSpeed - 1) * 100`. So `modCastSpeed` `1.0` → `0`,
 `0.5` (half cast time) → `100`, `>1.0` → negative.
 
@@ -25961,16 +27624,15 @@ Returns `nil` when:
   spell (Blizzard, Rain of Fire), and an item or lock cast.
 - The target's name can't be resolved (an off-screen stranger).
 
-The target comes from the cast's `SMSG_SPELL_START` packet. ClassicAPI
-captures it for the player and for any remote unit whose cast you observed
-since it began. So the same limit as
+ClassicAPI knows the target for the player and for any remote unit whose
+cast you saw from its start. So the same limit as
 [`C_Spell.UnitCastingInfo`](#c_spellunitcastinginfounit--c_spellcastinginfo)
 applies: a remote unit's target is known only while you saw its cast. The
-name is resolved through the object manager (players and creatures), then the
-friends list, then the persistent name cache — the same chain as
-[`UnitNameFromGUID`](#unitnamefromguidguid).
+name lookup is the same as for [`UnitNameFromGUID`](#unitnamefromguidguid):
+visible players and creatures, then the friends list, then the saved name
+cache.
 
-The player's target lands with the confirming packet, about one round-trip
+The player's target arrives when the server confirms the cast, about one round-trip
 after the cast starts. So `UnitSpellTargetName("player")` can read `nil` for
 the first part of your own cast, then return the name.
 
@@ -26029,9 +27691,8 @@ Backport of the `C_UnitAuras` namespace. Returns
 `local d = C_UnitAuras.GetAuraDataByIndex(unit, 1); if d.dispelName ==
 "Magic" then ...` works unchanged.
 
-Reads primarily off the unit's `m_objectFields` descriptor — same
-data source `UnitBuff` / `UnitDebuff` use. The descriptor has 48 aura
-slots. Buffs sit in slots 0 to 31 and debuffs in slots 32 to 47.
+The data is the same that `UnitBuff` / `UnitDebuff` use. A unit has 48
+aura slots. Buffs sit in slots 0 to 31 and debuffs in slots 32 to 47.
 
 Some servers, Turtle among them, put extra debuffs into free buff slots
 once the 16 debuff slots are full. `HELPFUL` and `HARMFUL` still select on
@@ -26055,8 +27716,8 @@ functions and to `GameTooltip:SetUnitAura`. For a party or raid member
 with no live unit object, the auras stay in slot order.
 
 When a party/raid member has **no live unit object at all** (a
-different map, far out of range), there is no descriptor to read — but
-the server still transmits that member's current aura spell IDs, and
+different map, far out of range), there is no unit to read — but
+the server still sends that member's current aura spell IDs, and
 these functions surface them, exactly as the built-in `UnitBuff` /
 `UnitDebuff` do. See [Out-of-range group members](#out-of-range-group-members).
 
@@ -26066,15 +27727,15 @@ these functions surface them, exactly as the built-in `UnitBuff` /
 |---|---|---|
 | `name` | string | localized spell name from `Spell.dbc` |
 | `icon` | string | icon path from `SpellIcon.dbc` |
-| `applications` | number | stack count (engine stores `stacks-1`, we display `+1`) |
-| `spellId` | number | spell ID from the descriptor's aura array |
+| `applications` | number | stack count, from 1 |
+| `spellId` | number | spell ID of the aura |
 | `dispelName` | string | `"Magic"` / `"Curse"` / `"Disease"` / `"Poison"` (from `SpellDispelType.dbc`), or `""` if non-dispellable |
 | `isHelpful` | boolean | true when the aura is a buff |
 | `isHarmful` | boolean | true when the aura is a debuff. This is the aura's real polarity, so a debuff parked in a buff slot still reads harmful |
-| `duration` | number | applied duration in seconds. For `unit == "player"`, this is the duration the server applied, with diminishing returns and the caster's talents included. For other units, when the aura's cast was observed (in the `Aura::Source` cache), this is the caster-modified duration — talent/glyph extensions like Improved Shadow Word: Pain included — so it stays consistent with `expirationTime` (`remaining ≤ duration`). When no expiration time is known, `duration` is 0 too, so the two values are always given together. Returns 0 for spells flagged "no duration" (passives, paladin auras, infinite buffs) |
-| `expirationTime` | number | for `unit == "player"`, read from the engine's player-buff table at `0x00BC6040` (same data `GetPlayerBuffTimeLeft` returns). For any other unit, taken from the `Aura::Source` cache (cast time + duration captured from `SMSG_SPELL_GO`; see below). `0` when neither source has it, and `0` for one of your auras that lasts until you cancel it. `expirationTime - GetTime()` gives the true remaining time |
-| `sourceUnit` | string | unit token of the caster (`"player"`, `"raid7"`, `"nameplate1"`, …), resolved from the `Aura::Source` cache. `nil` if the cast wasn't observed or the caster maps to no current token |
-| `sourceGUID` | string | caster's `"0x…"` GUID string from the same cache. **A ClassicAPI extension — not a standard `AuraData` field.** Set whenever a caster is known, including when `sourceUnit` is `nil` (caster left token range). Stable for the session, unlike the volatile nameplate token; doubles as a unit token under SuperWoW. `nil` on a cache miss |
+| `duration` | number | applied duration in seconds. For `unit == "player"`, this is the duration the server applied, with diminishing returns and the caster's talents included. For other units, when the aura's cast was observed, this is the caster-modified duration — talent/glyph extensions like Improved Shadow Word: Pain included — so it stays consistent with `expirationTime` (`remaining ≤ duration`). When no expiration time is known, `duration` is 0 too, so the two values are always given together. Returns 0 for spells flagged "no duration" (passives, paladin auras, infinite buffs) |
+| `expirationTime` | number | for `unit == "player"`, the same data `GetPlayerBuffTimeLeft` returns. For any other unit, the cast time + duration of an observed cast (see below). `0` when neither source has it, and `0` for one of your auras that lasts until you cancel it. `expirationTime - GetTime()` gives the true remaining time |
+| `sourceUnit` | string | unit token of the caster (`"player"`, `"raid7"`, `"nameplate1"`, …), from the observed cast. `nil` if the cast wasn't observed or the caster maps to no current token |
+| `sourceGUID` | string | caster's `"0x…"` GUID string from the same observed cast. **A ClassicAPI extension — not a standard `AuraData` field.** Set whenever a caster is known, including when `sourceUnit` is `nil` (caster left token range). Stable for the session, unlike the volatile nameplate token; doubles as a unit token under SuperWoW. `nil` when the cast was not observed |
 | `charges` / `maxCharges` | number | always `0` — there are stacks, not charges |
 | `timeMod` | number | always `1` — there are no haste-affected auras |
 | `isFromPlayerOrPlayerPet` | boolean | true when a player — any player, not only you — or a player's pet applied the aura. Read from the cached caster GUID, so it is `false` when the cast was not seen this session. Totem buffs read `false`: a totem is a creature, not a pet |
@@ -26096,30 +27757,25 @@ The range tokens work as follows:
 - **`HELPFUL`** (default) / **`HARMFUL`** — pick buffs or debuffs by each
   aura's polarity flag. In `GetUnitAuras`, supplying neither returns both.
 
-### Caster & timing (`Aura::Source`)
+### Caster & timing
 
-`sourceUnit`, `sourceGUID`, and non-player `expirationTime` come from a
-client-side cache the engine itself can't provide: the unit aura array
-stores only spell IDs — never the caster, and no cast/expiration timing for
-anyone but the local player. `Aura::Source` fills the gap by co-hooking
-three engine functions and caching `(targetGuid, spellId) → { casterGuid,
-expirationMs, durationMs }`; `Push` keys into it by the unit's GUID + the
-aura's spell ID.
+`sourceUnit`, `sourceGUID`, and non-player `expirationTime` come from
+casts that the client observes. The unit's aura list stores only spell
+IDs. It has no caster, and no timing for any unit but the local player.
+ClassicAPI records each aura cast and application that the client sees,
+by target and spell ID:
 
-- **`SpellGo`** (`FUN_SPELL_GO`, `0x006E7A70`) — the cast packet, the only
-  place the client sees an aura's **caster** + a server-authoritative,
-  caster-modified duration. Fills `sourceUnit`/`sourceGUID` + timing for
-  directly-cast auras.
-- **`OnAuraAdded`** (`0x006123F0`) — fires when any aura first occupies a
-  slot, including proc/triggered auras that emit no `SMSG_SPELL_GO` (Shadow
-  Weaving etc.). Stamps `expirationMs = now + base duration` (no caster).
-- **`OnAuraStacksChanged`** (`0x00612450`) — fires when an existing aura's
-  stack count changes; re-stamps expiration so a climbing stacking debuff
-  (e.g. Shadow Weaving 1→5) refreshes.
+- A direct cast gives the aura's **caster** and the duration that the
+  server applied, with the caster's talents. This fills
+  `sourceUnit`/`sourceGUID` and the timing.
+- An aura that appears without a cast (proc and triggered auras such as
+  Shadow Weaving) gets an expiration of now + base duration, with no
+  caster.
+- When the stack count of an aura changes, its expiration restarts, so a
+  climbing stacking debuff (e.g. Shadow Weaving 1→5) refreshes.
 
-Application hooks never overwrite an entry `SpellGo` already owns, so a
-directly-cast aura keeps its talented timing + caster regardless of hook
-order.
+An application never replaces the data of a direct cast, so a
+directly-cast aura keeps its talented timing and its caster.
 
 Implications:
 
@@ -26127,55 +27783,46 @@ Implications:
   already up when you logged in leave the defaults (`sourceUnit`/`sourceGUID`
   nil, non-player `expirationTime` 0).
 - **Max-stack refresh is a blind spot.** When a stacking debuff is refreshed
-  at *max* stacks (e.g. Shadow Weaving 5→5), no client-visible aura field
-  changes (spellID, stacks, flags, level all identical), so the server sends
-  no UpdateField and the engine fires no callback — there is no packet to
-  hook (verified: the stack-change dispatcher `FUN_00604ea0` calls
-  `OnAuraStacksChanged` unconditionally, so its silence proves nothing
-  arrived). The countdown therefore runs to 0 and the entry evicts; once
-  evicted, `expirationTime` falls back to 0 (unknown) while the aura is still
-  shown. Climbing stacks and single-stack refreshes (re-cast → fresh
-  `SpellGo`) are unaffected.
-- **No nampower dependency.** We parse the engine functions ourselves;
-  nampower (which hooks the same three) need not be loaded — when it is, we
-  co-hook the sites.
-- Entries are evicted once their timed aura elapses, so the cache stays
+  at *max* stacks (e.g. Shadow Weaving 5→5), nothing that the client can
+  see changes, and the server sends nothing. The countdown therefore runs
+  to 0 and the entry is removed. After that, `expirationTime` falls back
+  to 0 (unknown) while the aura is still shown. Climbing stacks and
+  single-stack refreshes (a new cast) are unaffected.
+- **No nampower dependency.** This works with or without nampower loaded.
+- Entries are removed once their timed aura elapses, so the cache stays
   bounded; infinite-duration auras persist until overwritten under load.
 
 ### Out-of-range group members
 
-The descriptor and the `Aura::Source` cache both require the member's
-CGUnit to exist on the client. When a party/raid member is on a
-**different map** (or otherwise far enough out of range that the engine
-drops their object entirely), neither is available — yet the server keeps
-every group member's current auras flowing in `SMSG_PARTY_MEMBER_STATS`
-(`GROUP_UPDATE_FLAG_AURAS` for buffs, `GROUP_UPDATE_FLAG_AURAS_NEGATIVE`
-for debuffs), and the client stashes them in the group-member roster
-structs. Every `C_UnitAuras.*` function falls back to that array when the
-unit has no object — the same source the built-in `UnitBuff` / `UnitDebuff`
-read out of range — so a cross-map `GetUnitAuras("raid7")` returns the
-member's real buffs/debuffs instead of an empty table.
+The aura list and the cast data both need the member to be visible to
+the client. When a party/raid member is on a **different map** (or
+otherwise far enough out of range that the client drops the unit
+entirely), neither is available. The server still sends the current
+auras of every group member. Every `C_UnitAuras.*` function falls back to
+that data when the unit is not visible — the same source the built-in
+`UnitBuff` / `UnitDebuff` read out of range — so a cross-map
+`GetUnitAuras("raid7")` returns the member's real buffs/debuffs instead
+of an empty table.
 
-This path is **spell-ID only**, because that is all the packet carries:
+This path is **spell-ID only**, because that is all the server sends:
 
 - `applications` is always `1` — stack counts aren't transmitted.
 - `expirationTime` / `sourceUnit` / `sourceGUID` are present only if *you*
-  cast the aura (the `Aura::Source` `SMSG_SPELL_GO` entry is merged in when
-  it matches); otherwise the usual defaults.
+  cast the aura; otherwise the usual defaults.
 - `duration` is 0 unless the expiration time is known too.
-- Spell IDs are truncated to 16 bits on the wire, so a custom aura with a
-  spell ID above 65535 comes through wrong — an inherent limitation of the
-  packet that `UnitBuff` shares.
+- Spell IDs arrive truncated to 16 bits, so a custom aura with a spell ID
+  above 65535 comes through wrong. `UnitBuff` has the same limit.
 
-Distinct from the in-range descriptor-drop cases (rogue stealth, nearby
-range fluctuation), where the object still exists and the `Aura::Source`
-cache is the fallback — see [Caster & timing](#caster--timing-aurasource).
+This is different from in-range cases where an aura drops from the unit's
+list (rogue stealth, nearby range changes). There the unit still exists
+and the observed cast data is the fallback — see
+[Caster & timing](#caster--timing).
 
 ### `C_UnitAuras.GetAuraDataByIndex(unit, index [, filter])`
 
 Returns the `AuraData` table for the `index`-th aura (1-based)
 matching `filter`, or `nil` if the unit has fewer than `index`
-matching auras. Empty / non-visible descriptor slots are skipped
+matching auras. Empty / non-visible aura slots are skipped
 during iteration, so consecutive indices return consecutive *active*
 auras. The order puts your own auras first. See
 [Aura order](#unitauras).
@@ -26394,12 +28041,11 @@ Returns `true` on success; re-registering a spellID replaces its entry.
 
 Background: combo-point finishers (Rupture, Kidney Shot, Slice and
 Dice, …) get their real duration computed **server-side** at cast time
-as `base + (max − base) × comboPoints / 5`, and 1.12 never transmits
-the result for debuffs the player puts on other units (verified with a
-whole-protocol packet capture). ClassicAPI therefore mirrors the
-computation automatically: it snapshots your combo points the instant
-the cast request leaves the client and applies the same formula from
-the spell's own `SpellDuration.dbc` row, so `duration`/
+as `base + (max − base) × comboPoints / 5`, and the server never sends
+the result for debuffs the player puts on other units. ClassicAPI
+therefore does the same computation automatically: it takes your combo
+points at the moment of the cast and applies the same formula with the
+spell's own `SpellDuration.dbc` values, so `duration`/
 `expirationTime` in every `AuraData` are combo-accurate out of the box
 — Rupture at 4 CP reads 14s, not the 6s base. Your duration talents
 apply on top, in the server's order. No registration involved.
@@ -26408,10 +28054,9 @@ The override exists only for spells whose client DBC data is missing
 or wrong on a specific server. The known case — Turtle's reworked Rip
 (8s + 2s per combo point), whose SpellDuration row exists on the
 server only — is built into ClassicAPI and gated on the client-data
-bug itself: the fallback applies only while the spell's DurationIndex
-points at a SpellDuration row the client doesn't have (a condition
-unique to Rip on Turtle's client; on a stock client Rip's index
-resolves normally, and if Turtle ever ships the missing row, the DBC
+bug itself: the fallback applies only while the client data has no
+duration row for the spell (a condition unique to Rip on Turtle's
+client; on a stock client Rip's duration resolves normally, and if Turtle ever ships the missing row, the DBC
 takes over automatically). No realm detection involved. This function
 is the escape hatch for *other* custom servers with the same class of
 gap — call it from your own config or addon; a registered override
@@ -26422,17 +28067,14 @@ beats both the DBC and the built-in values.
 ClassicAPI extension for **server-side DoT-duration changes on another
 unit that the client is never told about**. Returns `true` on success.
 
-`expirationTime` for a debuff on another unit is computed from the cast
-packet (`SMSG_SPELL_GO`) at cast time. When the server later changes that
-debuff's remaining duration — a refresh, or a partial consume — 1.12 sends
-**no** packet an observing caster can see (verified in the server source:
-the change runs through `SetAuraDuration`/`RefreshHolder`, and the only
-duration packet is self-scoped to the aura-bearer; on a mob it isn't even
-built). So the cached `expirationTime` would go stale.
+`expirationTime` for a debuff on another unit is computed when the client
+sees the cast. When the server later changes that debuff's remaining
+duration — a refresh, or a partial consume — the server tells **no**
+observing caster. So the cached `expirationTime` would go stale.
 
 The client *does* always see the **triggering** cast, though. Register a
-rule and ClassicAPI mirrors the server's edit on the cached aura when that
-trigger lands:
+rule and ClassicAPI applies the server's change to the cached aura when
+that trigger lands:
 
 | Arg | Meaning |
 |-----|---------|
@@ -26448,24 +28090,21 @@ Give at least one of `affectedFamilyFlags` and `affectedIcon`. A rule with
 neither would match every aura of the class, so it is rejected.
 
 The rule only fires for the aura **cast by the same unit** as the trigger
-(these mechanics act on the caster's own DoT), and misses are excluded for
-free (a missed trigger isn't in the packet's hit list).
+(these mechanics act on the caster's own DoT), and a missed trigger does
+not count.
 
 Rules keyed to an **exact trigger spellID** (rather than a family + school
-category) are registered inside the DLL instead. `!!!ClassicAPI`'s built-in
-Turtle mods — Conflagrate shaving 3s off the caster's Immolate, Molten Blast
-refreshing the caster's Flame Shock, and Bestial Wrath stretching the pet's
-Scent of Blood to its own length — live in `src/turtle/DurationMods.cpp`, and
-Carnage's roll-gated Rip/Rake refresh in `src/turtle/Carnage.cpp`.
+category) are built in. The built-in Turtle mods are Conflagrate shaving
+3s off the caster's Immolate, Molten Blast refreshing the caster's Flame
+Shock, Bestial Wrath stretching the pet's Scent of Blood to its own
+length, and Carnage's roll-gated Rip/Rake refresh.
 
-The one rule registered from Lua
-([Util/AuraDurationModifiers.lua](../src/embed/AddOns/!!!ClassicAPI/Util/AuraDurationModifiers.lua))
-is Shadow Weaving: for a 5/5 priest (talent `15334`, where the proc is 100%),
+One built-in rule uses this function: Shadow Weaving. For a 5/5 priest (talent `15334`, where the proc is 100%),
 any shadow-school priest cast refreshes the target's Shadow Vulnerability
 (`15258`). Below 5/5 it's roll-gated and deliberately not inferred — the client
 can't see the server's roll, so inferring it would show wrong timers. One
 accepted best-effort caveat: DoT *ticks* (SW:P / Devouring Plague) also refresh
-it server-side but emit no cast packet, so a pure DoT-only phase under-counts
+it server-side but the client sees no cast, so a pure DoT-only phase under-counts
 slightly.
 
 ```lua
@@ -26527,7 +28166,7 @@ transmit synthesized speech into.
 > provides them instead — the Lua-visible API is identical either way, so
 > addons don't need to care which one is active.
 
-SAPI is created lazily on first use. If SAPI is unavailable (e.g. running
+If SAPI is unavailable (e.g. running
 the client under Wine, or a stripped Windows), every call degrades
 gracefully: `GetTtsVoices` returns an empty table, `SpeakText` fires
 `VOICE_CHAT_TTS_PLAYBACK_FAILED` and does nothing, and the client stays
@@ -26611,7 +28250,7 @@ print(C_TTSSettings.GetVoiceOptionName())       -- "Microsoft Zira Desktop - ...
 
 ### TTS events
 
-Registered like any engine event (`frame:RegisterEvent("VOICE_CHAT_TTS_PLAYBACK_STARTED")`).
+Register them like any other event (`frame:RegisterEvent("VOICE_CHAT_TTS_PLAYBACK_STARTED")`).
 
 | Event | Args |
 |---|---|
@@ -26627,7 +28266,7 @@ completes, so it's the signal to start the next utterance in a queue.
 
 ### TTS CVars
 
-The `C_TTSSettings` values are stored as engine CVars, persisted to
+The `C_TTSSettings` values are stored as CVars, persisted to
 `WTF\Config.wtf`. You can also read/write them with the standard
 `GetCVar`/`SetCVar` (or `/console set`); writes are clamped by the same
 validation:
@@ -26655,9 +28294,8 @@ Each entry is `{ name = <string>, type = <frameType> }`, where `type` is the
 XML element tag the template was declared with (`"Frame"`, `"Button"`,
 `"CheckButton"`, `"StatusBar"`, …).
 
-The list is read straight from the engine's virtual-template registry — the
-same store the XML loader fills for `inherits=` — so it covers every template
-currently loaded from **both** Blizzard FrameXML and addon `.xml` files, and is
+The list holds every template that `inherits=` can use, so it covers every
+template currently loaded from **both** Blizzard FrameXML and addon `.xml` files, and is
 rebuilt on `/reload`. Font templates live in a separate registry and are not
 included (`GetTemplates` returns frame templates).
 Returns an empty table if no template has registered yet.
@@ -26684,18 +28322,17 @@ local info = C_XMLUtil.GetTemplateInfo("StatFrameTemplate")
 | `keyValues` | table | The template's own [`<KeyValues>`](#keyvalues-in-xml) entries, in file order. Each entry is `{ key, keyType, type, value }`, with the text as written in the file. `keyType` and `type` are `"string"` when the file leaves them out. Entries from inherited templates are not included. The table is empty when the template has no entries. |
 | `inherits` | string? | The template's `inherits=` attribute (a comma-delimited list), or `nil` if it inherits nothing. |
 
-Lookup is by name through the engine's own template registry — the same
-resolution `inherits=` uses — so it's case-insensitive and covers both
-Blizzard FrameXML and addon templates.
+Lookup by name works as `inherits=` does, so it's case-insensitive and
+covers both Blizzard FrameXML and addon templates.
 
 > **Not provided:** the `sourceLocation` field (file:line where the
-> template was defined); no source
-> location is recorded for XML nodes, so the field is omitted (reads as `nil`).
+> template was defined); the client does not record source
+> locations, so the field is omitted (reads as `nil`).
 
 ### `C_XMLUtil.DoesTemplateExist(name)`
 
 Returns `true` if a virtual template of that name is registered, `false`
-otherwise:
+otherwise. It is the Blizzard global `DoesTemplateExist`, under `C_XMLUtil`:
 
 ```lua
 if C_XMLUtil.DoesTemplateExist("MyAddonRowTemplate") then

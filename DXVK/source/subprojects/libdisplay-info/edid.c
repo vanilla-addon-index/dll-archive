@@ -4,8 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <libdisplay-info/dmt.h>
+
 #include "bits.h"
-#include "dmt.h"
 #include "edid.h"
 #include "log.h"
 
@@ -17,11 +18,18 @@
  * The size of an EDID standard timing, defined in section 3.9.
  */
 #define EDID_STANDARD_TIMING_SIZE 2
+/**
+ * The size of an EDID CVT timing code, defined in section 3.10.3.8.
+ */
+#define EDID_CVT_TIMING_CODE_SIZE 3
 
 /**
  * Fixed EDID header, defined in section 3.1.
  */
 static const uint8_t header[] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
+
+static void
+destroy_display_descriptor(struct di_edid_display_descriptor *desc);
 
 static void
 add_failure(struct di_edid *edid, const char fmt[], ...)
@@ -88,11 +96,12 @@ parse_vendor_product(struct di_edid *edid,
 	out->manufacturer[1] = ((man >> 5) & 0x1F) + '@';
 	out->manufacturer[2] = ((man >> 0) & 0x1F) + '@';
 
-	out->product = (uint16_t) (data[0x0A] | (data[0x0B] << 8));
-	out->serial = (uint32_t) (data[0x0C] |
-				  (data[0x0D] << 8) |
-				  (data[0x0E] << 16) |
-				  (data[0x0F] << 24));
+	out->product = (uint16_t) ((uint16_t)data[0x0A] |
+				   ((uint16_t)data[0x0B] << 8));
+	out->serial = (uint32_t) ((uint32_t)data[0x0C] |
+				  ((uint32_t)data[0x0D] << 8) |
+				  ((uint32_t)data[0x0E] << 16) |
+				  ((uint32_t)data[0x0F] << 24));
 
 	raw_week = data[0x10];
 	raw_year = data[0x11];
@@ -439,13 +448,13 @@ _di_edid_parse_detailed_timing_def(const uint8_t data[static_array EDID_BYTE_DES
 	case DI_EDID_DETAILED_TIMING_DEF_SIGNAL_ANALOG_COMPOSITE:
 		analog_composite = &priv->analog_composite;
 		analog_composite->sync_serrations = has_bit(flags, 2);
-		analog_composite->sync_on_green = has_bit(flags, 1);
+		analog_composite->sync_on_green = !has_bit(flags, 1);
 		def->analog_composite = analog_composite;
 		break;
 	case DI_EDID_DETAILED_TIMING_DEF_SIGNAL_BIPOLAR_ANALOG_COMPOSITE:
 		bipolar_analog_composite = &priv->bipolar_analog_composite;
 		bipolar_analog_composite->sync_serrations = has_bit(flags, 2);
-		bipolar_analog_composite->sync_on_green = has_bit(flags, 1);
+		bipolar_analog_composite->sync_on_green = !has_bit(flags, 1);
 		def->bipolar_analog_composite = bipolar_analog_composite;
 		break;
 	case DI_EDID_DETAILED_TIMING_DEF_SIGNAL_DIGITAL_COMPOSITE:
@@ -552,7 +561,7 @@ parse_display_range_limits(struct di_edid *edid,
 		return false;
 	}
 
-	base->max_pixel_clock_hz = (int32_t) data[9] * 10 * 1000 * 1000;
+	base->max_pixel_clock_hz = (int64_t) data[9] * 10 * 1000 * 1000;
 	if (edid->revision == 4 && base->max_pixel_clock_hz == 0) {
 		add_failure(edid, "Display Range Limits: EDID 1.4 block does not set max dotclock.");
 	}
@@ -605,11 +614,13 @@ parse_display_range_limits(struct di_edid *edid,
 	if (edid->revision >= 4 && !edid->misc_features.continuous_freq) {
 		switch (base->type) {
 		case DI_EDID_DISPLAY_RANGE_LIMITS_DEFAULT_GTF:
+			add_failure(edid, "Display Range Limits: GTF is supported, but the display does not support continuous frequencies.");
+			return false;
 		case DI_EDID_DISPLAY_RANGE_LIMITS_SECONDARY_GTF:
-			add_failure(edid, "Display Range Limits: GTF can't be combined with non-continuous frequencies.");
+			add_failure(edid, "Display Range Limits: Secondary GTF is supported, but the display does not support continuous frequencies.");
 			return false;
 		case DI_EDID_DISPLAY_RANGE_LIMITS_CVT:
-			add_failure(edid, "Display Range Limits: CVT can't be combined with non-continuous frequencies.");
+			add_failure(edid, "Display Range Limits: CVT is supported, but the display does not support continuous frequencies.");
 			return false;
 		default:
 			break;
@@ -799,30 +810,17 @@ static_assert(EDID_MAX_DESCRIPTOR_ESTABLISHED_TIMING_III_COUNT
 	      == sizeof(established_timings_iii) / sizeof(established_timings_iii[0]),
 	      "Invalid number of established timings III in table");
 
-static const struct di_dmt_timing *
-get_dmt_timing(uint8_t dmt_id)
-{
-	size_t i;
-	const struct di_dmt_timing *t;
-
-	for (i = 0; i < _di_dmt_timings_len; i++) {
-		t = &_di_dmt_timings[i];
-		if (t->dmt_id == dmt_id)
-			return t;
-	}
-
-	return NULL;
-}
-
-static void
+static bool
 parse_established_timings_iii_descriptor(struct di_edid *edid,
 					 const uint8_t data[static_array EDID_BYTE_DESCRIPTOR_SIZE],
-					 struct di_edid_display_descriptor *desc)
+					 struct di_edid_established_timings_iii *timings_iii)
 {
 	size_t i, offset, bit;
 	uint8_t dmt_id;
-	const struct di_dmt_timing *t;
 	bool has_zeroes;
+	struct di_dmt_code dmt_codes[EDID_MAX_DESCRIPTOR_ESTABLISHED_TIMING_III_COUNT];
+	size_t dmt_codes_len = 0;
+	size_t size;
 
 	if (edid->revision < 4)
 		add_failure(edid, "Established timings III: Not allowed for EDID < 1.4.");
@@ -832,12 +830,22 @@ parse_established_timings_iii_descriptor(struct di_edid *edid,
 		offset = 0x06 + i / 8;
 		bit = 7 - i % 8;
 		assert(offset < EDID_BYTE_DESCRIPTOR_SIZE);
-		if (has_bit(data[offset], bit)) {
-			t = get_dmt_timing(dmt_id);
-			assert(t != NULL);
-			desc->established_timings_iii[desc->established_timings_iii_len++] = t;
-		}
+		if (has_bit(data[offset], bit))
+			dmt_codes[dmt_codes_len++] = (struct di_dmt_code) { .code = dmt_id };
 	}
+
+	if (dmt_codes_len == 0) {
+		add_failure(edid, "Established timings III: No DMT codes.");
+		return true;
+	}
+
+	size = dmt_codes_len * sizeof(*dmt_codes);
+	timings_iii->dmt_codes = calloc(1, size);
+	if (!timings_iii->dmt_codes)
+		return false;
+
+	memcpy(timings_iii->dmt_codes, dmt_codes, size);
+	timings_iii->dmt_codes_len = dmt_codes_len;
 
 	has_zeroes = get_bit_range(data[11], 3, 0) == 0;
 	for (i = 12; i < EDID_BYTE_DESCRIPTOR_SIZE; i++) {
@@ -847,6 +855,8 @@ parse_established_timings_iii_descriptor(struct di_edid *edid,
 		add_failure_until(edid, 4,
 				  "Established timings III: Reserved bits must be set to zero.");
 	}
+
+	return true;
 }
 
 static bool
@@ -916,12 +926,113 @@ parse_color_management_data_descriptor(struct di_edid *edid,
 }
 
 static bool
+is_cvt_timing_code_preferred_vrate_supported(const struct di_edid_cvt_timing_code *t)
+{
+	switch (t->preferred_vertical_rate) {
+	case DI_EDID_CVT_TIMING_CODE_PREFERRED_VRATE_50HZ:
+		return t->supports_50hz_sb;
+	case DI_EDID_CVT_TIMING_CODE_PREFERRED_VRATE_60HZ:
+		return t->supports_60hz_sb || t->supports_60hz_rb;
+	case DI_EDID_CVT_TIMING_CODE_PREFERRED_VRATE_75HZ:
+		return t->supports_75hz_sb;
+	case DI_EDID_CVT_TIMING_CODE_PREFERRED_VRATE_85HZ:
+		return t->supports_85hz_sb;
+	}
+	abort(); /* unreachable */
+}
+
+static bool
+parse_cvt_timing_code(struct di_edid *edid,
+		      const uint8_t data[static_array EDID_CVT_TIMING_CODE_SIZE],
+		      struct di_edid_cvt_timing_code **out,
+		      bool first)
+{
+	struct di_edid_cvt_timing_code *t;
+	int32_t raw;
+
+	*out = NULL;
+
+	if (!first && data[0] == 0 && data[1] == 0 && data[2] == 0) {
+		/* Unused */
+		return true;
+	}
+	if (data[0] == 0) {
+		add_failure(edid,
+			    "CVT byte 0 is 0, which is a reserved value.");
+	}
+
+	t = calloc(1, sizeof(*t));
+	if (!t) {
+		return false;
+	}
+
+	raw = (int32_t)(data[0] | (get_bit_range(data[1], 7, 4) << 8));
+	t->addressable_lines_per_field = (raw + 1) * 2;
+	t->aspect_ratio = get_bit_range(data[1], 3, 2);
+
+	if (get_bit_range(data[1], 1, 0) != 0) {
+		add_failure(edid,
+			    "Reserved bits of CVT byte 1 are non-zero.");
+	}
+
+	t->supports_50hz_sb = has_bit(data[2], 4);
+	t->supports_60hz_sb = has_bit(data[2], 3);
+	t->supports_75hz_sb = has_bit(data[2], 2);
+	t->supports_85hz_sb = has_bit(data[2], 1);
+	t->supports_60hz_rb = has_bit(data[2], 0);
+
+	if (get_bit_range(data[2], 4, 0) == 0) {
+		add_failure(edid,
+			    "CVT byte 2 does not support any vertical rates.");
+	}
+
+	t->preferred_vertical_rate = get_bit_range(data[2], 6, 5);
+
+	if (has_bit(data[2], 7) != 0) {
+		add_failure(edid,
+			    "Reserved bit of CVT byte 2 is non-zero.");
+	}
+
+	if (!is_cvt_timing_code_preferred_vrate_supported(t))
+		add_failure(edid, "The preferred CVT Vertical Rate is not supported.");
+
+	*out = t;
+	return true;
+}
+
+static bool
+parse_cvt_timing_codes_descriptor(struct di_edid *edid,
+				  const uint8_t data[static_array EDID_BYTE_DESCRIPTOR_SIZE],
+				  struct di_edid_display_descriptor *desc)
+{
+	struct di_edid_cvt_timing_code *t;
+	size_t i;
+	const uint8_t *timing_data;
+
+	if (data[5] != 1) {
+		add_failure_until(edid, 4, "Invalid version number %u.",
+				  data[5]);
+	}
+
+	for (i = 0; i < EDID_MAX_DESCRIPTOR_CVT_TIMING_CODES_COUNT; i++) {
+		timing_data = &data[6 + i * EDID_CVT_TIMING_CODE_SIZE];
+		if (!parse_cvt_timing_code(edid, timing_data, &t, !i))
+			return false;
+		if (t) {
+			assert(desc->cvt_timing_codes_len < EDID_MAX_DESCRIPTOR_CVT_TIMING_CODES_COUNT);
+			desc->cvt_timing_codes[desc->cvt_timing_codes_len++] = t;
+		}
+	}
+
+	return true;
+}
+
+static bool
 parse_byte_descriptor(struct di_edid *edid,
 		      const uint8_t data[static_array EDID_BYTE_DESCRIPTOR_SIZE])
 {
 	struct di_edid_display_descriptor *desc;
 	struct di_edid_detailed_timing_def_priv *detailed_timing_def;
-	uint8_t tag;
 	char *newline;
 
 	if (data[0] || data[1]) {
@@ -953,8 +1064,8 @@ parse_byte_descriptor(struct di_edid *edid,
 		return false;
 	}
 
-	tag = data[3];
-	switch (tag) {
+	desc->tag = data[3];
+	switch (desc->tag) {
 	case DI_EDID_DISPLAY_DESCRIPTOR_PRODUCT_SERIAL:
 	case DI_EDID_DISPLAY_DESCRIPTOR_DATA_STRING:
 	case DI_EDID_DISPLAY_DESCRIPTOR_PRODUCT_NAME:
@@ -968,22 +1079,26 @@ parse_byte_descriptor(struct di_edid *edid,
 		break;
 	case DI_EDID_DISPLAY_DESCRIPTOR_RANGE_LIMITS:
 		if (!parse_display_range_limits(edid, data, &desc->range_limits)) {
-			free(desc);
+			destroy_display_descriptor(desc);
 			return true;
 		}
 		break;
 	case DI_EDID_DISPLAY_DESCRIPTOR_STD_TIMING_IDS:
 		if (!parse_standard_timings_descriptor(edid, data, desc)) {
-			free(desc);
+			destroy_display_descriptor(desc);
 			return false;
 		}
 		break;
 	case DI_EDID_DISPLAY_DESCRIPTOR_ESTABLISHED_TIMINGS_III:
-		parse_established_timings_iii_descriptor(edid, data, desc);
+		if (!parse_established_timings_iii_descriptor(edid, data,
+							      &desc->established_timings_iii)) {
+			destroy_display_descriptor(desc);
+			return false;
+		}
 		break;
 	case DI_EDID_DISPLAY_DESCRIPTOR_COLOR_POINT:
 		if (!parse_color_point_descriptor(edid, data, desc)) {
-			free(desc);
+			destroy_display_descriptor(desc);
 			return false;
 		}
 		break;
@@ -991,56 +1106,80 @@ parse_byte_descriptor(struct di_edid *edid,
 		parse_color_management_data_descriptor(edid, data, desc);
 		break;
 	case DI_EDID_DISPLAY_DESCRIPTOR_CVT_TIMING_CODES:
+		if (!parse_cvt_timing_codes_descriptor(edid, data, desc)) {
+			destroy_display_descriptor(desc);
+			return false;
+		}
+		break;
 	case DI_EDID_DISPLAY_DESCRIPTOR_DUMMY:
 		break; /* Ignore */
 	default:
-		free(desc);
-		if (tag <= 0x0F) {
+		if (desc->tag <= 0x0F) {
 			/* Manufacturer-specific */
 		} else {
-			add_failure_until(edid, 4, "Unknown Type 0x%02hhx.", tag);
+			add_failure_until(edid, 4, "Unknown Type 0x%02hhx.", desc->tag);
 		}
+		destroy_display_descriptor(desc);
 		return true;
 	}
 
-	desc->tag = tag;
 	assert(edid->display_descriptors_len < EDID_BYTE_DESCRIPTOR_COUNT);
 	edid->display_descriptors[edid->display_descriptors_len++] = desc;
 	return true;
+}
+
+static const char *
+ext_tag_name(enum di_edid_ext_tag tag)
+{
+	switch (tag) {
+	case DI_EDID_EXT_CEA:
+		return "CTA-861 Extension Block";
+	case DI_EDID_EXT_VTB:
+		return "Video Timing Extension Block";
+	case DI_EDID_EXT_DI:
+		return "Display Information Extension Block";
+	case DI_EDID_EXT_LS:
+		return "Localized String Extension Block";
+	case DI_EDID_EXT_DPVL:
+		return "Digital Packet Video Link Extension";
+	case DI_EDID_EXT_BLOCK_MAP:
+		return "Block Map Extension Block";
+	case DI_EDID_EXT_VENDOR:
+		return "Manufacturer-Specific Extension Block";
+	case DI_EDID_EXT_DISPLAYID:
+		return "DisplayID Extension Block";
+	}
+	return "Unknown Extension Block";
 }
 
 static bool
 parse_ext(struct di_edid *edid, const uint8_t data[static_array EDID_BLOCK_SIZE])
 {
 	struct di_edid_ext *ext;
-	uint8_t tag;
 	struct di_logger logger;
 	char section_name[64];
-
-	if (!validate_block_checksum(data)) {
-		errno = EINVAL;
-		return false;
-	}
+	const uint8_t *ext_data;
+	size_t ext_size;
+	bool ok;
 
 	ext = calloc(1, sizeof(*ext));
 	if (!ext) {
 		return false;
 	}
+	ext->tag = data[0x00];
 
-	tag = data[0x00];
-	switch (tag) {
+	snprintf(section_name, sizeof(section_name), "Block %zu, %s",
+		 edid->exts_len + 1, ext_tag_name(ext->tag));
+	logger = (struct di_logger) {
+		.f = edid->logger->f,
+		.section = section_name,
+	};
+
+	switch (ext->tag) {
 	case DI_EDID_EXT_CEA:
-		snprintf(section_name, sizeof(section_name),
-			 "Block %zu, CTA-861 Extension Block",
-			 edid->exts_len + 1);
-		logger = (struct di_logger) {
-			.f = edid->logger->f,
-			.section = section_name,
-		};
-
 		if (!_di_edid_cta_parse(&ext->cta, data, EDID_BLOCK_SIZE, &logger)) {
 			free(ext);
-			return false;
+			return errno == EINVAL;
 		}
 		break;
 	case DI_EDID_EXT_VTB:
@@ -1052,18 +1191,27 @@ parse_ext(struct di_edid *edid, const uint8_t data[static_array EDID_BLOCK_SIZE]
 		/* Supported */
 		break;
 	case DI_EDID_EXT_DISPLAYID:
-		snprintf(section_name, sizeof(section_name),
-			 "Block %zu, DisplayID Extension Block",
-			 edid->exts_len + 1);
-		logger = (struct di_logger) {
-			.f = edid->logger->f,
-			.section = section_name,
-		};
+		ext_data = &data[1];
+		ext_size = EDID_BLOCK_SIZE - 2;
 
-		if (!_di_displayid_parse(&ext->displayid, &data[1],
-					 EDID_BLOCK_SIZE - 2, &logger)) {
+		ext->displayid_version = _di_displayid_parse_version(ext_data, ext_size);
+		switch (ext->displayid_version) {
+		case 1:
+			ok = _di_displayid_parse(&ext->displayid, ext_data,
+						 ext_size, &logger);
+			break;
+		case 2:
+			ok = _di_displayid2_parse(&ext->displayid2, ext_data,
+						  ext_size, &logger);
+			break;
+		default:
+			/* Unsupported */
 			free(ext);
-			return false;
+			return true;
+		}
+		if (!ok) {
+			free(ext);
+			return errno == ENOTSUP || errno == EINVAL;
 		}
 		break;
 	default:
@@ -1073,7 +1221,9 @@ parse_ext(struct di_edid *edid, const uint8_t data[static_array EDID_BLOCK_SIZE]
 		return true;
 	}
 
-	ext->tag = tag;
+	if (!validate_block_checksum(data))
+		_di_logger_add_failure(&logger, "Invalid extension checksum.");
+
 	assert(edid->exts_len < EDID_MAX_BLOCK_COUNT - 1);
 	edid->exts[edid->exts_len++] = ext;
 	return true;
@@ -1085,13 +1235,11 @@ _di_edid_parse(const void *data, size_t size, FILE *failure_msg_file)
 	struct di_edid *edid;
 	struct di_logger logger;
 	int version, revision;
-	size_t exts_len, i;
+	size_t exts_len, parsed_ext_len, i;
 	const uint8_t *standard_timing_data, *byte_desc_data, *ext_data;
 	struct di_edid_standard_timing *standard_timing;
 
-	if (size < EDID_BLOCK_SIZE ||
-	    size > EDID_MAX_BLOCK_COUNT * EDID_BLOCK_SIZE ||
-	    size % EDID_BLOCK_SIZE != 0) {
+	if (size < EDID_BLOCK_SIZE) {
 		errno = EINVAL;
 		return NULL;
 	}
@@ -1114,12 +1262,6 @@ _di_edid_parse(const void *data, size_t size, FILE *failure_msg_file)
 		return NULL;
 	}
 
-	exts_len = size / EDID_BLOCK_SIZE - 1;
-	if (exts_len != parse_ext_count(data)) {
-		errno = EINVAL;
-		return NULL;
-	}
-
 	edid = calloc(1, sizeof(*edid));
 	if (!edid) {
 		return NULL;
@@ -1133,6 +1275,22 @@ _di_edid_parse(const void *data, size_t size, FILE *failure_msg_file)
 
 	edid->version = version;
 	edid->revision = revision;
+
+	if (size % EDID_BLOCK_SIZE != 0)
+		add_failure(edid, "The data is not a multiple of the block size.");
+	if (size > EDID_MAX_BLOCK_COUNT * EDID_BLOCK_SIZE)
+		add_failure(edid, "The data is exceeding the maximum block count.");
+
+	exts_len = (size / EDID_BLOCK_SIZE) - 1;
+	parsed_ext_len = parse_ext_count(data);
+
+	if (exts_len != parsed_ext_len)
+		add_failure(edid, "The data size does not match the encoded block count.");
+
+	if (parsed_ext_len < exts_len)
+		exts_len = parsed_ext_len;
+
+	assert(exts_len < EDID_MAX_BLOCK_COUNT);
 
 	parse_vendor_product(edid, data);
 	parse_basic_params_features(edid, data);
@@ -1186,6 +1344,19 @@ destroy_display_descriptor(struct di_edid_display_descriptor *desc)
 			free(desc->standard_timings[i]);
 		}
 		break;
+	case DI_EDID_DISPLAY_DESCRIPTOR_COLOR_POINT:
+		for (i = 0; i < desc->color_points_len; i++) {
+			free(desc->color_points[i]);
+		}
+		break;
+	case DI_EDID_DISPLAY_DESCRIPTOR_ESTABLISHED_TIMINGS_III:
+		free(desc->established_timings_iii.dmt_codes);
+		break;
+	case DI_EDID_DISPLAY_DESCRIPTOR_CVT_TIMING_CODES:
+		for (i = 0; i < desc->cvt_timing_codes_len; i++) {
+			free(desc->cvt_timing_codes[i]);
+		}
+		break;
 	default:
 		break; /* Nothing to do */
 	}
@@ -1218,6 +1389,7 @@ _di_edid_destroy(struct di_edid *edid)
 			break;
 		case DI_EDID_EXT_DISPLAYID:
 			_di_displayid_finish(&ext->displayid);
+			_di_displayid2_finish(&ext->displayid2);
 			break;
 		default:
 			break; /* Nothing to do */
@@ -1324,29 +1496,6 @@ di_edid_standard_timing_get_vert_video(const struct di_edid_standard_timing *t)
 	abort(); /* unreachable */
 }
 
-const struct di_dmt_timing *
-di_edid_standard_timing_get_dmt(const struct di_edid_standard_timing *t)
-{
-	int32_t vert_video;
-	size_t i;
-	const struct di_dmt_timing *dmt;
-
-	vert_video = di_edid_standard_timing_get_vert_video(t);
-
-	for (i = 0; i < _di_dmt_timings_len; i++) {
-		dmt = &_di_dmt_timings[i];
-
-		if (dmt->horiz_video == t->horiz_video
-		    && dmt->vert_video == vert_video
-		    && dmt->refresh_rate_hz == (float)t->refresh_rate_hz
-		    && dmt->edid_std_id != 0) {
-			return dmt;
-		}
-	}
-
-	return 0;
-}
-
 const struct di_edid_standard_timing *const *
 di_edid_get_standard_timings(const struct di_edid *edid)
 {
@@ -1411,13 +1560,13 @@ di_edid_display_descriptor_get_color_points(const struct di_edid_display_descrip
 	return (const struct di_edid_color_point *const *) desc->color_points;
 }
 
-const struct di_dmt_timing *const *
+const struct di_edid_established_timings_iii *
 di_edid_display_descriptor_get_established_timings_iii(const struct di_edid_display_descriptor *desc)
 {
 	if (desc->tag != DI_EDID_DISPLAY_DESCRIPTOR_ESTABLISHED_TIMINGS_III) {
 		return NULL;
 	}
-	return desc->established_timings_iii;
+	return &desc->established_timings_iii;
 }
 
 const struct di_edid_color_management_data *
@@ -1427,6 +1576,15 @@ di_edid_display_descriptor_get_color_management_data(const struct di_edid_displa
 		return NULL;
 	}
 	return &desc->dcm_data;
+}
+
+const struct di_edid_cvt_timing_code *const *
+di_edid_display_descriptor_get_cvt_timing_codes(const struct di_edid_display_descriptor *desc)
+{
+	if (desc->tag != DI_EDID_DISPLAY_DESCRIPTOR_CVT_TIMING_CODES) {
+		return NULL;
+	}
+	return (const struct di_edid_cvt_timing_code *const *) desc->cvt_timing_codes;
 }
 
 const struct di_edid_ext *const *
@@ -1453,8 +1611,17 @@ di_edid_ext_get_cta(const struct di_edid_ext *ext)
 const struct di_displayid *
 di_edid_ext_get_displayid(const struct di_edid_ext *ext)
 {
-	if (ext->tag != DI_EDID_EXT_DISPLAYID) {
+	if (ext->tag != DI_EDID_EXT_DISPLAYID || ext->displayid_version != 1) {
 		return NULL;
 	}
 	return &ext->displayid;
+}
+
+const struct di_displayid2 *
+di_edid_ext_get_displayid2(const struct di_edid_ext *ext)
+{
+	if (ext->tag != DI_EDID_EXT_DISPLAYID || ext->displayid_version != 2) {
+		return NULL;
+	}
+	return &ext->displayid2;
 }

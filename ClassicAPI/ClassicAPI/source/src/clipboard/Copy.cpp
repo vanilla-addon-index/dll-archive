@@ -104,21 +104,38 @@ int __fastcall Script_CopyToClipboard(void *L) {
     const bool removeMarkup = Game::Lua::ToBoolean(L, 2) != 0;
 
     int copiedLen;
+    bool copied;
     if (removeMarkup) {
         const std::string stripped = StripMarkup(text, len);
         copiedLen = static_cast<int>(stripped.size());
-        SetClipboardUtf8(stripped.data(), copiedLen);
+        copied = SetClipboardUtf8(stripped.data(), copiedLen);
     } else {
         copiedLen = static_cast<int>(len);
-        SetClipboardUtf8(text, copiedLen);
+        copied = SetClipboardUtf8(text, copiedLen);
     }
+    if (!copied)
+        copiedLen = 0;
 
     Game::Lua::PushNumber(L, static_cast<double>(copiedLen));
     return 1;
 }
 
+const Game::Doc::Field kArgs[] = {
+    Game::Doc::Req("text", "cstring"),
+    Game::Doc::Opt("removeMarkup", "bool", "false",
+                   "True removes colors, links, textures and other escape codes, as Ctrl+C "
+                   "in an edit box does."),
+};
+const Game::Doc::Field kRets[] = {
+    Game::Doc::Req("length", "number", "The length of the copied text in bytes; 0 when the clipboard "
+                   "could not be written."),
+};
+const Game::Doc::Function kCopyToClipboard{"Copies text to the system clipboard.", kArgs, kRets,
+                                           "OsGlobals"};
+
 void RegisterFns() {
-    Game::Lua::RegisterGlobalFunction("CopyToClipboard", &Script_CopyToClipboard);
+    Game::Lua::RegisterGlobalFunction("CopyToClipboard", &Script_CopyToClipboard,
+                                      &kCopyToClipboard);
 }
 
 const Game::ModuleAutoRegister _autoreg{&RegisterFns};

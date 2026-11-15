@@ -13,6 +13,7 @@
 
 #include "Game.h"
 #include "Offsets.h"
+#include "dbc/Lookup.h"
 
 #include <cstdint>
 
@@ -46,16 +47,7 @@ int CapForType(uint32_t type) {
 }
 
 const uint8_t *MapRecord(uint32_t mapID) {
-    const int count = *reinterpret_cast<const int *>(
-        static_cast<uintptr_t>(Offsets::VAR_MAP_COUNT));
-    if (static_cast<int>(mapID) < 0 || static_cast<int>(mapID) > count)
-        return nullptr;
-    const uint8_t *const *records =
-        *reinterpret_cast<const uint8_t *const *const *>(
-            static_cast<uintptr_t>(Offsets::VAR_MAP_RECORDS));
-    if (records == nullptr)
-        return nullptr;
-    return records[mapID];
+    return DBC::Record(Offsets::VAR_MAP_RECORDS, Offsets::VAR_MAP_COUNT, mapID);
 }
 
 } // namespace
@@ -118,9 +110,30 @@ static int __fastcall Script_GetInstanceInfo(void *L) {
     return 9;
 }
 
+namespace {
+
+const Game::Doc::Field kGetInstanceInfoRets[] = {
+    Game::Doc::Req("name", "cstring", "The name of the current map."),
+    Game::Doc::Req("instanceType", "cstring",
+                   "\"none\", \"party\", \"raid\", \"pvp\" or \"arena\"."),
+    Game::Doc::Req("difficultyID", "number", "Always 1."),
+    Game::Doc::Req("difficultyName", "cstring", "Always \"Normal\"."),
+    Game::Doc::Req("maxPlayers", "number",
+                   "5 for a dungeon, 40 for a raid or battleground, 0 in the open world; not "
+                   "the instance's own limit."),
+    Game::Doc::Req("dynamicDifficulty", "number", "Always 0."),
+    Game::Doc::Req("isDynamic", "bool", "Always false."),
+    Game::Doc::Req("instanceID", "number", "The map ID."),
+    Game::Doc::Req("instanceGroupSize", "number", "Same as maxPlayers."),
+};
+const Game::Doc::Function kGetInstanceInfo{"Returns information about the current map.", {},
+                                           kGetInstanceInfoRets, "InstanceGlobals"};
+
+} // namespace
+
 static void RegisterLuaFunctions() {
     Game::Lua::RegisterGlobalFunction("GetInstanceInfo",
-                                      &Script_GetInstanceInfo);
+                                      &Script_GetInstanceInfo, &kGetInstanceInfo);
 }
 
 static const Game::ModuleAutoRegister _autoreg{&RegisterLuaFunctions};

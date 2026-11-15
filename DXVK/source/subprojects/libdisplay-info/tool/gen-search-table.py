@@ -27,23 +27,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import os
 import sys
 
 def escape_for_c(s):
     l = [c if c.isalnum() or c in ' .,' else '\\%03o' % ord(c) for c in s]
     return ''.join(l)
 
-if len(sys.argv) != 4:
-    print('usage: ' + sys.argv[0] + ' <infile> <outfile> <ident>', file=sys.stderr)
+if len(sys.argv) not in (3, 4):
+    print('usage: ' + sys.argv[0] + ' [infile] <outfile> <ident>', file=sys.stderr)
     sys.exit(1)
 
-infile = sys.argv[1]
-outfile = sys.argv[2]
-ident = sys.argv[3]
+infile = sys.argv[1] if len(sys.argv) == 4 else None
+outfile = sys.argv[-2]
+ident = sys.argv[-1]
 
 records = {}
 
-with open(infile, mode='r', encoding='utf-8') as f:
+with open(infile, 'r', encoding='utf-8') if infile else open(os.devnull) as f:
     for line in f:
         [pnpid, name] = line.split(maxsplit=1)
 
@@ -53,7 +54,7 @@ with open(infile, mode='r', encoding='utf-8') as f:
 
         records[pnpid] = escape_for_c(name.strip())
 
-with open(outfile, mode='w', encoding='utf-8') as f:
+with open(outfile, 'w', encoding='utf-8') as f:
     f.write(
 f'''
 #include <string.h>

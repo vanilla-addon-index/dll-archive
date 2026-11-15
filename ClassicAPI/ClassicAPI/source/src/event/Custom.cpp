@@ -19,6 +19,7 @@
 #include "frame/ScriptArgs.h"
 #include "frame/UnitEvent.h"
 #include "profile/ScriptTime.h"
+#include "storm/Memory.h"
 
 #include <cstdint>
 #include <cstring>
@@ -55,6 +56,10 @@ struct Reservation {
     int slot;  // -1 until claimed
     const Game::Doc::Event *doc;  // API documentation; nullptr = undocumented
     int fixedId;  // an `EngineName`'s engine id (its slot for good); -1 = claimed
+    // The SStrDup'd name `Claim` wrote into `slot`'s entry; nullptr while
+    // unclaimed. `RetryClaims` compares it against the live entry to notice
+    // that the engine rebuilt the table underneath a cached slot.
+    const char *claimed;
 };
 Reservation g_reserved[MAX_RESERVED];
 int g_reservedCount = 0;
@@ -63,7 +68,7 @@ bool g_writesEnabled = false;
 // claim) is logged once per session instead of silently dropping the
 // event — the failure mode that would otherwise rot unnoticed. Re-armed on
 // `/reload` (the table is rebuilt fresh). In practice this never triggers:
-// the engine leaves ~115 claimable gaps below 549 (see `TryClaim`) against
+// the engine leaves ~115 claimable gaps below 549 (see `Claim`) against
 // our ~77 reservations, and `Grow` adds room past that. The log is
 // purely a backstop if some future install somehow drains the gap pool.
 bool g_warnedTableFull = false;
@@ -88,23 +93,6 @@ char *SStrDup(const char *s) {
                                           int line);
     auto fn = reinterpret_cast<SStrDup_t>(Offsets::FUN_STORM_SSTRDUP);
     return fn(s, __FILE__, __LINE__);
-}
-
-// Storm allocator/free — the same pair the engine uses for the event-table
-// buffer (see RebuildEventTable), so its reload teardown `SMemFree`s our
-// grown buffer exactly as its own. Both `__stdcall`, 4 args (`ret 0x10`).
-// SMemAlloc flag bit 8 zero-fills (matching SetEventCount's fresh entries).
-void *SMemAlloc(unsigned size) {
-    using SMemAlloc_t = void *(__stdcall *)(unsigned size, const char *file,
-                                            int line, int flags);
-    auto fn = reinterpret_cast<SMemAlloc_t>(Offsets::FUN_STORM_SMEM_ALLOC);
-    return fn(size, __FILE__, __LINE__, 8 /* zero-fill */);
-}
-void SMemFree(void *ptr) {
-    using SMemFree_t = int(__stdcall *)(void *ptr, const char *file, int line,
-                                        int flags);
-    auto fn = reinterpret_cast<SMemFree_t>(Offsets::FUN_STORM_SMEM_FREE);
-    fn(ptr, __FILE__, __LINE__, 0);
 }
 
 // True when slot `id` of the live table can take one of our names: its name
@@ -147,23 +135,39 @@ int ClaimDemand() {
 // tail. Below 549 only nampower writes, at 369 and 540, both before any Lua
 // runs, so skip-occupied steps over them. Claiming low keeps us out of
 // everyone's way and independent of their clamp / hook order.
-int TryClaim(const char *eventName) {
+//
+// Claims only into the IN-GAME table. `CGGameUI::Initialize` (0x0048FE00)
+// calls `RegisterScriptFunctions` (our `EnableWrites` hook) and only THEN
+// `SetScriptEventTable(0xBE1198, 0x225)`, so between the two the live table
+// is still glue's 26-entry one. A `Frame::RegisterEvent` in that window
+// (a third-party DLL registering a frame from its own LoadScriptFunctions
+// hook — issue #134) used to grow the glue table and claim into it; the
+// engine then freed that buffer and our cached ids silently aliased engine
+// events in the real table. The in-game build always passes 0x225 names
+// (clamps by other DLLs only enlarge it), so a smaller count is not it.
+bool GameTableInstalled(int count) {
+    return count >= Offsets::EVENT_NAME_TABLE_STATIC_COUNT;
+}
+
+void Claim(Reservation &r) {
     if (!g_writesEnabled)
-        return -1;
+        return;
     auto *base = Game::Read<uint8_t *>(Offsets::VAR_EVENT_TABLE_BASE_PTR);
     const int count = Game::Read<int>(Offsets::VAR_EVENT_TABLE_COUNT);
-    if (base == nullptr || count <= 0)
-        return -1;
+    if (base == nullptr || !GameTableInstalled(count))
+        return;
     for (int i = 0; i < count; ++i) {
         if (Claimable(base, i)) {
             auto **namePtr = Game::Ptr<const char *>(
                 base + i * Offsets::EVENT_ENTRY_STRIDE,
                 Offsets::OFF_EVENT_ENTRY_NAME);
-            char *copy = SStrDup(eventName);
+            char *copy = SStrDup(r.name);
             if (copy == nullptr)
-                return -1;
+                return;
             *namePtr = copy;
-            return i;
+            r.slot = i;
+            r.claimed = copy;
+            return;
         }
     }
     // Writes are enabled and the table is valid, but every slot is taken —
@@ -173,9 +177,39 @@ int TryClaim(const char *eventName) {
         Debug::Log::Printf(
             "[event] table full (%d slots, no NULL left) — cannot claim '%s'"
             " and any further custom events; even Grow couldn't make room.",
-            count, eventName ? eventName : "?");
+            count, r.name);
     }
-    return -1;
+}
+
+// True when a claimed reservation's slot no longer holds its name: the
+// engine rebuilt the table (every entry re-`SStrDup`'d at a fresh buffer)
+// without our `PrepareForReload` seeing it. The pointer test is the cheap
+// common case; the strcmp covers an allocator handing the engine our freed
+// block for a different name.
+bool Stale(const Reservation &r) {
+    if (r.claimed == nullptr)
+        return false;
+    auto *base = Game::Read<uint8_t *>(Offsets::VAR_EVENT_TABLE_BASE_PTR);
+    const int count = Game::Read<int>(Offsets::VAR_EVENT_TABLE_COUNT);
+    if (base == nullptr || r.slot >= count)
+        return true;
+    const char *live = Game::Read<const char *>(
+        base + r.slot * Offsets::EVENT_ENTRY_STRIDE, Offsets::OFF_EVENT_ENTRY_NAME);
+    if (live == r.claimed)
+        return false;
+    return live == nullptr || std::strcmp(live, r.name) != 0;
+}
+
+// Forget every claimed slot: the table they were claimed in is gone. The
+// engine freed our name copies with its per-entry teardown, so nothing to
+// release here. Re-arms the per-build one-shots.
+void ForgetClaims() {
+    for (int i = 0; i < g_reservedCount; ++i) {
+        g_reserved[i].slot = g_reserved[i].fixedId;
+        g_reserved[i].claimed = nullptr;
+    }
+    g_warnedTableFull = false;
+    g_growLatched = false;
 }
 
 // On-demand event-table grow. Correctly TIMED: called once per in-game
@@ -205,12 +239,14 @@ int TryClaim(const char *eventName) {
 void Grow() {
     if (g_growLatched || !g_writesEnabled)
         return;
-    g_growLatched = true; // one attempt per build, whether or not it grows
-
     const int count = Game::Read<int>(Offsets::VAR_EVENT_TABLE_COUNT);
     auto *base = Game::Read<uint8_t *>(Offsets::VAR_EVENT_TABLE_BASE_PTR);
+    if (base == nullptr || !GameTableInstalled(count))
+        return; // still glue's table — the in-game build hasn't run yet
+    g_growLatched = true; // one attempt per build, whether or not it grows
+
     const int demand = ClaimDemand();
-    if (base == nullptr || count <= 0 || demand <= 0)
+    if (demand <= 0)
         return;
 
     int nulls = 0;
@@ -242,8 +278,12 @@ void Grow() {
     constexpr int kMargin = 16;
     const int deficit = (nulls < demand) ? (demand - nulls) : 0;
     const int newCount = count + deficit + kMargin;
+    // Storm's heap, like the engine's own table buffer (see RebuildEventTable),
+    // so its reload teardown SMemFrees ours the same way; zero-filled, like
+    // SetEventCount's fresh entries.
     auto *newBuf = static_cast<uint8_t *>(
-        SMemAlloc(static_cast<unsigned>(newCount) * Offsets::EVENT_ENTRY_STRIDE));
+        Storm::Alloc(static_cast<size_t>(newCount) * Offsets::EVENT_ENTRY_STRIDE, __FILE__,
+                     __LINE__, true));
     if (newBuf == nullptr)
         return; // alloc failed — keep the old table; claiming still works
 
@@ -271,7 +311,7 @@ void Grow() {
     Game::Ref<uint8_t *>(Offsets::VAR_EVENT_TABLE_BASE_PTR) = newBuf;
     Game::Ref<int>(Offsets::VAR_EVENT_TABLE_CAP) = newCount;
     Game::Ref<int>(Offsets::VAR_EVENT_TABLE_COUNT) = newCount;
-    SMemFree(base);
+    Storm::Free(base, __FILE__, __LINE__);
 
     Debug::Log::Printf("[event] grew table %d -> %d (%d NULL, %d reserved%s)",
                        count, newCount, nulls, demand,
@@ -320,6 +360,7 @@ AutoReserve::AutoReserve(const char *name, const Game::Doc::Event *doc) {
     g_reserved[g_reservedCount].slot = -1;
     g_reserved[g_reservedCount].doc = doc;
     g_reserved[g_reservedCount].fixedId = -1;
+    g_reserved[g_reservedCount].claimed = nullptr;
     index_ = g_reservedCount;
     ++g_reservedCount;
 }
@@ -339,7 +380,7 @@ EngineName::EngineName(int id, const char *name, const Game::Doc::Event *doc) {
     if (*slot != nullptr)
         return; // the engine names it; never take an engine event's slot
     *slot = name;
-    g_reserved[g_reservedCount] = {name, id, doc, id};
+    g_reserved[g_reservedCount] = {name, id, doc, id, nullptr};
     ++g_reservedCount;
 }
 
@@ -428,6 +469,18 @@ void FireValues(int slot, void *L, int firstArgIdx, int nargs) {
 }
 
 void RetryClaims() {
+    // A table rebuilt behind our back (no FrameScript_Initialize in between)
+    // leaves every cached slot pointing at whatever engine event now sits at
+    // that id. Check the claims against the live table and start over if any
+    // moved — we run before the original registers, so no frame has joined a
+    // chain in the new table yet.
+    for (int i = 0; i < g_reservedCount; ++i) {
+        if (Stale(g_reserved[i])) {
+            Debug::Log::Printf("[event] table rebuilt under cached slots — re-claiming");
+            ForgetClaims();
+            break;
+        }
+    }
     // Grow the table first if the low gap pool is short (dormant valve).
     // Runs at most once per table build; on the first call every chain is
     // still empty (this is the first registration), which is the only safe
@@ -435,18 +488,15 @@ void RetryClaims() {
     Grow();
     for (int i = 0; i < g_reservedCount; ++i) {
         if (g_reserved[i].slot < 0)
-            g_reserved[i].slot = TryClaim(g_reserved[i].name);
+            Claim(g_reserved[i]);
     }
 }
 
 void EnableWrites() { g_writesEnabled = true; }
 
 void PrepareForReload() {
-    for (int i = 0; i < g_reservedCount; ++i)
-        g_reserved[i].slot = g_reserved[i].fixedId;
+    ForgetClaims();
     g_writesEnabled = false;
-    g_warnedTableFull = false;  // fresh table after the rebuild — re-arm
-    g_growLatched = false;      // re-arm the one-shot grow for the new table
 }
 
 static const Game::ReloadAutoRegister _reloadReg{&PrepareForReload};
@@ -507,11 +557,11 @@ int __fastcall Script_ForceEventGrow(void *) {
 }
 
 void RegisterDiagnostics() {
-    Game::Lua::RegisterGlobalFunction("_classicapi_DumpSlot", &Script_DumpSlot);
-    Game::Lua::RegisterGlobalFunction("_classicapi_DumpAllEvents",
-                                      &Script_DumpAllEvents);
-    Game::Lua::RegisterGlobalFunction("_classicapi_ForceEventGrow",
-                                      &Script_ForceEventGrow);
+    Game::Lua::RegisterGlobalFunction("_classicapi_DumpSlot", &Script_DumpSlot, nullptr);
+    Game::Lua::RegisterGlobalFunction("_classicapi_DumpAllEvents", &Script_DumpAllEvents,
+                                      nullptr);
+    Game::Lua::RegisterGlobalFunction("_classicapi_ForceEventGrow", &Script_ForceEventGrow,
+                                      nullptr);
 }
 
 const Game::ModuleAutoRegister _autoreg{&RegisterDiagnostics};

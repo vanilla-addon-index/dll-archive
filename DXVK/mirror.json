@@ -9,7 +9,7 @@
     "url": "https://github.com/doitsujin/dxvk",
     "api": "https://api.github.com/repos/doitsujin/dxvk"
   },
-  "commit": "829e377d2d5cf4b07455412fcabed66a1bf4390c",
+  "commit": "71bf4bad427dd6a6a338d6768812110c61bb4503",
   "sourceFiles": {
     ".github/ISSUE_TEMPLATE/bug_report.yml": {
       "sha256": "454c3c31a5a1831fe2035e0873bd60393e097f3cad5843f06379abcf2595ce93",
@@ -28,8 +28,8 @@
       "bytes": 264
     },
     ".github/workflows/artifacts.yml": {
-      "sha256": "6e1ed88a36f7f9dfd97861749a1741d1f1ac2d3d861a8a75aa02b8adf42deb5a",
-      "bytes": 2498
+      "sha256": "d8b2e427b3175ae75a1c99fb5432c43bc09433e243e302a48f722eaa4263ec73",
+      "bytes": 2505
     },
     ".github/workflows/test-build-windows.yml": {
       "sha256": "ae51fc9df629df8e3c8210fae4d4f85e1c508e2d9f9ec7e3e7af5e393e602a17",
@@ -52,8 +52,8 @@
       "bytes": 150
     },
     "dxvk.conf": {
-      "sha256": "a561fbeaec0a90d5e1d02774be5642c13eb10425438f4cfdcba179bb0a06f24d",
-      "bytes": 29211
+      "sha256": "a628158a21ba8d8dc806a215ff7d302b469bed5219138d95577c0114335b6f71",
+      "bytes": 29558
     },
     "include/native/directx/_mingw_unicode.h": {
       "sha256": "3663cc841853b4350b9bfcbb5a43eed888ea8fc6dcb0225ef70cb5b19b5cd781",
@@ -428,312 +428,312 @@
       "bytes": 280
     },
     "include/spirv/include/spirv/1.0/extinst.glsl.std.450.grammar.json": {
-      "sha256": "1194af693a740d972a8d0675f3277f596caae6d61ed0eb0415e5fd35619726dc",
-      "bytes": 14233
+      "sha256": "b0a122c0af7face3bd2adaa50277ea97647b8ff9e6659d9d5077d109b72f3e66",
+      "bytes": 13607
     },
     "include/spirv/include/spirv/1.0/extinst.opencl.std.100.grammar.json": {
-      "sha256": "7819c6bf8f4f87b5fe7b862f871b6e545e9b85d466c846c79cfef917c6bbe8ec",
-      "bytes": 29498
+      "sha256": "313808d270e099397d70fb93699c3dea05f6eab8191cb1d06627788996e96403",
+      "bytes": 28235
     },
     "include/spirv/include/spirv/1.0/GLSL.std.450.h": {
-      "sha256": "b65b7b02fca634dd4d7a9f2c475a29ca7eea8c6cfd31360720cff6f73f29d728",
-      "bytes": 3202
+      "sha256": "dbbeafbec24d7d44e3b14969328f85c9fb94bf578f008b5aad1b347c34aa3471",
+      "bytes": 3087
     },
     "include/spirv/include/spirv/1.0/OpenCL.std.h": {
-      "sha256": "556d37ad0fd80c4edf495b38aa3fe91913f54746c4ac809e8d0fb5b2edf9a549",
-      "bytes": 3942
+      "sha256": "ac8a686d215962253915ec76e34709d6bcf96f7136c75cd10dfcc90c7b3904a3",
+      "bytes": 3748
     },
     "include/spirv/include/spirv/1.0/spirv.core.grammar.json": {
-      "sha256": "b7ce621871ef9baeb12405db397297131138643e0962656e57e7bd8874e29074",
-      "bytes": 168972
+      "sha256": "7d928866be499a40f6f84f4b6275d6c69e71834994fd0ab82f8f663cb13dcea9",
+      "bytes": 163213
     },
     "include/spirv/include/spirv/1.0/spirv.cs": {
       "sha256": "9d8145d722ee34d7017b09e1fa47fc463b4f2ca14c80122a0b509e0186b8bd27",
       "bytes": 29296
     },
     "include/spirv/include/spirv/1.0/spirv.h": {
-      "sha256": "730ec0f621e29cf894ba8b7b88af126c6e5d66283e3107bd9790d3faada778cf",
-      "bytes": 33361
+      "sha256": "0c25f6eb16d544164fa48bafa0eac569c05f1400ea3daa903d50b6153fe08a43",
+      "bytes": 32384
     },
     "include/spirv/include/spirv/1.0/spirv.hpp": {
-      "sha256": "04c5e915df3810c1f67cc0cfd46d60cd870bb1ea235dc232358dab8c6ec281c8",
-      "bytes": 30881
+      "sha256": "4d74405b6f07fba049a576b007ddbf769afd5d9637c61daa20906ba217f6602c",
+      "bytes": 29895
     },
     "include/spirv/include/spirv/1.0/spirv.hpp11": {
-      "sha256": "fc4b4aaad179f32005ed8fe8e21213e757f29ed7d9cd22960ff720fb8ef880d1",
-      "bytes": 25347
+      "sha256": "7a896d4af952a978e69ffe3e1def37f1ac610047063dc2d8be649d2b9ac718b7",
+      "bytes": 24361
     },
     "include/spirv/include/spirv/1.0/spirv.json": {
-      "sha256": "1730f3bb442a96de1bb8fae9bb4457d1f81d88004b0bd54e99d4c54890764fcd",
-      "bytes": 38742
+      "sha256": "37511983938c9ab0b4c78ea635e298812d55867dc51cd257849dbe2b7d4cdd5a",
+      "bytes": 37738
     },
     "include/spirv/include/spirv/1.0/spirv.lua": {
-      "sha256": "707947233e55cfdb8f4ab9370015543225ae8de811c3c502d815142365cd544f",
-      "bytes": 25822
+      "sha256": "d93d4f84a09796532b90c39270f04d602c20f16a646d558d4df7112fa3d92455",
+      "bytes": 24889
     },
     "include/spirv/include/spirv/1.0/spirv.py": {
-      "sha256": "895c9091257b34b9fe0fb4f665c943b1ca01f63ef775e12beda55c586a9d48d9",
-      "bytes": 27452
+      "sha256": "5bdd478afd224ad31b496a14edd8208dd5a0e31c4c745f7d3205eb360705c542",
+      "bytes": 26519
     },
     "include/spirv/include/spirv/1.1/extinst.glsl.std.450.grammar.json": {
-      "sha256": "572dc653861c877f51279789afea48d8697d7e8b1da383ec97c45f8245a35563",
-      "bytes": 14232
+      "sha256": "e23de69b26e1a1529ecb2c78f559b2168623f35f423fb28ea2baf2ed1a905e9e",
+      "bytes": 13606
     },
     "include/spirv/include/spirv/1.1/extinst.opencl.std.100.grammar.json": {
-      "sha256": "ed77555aa0756fb08cc284cbcf81f008975b2c0cc614e541f3439576121ad241",
-      "bytes": 29497
+      "sha256": "2a12bd815cd988639a716c96d2fa5a43dc4cc14fa0d91121c8ef9d53ff62ed98",
+      "bytes": 28234
     },
     "include/spirv/include/spirv/1.1/GLSL.std.450.h": {
-      "sha256": "b65b7b02fca634dd4d7a9f2c475a29ca7eea8c6cfd31360720cff6f73f29d728",
-      "bytes": 3202
+      "sha256": "dbbeafbec24d7d44e3b14969328f85c9fb94bf578f008b5aad1b347c34aa3471",
+      "bytes": 3087
     },
     "include/spirv/include/spirv/1.1/OpenCL.std.h": {
-      "sha256": "556d37ad0fd80c4edf495b38aa3fe91913f54746c4ac809e8d0fb5b2edf9a549",
-      "bytes": 3942
+      "sha256": "ac8a686d215962253915ec76e34709d6bcf96f7136c75cd10dfcc90c7b3904a3",
+      "bytes": 3748
     },
     "include/spirv/include/spirv/1.1/spirv.core.grammar.json": {
-      "sha256": "93524d95cefad67a1cec876b511a138965fbddeeb01669b41ec354379d70bbc1",
-      "bytes": 173917
+      "sha256": "5433e9a301f190d6b473364a1cb3152523f5653a99fecde67a8a08f9664abca5",
+      "bytes": 167995
     },
     "include/spirv/include/spirv/1.1/spirv.cs": {
       "sha256": "a2f967b0a5b8955ecda384ac98d6824d803063450e8de93d4f269b7a24041ee3",
       "bytes": 30125
     },
     "include/spirv/include/spirv/1.1/spirv.h": {
-      "sha256": "4f60a101538e87f1c6f54fdb69e25ab29e2dbda08e77f1bb3af5870574a0ded2",
-      "bytes": 34254
+      "sha256": "2b88e5b757bad01ccfb796cd45ae46615a88a76acebed6f3aa33ab033115d03f",
+      "bytes": 33255
     },
     "include/spirv/include/spirv/1.1/spirv.hpp": {
-      "sha256": "13596cb826ce52f172be77283121b0165150c53f33610ace730020a89faa48e1",
-      "bytes": 31708
+      "sha256": "f531520cbf97005793a8af7e168b66197cf17c25aabedd8330816b2d271f8db4",
+      "bytes": 30700
     },
     "include/spirv/include/spirv/1.1/spirv.hpp11": {
-      "sha256": "696e7614fd445f02c600ab0f702525855b411532517d1dbc4bb204b0a6daea79",
-      "bytes": 26020
+      "sha256": "fee95d2849b5bf55cabe938c91a86056f3e273a6c596d4e3eb044af0c55124b4",
+      "bytes": 25012
     },
     "include/spirv/include/spirv/1.1/spirv.json": {
-      "sha256": "5fa2a0708a03e686aa4437de1cdf99dfea96a2208e4a2ec7f40d42befdd23688",
-      "bytes": 39682
+      "sha256": "b61f458257db6c51d6f5d21972e15f8c8eb93024d6366b28554ba9ae5c3c7d2f",
+      "bytes": 38658
     },
     "include/spirv/include/spirv/1.1/spirv.lua": {
-      "sha256": "e06968437ad26e753921a5132fd50243e79f18280f4b26549ee022ad2f836301",
-      "bytes": 26584
+      "sha256": "2846adc9c2d1b1da8094db40512a264a1473fc07d293761ea385dd93b77f9bf4",
+      "bytes": 25629
     },
     "include/spirv/include/spirv/1.1/spirv.py": {
-      "sha256": "0a0a4cabd14ff146547c69eea488d5becaaf4677b7ab846e5eb16057880b6b09",
-      "bytes": 28257
+      "sha256": "6536e543679feeb146c503e58b80f07e64e886775c98c986e82da677280f45dd",
+      "bytes": 27302
     },
     "include/spirv/include/spirv/1.2/extinst.glsl.std.450.grammar.json": {
-      "sha256": "572dc653861c877f51279789afea48d8697d7e8b1da383ec97c45f8245a35563",
-      "bytes": 14232
+      "sha256": "e23de69b26e1a1529ecb2c78f559b2168623f35f423fb28ea2baf2ed1a905e9e",
+      "bytes": 13606
     },
     "include/spirv/include/spirv/1.2/extinst.opencl.std.100.grammar.json": {
-      "sha256": "7819c6bf8f4f87b5fe7b862f871b6e545e9b85d466c846c79cfef917c6bbe8ec",
-      "bytes": 29498
+      "sha256": "313808d270e099397d70fb93699c3dea05f6eab8191cb1d06627788996e96403",
+      "bytes": 28235
     },
     "include/spirv/include/spirv/1.2/GLSL.std.450.h": {
-      "sha256": "b65b7b02fca634dd4d7a9f2c475a29ca7eea8c6cfd31360720cff6f73f29d728",
-      "bytes": 3202
+      "sha256": "dbbeafbec24d7d44e3b14969328f85c9fb94bf578f008b5aad1b347c34aa3471",
+      "bytes": 3087
     },
     "include/spirv/include/spirv/1.2/OpenCL.std.h": {
-      "sha256": "556d37ad0fd80c4edf495b38aa3fe91913f54746c4ac809e8d0fb5b2edf9a549",
-      "bytes": 3942
+      "sha256": "ac8a686d215962253915ec76e34709d6bcf96f7136c75cd10dfcc90c7b3904a3",
+      "bytes": 3748
     },
     "include/spirv/include/spirv/1.2/spirv.core.grammar.json": {
-      "sha256": "972ec6171c2ec2aacc183199c801f04eebdab7eaf2b701bcd4b4b40cc29f3be6",
-      "bytes": 175367
+      "sha256": "f25068d6d372c8fd61e529f53db8cfd6ec9182a0f9321748c5b132a9c9b548bf",
+      "bytes": 169397
     },
     "include/spirv/include/spirv/1.2/spirv.cs": {
       "sha256": "d1193d3c947c9a891e77d5dc547ba631302a5b235516a16698ea242572eacc6c",
       "bytes": 30332
     },
     "include/spirv/include/spirv/1.2/spirv.h": {
-      "sha256": "a4f01708fec0b65bfe80ca47d84c98d20def101b1e58743036bcc14ee5fdbe82",
-      "bytes": 34496
+      "sha256": "d0580351b4164bfa938e8e374fb0205811966e0f4cf4fb80f72e8655a45e0343",
+      "bytes": 33491
     },
     "include/spirv/include/spirv/1.2/spirv.hpp": {
-      "sha256": "910df2cc7e1ccea4923ba30f1e658876a97175de149176b658dfb5aaf9da7f0d",
-      "bytes": 31932
+      "sha256": "25c328ad50132ba22437fe7ed2898de79509285c3402762c6ffea17ac9f748a9",
+      "bytes": 30918
     },
     "include/spirv/include/spirv/1.2/spirv.hpp11": {
-      "sha256": "2d0d9495f4d6f25f7298397069b913686c298994339e9b0ab9ff267c64ba8b75",
-      "bytes": 26185
+      "sha256": "33f9b5a3ea90429e38e479970b51f125fa24aec48101239b163e2b80b1591ee8",
+      "bytes": 25171
     },
     "include/spirv/include/spirv/1.2/spirv.json": {
-      "sha256": "1907998562909c82cbaea24a71f43ab9d8e4161d078bd2380032c46001719e99",
-      "bytes": 39949
+      "sha256": "dd6c543d7eea72f81b1cfe7dbec06530aa9c7f89a27a68f6c18827cb7992e5ea",
+      "bytes": 38919
     },
     "include/spirv/include/spirv/1.2/spirv.lua": {
-      "sha256": "db4be788ae78e8f06e85e5e78173a26f517b51295ee577f99b825718c0ab998d",
-      "bytes": 26773
+      "sha256": "98d386749f7b255290af81d4b25c488c1af9f44a64cb5715dfd6fa7a8118dc32",
+      "bytes": 25812
     },
     "include/spirv/include/spirv/1.2/spirv.py": {
-      "sha256": "5ccceca298073da18e30a3430ee47c4662ad6ce3197c3663a1c09d62c31834ca",
-      "bytes": 28458
+      "sha256": "6e9023b8266e418272b593704e5cc9c2b0f300941981b2b3843e67090641988b",
+      "bytes": 27497
     },
     "include/spirv/include/spirv/spir-v.xml": {
       "sha256": "fadea309ff28ef64eacafd2ba37cb1fcb1d84acbb71916a626ff9e2b695fffa3",
       "bytes": 22311
     },
     "include/spirv/include/spirv/unified1/AMD_gcn_shader.h": {
-      "sha256": "9a95d13c0b19f7555a4f094b8278751d23a3dc2291489738bfa0d4b6d485e44c",
-      "bytes": 867
+      "sha256": "fedf1db1c6b0910a624d849c2b92d29576105887b9b216ad2b1a60e053ffa6e6",
+      "bytes": 832
     },
     "include/spirv/include/spirv/unified1/AMD_shader_ballot.h": {
-      "sha256": "033031c9f621891733b6ab0187375330f8ce498925a41ef83a5fe4e2390278cb",
-      "bytes": 960
+      "sha256": "15aa9f9c36086713985c832238061f64be4cd4eb4f8bf7bd08e7c61ef5161355",
+      "bytes": 924
     },
     "include/spirv/include/spirv/unified1/AMD_shader_explicit_vertex_parameter.h": {
-      "sha256": "93588fd6985aeb0b235ea8886fd6a0b2c708141eaa80cc0cef9b7e77ea15a21f",
-      "bytes": 976
+      "sha256": "b716d0a212c2897ca4cbf23d642f490cd8e82e6f557ea4cf60c500a69aaeddaa",
+      "bytes": 943
     },
     "include/spirv/include/spirv/unified1/AMD_shader_trinary_minmax.h": {
-      "sha256": "d94d4935f8b5aaaf5f0295b1d68bf4fab704b3cc9b73b077f1f2b1c61124aba2",
-      "bytes": 1226
+      "sha256": "c82e0dfec563a319c73951ca0a12709286bd75ef4fd567543a526420761bc557",
+      "bytes": 1185
     },
     "include/spirv/include/spirv/unified1/ArmMotionEngine.100.h": {
-      "sha256": "9f9cec74c09cabeee2d8ff642094b131992edd7c074524ae96edc72982ec4dce",
-      "bytes": 711
+      "sha256": "788c1811b9b06542c57b9e74670455c964440b6a12c7afab0934a70b48417b3c",
+      "bytes": 679
     },
     "include/spirv/include/spirv/unified1/DebugInfo.h": {
-      "sha256": "2147833f9c20041e48caa8fa5ea6c7a136f9f47900b8dbe69897235412f32ef8",
-      "bytes": 3769
+      "sha256": "38ce5d069c4d81adc919def9503999944685af322a430a0696445f7adeb31780",
+      "bytes": 3641
     },
     "include/spirv/include/spirv/unified1/extinst.arm.motion-engine.100.grammar.json": {
-      "sha256": "4f16a0967fd8d143eba7687fc89604611f4baa4939a4ce5a8140c27702a8257f",
-      "bytes": 2683
+      "sha256": "86fb7c418bc660338068ebe43409371e10cb78ecca83f9347c601b0b68ab8695",
+      "bytes": 2550
     },
     "include/spirv/include/spirv/unified1/extinst.debuginfo.grammar.json": {
-      "sha256": "927ee250d6c2c7a2e6f8b6c89583cf2e72002e5e2d64ee811476747b0936469c",
-      "bytes": 16409
+      "sha256": "3f6b26f7e930ebf27524991c15366a278d7f0a73a8eb70b9e9503375c4a341b6",
+      "bytes": 15853
     },
     "include/spirv/include/spirv/unified1/extinst.glsl.std.450.grammar.json": {
-      "sha256": "cac419d11e1e8997d91d7a2e746ebac4c48ccdc88f173c97c9c759a1134d8aec",
-      "bytes": 13995
+      "sha256": "5d72e48247569f9b77a17a849db624350abc9d26f7f72b153bbcf15c37238239",
+      "bytes": 13369
     },
     "include/spirv/include/spirv/unified1/extinst.nonsemantic.clspvreflection.grammar.json": {
-      "sha256": "b981812fb2ca1f369d7a0bbe940f524f3e32b1c118aca208690e39d77065633a",
-      "bytes": 13692
+      "sha256": "425414766ed0b387f05e30a57b74cfcc6288d07b23d61b86befa118c1d73d4d8",
+      "bytes": 13258
     },
     "include/spirv/include/spirv/unified1/extinst.nonsemantic.debugbreak.grammar.json": {
-      "sha256": "486129d2a02666332009319ded75c557392e0cc068f29e7a8ab29c4196ecbad0",
-      "bytes": 118
+      "sha256": "1d30fb3a054592f8d749dff42ad4aa4f695bd5f0d4a9cadc70694a1d0cafe23b",
+      "bytes": 109
     },
     "include/spirv/include/spirv/unified1/extinst.nonsemantic.debugprintf.grammar.json": {
-      "sha256": "c101f9b54a3f2e513aaeaee251a5ca7d542269cf40a2ab2296ff14b6cc332c36",
-      "bytes": 265
+      "sha256": "e23844cf66431dcd1d50d23b84cd45a07b16c4cdb0262ed9b32f7b9331131a89",
+      "bytes": 252
     },
     "include/spirv/include/spirv/unified1/extinst.nonsemantic.shader.debuginfo.100.grammar.json": {
-      "sha256": "552ac3ed2d7cbd5b2d54667fa378b96967ec368118732a03f6e8d6862499a48d",
-      "bytes": 19842
+      "sha256": "a057349c3902dce992c6f70a685812e84b019a823efbbaf8d81c276e86a12de7",
+      "bytes": 19145
     },
     "include/spirv/include/spirv/unified1/extinst.nonsemantic.vkspreflection.grammar.json": {
-      "sha256": "0800008054befa10fa60937ad2b0a5f185e4b7c804825de585f82f681e0c1359",
-      "bytes": 5373
+      "sha256": "5479df05d87a80d84031fe8837908fb66b02b8f07f5cdb43b06005534d749200",
+      "bytes": 5235
     },
     "include/spirv/include/spirv/unified1/extinst.opencl.debuginfo.100.grammar.json": {
-      "sha256": "71acb00d98fb68b06dc033ea1c98f66b8d4b35ead0d5c34396ac590c87fdeb90",
-      "bytes": 18887
+      "sha256": "a0e0d510c7206ae98fc76b42756009991d56d2caa84f151165002806cdc9b222",
+      "bytes": 18252
     },
     "include/spirv/include/spirv/unified1/extinst.opencl.std.100.grammar.json": {
-      "sha256": "8557e9a50f055a84f7988d1dd8646134528fcc9d109def195888803bc9cb51ac",
-      "bytes": 28947
+      "sha256": "44b752999f78f8161ee52a9d305b14576ad7ed0a81a10d28870b7cd0ba5788a4",
+      "bytes": 27684
     },
     "include/spirv/include/spirv/unified1/extinst.spv-amd-gcn-shader.grammar.json": {
-      "sha256": "65c2b4e0c81b164d11d9edf1b00fe2fdb5fd7761d3f94e607f796913ae66d4f5",
-      "bytes": 557
+      "sha256": "ffb7b0f755f774c1fefd92ffc46a4790ac5bce3b1bc366676637186fd1ddfeb6",
+      "bytes": 531
     },
     "include/spirv/include/spirv/unified1/extinst.spv-amd-shader-ballot.grammar.json": {
-      "sha256": "279715d5778fb3750bf4a9332b086808773bf433851875a125ae13c4276fb7bf",
-      "bytes": 1090
+      "sha256": "823b90a85ba6a516def3db45c6b37ecdaba56263f9f7867c8c5432a0d2597395",
+      "bytes": 1049
     },
     "include/spirv/include/spirv/unified1/extinst.spv-amd-shader-explicit-vertex-parameter.grammar.json": {
-      "sha256": "9343c4acfc86d39f47ad8f3dac61b8b6248d8583fc05c6f19b541b335171b512",
-      "bytes": 339
+      "sha256": "c022b2c0b337d20951b9076ac0b6ec1ea512b2964051fc3ade04cbb70146ac8b",
+      "bytes": 325
     },
     "include/spirv/include/spirv/unified1/extinst.spv-amd-shader-trinary-minmax.grammar.json": {
-      "sha256": "6ef34572b108e457b25f86f74b3b718230026ab2ed88f3be895201af32027172",
-      "bytes": 2661
+      "sha256": "7702f8d593e435f4f294d7a98cd9672b13efaa433a34a037698a285adfd84158",
+      "bytes": 2566
     },
     "include/spirv/include/spirv/unified1/extinst.tosa.001000.1.grammar.json": {
-      "sha256": "b82c5b382f49db2c6a2a14f898ffff9ee5c137313528b7235ef41900de3c7ef2",
-      "bytes": 21011
+      "sha256": "fb028a301e201afb61387b331a664b30790ffb2d2d2ecf81e09f2b63301e607c",
+      "bytes": 19867
     },
     "include/spirv/include/spirv/unified1/GLSL.std.450.h": {
-      "sha256": "057b8f4286a9ba6f208b47ee381dbf2775bae0d5208caba7166dfc5e7438c60e",
-      "bytes": 3202
+      "sha256": "d18a932ee97c268a57e33134651d554dbe71a5654b975e89e9e9487fa59ac9df",
+      "bytes": 3087
     },
     "include/spirv/include/spirv/unified1/NonSemanticClspvReflection.h": {
-      "sha256": "4527f1b0903ef2b134ffe9b11ff7ae9d3d2ac7af1e223fa6abbd066a6682b089",
-      "bytes": 3695
+      "sha256": "10dfd6329e8ca50f49ea85961c757fb8ee03cba9fa01031e165b8964a1473059",
+      "bytes": 3614
     },
     "include/spirv/include/spirv/unified1/NonSemanticDebugBreak.h": {
-      "sha256": "35cdd05326fb7f9f8d6e6083a732a25cc315d3afac7ea91e3c8ce79c98fa3be5",
-      "bytes": 844
+      "sha256": "51a75260843872e4f1bcf0558407c2de839663b67ae694354c68689f608363a4",
+      "bytes": 811
     },
     "include/spirv/include/spirv/unified1/NonSemanticDebugPrintf.h": {
-      "sha256": "906052d005ace731b8c0735d991bcc7ea3d62bb100f79e0ef8584d940d63829a",
-      "bytes": 853
+      "sha256": "79b5ee5d02940ef73db51d4a4fbdc3c2bd7c318d1258f0ec39dc0a6fb3d620cb",
+      "bytes": 820
     },
     "include/spirv/include/spirv/unified1/NonSemanticShaderDebugInfo100.h": {
-      "sha256": "789501b6d742449c46c90af9e349487be2c53f5dd9529d1d98868790411c8e3e",
-      "bytes": 7030
+      "sha256": "324d769f18e568b70b6a4b4359c4838c929b337759c43691f1cec49ea03bcad1",
+      "bytes": 6875
     },
     "include/spirv/include/spirv/unified1/NonSemanticVkspReflection.h": {
-      "sha256": "0086748adbd88cef4a65aa88c04777f7ce2d3ee584ff446cf9204b988be84cb6",
-      "bytes": 1246
+      "sha256": "1447e0f039b8baeb4ccd0e1b00ea1d51d9d03019f5cb5037999d107a000642ef",
+      "bytes": 1206
     },
     "include/spirv/include/spirv/unified1/OpenCL.std.h": {
-      "sha256": "5769608e50bb04ea01eaa0e02e7e12086554885ac566690365d0000547789943",
-      "bytes": 9228
+      "sha256": "7cf7a4aa83fef2e12580783c8b5f2b1be0babf1cc4cce8199540ec2c3c3182d3",
+      "bytes": 8843
     },
     "include/spirv/include/spirv/unified1/OpenCLDebugInfo100.h": {
-      "sha256": "f574356a145ede4dbed593a8fad58fc84105a2f3da3acb5067fe8ccdb5503bd3",
-      "bytes": 5171
+      "sha256": "80f14fe4347d597c274e334f434fe5819f16dc10805fef0f0bedfe159091d11f",
+      "bytes": 5029
     },
     "include/spirv/include/spirv/unified1/spirv.bf": {
       "sha256": "102f6f133a2704e34a2c2b6e6482bb001f06964f5c5442f105448dd36177e91f",
       "bytes": 102408
     },
     "include/spirv/include/spirv/unified1/spirv.core.grammar.json": {
-      "sha256": "c219957a8e53c00e145105a1f8364a23d646da8325c0b0a511f057acee10f668",
-      "bytes": 616979
+      "sha256": "508e6677e27b0b58eac8395aa49a90ac1766a8d392c247a0aba7b03f4fdd85b9",
+      "bytes": 597741
     },
     "include/spirv/include/spirv/unified1/spirv.cs": {
       "sha256": "37da35a127a7c1b9b0864933ff69611332045476c1998532e5f29ebdad3572eb",
       "bytes": 100530
     },
     "include/spirv/include/spirv/unified1/spirv.h": {
-      "sha256": "2d4d23d666a51d898e38eca1d780c5117f35c8d7bff2c20581738551ad3e716a",
-      "bytes": 323797
+      "sha256": "a3e041124815be3e6411dc9cfe04153a499b37ff83e630af8f7f98766db183a7",
+      "bytes": 318237
     },
     "include/spirv/include/spirv/unified1/spirv.hpp": {
-      "sha256": "bb987e64b0ab3a52b45a846f6ddfe2cd1cca0643df15817148dd6ba0cabe0d0e",
-      "bytes": 315196
+      "sha256": "f1c7707b4fa073bb61706eecf3583163651504a3abac17f3e3f2420313082aac",
+      "bytes": 309571
     },
     "include/spirv/include/spirv/unified1/spirv.hpp11": {
-      "sha256": "173a3717d32680e3da27ac6733d659106cb061cf743c503bbf888995618b3b9b",
-      "bytes": 306233
+      "sha256": "83cb8f2f9ba84b3013a6f9a4a9e40807c01c4db4244d36048b9c266f64711504",
+      "bytes": 300608
     },
     "include/spirv/include/spirv/unified1/spirv.json": {
-      "sha256": "8e440c7fec62012bcc0e84a0d83e7b8f77082481b622432c1faefe384da40777",
-      "bytes": 119990
+      "sha256": "d34a5f20e84e27abeee26ca45f165f0ee777e773ed32d8c4bb5ac3980de999b2",
+      "bytes": 117387
     },
     "include/spirv/include/spirv/unified1/spirv.lua": {
-      "sha256": "9f99c26a345e6520cd5a2feef948a8763d65740f8104c4ea4473d4236c3bbce7",
-      "bytes": 91690
+      "sha256": "4d384df6465eba7a15e8ea6319d88850385a5f5c3b2cd51b3d8bf757d5486ea8",
+      "bytes": 89068
     },
     "include/spirv/include/spirv/unified1/spirv.py": {
-      "sha256": "91e3343ba31eb7f6649b5b5f72e0117c2f3c093f15ccad194e5d18386e58f47f",
-      "bytes": 94861
+      "sha256": "5c2936c0a68408d4f7450b48c8ddd85ef89b86ee2ee4c150a9faba555b0a4032",
+      "bytes": 92297
     },
     "include/spirv/include/spirv/unified1/spv.d": {
       "sha256": "329831d86b33dc0cdbbffd4653f46d54e63eba7db88ba66e0b87be20876a43ab",
       "bytes": 79702
     },
     "include/spirv/include/spirv/unified1/TOSA.001000.1.h": {
-      "sha256": "48194227853768b5df3eb901db6e1c6efd81a947aef517a418b7d96f2185825a",
-      "bytes": 2075
+      "sha256": "f500c3d501aba42b3ae921d1d0c8f94e8d5037329050f73fd7e85e22597b7f25",
+      "bytes": 1980
     },
     "include/spirv/LICENSE": {
       "sha256": "ea43b1de38a6f90c488800d66dec1ed671e68cda530266bc96951fb5b6307613",
@@ -788,12 +788,12 @@
       "bytes": 663
     },
     "include/spirv/tools/buildHeaders/bin/generate_language_headers.py": {
-      "sha256": "762f9de8d7663776faf1c2a2098e5b684284b5b911dcde41870845e54676d23a",
-      "bytes": 7166
+      "sha256": "3581c7806abed37ee64ea208d40380e56aeaeab18692b0a07524f3eba5537225",
+      "bytes": 6955
     },
     "include/spirv/tools/buildHeaders/bin/makeExtinstHeaders.py": {
-      "sha256": "4de39d2324493164770454c0cda58107a10b4dfa010925eae37c1c88b2a38b36",
-      "bytes": 1832
+      "sha256": "bf30352f171d9448ccbc43b83e9d401fa1aea39b547a5df70cee5cca1ae7f44f",
+      "bytes": 1799
     },
     "include/spirv/tools/buildHeaders/bin/makeHeaders": {
       "sha256": "f3ee5da75f6a5c7cebcc85598ceacc454344e2d744fcf59f264c4db1fb868c81",
@@ -808,16 +808,16 @@
       "bytes": 36751
     },
     "include/spirv/tools/buildHeaders/header.h": {
-      "sha256": "f9811447ea7f15c9290e7ec2bb8d0cd9d8fbebba04bfaa7903a95f10c228e19f",
-      "bytes": 1042
+      "sha256": "d51ef97321d4cb61db30de2b961f7178cf87030f8c364434689c6c0b495b7ec8",
+      "bytes": 1003
     },
     "include/spirv/tools/buildHeaders/jsoncpp/dist/json/json-forwards.h": {
-      "sha256": "eb0d9fc1013e4092203b94eb6f4ee4095c746528dd239890b24ccbbc0094964a",
-      "bytes": 9209
+      "sha256": "757c5fb189b56c574b0d91e306f56052667914ee666699d5d311675795c9da88",
+      "bytes": 8954
     },
     "include/spirv/tools/buildHeaders/jsoncpp/dist/json/json.h": {
-      "sha256": "6b011918e6b9130e71ce43206d1fddebcb5e75b4e714c3f7d6a2c3bdce3eaf18",
-      "bytes": 67880
+      "sha256": "01ada08bea4a25a3cc095050f1ce633d0b9ed9cb3a4a127eee8dc7534b662901",
+      "bytes": 65863
     },
     "include/spirv/tools/buildHeaders/jsoncpp/dist/jsoncpp.cpp": {
       "sha256": "7e3744005f1ee198e119fcfc7ba74c12465300a8fe626169f1180f551a4fc64a",
@@ -828,376 +828,376 @@
       "bytes": 39939
     },
     "include/spirv/tools/buildHeaders/jsonToSpirv.h": {
-      "sha256": "862fb56ed192afb8afd4b16dda90bb870a7421ccb26321bc43cc9b2555a0b864",
-      "bytes": 10662
+      "sha256": "dc6cf10a233c26f467f574a54f1a2087b94e9182b6cddab8cf20ce63f475dd3a",
+      "bytes": 10354
     },
     "include/spirv/tools/buildHeaders/main.cpp": {
       "sha256": "ab5b5d6e7ea27201e3d6ef418afc1c5141565787ec223e19315fea0f1caa14a8",
       "bytes": 3473
     },
     "include/spirv/tools/check_grammar/check_grammar.py": {
-      "sha256": "0cb5227f400a34ac7844bcfca8141eb7876514ef88d3876df3ef1f054bc88f91",
-      "bytes": 7033
+      "sha256": "fd4eb69e0ca975c5593c657950c57a5f2051191f55defb0309ee86dd38fb8847",
+      "bytes": 6848
     },
     "include/spirv/WORKSPACE": {
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "bytes": 0
     },
     "include/vulkan/.gitattributes.upstream": {
-      "sha256": "bb620d4ea78ba086be890df2c22c6822eb03bdfe4ee69fb6869ae6e5a17eec1e",
-      "bytes": 618
+      "sha256": "7bdc16faa9cd50c8820067db6b14c2242a915c6d8bb5cf8756debfb493739de0",
+      "bytes": 594
     },
     "include/vulkan/.github/dependabot.yml": {
-      "sha256": "a52711e14a0a1e081ca99979ad255ee56cc523b9d32a7b68c78a4417443726b1",
-      "bytes": 244
+      "sha256": "c392e1b071a11d7e8d908c41b22861ab202d4ff427d3f6ba58a0e5331f79b0d2",
+      "bytes": 232
     },
     "include/vulkan/.github/ISSUE_TEMPLATE/bug_report.md": {
-      "sha256": "ed157844cc0c72ccb6cd282b5ed2032e1994010c98caa638759981fc3623730d",
-      "bytes": 1224
+      "sha256": "d8bbc52c96c7693ccbc07e7897faf77f9e5ba77194f8c6269729fa4adfa6d4e4",
+      "bytes": 1171
     },
     "include/vulkan/.github/pull_request_template.md": {
-      "sha256": "befd3551f7ed73adf89646bccb7abf769871e37d158584150759cc45485668e7",
-      "bytes": 597
+      "sha256": "ac7346bdd9e8d257e412d5f8285617d858569e779ec8eabd08645359a12713ca",
+      "bytes": 578
     },
     "include/vulkan/.github/workflows/ci.yml": {
-      "sha256": "7d36347fc4512bbe05ab21a2e7f7bf2e79f5ae392b4f8638fb5ced69b39e145c",
-      "bytes": 4319
+      "sha256": "cad40fffd65e70a07650b2858ed05918d1c52050ca424bf7c6f799dd5571ed68",
+      "bytes": 4191
     },
     "include/vulkan/.gitignore.upstream": {
-      "sha256": "d2de55bb7a928517a7113865e39efafce261fb09971040117b51196712a4cda0",
-      "bytes": 269
+      "sha256": "925a1e2eccfc29d2e6bf607bcd90a41e6a38e9174a02d52d945dbca11f9c1227",
+      "bytes": 253
     },
     "include/vulkan/BUILD.gn": {
-      "sha256": "dbbcd88e6801943c93159a94a43f650ceabc92e28203d4619e4b2c58b1174266",
-      "bytes": 2399
+      "sha256": "97d0a2e736d690993ce27477c253a5e2b1217f13e788b1b0a5dace648d4db46f",
+      "bytes": 2323
     },
     "include/vulkan/BUILD.md": {
-      "sha256": "d86dc9fead0b856243acce58914b995329c717278203aa3d58133b749e06d55d",
-      "bytes": 1263
+      "sha256": "33678f65ffe16d52e84db2efd015d44dc65edcc9da7154337ca8bc8569b7a639",
+      "bytes": 1217
     },
     "include/vulkan/CMakeLists.txt": {
-      "sha256": "ab6107997aedaf0b8758fe80694ec9c375935d4f49ec733925d41e29ef8ad9bb",
-      "bytes": 6043
+      "sha256": "b8ce9860d5ccad11aed6f3bf2008bbe62725db2dccdf267b8a6fa84ddc8d821d",
+      "bytes": 5918
     },
     "include/vulkan/CODE_OF_CONDUCT.adoc": {
-      "sha256": "790e1f195e66d8843e24374134b75e71c753027a3a316aea127c1e1f39139c7a",
-      "bytes": 379
+      "sha256": "118a9963d8011a2e6939eb021f8170fa39f764be3a8dc844f2a3f94c79044aba",
+      "bytes": 369
     },
     "include/vulkan/CONTRIBUTING.md": {
-      "sha256": "43862875fc13fb8023c71cc7b4c97be82caaa9d14f302189be376c6d98ef0357",
-      "bytes": 2027
+      "sha256": "0cadcbdd6611f414ec9c3f3480811e8fbf5c053731f03ace68ec20c2247493e2",
+      "bytes": 1969
     },
     "include/vulkan/include/vk_video/vulkan_video_codec_av1std_decode.h": {
-      "sha256": "fa2e85e9669f1666badfab9211de9dbe279bc2adc3ed095635313712ced9219d",
-      "bytes": 4366
+      "sha256": "7e3a1ce177c12546d410f3179ce1b81f2da7a8eba4f525b29cd563ab4099c0e5",
+      "bytes": 4257
     },
     "include/vulkan/include/vk_video/vulkan_video_codec_av1std_encode.h": {
-      "sha256": "5bb49198ac7a63c810115c62c9ab44b2e60f20c60869a68a813730f30777db5f",
-      "bytes": 6129
+      "sha256": "8d166b4543260a38347860443b1a59c7a5e86cdb0d0facaf4c704f667de030e3",
+      "bytes": 5986
     },
     "include/vulkan/include/vk_video/vulkan_video_codec_av1std.h": {
-      "sha256": "110d61f53214322f4d0aec8f77a7cec40c1517829b125c0d01d6fc9fdf0fdd83",
-      "bytes": 17088
+      "sha256": "c75c1d324b97d247aef0008024bc7f3adb98c741ab7f66c882ec38fdacc7ee33",
+      "bytes": 16694
     },
     "include/vulkan/include/vk_video/vulkan_video_codec_h264std_decode.h": {
-      "sha256": "fbee59666126c323b2bacc0b4b2c6fd1d1a28ced72e4c6791026a730f05bc129",
-      "bytes": 2807
+      "sha256": "37b970c3d80536ad1ac074cfe19b58ee03c3075378e02179e1dc5e4351266821",
+      "bytes": 2730
     },
     "include/vulkan/include/vk_video/vulkan_video_codec_h264std_encode.h": {
-      "sha256": "cd7e050bc0062d791a5e4e3cc97efdd4b9b3838214168785743fb48ebd5a041a",
-      "bytes": 7032
+      "sha256": "227e092b53c4e7ca1a948ed021704511c1ed16040cd6188ff6703e5ae66db64d",
+      "bytes": 6885
     },
     "include/vulkan/include/vk_video/vulkan_video_codec_h264std.h": {
-      "sha256": "84d669c6010443e268f940e57a26e3ff0c4050c9c434b79efaaa1bfa3d3d203c",
-      "bytes": 14275
+      "sha256": "fded484cef9f90fbbd089e0647268f36e5f4292179fbc5428a2c9e8d7709bbe9",
+      "bytes": 13961
     },
     "include/vulkan/include/vk_video/vulkan_video_codec_h265std_decode.h": {
-      "sha256": "4ce92dc8ff11f8f9652b01713992f1235b6c88694a658b8fe8777ac7c79fb5df",
-      "bytes": 2503
+      "sha256": "879a0dd370a1b1ad184638906c52bdfe7d80d639fbc5a5baa8b02d7c5b60b147",
+      "bytes": 2436
     },
     "include/vulkan/include/vk_video/vulkan_video_codec_h265std_encode.h": {
-      "sha256": "182114ca162aae8b3c1ed3c9693852126b2dda009712e387a1ab6f475ab8058e",
-      "bytes": 7626
+      "sha256": "abb3e72af22e4e0a3dbe5dff7be1b275949388809fb3987830341e8f495ea1c7",
+      "bytes": 7469
     },
     "include/vulkan/include/vk_video/vulkan_video_codec_h265std.h": {
-      "sha256": "d3ae5c05dca0765d950e53aa1aafc9526be8be6be72b373803c70c94086665a1",
-      "bytes": 23892
+      "sha256": "0b81f8986ada015ef2e127449eff9d9634899bb59a0a9277a4054e9ec4416c12",
+      "bytes": 23446
     },
     "include/vulkan/include/vk_video/vulkan_video_codec_vp9std_decode.h": {
-      "sha256": "ac1ac9e1494a26855e327001fa6ffa26020eb5bf852dab1ea3e89939ced3d5ee",
-      "bytes": 2446
+      "sha256": "1ceb1a8d0e3370e508cf688a6e57dc314cd82186b60f3cef420ea4b1b483865d",
+      "bytes": 2378
     },
     "include/vulkan/include/vk_video/vulkan_video_codec_vp9std.h": {
-      "sha256": "b4a35526ddf93652c6244e26a71f6d2d9536c0bd5aebde35ed777d1cd8a64978",
-      "bytes": 5542
+      "sha256": "0a47125865376a3fe7014b69ff6db9d04e30ebf8c4d15664f1d894649ad5c09d",
+      "bytes": 5391
     },
     "include/vulkan/include/vk_video/vulkan_video_codecs_common.h": {
-      "sha256": "cf775e4d74384e3d4ed5657fb7d87faa4a7eaf6fee21f4f4113640565494a924",
-      "bytes": 703
+      "sha256": "d2e7caa396c521d03d491a269572b1d31b925b5127d22fda14199951ebae89f8",
+      "bytes": 667
     },
     "include/vulkan/include/vulkan/vk_icd.h": {
-      "sha256": "46a46bf9bb5176becff061262f1093c1caa9ef33a2ec6f3432e8b1da1ce2c436",
-      "bytes": 8472
+      "sha256": "ba22828f76de7231e7dfbb5d8564e7a58dd9f5dbeac8c1f0ff6c056c92db744a",
+      "bytes": 8228
     },
     "include/vulkan/include/vulkan/vk_layer.h": {
-      "sha256": "5ad88b2b4108855d6c53d81da654a5663953e2102fb1f6e3ba47b2d7f8c95ade",
-      "bytes": 7373
+      "sha256": "a9fb1343e7e1fa3456189bf146f2186b8df46c1b1a01f88f8b9ae4cd25b1623c",
+      "bytes": 7182
     },
     "include/vulkan/include/vulkan/vk_platform.h": {
-      "sha256": "1fc08c530b46e587295aafb19493eb9d434e963f7e48d3a323adbee06f59976c",
-      "bytes": 2915
+      "sha256": "a2cd9085c66776845d2524c3b0e73ccf4827ba046aa6f676c4b8ddbed47d6552",
+      "bytes": 2832
     },
     "include/vulkan/include/vulkan/vulkan_android.h": {
-      "sha256": "4f5afd4b0b31b655b7e6a27d9954ab232f0f3cd8bfa6a340335ba939d20648c7",
-      "bytes": 6496
+      "sha256": "9dcce545a790b5b1ce00e103ade95c8efa4c8a0bf2ff39865d76a7d2f987aef2",
+      "bytes": 6337
     },
     "include/vulkan/include/vulkan/vulkan_beta.h": {
-      "sha256": "cbee78bfb43fb7faac49e1da0d8b7c46132036ea6c021469650f2e57888da505",
-      "bytes": 17794
+      "sha256": "bb43577a445c357c3f0c03572b3dd3ebd9fca39914c0092f7d77e942af05d3fc",
+      "bytes": 17419
     },
     "include/vulkan/include/vulkan/vulkan_core.h": {
-      "sha256": "944cd8f81d98e94999c7353dd632f73be471f2da95afecbc7d9ffe0ad5295deb",
-      "bytes": 1390151
+      "sha256": "2f64fd6c7c3f342b0e44f039f1c359b7f0e6cfcb71a7dca1cc5156282faa3b51",
+      "bytes": 1362950
     },
     "include/vulkan/include/vulkan/vulkan_directfb.h": {
-      "sha256": "e68438c77132d629ce6c05eae7f21ff8818a6b743b2adcdeaee2c1669f7bc4e9",
-      "bytes": 2018
+      "sha256": "efecf5a15380f61c16ef257ed55a998f2cc651789bec22056ccc81d2518daefc",
+      "bytes": 1959
     },
     "include/vulkan/include/vulkan/vulkan_enums.hpp": {
-      "sha256": "dc89c08f7d7d0f31208a119695bebd113611341455b5da6b6667152e426c1671",
-      "bytes": 747395
+      "sha256": "d0010108ee57bc78dbb29a9e7e86c6ddd91048445a22246c5a6e503e1f1a0d39",
+      "bytes": 736533
     },
     "include/vulkan/include/vulkan/vulkan_extension_inspection.hpp": {
-      "sha256": "14c9631d67532b8e395d7b35bf421df05dc875b6799ca52834c8308cbcfa003f",
-      "bytes": 213612
+      "sha256": "a00dccf39ecfac4b6a278a4656543107e425ae198bc571e928679facc0cd8e14",
+      "bytes": 209138
     },
     "include/vulkan/include/vulkan/vulkan_format_traits.hpp": {
-      "sha256": "df996975ba4c12548403ad99d44e4ff0cdcd88c771bcd6176774e37416f89853",
-      "bytes": 439335
+      "sha256": "b980aefbb629a1bfebdfd475532f9f2214660a6532c39dffb91c2fe6c38ec0d2",
+      "bytes": 428681
     },
     "include/vulkan/include/vulkan/vulkan_fuchsia.h": {
-      "sha256": "46915b5d3390cf9d6c46baa13fa6792b7f8c172187d00662d7843cd0bba2b8f0",
-      "bytes": 13189
+      "sha256": "17aedccaae68825bfa2954faec1bc9e953b106f1161e1b2ab26ab4cdccf21a06",
+      "bytes": 12907
     },
     "include/vulkan/include/vulkan/vulkan_funcs.hpp": {
-      "sha256": "0514500fdebaad4eab0c4d4ba893a0563c588587c7ccab2a82787e154915c91b",
-      "bytes": 2683046
+      "sha256": "3dadbd45f4f9ac49f855e516ddf9c56aff35c48d38794d63e9a7720c916ac831",
+      "bytes": 2639226
     },
     "include/vulkan/include/vulkan/vulkan_ggp.h": {
-      "sha256": "be82c59a2459d70a6ceaab715d7c3470a61cc791131babb7e70f66906bffb23a",
-      "bytes": 2008
+      "sha256": "b68cbbf19b9397ee63dd6ba94526059bd2ff000c66083243758e3a04e215bd2c",
+      "bytes": 1946
     },
     "include/vulkan/include/vulkan/vulkan_handles.hpp": {
-      "sha256": "832d8574813c7261ca6cb8c4c5114d5850480103b1d0a1ac4afa248676ba1aa0",
-      "bytes": 2173220
+      "sha256": "12f46f1c8a49fd1d121e574e2dc9d743dc51199d978efaa37e33cdb97813dfe6",
+      "bytes": 2139594
     },
     "include/vulkan/include/vulkan/vulkan_hash.hpp": {
-      "sha256": "ed202c7a73f27398ab6763a66111632a4a975dff20b82471bbb90c59c75a9b94",
-      "bytes": 1129686
+      "sha256": "f60718e74d5a3dace2579a439681ab93a51e3d98f2299aa89db2298bd94181fa",
+      "bytes": 1106690
     },
     "include/vulkan/include/vulkan/vulkan_hpp_macros.hpp": {
-      "sha256": "05d1547fad3804901c235542dd0a27772c6c2bf1e06a8768e21ddeecfb4e47e2",
-      "bytes": 12374
+      "sha256": "b9a71f468bde2facb989164186c99e4ec565ca0bc45b3c2675ebb4056a236a4b",
+      "bytes": 12019
     },
     "include/vulkan/include/vulkan/vulkan_ios.h": {
-      "sha256": "cd5a5f1b33ca5904d08df8a90ac41c8be5ac604d30e023b8036f19430f56c151",
-      "bytes": 1409
+      "sha256": "ebaeffc3f4ec0484dcf34753678f1642caf73f6db4e17f11f1b82302151b918c",
+      "bytes": 1359
     },
     "include/vulkan/include/vulkan/vulkan_macos.h": {
-      "sha256": "d7ff1957e199b1c2e128c148d5e66637e5e49dae35ec5a97db87fca5e02d4c04",
-      "bytes": 1441
+      "sha256": "3ae5522081741e9021be86727e11949ad8c695e66f75e1c422e577afd7657f59",
+      "bytes": 1391
     },
     "include/vulkan/include/vulkan/vulkan_metal.h": {
-      "sha256": "ae36aacf5139410c9608e702e56d42770a5ba264f0e9dfc9ef52605bda4be47f",
-      "bytes": 8317
+      "sha256": "d5fe0caf881cc9c72ea2ba31ca86c684e97cdec6741d6e6298ecbd8f58dc8c5e",
+      "bytes": 8073
     },
     "include/vulkan/include/vulkan/vulkan_ohos.h": {
-      "sha256": "005aaa229cf9961e3edc09a0f47c9c3593cbc57ca15a9cacbb521bef27455b7e",
-      "bytes": 4233
+      "sha256": "3cc40f845b5fd75cda0d8a3b1f2782522a3591657f67c656a211b4639eb23b16",
+      "bytes": 4113
     },
     "include/vulkan/include/vulkan/vulkan_raii.hpp": {
-      "sha256": "d33dede3ba45812da1afcb1307170b68e2740034a6b3dd070192e3ae089d48dc",
-      "bytes": 1919005
+      "sha256": "e2a367755746b91b9ce9b823e1d98420b4f5b2813c36c5d50e847643cee4bec5",
+      "bytes": 1888733
     },
     "include/vulkan/include/vulkan/vulkan_screen.h": {
-      "sha256": "06563ce3cdbda16f74976fabf42132d514625f53dec7974fa9330972990edfb7",
-      "bytes": 4314
+      "sha256": "b9e7e7921b4be199c8ecfe518bd71bd8e533adbbab193714c542157b87b10e86",
+      "bytes": 4200
     },
     "include/vulkan/include/vulkan/vulkan_shared.hpp": {
-      "sha256": "12f924b2afa1cc1744bcf83f663d788bc2df32c89768a5156c4c23a00cd96618",
-      "bytes": 38567
+      "sha256": "9fe25e7cae294e71ce1683b15c78a3f57d772a889b7f0e4319e5a8a7b5d94e59",
+      "bytes": 37350
     },
     "include/vulkan/include/vulkan/vulkan_static_assertions.hpp": {
-      "sha256": "27b470f175b3c5474e6b01f73771e246a949bda0720bcf7aa2a87101c26cfef0",
-      "bytes": 956855
+      "sha256": "4caa2b71907bc9fe350a5553c8ac6ce908da3e1f0b86135e6459df5ef007a976",
+      "bytes": 946220
     },
     "include/vulkan/include/vulkan/vulkan_structs.hpp": {
-      "sha256": "353c4bc77fbe813653947e853bd59b0ec01a16ac5c01df1960d477e57178b5b5",
-      "bytes": 9165845
+      "sha256": "ccd71f3d7f7afcea0489eef7e90b6f92e402701d9eead31c26cae79f62fefc31",
+      "bytes": 8945113
     },
     "include/vulkan/include/vulkan/vulkan_to_string.hpp": {
-      "sha256": "c8ca33d5ab65c9c930d255d3799791d50cd9c9ab1670860090ff195ff86ac2b2",
-      "bytes": 690027
+      "sha256": "ed3bd9f3dd6cc8bcdb6a33d40b65dc05bc074731a51954c7ee58095fbe417414",
+      "bytes": 677935
     },
     "include/vulkan/include/vulkan/vulkan_ubm.h": {
-      "sha256": "aae80e021e1122a157923177676dc2a9447bd9bd970e3d80cec043f981d26605",
-      "bytes": 1937
+      "sha256": "ac106317c017d1975f26184d3979dba0352f10aa1cfc7ef5373be92fef6bd137",
+      "bytes": 1878
     },
     "include/vulkan/include/vulkan/vulkan_vi.h": {
-      "sha256": "2adb9ae5b758783548e79398f3ecad65af1e536bbeb701b3628ede54467999ec",
-      "bytes": 1382
+      "sha256": "a53e35bb1b3113e6ef4932cb9358a27861a198d7865227ecd93555fecc73dd68",
+      "bytes": 1332
     },
     "include/vulkan/include/vulkan/vulkan_video.cppm": {
-      "sha256": "ea0d8227b25773b7e76a8c42a235e96c531d36b42f2a77602562f0abcf3850ec",
-      "bytes": 2363
+      "sha256": "37e56f21b46d6cad409c062adb57c537bbaaf04298ca431733bc88ab3fa6b63a",
+      "bytes": 2290
     },
     "include/vulkan/include/vulkan/vulkan_video.hpp": {
-      "sha256": "77ee6fc130aff3f0b4fd840bd0eaa2399892bd0e789e59f86f59cda6c4b9b989",
-      "bytes": 278252
+      "sha256": "8ba6bcb58a614d10b3b1b82373d839c877afa9fc33cda5aef5575be4c306a61a",
+      "bytes": 272723
     },
     "include/vulkan/include/vulkan/vulkan_wayland.h": {
-      "sha256": "f9b46a0805eeea61b42c2a52d783cf65690ad330c1869ac422c4a2b81adcebaf",
-      "bytes": 2018
+      "sha256": "6c4146149d45bcbb5a22c7540feaa396ee9a49f077737c7a343c62de5199fbc7",
+      "bytes": 1959
     },
     "include/vulkan/include/vulkan/vulkan_win32.h": {
-      "sha256": "9dc4d69efa98e5d2b94458c60861b963ab5fe18b7af6be20ec7e6c020086c1d5",
-      "bytes": 16136
+      "sha256": "72f0b6de71287d3b04d12235e4f2fef8f343126f85be4963c516d31d5bb4c099",
+      "bytes": 15764
     },
     "include/vulkan/include/vulkan/vulkan_xcb.h": {
-      "sha256": "ba4bfcef79ec4479aa6309d206cb075fbcfec1c9b625ffae39531a49904a08ef",
-      "bytes": 2033
+      "sha256": "3d49f5eb52090e72e1cf7cde545088225ac524a2ff1d1f35737e7d944474c1b7",
+      "bytes": 1973
     },
     "include/vulkan/include/vulkan/vulkan_xlib_xrandr.h": {
-      "sha256": "d2131832eecbd4e53cac6cf67ecae05b655fbe0fb8543440d7b285b3495d2ae7",
-      "bytes": 1554
+      "sha256": "188233d112d812cca1777cfa6c1585073f1f2b033fa08b2f11c8d0757fcc232e",
+      "bytes": 1504
     },
     "include/vulkan/include/vulkan/vulkan_xlib.h": {
-      "sha256": "cdd0677b5a5130994630c8fa21f6cdc2655cf5310bc416f332c5b8d386eed06f",
-      "bytes": 2014
+      "sha256": "3c44e97d3f380eb912e01a79e9667457fdf5e18164f0b09b3c61431f421bc551",
+      "bytes": 1954
     },
     "include/vulkan/include/vulkan/vulkan.cppm": {
-      "sha256": "6843c24b75ecc0b14c8fd8f83339974ac7c9f7abdd90a8efbc4c7d60f413324b",
-      "bytes": 50325
+      "sha256": "21c0fa98c43cde45af6771c921ae1c7cca34511d9319d6538114b7a32fc2fd1e",
+      "bytes": 48976
     },
     "include/vulkan/include/vulkan/vulkan.h": {
-      "sha256": "2d1a6f00bfdcddbe1c68bf5f574a0fc4cf95c4be9eae683123b6db8af9d1a1de",
-      "bytes": 1722
+      "sha256": "096f50152d0b298d8df84a561a37d8190c8a60af34dff0e2cc8328b24491a640",
+      "bytes": 1620
     },
     "include/vulkan/include/vulkan/vulkan.hpp": {
-      "sha256": "e438776a3d842c19fee78b67fe89e9639a2a8522675f75ca831e513aeef5424e",
-      "bytes": 1260968
+      "sha256": "a3ca069543715eb41b997234062ff8beb1d9f7a550e4a4461b4ed920cabfc6f6",
+      "bytes": 1233026
     },
     "include/vulkan/LICENSE.md": {
-      "sha256": "a2d4407962c909f84807774cbfe9fad05a1ebe972472c08ed5ad43d482afd288",
-      "bytes": 514
+      "sha256": "95ad366d23fadf701d355bc45fb8b82ae2d700239471d35d41286ac3b08ff903",
+      "bytes": 495
     },
     "include/vulkan/LICENSES/Apache-2.0.txt": {
-      "sha256": "3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5",
-      "bytes": 11560
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358
     },
     "include/vulkan/LICENSES/MIT.txt": {
-      "sha256": "051daae2dae99c2b0fc9d8363cf704b9456ae0e3c89589ac755d506a0b2c10c3",
-      "bytes": 1093
+      "sha256": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227",
+      "bytes": 1084
     },
     "include/vulkan/Makefile.release": {
-      "sha256": "a4ea03ed9db8b192daec64e3e0eca6c50ca2fd91787a3826ff3634ef036677aa",
-      "bytes": 5054
+      "sha256": "0ce81ade2979a57d433d08e402b19242475916fae2e74ec3d40efbb54c7484fa",
+      "bytes": 4913
     },
     "include/vulkan/README.md": {
-      "sha256": "1bdad01cc84e69a7d77324e44a510f9484610f75b41cb932a9dda7c1a15d191b",
-      "bytes": 1971
+      "sha256": "28c9757358d56c906716e81b02f5c114b44f6c66fc3515222dd6c0039aa1954b",
+      "bytes": 1919
     },
     "include/vulkan/registry/apiconventions.py": {
-      "sha256": "cd9d19002f8c9e2a994bbc97b89f5f8cc518511b00f4a76f725741f6c9aa14c2",
-      "bytes": 685
+      "sha256": "824026aeb6762ee9758bd2a6d6c3a31b7e9d8ca094ddd62faae129c34a196f69",
+      "bytes": 662
     },
     "include/vulkan/registry/base_generator.py": {
-      "sha256": "3dd687596bbc083a23ff51f78b28502dfc792f124a99b4acc75da9b1497d8386",
-      "bytes": 75499
+      "sha256": "acaf5292c4784caf0c8b1a233eab80834c24da8be241a59111c2dedff00dad59",
+      "bytes": 74057
     },
     "include/vulkan/registry/cgenerator.py": {
-      "sha256": "bb6b3e82c7a9ebe56e7d2e0ad225f69738848f850ece321efcdc1392858eabc9",
-      "bytes": 26733
+      "sha256": "01161f153fb8319cb1a228d5f184436179bc070c0d139107229b1bbe0fb8e6c0",
+      "bytes": 26158
     },
     "include/vulkan/registry/generator.py": {
-      "sha256": "5da3ae7434970fe806cdbb72cd7ad84d11a5f64dc3fba644162b6d25c1b5d784",
-      "bytes": 60046
+      "sha256": "ba06ff286e42af55bc7ab780dc4adb1598a18664c94d0fa4f9520773e6771f51",
+      "bytes": 58568
     },
     "include/vulkan/registry/parse_dependency.py": {
-      "sha256": "e9d1d50fc15378ec39e3c47e2f3f9e46c705eca4fbdd82cd8856315568043cda",
-      "bytes": 16342
+      "sha256": "00489a3b2ec34cbe21045de37c91ead429e0c1189469f0e2cfb3d2878dd929b1",
+      "bytes": 15868
     },
     "include/vulkan/registry/profiles/VP_KHR_roadmap.json": {
-      "sha256": "9d1b4cd5b59320558f4bff352bbb5373d397d8d42bde5282c791bd5410aafbec",
-      "bytes": 37732
+      "sha256": "41d8e5b2421bcd78e36d346de18933f5e8ac8e13a82bbcb197bed3fb7fec066d",
+      "bytes": 36864
     },
     "include/vulkan/registry/reg.py": {
-      "sha256": "9838cb3a203de2e530dea709d19d4854b8de23b42b48f00016a07810fccbb925",
-      "bytes": 104778
+      "sha256": "3afc9117e515aa3187847dda7f1fb0680b6713523052def44fbfa5c2e26832f2",
+      "bytes": 102654
     },
     "include/vulkan/registry/spec_tools/conventions.py": {
-      "sha256": "a0cc242795b8c2ec2daae3b40aed5c51a4a4bcf6d5ec370d9f19313d941da719",
-      "bytes": 18395
+      "sha256": "f76baccf558969c483993d399f24a8e63559e701b9df5cf921bb3e91ca0c5977",
+      "bytes": 17834
     },
     "include/vulkan/registry/spec_tools/util.py": {
-      "sha256": "f250d15adbd823566717b8546cb37202be670516a77d9fc1d6e39bf2f3d2e1fd",
-      "bytes": 2201
+      "sha256": "6386baa0b90ce32088b7d0fcc4500c5689f30469fc4a5dde0addba104de81388",
+      "bytes": 2143
     },
     "include/vulkan/registry/stripAPI.py": {
-      "sha256": "d62c15e7ea98c0ff76a1e677b8fc7407afa50cd6ca2960088195e2f451b8f80c",
-      "bytes": 1743
+      "sha256": "9c268bde5a1e05e51af01f2e18a6c59684842b861936e7eda7384f778197cafa",
+      "bytes": 1701
     },
     "include/vulkan/registry/validusage.json": {
-      "sha256": "d12ab56ca49d3df23ec7ea90a1a782ef345366601a93c59086c36acbd7667194",
-      "bytes": 15759929
+      "sha256": "139a12833d24baacdc10093a862d86cb36404f484c9633394948cb842c0d56d6",
+      "bytes": 15613885
     },
     "include/vulkan/registry/video.xml": {
-      "sha256": "99c4ac0b646f3a995d939c2f57e693b58f8e60e43a9be45b18c6315262b9e972",
-      "bytes": 199146
+      "sha256": "d018b914014c06605e367a3b929670511e6f6de2f225c405a8b5e2d912408b76",
+      "bytes": 197124
     },
     "include/vulkan/registry/vk.xml": {
-      "sha256": "644c562d10ad207317ebeab9c292968eafd3a811f5f17e864b1d694bbc2126e1",
-      "bytes": 3347802
+      "sha256": "55ec60950cfb18c3575dcf5fd52741b2bb70eb1e466408f803a91049973ee6fb",
+      "bytes": 3312019
     },
     "include/vulkan/registry/vkconventions.py": {
-      "sha256": "7d36277d0e8104b1848f93c63e61db918a8267a6a69026a723d9acde35d1050f",
-      "bytes": 12632
+      "sha256": "1c96faf15214221884f273b4f71065023791093513a84ea7e948d403ceb7d7f1",
+      "bytes": 12302
     },
     "include/vulkan/registry/vulkan_object.py": {
-      "sha256": "215c03732dfc60ff8126dbc4268a8e8efb2a2732ca937c55e2fa797781b9a5c0",
-      "bytes": 28912
+      "sha256": "aed79cb3b60deaf8920b2cf243f62ed14d9d9e4ad5a00bebfe855c2da8ff5717",
+      "bytes": 28188
     },
     "include/vulkan/REUSE.toml": {
-      "sha256": "18ccafd65fb6ed35af59513a348ea345f01db3db70ea6a175e33789583dcd462",
-      "bytes": 737
+      "sha256": "248d32fb51aa837dfbc64246dc9231a3e462e36295604f3fab2845cc19969edb",
+      "bytes": 716
     },
     "include/vulkan/SECURITY.md": {
-      "sha256": "4f1ca7d0e4b573b22a16baf41c9ff3600cdff79b34cc4741810d6331f39b4621",
-      "bytes": 422
+      "sha256": "d6a199f2149d29a8d8230ff31c89a1b21ecf31a5d75e47b22d6d1aa56b896270",
+      "bytes": 411
     },
     "include/vulkan/tests/CMakeLists.txt": {
-      "sha256": "dce4e44af68cb69708c0df4681ad3b68ef973a125f5a407b80d63843270974a6",
-      "bytes": 1291
+      "sha256": "f69722f0d4e93b2a4e9d31ea97c2da32a31b5dbf3a80ef6d2ed819947355ff98",
+      "bytes": 1255
     },
     "include/vulkan/tests/integration/CMakeLists.txt": {
-      "sha256": "4bddef90c7c3f33ab950e14ab1f66958c1a3b6da0eaa4525cad9ed9ddf0a057c",
-      "bytes": 2714
+      "sha256": "8d8963976b297977dd1953b18af488d3f6ca12da9ec876c843b6011ca70a2296",
+      "bytes": 2626
     },
     "include/vulkan/tests/vk_hpp_module.cpp": {
-      "sha256": "28c62290f8a3d4c889f7cd11f12953a7543f24538bb29f0395e352b4fd197dff",
-      "bytes": 270
+      "sha256": "7728e022395d376d9bc0827b253aa34b567690642609e9a71071710b748b7c08",
+      "bytes": 257
     },
     "include/vulkan/tests/vk_hpp.cpp": {
-      "sha256": "440477db2b232079138315d1a1340003623f9d9f3cc99fcbeed4a3e787272e2f",
-      "bytes": 282
+      "sha256": "05136569c1b6b6703e98280e59cbd4b045163000662322203d40c352436c5655",
+      "bytes": 270
     },
     "include/vulkan/tests/vk_icd.c": {
-      "sha256": "9af9a8643c348ae93a073bab401d2dc8316f204228ccadc8f19492e511b64429",
-      "bytes": 255
+      "sha256": "a3d7c5e08b6f82038b3546493054a09303079b74e7e89d5f6da64ab5d9937eb2",
+      "bytes": 241
     },
     "include/vulkan/tests/vk_layer.c": {
-      "sha256": "3dce33a54ec41cb5029f9fca2916be2189ae18a90a6f682ec4ae7e24287119eb",
-      "bytes": 257
+      "sha256": "c862058c054098315bf03347ffb5f1a383e927301529bf38c2073c10a7281610",
+      "bytes": 243
     },
     "LICENSE": {
       "sha256": "a5cb1a6ded7d2d7e92d550ba28edd21be2d1d4044662b399887351023e30ce64",
@@ -1208,20 +1208,20 @@
       "bytes": 783
     },
     "meson.build": {
-      "sha256": "2cb2a60f2d03266595b0b529d25de68ca4725bd6ba8e4a49156dc5bec94f0bb5",
-      "bytes": 6416
+      "sha256": "2daaac21ab1931f72bb01852677d9a8ce6fc76b441b3e1341bc8fce2d9121baa",
+      "bytes": 6418
     },
     "package-native.sh": {
       "sha256": "32051c2dc727f688406a27ad5d6f41159ecd0aa7e6f9619a641ee9a7d6d52bf3",
       "bytes": 1905
     },
     "package-release.sh": {
-      "sha256": "54eafca48b2a2e4c3e1f07efa3427c6f4acac74b928c7aca44d25fa88da0b845",
-      "bytes": 2140
+      "sha256": "e627336cbb88a93cde743908da985467577e9d42d696cc7c07d8e5b2fb58f958",
+      "bytes": 2159
     },
     "README.md": {
-      "sha256": "cddb299b327467c04f9d6f70e12be5b0db87c605a1d6a6cc705ffa7a1d871c6e",
-      "bytes": 11305
+      "sha256": "f128288602502daa82b8d6d567559b5b4a8e19461c7d02213a535c1170a96b27",
+      "bytes": 11324
     },
     "RELEASE": {
       "sha256": "6dc3b2dc3139b7d421b6fc26a7f853389a9b035ea4f2e9047b9516050dd6ac73",
@@ -1572,8 +1572,8 @@
       "bytes": 2951
     },
     "src/d3d11/d3d11_rasterizer.cpp": {
-      "sha256": "08e247dffcac52ad3ef5a3de816be4cb200b1e78dc2a6e64f4589f37e1e1ae40",
-      "bytes": 7882
+      "sha256": "d009aa85ac528891069fbb3f5850155d2d4d98c19b1a67edeec2f0ff1986b93d",
+      "bytes": 8399
     },
     "src/d3d11/d3d11_rasterizer.h": {
       "sha256": "d9d19edfa479db0a08c83669c022716f6c2435e2ef0fb4d3c830517fa40ddc85",
@@ -1856,12 +1856,12 @@
       "bytes": 822
     },
     "src/d3d9/d3d9_adapter.cpp": {
-      "sha256": "a109ba2843bd816814c4f21e2519e24c5238e2ef2e765772ff6f2f1dc3359fd6",
-      "bytes": 48040
+      "sha256": "df5edb71d037646396c50205b0a0b1de83b208525602c84032b10216d1a406a3",
+      "bytes": 49114
     },
     "src/d3d9/d3d9_adapter.h": {
-      "sha256": "f3b9a3332f3f7c018218bd13cff5d9228a2719b9a0bdc596d1ccbbd6cdc37016",
-      "bytes": 5077
+      "sha256": "0a0fa2d9d407e2874d879d4ba0eff12ec208c2b9f37700b3c50125756ec4c0bc",
+      "bytes": 5409
     },
     "src/d3d9/d3d9_annotation.cpp": {
       "sha256": "2386dbd189d2118e0665a0ed4730a26e6c5b6b03203dc992ef540b19881f067c",
@@ -1944,12 +1944,12 @@
       "bytes": 1470
     },
     "src/d3d9/d3d9_device.cpp": {
-      "sha256": "af7c6114deb4f0c6361cfbdded217c0affd7d8c85a14ea1ca13af92723e2788a",
-      "bytes": 333192
+      "sha256": "c2c8342611d12242ca0495e7ccdc9e81f05343bb1b1d876cd806798e57522d22",
+      "bytes": 336484
     },
     "src/d3d9/d3d9_device.h": {
-      "sha256": "935196a72d26e4f06680acd600d3be37d2d945d72ff5e3388b0caa09b6471486",
-      "bytes": 57785
+      "sha256": "0abba337567c17d7011ff193ffa7408fedad4f0595693c1f4fd01ba38f0bec73",
+      "bytes": 57943
     },
     "src/d3d9/d3d9_fixed_function.cpp": {
       "sha256": "7039b1816fd63b739ced18f7babf26d77a61eb50df2b8cfabaefec87f30a5bc6",
@@ -1996,12 +1996,12 @@
       "bytes": 2021
     },
     "src/d3d9/d3d9_interface.cpp": {
-      "sha256": "e6742a3141df2a253b115273b8a6311487c3c79dd7b271e5e61b39521d0563fa",
-      "bytes": 18844
+      "sha256": "39241f38013284a9a3a5ebddc638621c7c0c37c68487dd532c0ac41d6fcaa9f1",
+      "bytes": 22390
     },
     "src/d3d9/d3d9_interface.h": {
-      "sha256": "1d84542c96022e21dc3bba971b873d80b61ab14ce24c413d95175b6e0d83d9e9",
-      "bytes": 6341
+      "sha256": "9ad39a8314c7018f506606dea7bf1d2d47c024605062067064f501617df880a9",
+      "bytes": 6548
     },
     "src/d3d9/d3d9_interfaces.h": {
       "sha256": "c80b7df66b07c0cb77f785e4a64c470baa8cd35a39965b941fb9d818468f9a05",
@@ -2044,12 +2044,12 @@
       "bytes": 761
     },
     "src/d3d9/d3d9_options.cpp": {
-      "sha256": "6802ebdb9409d61c4d6db90ded54c4f7d876e38d72802d2c63828ab0bdfcde69",
-      "bytes": 7555
+      "sha256": "9814e0ba5666c67193325e43bf08703113f7a20135e8c570b7e7a3b1417e2ee3",
+      "bytes": 7673
     },
     "src/d3d9/d3d9_options.h": {
-      "sha256": "88fb694901100e73c2066c0a96a3630b7b82fe5169aa39193e3baed088eb5a31",
-      "bytes": 5428
+      "sha256": "9c0ad93621ed806dee0b9d20eac3ad48054439aa7f76520c5e7fb0d2d02d4a60",
+      "bytes": 5524
     },
     "src/d3d9/d3d9_query.cpp": {
       "sha256": "f610264993b6f8993b06323835cc2918b37b451ebdd7c853f04ff9d72f29a572",
@@ -2116,12 +2116,12 @@
       "bytes": 1894
     },
     "src/d3d9/d3d9_swapchain.cpp": {
-      "sha256": "65ae41879a1121589b924baec173570ce406eef453a42217a183012eba9fe285",
-      "bytes": 48932
+      "sha256": "e029e9745f9942658004e985035fbab1d92e60304ce929c79910bd804f309882",
+      "bytes": 50023
     },
     "src/d3d9/d3d9_swapchain.h": {
-      "sha256": "111a662cf2e1202034fde8851636e45304f71dd8af805888249cc8716d2fd5c0",
-      "bytes": 7218
+      "sha256": "2dba67a8775a919a89e98515b175e5d36d989adc8b7d614a895478585c4353ba",
+      "bytes": 7413
     },
     "src/d3d9/d3d9_swvp_emu.cpp": {
       "sha256": "58c39c6b4b36b8cba15b8109626acdf8a939b765b7b97b4a562bbd3271e73a43",
@@ -2164,8 +2164,8 @@
       "bytes": 1045
     },
     "src/d3d9/d3d9_window.cpp": {
-      "sha256": "d977feeb4851ac0a287baded254b5c562a5163df20f93fd659ee82eeee782839",
-      "bytes": 5279
+      "sha256": "4d357eb4f04d9f73702cdb69e4fee9b8fc4c786d2f44924f6edd664454d9dbb9",
+      "bytes": 5785
     },
     "src/d3d9/d3d9_window.h": {
       "sha256": "c9c03e9d36086c1fe44209ffc88ef0dfcf3e13d407b427aac9db59d06fc9f7cb",
@@ -2388,12 +2388,12 @@
       "bytes": 4713
     },
     "src/dxvk/dxvk_buffer.cpp": {
-      "sha256": "79daf16dc006e8d70f120c7fcfc42d793a31f260969740d129c1978c8aaf66d6",
-      "bytes": 4677
+      "sha256": "7485f2d11d3447d967d73c9d67b4c934bb04658ee0317e22d2c98a23f9c30e69",
+      "bytes": 5556
     },
     "src/dxvk/dxvk_buffer.h": {
-      "sha256": "543abd9259bd3894c5e7c62de5b65ff71e148ec7d34be6d37fb3aea2af14c3e2",
-      "bytes": 18140
+      "sha256": "1813004ecc03aafaaf66e1ecb56f50013f681afd37b2f6b4368d6454ad342e39",
+      "bytes": 17461
     },
     "src/dxvk/dxvk_cmdlist.cpp": {
       "sha256": "447db16701d4f837e08a572d66b35258267f08fa845d5d69f755969d77ca2e81",
@@ -2424,12 +2424,12 @@
       "bytes": 9755
     },
     "src/dxvk/dxvk_context.cpp": {
-      "sha256": "f9d6be15d5bc69ad3b6dec29329015c4fd20e3db600b461af60bd67b33683f48",
-      "bytes": 435053
+      "sha256": "117779a3442b46f9dc86dad5035560492fa5469a0f02ffc626b4b19bb4949ace",
+      "bytes": 434661
     },
     "src/dxvk/dxvk_context.h": {
-      "sha256": "662fc7884ea692461f2da39c6235996bacfd2344764d2e15cbf35b94baa9e5c0",
-      "bytes": 79076
+      "sha256": "c02c538d40f8b78d50be4836960612d5da7e63b775a17c7b23fa6c205d54989d",
+      "bytes": 79141
     },
     "src/dxvk/dxvk_cs.cpp": {
       "sha256": "a336e033437dd671d211fa97d0d1d6ce6917d0f845a0cd011373dc3f4626a1a0",
@@ -2484,28 +2484,28 @@
       "bytes": 1190
     },
     "src/dxvk/dxvk_device_info.cpp": {
-      "sha256": "1d38b51fa24d77654eb837694550ce2c4d8330745b7e07e26b73aa499b5d2c1a",
-      "bytes": 49237
+      "sha256": "16c2833b0ef25a6b26c39ccc8543ff0e7a73caaa0c5466b4e9126446c7d2a475",
+      "bytes": 49900
     },
     "src/dxvk/dxvk_device_info.h": {
-      "sha256": "116798cbdf3b0133a78398fae845f01af681b550e0966117a053c8ac66bb5d6e",
-      "bytes": 32583
+      "sha256": "2d28e1dd96bb88f69789152e27724cb1a0a38c2891e085f67a59acf9c455d477",
+      "bytes": 33053
     },
     "src/dxvk/dxvk_device.cpp": {
-      "sha256": "7f9584335813bf6c385d155251b9b7cd5495df074045b48d2c032e787ed2614a",
-      "bytes": 35306
+      "sha256": "973c3dc3510c890e2b642dead533229e641562962cb7d1539d364b2a1ff5a8ef",
+      "bytes": 35591
     },
     "src/dxvk/dxvk_device.h": {
-      "sha256": "736ac5262a0a3e40b18407d784061b14cc7be1cb5dd232c512f56dfe958c06ac",
-      "bytes": 22031
+      "sha256": "59dd710c2752236b9f4dbe08d9377c17db1d680b3f7a021abee6a0803327f9ae",
+      "bytes": 22318
     },
     "src/dxvk/dxvk_extension_provider.h": {
       "sha256": "5de9449e79617d0e37e1fbaea5d4cce8c102e75b21e33e9def1528db03b2a599",
       "bytes": 1502
     },
     "src/dxvk/dxvk_fence.cpp": {
-      "sha256": "52e14ce8eea8385ca6ead43287c8fa65b3a9e00bf93b4c77e8c71b8366c8fd4f",
-      "bytes": 7923
+      "sha256": "2fe06323b376b078ebad6aec3687556e563bf5be3041c2e05998914ad7a78aad",
+      "bytes": 8080
     },
     "src/dxvk/dxvk_fence.h": {
       "sha256": "f94411c63726a0581ffd34d924d5be67b2c37a55cd09d74621878e34b7b78df4",
@@ -2544,16 +2544,16 @@
       "bytes": 10353
     },
     "src/dxvk/dxvk_graphics_state.h": {
-      "sha256": "28fbf005613750bdbd7f85d9eaec023235a94cefffb0eb669fc8131b05d35989",
-      "bytes": 27205
+      "sha256": "b0940bb37541da69d4f437762588e054bd620bfa61d600b79a1b3d04e4bef2fc",
+      "bytes": 27821
     },
     "src/dxvk/dxvk_graphics.cpp": {
-      "sha256": "55a726674b597043987aa7a88df5e8a2bf6040b382b9e1109d08b47d61973ecf",
-      "bytes": 70530
+      "sha256": "febcacaff1fab7fcdb3bb252b006b4bbcb872cf176683eecd25274a00cda1471",
+      "bytes": 71036
     },
     "src/dxvk/dxvk_graphics.h": {
-      "sha256": "463aa4abc247e0a47cce4373cdfe371fcc928dc0c3704425fff8d187bafa7573",
-      "bytes": 22118
+      "sha256": "47fcb96067fb69df29f1df581d44210a5aa44431cbeb567ffac7ca8cc19a5fa0",
+      "bytes": 22332
     },
     "src/dxvk/dxvk_hang.cpp": {
       "sha256": "8057f72804fc568fe98614d3728c604230c1afca85e38570b3700b2d3b711102",
@@ -2568,8 +2568,8 @@
       "bytes": 841
     },
     "src/dxvk/dxvk_image.cpp": {
-      "sha256": "549f6e1bda75fc546b90ced888b0469501e4c470137230545c71b016bde7a949",
-      "bytes": 28012
+      "sha256": "d27213a8d03bd15e5822042a65d6f4a198acf39a2bf370117322b77d1a470729",
+      "bytes": 28162
     },
     "src/dxvk/dxvk_image.h": {
       "sha256": "3c1c0a8dfdcf45bdef8f97a826dd05761b4bda0714e2d51d4f3c836d94127f88",
@@ -2600,12 +2600,12 @@
       "bytes": 838
     },
     "src/dxvk/dxvk_memory.cpp": {
-      "sha256": "86ace5afea0376307d6ab47a673d746e19e771d7a047fc013fef6d1f5cbec55b",
-      "bytes": 104941
+      "sha256": "0b0094f01f02d33d12003fb82e2f11fd4132e00415a2c1865d4a3f1722ca58af",
+      "bytes": 108108
     },
     "src/dxvk/dxvk_memory.h": {
-      "sha256": "4542b79cf0858dcd623c82133068adc1cdd01e91afb1c6195b57eaa14d295220",
-      "bytes": 44562
+      "sha256": "f5c342cc61f1ef869e338fa54d547b027384689a6bee75c21526d1442c074225",
+      "bytes": 46007
     },
     "src/dxvk/dxvk_meta_blit.cpp": {
       "sha256": "73d7ef4e27f647707e8157c1e9c458e5ae47bf9efb684ad49a604362684b51c5",
@@ -2756,8 +2756,8 @@
       "bytes": 4369
     },
     "src/dxvk/dxvk_shader_ir.cpp": {
-      "sha256": "3a1162f66804f4ddb15e547040e09784d110db6a0e86b3677404223032bbd29c",
-      "bytes": 90191
+      "sha256": "e9fadd8f7276c929077fc4bc168c68a85f905e8b41d8d5ae0eb1809fefdc5a4c",
+      "bytes": 90405
     },
     "src/dxvk/dxvk_shader_ir.h": {
       "sha256": "c3f6c12ef7450bd80f86c2248311ac7d67151900022ee53240cd475753cb2a48",
@@ -2784,8 +2784,8 @@
       "bytes": 28187
     },
     "src/dxvk/dxvk_shader.h": {
-      "sha256": "4a1a324068442cbbe081b463ddd842c1c5b221f5729b628b19ff0d43a201dd4f",
-      "bytes": 20816
+      "sha256": "c285253c501835a26fffb4fa1aa80901782ecaef1f36e49c9e40f999e24c2e2a",
+      "bytes": 20836
     },
     "src/dxvk/dxvk_signal.cpp": {
       "sha256": "407609685ca6373e0f11d626e44a1542ceb11490f91c53d8dc255a4cc1a0e568",
@@ -3364,12 +3364,12 @@
       "bytes": 2921
     },
     "src/wsi/win32/wsi_window_win32.cpp": {
-      "sha256": "7f8048ccb48bf7dc7054b72a3a79040c41e12bd3a508d4b61bf8205c4f77a2f0",
-      "bytes": 11501
+      "sha256": "7c77ea51247c6684a2f1672a0ae3256d194d4ae475a9e483affec7f55bcac99e",
+      "bytes": 12220
     },
     "src/wsi/wsi_edid.cpp": {
-      "sha256": "77bed12adc744f4b1788fad89f124178ffd2b3b7117a5c713bf9ba0c3bb6d7e7",
-      "bytes": 2367
+      "sha256": "51149bdacaadd35469cec97dee78079d3dfc14abb225a01a08579b3c2846c805",
+      "bytes": 1730
     },
     "src/wsi/wsi_edid.h": {
       "sha256": "6e404425c9ee42da4997283576c1e7206f6f4cbf178717510e34d87e2ee33d9a",
@@ -3488,7 +3488,7 @@
       "bytes": 43667
     },
     "subprojects/dxbc-spirv/dxbc/dxbc_types.h": {
-      "sha256": "cc3ed5333197bcb0c98065d7fb1818b5a16e4327896ce31026803e4c6a2177bd",
+      "sha256": "7077cef22d66e18e920ed48d46c5bfac7caf8ab7b40b04af12ec4892b4d35830",
       "bytes": 22191
     },
     "subprojects/dxbc-spirv/ir/ir_builder.cpp": {
@@ -3564,20 +3564,20 @@
       "bytes": 49329
     },
     "subprojects/dxbc-spirv/ir/passes/ir_pass_arithmetic.cpp": {
-      "sha256": "fe8fc419a38f743a70c8f53e4e58285d139960868eafd3359d9f38c459e05c17",
-      "bytes": 180644
+      "sha256": "6c1a02cdb3e453c94f8e2de9560b48315d8c0bfc10e6f9f0b905fe178899c885",
+      "bytes": 181632
     },
     "subprojects/dxbc-spirv/ir/passes/ir_pass_arithmetic.h": {
       "sha256": "dcbfe45de3e029925757e0ab3319cf3f04bc1a5e16cd58ec0946d81e03ecdac3",
       "bytes": 8992
     },
     "subprojects/dxbc-spirv/ir/passes/ir_pass_buffer_indexing.cpp": {
-      "sha256": "2e3b1cd94cfe4a2ecdd9ec819c3dee0cb51ca4ea024309a9a765165c461b21b9",
-      "bytes": 9103
+      "sha256": "e6dd9433567b7c88037e0ecb7b85b6064ba27df507aed8831e39b42f46d8eab4",
+      "bytes": 11547
     },
     "subprojects/dxbc-spirv/ir/passes/ir_pass_buffer_indexing.h": {
-      "sha256": "7e4a38ee746b7106425610134d738f5b2b5614a8f3504eb751fa81fab6a16e99",
-      "bytes": 1425
+      "sha256": "ba526c269aac69a83be5f47f8c9f3a28a2dac41214e2b066822a3294017073a3",
+      "bytes": 1903
     },
     "subprojects/dxbc-spirv/ir/passes/ir_pass_buffer_kind.cpp": {
       "sha256": "bf17f7e530ed5b525e567a203cd81d8da79bb2a0b6d0efc2e0c07c775f6d988b",
@@ -3868,304 +3868,304 @@
       "bytes": 280
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.0/extinst.glsl.std.450.grammar.json": {
-      "sha256": "1194af693a740d972a8d0675f3277f596caae6d61ed0eb0415e5fd35619726dc",
-      "bytes": 14233
+      "sha256": "b0a122c0af7face3bd2adaa50277ea97647b8ff9e6659d9d5077d109b72f3e66",
+      "bytes": 13607
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.0/extinst.opencl.std.100.grammar.json": {
-      "sha256": "7819c6bf8f4f87b5fe7b862f871b6e545e9b85d466c846c79cfef917c6bbe8ec",
-      "bytes": 29498
+      "sha256": "313808d270e099397d70fb93699c3dea05f6eab8191cb1d06627788996e96403",
+      "bytes": 28235
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.0/GLSL.std.450.h": {
-      "sha256": "b65b7b02fca634dd4d7a9f2c475a29ca7eea8c6cfd31360720cff6f73f29d728",
-      "bytes": 3202
+      "sha256": "dbbeafbec24d7d44e3b14969328f85c9fb94bf578f008b5aad1b347c34aa3471",
+      "bytes": 3087
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.0/OpenCL.std.h": {
-      "sha256": "556d37ad0fd80c4edf495b38aa3fe91913f54746c4ac809e8d0fb5b2edf9a549",
-      "bytes": 3942
+      "sha256": "ac8a686d215962253915ec76e34709d6bcf96f7136c75cd10dfcc90c7b3904a3",
+      "bytes": 3748
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.0/spirv.core.grammar.json": {
-      "sha256": "b7ce621871ef9baeb12405db397297131138643e0962656e57e7bd8874e29074",
-      "bytes": 168972
+      "sha256": "7d928866be499a40f6f84f4b6275d6c69e71834994fd0ab82f8f663cb13dcea9",
+      "bytes": 163213
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.0/spirv.cs": {
       "sha256": "9d8145d722ee34d7017b09e1fa47fc463b4f2ca14c80122a0b509e0186b8bd27",
       "bytes": 29296
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.0/spirv.h": {
-      "sha256": "730ec0f621e29cf894ba8b7b88af126c6e5d66283e3107bd9790d3faada778cf",
-      "bytes": 33361
+      "sha256": "0c25f6eb16d544164fa48bafa0eac569c05f1400ea3daa903d50b6153fe08a43",
+      "bytes": 32384
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.0/spirv.hpp": {
-      "sha256": "04c5e915df3810c1f67cc0cfd46d60cd870bb1ea235dc232358dab8c6ec281c8",
-      "bytes": 30881
+      "sha256": "4d74405b6f07fba049a576b007ddbf769afd5d9637c61daa20906ba217f6602c",
+      "bytes": 29895
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.0/spirv.hpp11": {
-      "sha256": "fc4b4aaad179f32005ed8fe8e21213e757f29ed7d9cd22960ff720fb8ef880d1",
-      "bytes": 25347
+      "sha256": "7a896d4af952a978e69ffe3e1def37f1ac610047063dc2d8be649d2b9ac718b7",
+      "bytes": 24361
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.0/spirv.json": {
-      "sha256": "1730f3bb442a96de1bb8fae9bb4457d1f81d88004b0bd54e99d4c54890764fcd",
-      "bytes": 38742
+      "sha256": "37511983938c9ab0b4c78ea635e298812d55867dc51cd257849dbe2b7d4cdd5a",
+      "bytes": 37738
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.0/spirv.lua": {
-      "sha256": "707947233e55cfdb8f4ab9370015543225ae8de811c3c502d815142365cd544f",
-      "bytes": 25822
+      "sha256": "d93d4f84a09796532b90c39270f04d602c20f16a646d558d4df7112fa3d92455",
+      "bytes": 24889
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.0/spirv.py": {
-      "sha256": "895c9091257b34b9fe0fb4f665c943b1ca01f63ef775e12beda55c586a9d48d9",
-      "bytes": 27452
+      "sha256": "5bdd478afd224ad31b496a14edd8208dd5a0e31c4c745f7d3205eb360705c542",
+      "bytes": 26519
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.1/extinst.glsl.std.450.grammar.json": {
-      "sha256": "572dc653861c877f51279789afea48d8697d7e8b1da383ec97c45f8245a35563",
-      "bytes": 14232
+      "sha256": "e23de69b26e1a1529ecb2c78f559b2168623f35f423fb28ea2baf2ed1a905e9e",
+      "bytes": 13606
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.1/extinst.opencl.std.100.grammar.json": {
-      "sha256": "ed77555aa0756fb08cc284cbcf81f008975b2c0cc614e541f3439576121ad241",
-      "bytes": 29497
+      "sha256": "2a12bd815cd988639a716c96d2fa5a43dc4cc14fa0d91121c8ef9d53ff62ed98",
+      "bytes": 28234
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.1/GLSL.std.450.h": {
-      "sha256": "b65b7b02fca634dd4d7a9f2c475a29ca7eea8c6cfd31360720cff6f73f29d728",
-      "bytes": 3202
+      "sha256": "dbbeafbec24d7d44e3b14969328f85c9fb94bf578f008b5aad1b347c34aa3471",
+      "bytes": 3087
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.1/OpenCL.std.h": {
-      "sha256": "556d37ad0fd80c4edf495b38aa3fe91913f54746c4ac809e8d0fb5b2edf9a549",
-      "bytes": 3942
+      "sha256": "ac8a686d215962253915ec76e34709d6bcf96f7136c75cd10dfcc90c7b3904a3",
+      "bytes": 3748
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.1/spirv.core.grammar.json": {
-      "sha256": "93524d95cefad67a1cec876b511a138965fbddeeb01669b41ec354379d70bbc1",
-      "bytes": 173917
+      "sha256": "5433e9a301f190d6b473364a1cb3152523f5653a99fecde67a8a08f9664abca5",
+      "bytes": 167995
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.1/spirv.cs": {
       "sha256": "a2f967b0a5b8955ecda384ac98d6824d803063450e8de93d4f269b7a24041ee3",
       "bytes": 30125
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.1/spirv.h": {
-      "sha256": "4f60a101538e87f1c6f54fdb69e25ab29e2dbda08e77f1bb3af5870574a0ded2",
-      "bytes": 34254
+      "sha256": "2b88e5b757bad01ccfb796cd45ae46615a88a76acebed6f3aa33ab033115d03f",
+      "bytes": 33255
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.1/spirv.hpp": {
-      "sha256": "13596cb826ce52f172be77283121b0165150c53f33610ace730020a89faa48e1",
-      "bytes": 31708
+      "sha256": "f531520cbf97005793a8af7e168b66197cf17c25aabedd8330816b2d271f8db4",
+      "bytes": 30700
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.1/spirv.hpp11": {
-      "sha256": "696e7614fd445f02c600ab0f702525855b411532517d1dbc4bb204b0a6daea79",
-      "bytes": 26020
+      "sha256": "fee95d2849b5bf55cabe938c91a86056f3e273a6c596d4e3eb044af0c55124b4",
+      "bytes": 25012
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.1/spirv.json": {
-      "sha256": "5fa2a0708a03e686aa4437de1cdf99dfea96a2208e4a2ec7f40d42befdd23688",
-      "bytes": 39682
+      "sha256": "b61f458257db6c51d6f5d21972e15f8c8eb93024d6366b28554ba9ae5c3c7d2f",
+      "bytes": 38658
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.1/spirv.lua": {
-      "sha256": "e06968437ad26e753921a5132fd50243e79f18280f4b26549ee022ad2f836301",
-      "bytes": 26584
+      "sha256": "2846adc9c2d1b1da8094db40512a264a1473fc07d293761ea385dd93b77f9bf4",
+      "bytes": 25629
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.1/spirv.py": {
-      "sha256": "0a0a4cabd14ff146547c69eea488d5becaaf4677b7ab846e5eb16057880b6b09",
-      "bytes": 28257
+      "sha256": "6536e543679feeb146c503e58b80f07e64e886775c98c986e82da677280f45dd",
+      "bytes": 27302
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.2/extinst.glsl.std.450.grammar.json": {
-      "sha256": "572dc653861c877f51279789afea48d8697d7e8b1da383ec97c45f8245a35563",
-      "bytes": 14232
+      "sha256": "e23de69b26e1a1529ecb2c78f559b2168623f35f423fb28ea2baf2ed1a905e9e",
+      "bytes": 13606
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.2/extinst.opencl.std.100.grammar.json": {
-      "sha256": "7819c6bf8f4f87b5fe7b862f871b6e545e9b85d466c846c79cfef917c6bbe8ec",
-      "bytes": 29498
+      "sha256": "313808d270e099397d70fb93699c3dea05f6eab8191cb1d06627788996e96403",
+      "bytes": 28235
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.2/GLSL.std.450.h": {
-      "sha256": "b65b7b02fca634dd4d7a9f2c475a29ca7eea8c6cfd31360720cff6f73f29d728",
-      "bytes": 3202
+      "sha256": "dbbeafbec24d7d44e3b14969328f85c9fb94bf578f008b5aad1b347c34aa3471",
+      "bytes": 3087
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.2/OpenCL.std.h": {
-      "sha256": "556d37ad0fd80c4edf495b38aa3fe91913f54746c4ac809e8d0fb5b2edf9a549",
-      "bytes": 3942
+      "sha256": "ac8a686d215962253915ec76e34709d6bcf96f7136c75cd10dfcc90c7b3904a3",
+      "bytes": 3748
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.2/spirv.core.grammar.json": {
-      "sha256": "972ec6171c2ec2aacc183199c801f04eebdab7eaf2b701bcd4b4b40cc29f3be6",
-      "bytes": 175367
+      "sha256": "f25068d6d372c8fd61e529f53db8cfd6ec9182a0f9321748c5b132a9c9b548bf",
+      "bytes": 169397
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.2/spirv.cs": {
       "sha256": "d1193d3c947c9a891e77d5dc547ba631302a5b235516a16698ea242572eacc6c",
       "bytes": 30332
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.2/spirv.h": {
-      "sha256": "a4f01708fec0b65bfe80ca47d84c98d20def101b1e58743036bcc14ee5fdbe82",
-      "bytes": 34496
+      "sha256": "d0580351b4164bfa938e8e374fb0205811966e0f4cf4fb80f72e8655a45e0343",
+      "bytes": 33491
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.2/spirv.hpp": {
-      "sha256": "910df2cc7e1ccea4923ba30f1e658876a97175de149176b658dfb5aaf9da7f0d",
-      "bytes": 31932
+      "sha256": "25c328ad50132ba22437fe7ed2898de79509285c3402762c6ffea17ac9f748a9",
+      "bytes": 30918
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.2/spirv.hpp11": {
-      "sha256": "2d0d9495f4d6f25f7298397069b913686c298994339e9b0ab9ff267c64ba8b75",
-      "bytes": 26185
+      "sha256": "33f9b5a3ea90429e38e479970b51f125fa24aec48101239b163e2b80b1591ee8",
+      "bytes": 25171
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.2/spirv.json": {
-      "sha256": "1907998562909c82cbaea24a71f43ab9d8e4161d078bd2380032c46001719e99",
-      "bytes": 39949
+      "sha256": "dd6c543d7eea72f81b1cfe7dbec06530aa9c7f89a27a68f6c18827cb7992e5ea",
+      "bytes": 38919
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.2/spirv.lua": {
-      "sha256": "db4be788ae78e8f06e85e5e78173a26f517b51295ee577f99b825718c0ab998d",
-      "bytes": 26773
+      "sha256": "98d386749f7b255290af81d4b25c488c1af9f44a64cb5715dfd6fa7a8118dc32",
+      "bytes": 25812
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/1.2/spirv.py": {
-      "sha256": "5ccceca298073da18e30a3430ee47c4662ad6ce3197c3663a1c09d62c31834ca",
-      "bytes": 28458
+      "sha256": "6e9023b8266e418272b593704e5cc9c2b0f300941981b2b3843e67090641988b",
+      "bytes": 27497
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/spir-v.xml": {
       "sha256": "42bf7a6c8aef0f171beb12897d2fa2e75da9947d4f31da65c05ce231a8042664",
       "bytes": 21943
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/AMD_gcn_shader.h": {
-      "sha256": "9a95d13c0b19f7555a4f094b8278751d23a3dc2291489738bfa0d4b6d485e44c",
-      "bytes": 867
+      "sha256": "fedf1db1c6b0910a624d849c2b92d29576105887b9b216ad2b1a60e053ffa6e6",
+      "bytes": 832
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/AMD_shader_ballot.h": {
-      "sha256": "033031c9f621891733b6ab0187375330f8ce498925a41ef83a5fe4e2390278cb",
-      "bytes": 960
+      "sha256": "15aa9f9c36086713985c832238061f64be4cd4eb4f8bf7bd08e7c61ef5161355",
+      "bytes": 924
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/AMD_shader_explicit_vertex_parameter.h": {
-      "sha256": "93588fd6985aeb0b235ea8886fd6a0b2c708141eaa80cc0cef9b7e77ea15a21f",
-      "bytes": 976
+      "sha256": "b716d0a212c2897ca4cbf23d642f490cd8e82e6f557ea4cf60c500a69aaeddaa",
+      "bytes": 943
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/AMD_shader_trinary_minmax.h": {
-      "sha256": "d94d4935f8b5aaaf5f0295b1d68bf4fab704b3cc9b73b077f1f2b1c61124aba2",
-      "bytes": 1226
+      "sha256": "c82e0dfec563a319c73951ca0a12709286bd75ef4fd567543a526420761bc557",
+      "bytes": 1185
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/DebugInfo.h": {
-      "sha256": "2147833f9c20041e48caa8fa5ea6c7a136f9f47900b8dbe69897235412f32ef8",
-      "bytes": 3769
+      "sha256": "38ce5d069c4d81adc919def9503999944685af322a430a0696445f7adeb31780",
+      "bytes": 3641
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/extinst.debuginfo.grammar.json": {
-      "sha256": "16e575039b5b2ef650197fe4b1d14af577baab46cd2b1420a2cdab864628006a",
-      "bytes": 16455
+      "sha256": "056f62d07a26dacd7cf466a2704f667dc212142408cc093b9cae757c34a4d007",
+      "bytes": 15899
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/extinst.glsl.std.450.grammar.json": {
-      "sha256": "cac419d11e1e8997d91d7a2e746ebac4c48ccdc88f173c97c9c759a1134d8aec",
-      "bytes": 13995
+      "sha256": "5d72e48247569f9b77a17a849db624350abc9d26f7f72b153bbcf15c37238239",
+      "bytes": 13369
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/extinst.nonsemantic.clspvreflection.grammar.json": {
-      "sha256": "b981812fb2ca1f369d7a0bbe940f524f3e32b1c118aca208690e39d77065633a",
-      "bytes": 13692
+      "sha256": "425414766ed0b387f05e30a57b74cfcc6288d07b23d61b86befa118c1d73d4d8",
+      "bytes": 13258
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/extinst.nonsemantic.debugbreak.grammar.json": {
-      "sha256": "486129d2a02666332009319ded75c557392e0cc068f29e7a8ab29c4196ecbad0",
-      "bytes": 118
+      "sha256": "1d30fb3a054592f8d749dff42ad4aa4f695bd5f0d4a9cadc70694a1d0cafe23b",
+      "bytes": 109
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/extinst.nonsemantic.debugprintf.grammar.json": {
-      "sha256": "c101f9b54a3f2e513aaeaee251a5ca7d542269cf40a2ab2296ff14b6cc332c36",
-      "bytes": 265
+      "sha256": "e23844cf66431dcd1d50d23b84cd45a07b16c4cdb0262ed9b32f7b9331131a89",
+      "bytes": 252
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/extinst.nonsemantic.shader.debuginfo.100.grammar.json": {
-      "sha256": "3b822e8836d244b55334de888474ffa27455fc6356dd8461573c6dba8f55df53",
-      "bytes": 19896
+      "sha256": "081acf2f3997f7c92211ccacf28c3659f128a919d0299ab30241db50f5dd569a",
+      "bytes": 19199
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/extinst.nonsemantic.vkspreflection.grammar.json": {
-      "sha256": "0800008054befa10fa60937ad2b0a5f185e4b7c804825de585f82f681e0c1359",
-      "bytes": 5373
+      "sha256": "5479df05d87a80d84031fe8837908fb66b02b8f07f5cdb43b06005534d749200",
+      "bytes": 5235
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/extinst.opencl.debuginfo.100.grammar.json": {
-      "sha256": "ccee5f406c47cd99d63278adf84439abd63b4addf939571a5fa059c3f0da7ac8",
-      "bytes": 18941
+      "sha256": "a2954b3c655286b01441175b4e048de0ada438feb1695c4b66af8e3f219434a2",
+      "bytes": 18306
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/extinst.opencl.std.100.grammar.json": {
-      "sha256": "4fe5b1697c611963ccf0006d11947c35cf43cdf00f130ebcc6ce2e48dca8888e",
-      "bytes": 28947
+      "sha256": "27a541383a94ed5e79a3d9e478695a8cdcd181a9cbca6ddd95650124886febb6",
+      "bytes": 27684
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/extinst.spv-amd-gcn-shader.grammar.json": {
-      "sha256": "65c2b4e0c81b164d11d9edf1b00fe2fdb5fd7761d3f94e607f796913ae66d4f5",
-      "bytes": 557
+      "sha256": "ffb7b0f755f774c1fefd92ffc46a4790ac5bce3b1bc366676637186fd1ddfeb6",
+      "bytes": 531
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/extinst.spv-amd-shader-ballot.grammar.json": {
-      "sha256": "279715d5778fb3750bf4a9332b086808773bf433851875a125ae13c4276fb7bf",
-      "bytes": 1090
+      "sha256": "823b90a85ba6a516def3db45c6b37ecdaba56263f9f7867c8c5432a0d2597395",
+      "bytes": 1049
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/extinst.spv-amd-shader-explicit-vertex-parameter.grammar.json": {
-      "sha256": "9343c4acfc86d39f47ad8f3dac61b8b6248d8583fc05c6f19b541b335171b512",
-      "bytes": 339
+      "sha256": "c022b2c0b337d20951b9076ac0b6ec1ea512b2964051fc3ade04cbb70146ac8b",
+      "bytes": 325
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/extinst.spv-amd-shader-trinary-minmax.grammar.json": {
-      "sha256": "6ef34572b108e457b25f86f74b3b718230026ab2ed88f3be895201af32027172",
-      "bytes": 2661
+      "sha256": "7702f8d593e435f4f294d7a98cd9672b13efaa433a34a037698a285adfd84158",
+      "bytes": 2566
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/extinst.tosa.001000.1.grammar.json": {
-      "sha256": "db91ba789a84bb8cdb3417f7ad26e2361c9cbb2668d74c2926fcb1dc8f159c96",
-      "bytes": 21011
+      "sha256": "3aa926caf79c8419c5e1cb468dd31c3659e4e54be921b32ffa742a95dd825943",
+      "bytes": 19867
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/GLSL.std.450.h": {
-      "sha256": "057b8f4286a9ba6f208b47ee381dbf2775bae0d5208caba7166dfc5e7438c60e",
-      "bytes": 3202
+      "sha256": "d18a932ee97c268a57e33134651d554dbe71a5654b975e89e9e9487fa59ac9df",
+      "bytes": 3087
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/NonSemanticClspvReflection.h": {
-      "sha256": "4527f1b0903ef2b134ffe9b11ff7ae9d3d2ac7af1e223fa6abbd066a6682b089",
-      "bytes": 3695
+      "sha256": "10dfd6329e8ca50f49ea85961c757fb8ee03cba9fa01031e165b8964a1473059",
+      "bytes": 3614
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/NonSemanticDebugBreak.h": {
-      "sha256": "35cdd05326fb7f9f8d6e6083a732a25cc315d3afac7ea91e3c8ce79c98fa3be5",
-      "bytes": 844
+      "sha256": "51a75260843872e4f1bcf0558407c2de839663b67ae694354c68689f608363a4",
+      "bytes": 811
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/NonSemanticDebugPrintf.h": {
-      "sha256": "906052d005ace731b8c0735d991bcc7ea3d62bb100f79e0ef8584d940d63829a",
-      "bytes": 853
+      "sha256": "79b5ee5d02940ef73db51d4a4fbdc3c2bd7c318d1258f0ec39dc0a6fb3d620cb",
+      "bytes": 820
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/NonSemanticShaderDebugInfo100.h": {
-      "sha256": "789501b6d742449c46c90af9e349487be2c53f5dd9529d1d98868790411c8e3e",
-      "bytes": 7030
+      "sha256": "324d769f18e568b70b6a4b4359c4838c929b337759c43691f1cec49ea03bcad1",
+      "bytes": 6875
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/NonSemanticVkspReflection.h": {
-      "sha256": "0086748adbd88cef4a65aa88c04777f7ce2d3ee584ff446cf9204b988be84cb6",
-      "bytes": 1246
+      "sha256": "1447e0f039b8baeb4ccd0e1b00ea1d51d9d03019f5cb5037999d107a000642ef",
+      "bytes": 1206
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/OpenCL.std.h": {
-      "sha256": "5769608e50bb04ea01eaa0e02e7e12086554885ac566690365d0000547789943",
-      "bytes": 9228
+      "sha256": "7cf7a4aa83fef2e12580783c8b5f2b1be0babf1cc4cce8199540ec2c3c3182d3",
+      "bytes": 8843
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/OpenCLDebugInfo100.h": {
-      "sha256": "f574356a145ede4dbed593a8fad58fc84105a2f3da3acb5067fe8ccdb5503bd3",
-      "bytes": 5171
+      "sha256": "80f14fe4347d597c274e334f434fe5819f16dc10805fef0f0bedfe159091d11f",
+      "bytes": 5029
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/spirv.bf": {
       "sha256": "49ae17c9628e78d304082d9bc56dfb206713add23d04f17d224dc652e77fdb8c",
       "bytes": 93793
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/spirv.core.grammar.json": {
-      "sha256": "65544eca5537f71d2ec19a3caf7ae47f71989530f5822d1a12249a3ff8844472",
-      "bytes": 587612
+      "sha256": "cebd18fd2f421629468e450473dcb8d64eb24e3388622dea1aa1c683d8feacbb",
+      "bytes": 569164
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/spirv.cs": {
       "sha256": "cebb45250693af53f2d5ca3899e13647deb8504844ea37cf01a0d74cf29ae551",
       "bytes": 91915
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/spirv.h": {
-      "sha256": "ee2134db13dc682ae935348e28340de318dc039209be8eb6dfd27022cb5cabe1",
-      "bytes": 305566
+      "sha256": "801ef6088a7871d41bac9a45407cbcb5a75cb2079e097e499031cb962e8adf06",
+      "bytes": 300303
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/spirv.hpp": {
-      "sha256": "31fa02974cba063daa301b854258bb41a01bcaed8cc855073227d9e8a846149c",
-      "bytes": 297856
+      "sha256": "072390a33b2b63ef4e6188d0244785709951a2730563fe15a471aea33eddaf88",
+      "bytes": 292528
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/spirv.hpp11": {
-      "sha256": "f4930c72d108bdecb9693ba22d77abbd575ed9c89392b302d0d2039fc995c781",
-      "bytes": 289754
+      "sha256": "665b1f73c53cfaa430eaef9785cb2b6dda8b900fac97ce0415bad529344c546b",
+      "bytes": 284426
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/spirv.json": {
-      "sha256": "25be5a5eb688259068635eb7b7082eff5998253644bdc3e22610e864b63a8436",
-      "bytes": 110020
+      "sha256": "3dc43b8f7ee2e223a8d3c0e00d93ba78cc4434a8414081c11768878f53b11ca1",
+      "bytes": 107600
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/spirv.lua": {
-      "sha256": "8ed324c9533d4e6cb25159f878a7e93a3d294646ee717bc906160e888b929c3b",
-      "bytes": 83654
+      "sha256": "9c187b988fa9c643f2c703e2f3e4521abc9fff3f6ad869b70e00c7cb893ac521",
+      "bytes": 81225
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/spirv.py": {
-      "sha256": "5746ae9718b901b8b8da4ff313c322ff7e77e25754791b72201c1fb32b96f37e",
-      "bytes": 86439
+      "sha256": "133e583218a8df0d2d5a6f34e04854aaf7f87b06222b2f6dc3cd7df4d03b7483",
+      "bytes": 84068
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/spv.d": {
       "sha256": "37682bfcba94a11ff7abb7d30a0261d9c3ff797bc55b2ecd008e3fd09190c4e1",
       "bytes": 72631
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/include/spirv/unified1/TOSA.001000.1.h": {
-      "sha256": "9fc7036bfe32003c6d9036e38dbfe3ee74e262964e5dd3f004ef48431be40e8a",
-      "bytes": 2075
+      "sha256": "ebac5686a2685e330ad6c67f7f0a82b2c6bc54b6cf5717e56a21c30de8df9f82",
+      "bytes": 1980
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/LICENSE": {
       "sha256": "ea43b1de38a6f90c488800d66dec1ed671e68cda530266bc96951fb5b6307613",
@@ -4220,12 +4220,12 @@
       "bytes": 663
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/tools/buildHeaders/bin/generate_language_headers.py": {
-      "sha256": "762f9de8d7663776faf1c2a2098e5b684284b5b911dcde41870845e54676d23a",
-      "bytes": 7166
+      "sha256": "3581c7806abed37ee64ea208d40380e56aeaeab18692b0a07524f3eba5537225",
+      "bytes": 6955
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/tools/buildHeaders/bin/makeExtinstHeaders.py": {
-      "sha256": "f846b6f758ad63dfc5db955cf66f995f5da557a862371847f558c47008f6fe56",
-      "bytes": 1732
+      "sha256": "666e32f911fdfe65476a4ce155655aacd136875d4904cec6a12c70c3b0f3f4b1",
+      "bytes": 1700
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/tools/buildHeaders/bin/makeHeaders": {
       "sha256": "f3ee5da75f6a5c7cebcc85598ceacc454344e2d744fcf59f264c4db1fb868c81",
@@ -4240,16 +4240,16 @@
       "bytes": 36751
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/tools/buildHeaders/header.h": {
-      "sha256": "f9811447ea7f15c9290e7ec2bb8d0cd9d8fbebba04bfaa7903a95f10c228e19f",
-      "bytes": 1042
+      "sha256": "d51ef97321d4cb61db30de2b961f7178cf87030f8c364434689c6c0b495b7ec8",
+      "bytes": 1003
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/tools/buildHeaders/jsoncpp/dist/json/json-forwards.h": {
-      "sha256": "eb0d9fc1013e4092203b94eb6f4ee4095c746528dd239890b24ccbbc0094964a",
-      "bytes": 9209
+      "sha256": "757c5fb189b56c574b0d91e306f56052667914ee666699d5d311675795c9da88",
+      "bytes": 8954
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/tools/buildHeaders/jsoncpp/dist/json/json.h": {
-      "sha256": "6b011918e6b9130e71ce43206d1fddebcb5e75b4e714c3f7d6a2c3bdce3eaf18",
-      "bytes": 67880
+      "sha256": "01ada08bea4a25a3cc095050f1ce633d0b9ed9cb3a4a127eee8dc7534b662901",
+      "bytes": 65863
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/tools/buildHeaders/jsoncpp/dist/jsoncpp.cpp": {
       "sha256": "7e3744005f1ee198e119fcfc7ba74c12465300a8fe626169f1180f551a4fc64a",
@@ -4260,8 +4260,8 @@
       "bytes": 40030
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/tools/buildHeaders/jsonToSpirv.h": {
-      "sha256": "862fb56ed192afb8afd4b16dda90bb870a7421ccb26321bc43cc9b2555a0b864",
-      "bytes": 10662
+      "sha256": "dc6cf10a233c26f467f574a54f1a2087b94e9182b6cddab8cf20ce63f475dd3a",
+      "bytes": 10354
     },
     "subprojects/dxbc-spirv/submodules/spirv_headers/tools/buildHeaders/main.cpp": {
       "sha256": "ab5b5d6e7ea27201e3d6ef418afc1c5141565787ec223e19315fea0f1caa14a8",
@@ -4512,112 +4512,172 @@
       "bytes": 2191
     },
     "subprojects/libdisplay-info/.editorconfig": {
-      "sha256": "d9b84dc913e1aa18671930dce95132a736b8fbdf573332985f407a2a46a11d65",
-      "bytes": 257
+      "sha256": "bca72b92b5546d1ac1ac85b9e7f47618776823e3f25909e859147d9cd0847a92",
+      "bytes": 258
     },
     "subprojects/libdisplay-info/.gitlab-ci.yml": {
-      "sha256": "63a81e7c20be1f4e0f025af30dfb8e1f61adc749c22c1a0b3ab2e4939bd21286",
-      "bytes": 3019
+      "sha256": "5920d3979b9184c62a14b5a08f994ffef719d145886fa51c3ec4fdb10db4f269",
+      "bytes": 5743
+    },
+    "subprojects/libdisplay-info/cta-vic-table.c": {
+      "sha256": "60ef8a95ffccf1ce48769967fe83cb59fe438f8ccbcfd58d4bd55eb721ac879d",
+      "bytes": 66333
+    },
+    "subprojects/libdisplay-info/cta-vic.c": {
+      "sha256": "4264a210c36324789e552ea91c1fc4451e1a24ec589e8bd1ef143b1e96c91d18",
+      "bytes": 1376
     },
     "subprojects/libdisplay-info/cta.c": {
-      "sha256": "34f1bd2198d4a7adc877876c57eda5360480788d2c5e0a966e5652e902e42e8b",
-      "bytes": 14397
+      "sha256": "d44b3eb30edb45cacbe1bbac64869633950371ed72a9c6938af9a3e2560ec1bf",
+      "bytes": 85568
+    },
+    "subprojects/libdisplay-info/cvt.c": {
+      "sha256": "31dd70045d818ea3e72858374c0bf7ef47ada9a5db6aa95cd75fed1d5695fc4e",
+      "bytes": 5621
     },
     "subprojects/libdisplay-info/di-edid-decode/cta.c": {
-      "sha256": "557369825c2540fea9260da38bbb3c4985ebe8e158cd746ed1442ec0b3bfde93",
-      "bytes": 9115
+      "sha256": "a1875b6ffcf127f1b6271d3a08079edf1bb9d910d80baa7ba166c667609e132e",
+      "bytes": 48153
     },
     "subprojects/libdisplay-info/di-edid-decode/displayid.c": {
-      "sha256": "f7f95773f88efdb875493b21df146a530a67ef1950bbdd58d1ab0c4dba7536de",
-      "bytes": 9276
+      "sha256": "84a251f44ee965fe7bf7f8d7b8d1bca55c8ef738ff98fbbf668134388c4d592c",
+      "bytes": 15484
+    },
+    "subprojects/libdisplay-info/di-edid-decode/displayid2.c": {
+      "sha256": "0e10aaf419829e37b39d0a174418f5b493e2facb1763e241129a43a93d00df60",
+      "bytes": 4036
     },
     "subprojects/libdisplay-info/di-edid-decode/edid.c": {
-      "sha256": "468566fc036afb83a559ff283aa016a8574b1e596e97ed0990f59bdfb1b7910f",
-      "bytes": 29013
+      "sha256": "c815b5c610822c30ff6ddf156bd2bc1b92a758e22a77276e98c4f8b8b0657b52",
+      "bytes": 31506
     },
     "subprojects/libdisplay-info/di-edid-decode/main.c": {
-      "sha256": "2bc879833077dc8bd047ae1ddd38f16413563a306cdc60420c091ae15d577737",
-      "bytes": 4164
+      "sha256": "ce858966475cba8c5184f7ac3362c62fe77a69b8e8a567fdc53bba2e24844dbd",
+      "bytes": 4998
+    },
+    "subprojects/libdisplay-info/di-edid-decode/meson.build": {
+      "sha256": "cf8ffca389b8b7225db1b87a8535a24b7fe77d63ccef397dead72ea52b2da208",
+      "bytes": 200
+    },
+    "subprojects/libdisplay-info/di-edid-decode/timing.c": {
+      "sha256": "f740de1331dbda8341a7d5650dae522e7cf39d147360b287655444f9073d6b0d",
+      "bytes": 4674
+    },
+    "subprojects/libdisplay-info/di-edid-decode/util.c": {
+      "sha256": "f4514cce7b7b76ea02b2921d0b013635ee2328ae4be887fbe55833c185cd2a60",
+      "bytes": 468
     },
     "subprojects/libdisplay-info/displayid.c": {
-      "sha256": "38bcc092b7021fa7c9d2faabd3dacb1d847504f92331c7a686bf76891102885e",
-      "bytes": 12822
+      "sha256": "24abe44f963491ecf5d613952aba324929f9facc42ce9071d3564c01fe87a3dd",
+      "bytes": 27688
+    },
+    "subprojects/libdisplay-info/displayid2.c": {
+      "sha256": "aadacf37a39470374062717b12b9584f3dabe6fa1c23569d739ab01831e80eee",
+      "bytes": 8177
     },
     "subprojects/libdisplay-info/dmt-table.c": {
-      "sha256": "50b2ea92a88c92c29ae0d2536eb2ea1098257f20c5be1bfb08d99ae306a712f9",
-      "bytes": 30557
+      "sha256": "3b1948bfa76cad99a8f9810ecda8b581d3d4ed0e9da5ce77a087cd322289cf26",
+      "bytes": 34248
+    },
+    "subprojects/libdisplay-info/dmt.c": {
+      "sha256": "9bff29daeb0fb5752a49db7a2eb16c306045fbfb12ed5e6f94e5edc8bf331fe9",
+      "bytes": 1951
     },
     "subprojects/libdisplay-info/edid.c": {
-      "sha256": "32fd62a93f372bd7d4ce96a881ac8824565e8452ebfee331701fa251d813ec06",
-      "bytes": 40906
+      "sha256": "2b44b1bb27d77cf85ce7e7434bad389236722a6a802baf65584c64326fc09e47",
+      "bytes": 46317
+    },
+    "subprojects/libdisplay-info/gcovr.cfg": {
+      "sha256": "5b0ac3e7181baf01a1df624bec0ffcafbbcc8215e25eb393ed3dbe0b69d44f33",
+      "bytes": 40
     },
     "subprojects/libdisplay-info/gtf.c": {
-      "sha256": "f2df932a841293136461f2eba8fc8bf09b47f1e2c37cfa85698407d6ca85c865",
-      "bytes": 4617
+      "sha256": "682c53c91529c001470b5815d4da8a5a2df908c394986471d8d99964192e5076",
+      "bytes": 4609
+    },
+    "subprojects/libdisplay-info/hdmi-vic.c": {
+      "sha256": "55ecd1651464aa4a7e7be9b0f1fd6ccca62432c327b52368a36a0dc7df938f89",
+      "bytes": 2239
     },
     "subprojects/libdisplay-info/include/bits.h": {
       "sha256": "fc6c05e455338ffaeb1d29ac803a7471465b23d369dac0599dbc51f77d396da2",
       "bytes": 679
     },
     "subprojects/libdisplay-info/include/cta.h": {
-      "sha256": "869356686ec19191fe068cbcd193facd38b379df92ab7fd2ca936ef1a7dd8eb3",
-      "bytes": 2405
+      "sha256": "e9bb04c79ab5594a6fd48b06dd0ab6d8f9ee7779d113dc9fa6ad324b5c152310",
+      "bytes": 9299
     },
     "subprojects/libdisplay-info/include/di-edid-decode.h": {
-      "sha256": "332b7e44e049be43443b13c96174dea406889a9fc5b51d66af5251fd654ae342",
-      "bytes": 587
+      "sha256": "55ac92329722873da5bc3f55ae9185a5a05def72aaa5bc37b7357994e2e8b2a6",
+      "bytes": 1445
     },
     "subprojects/libdisplay-info/include/displayid.h": {
-      "sha256": "3af9d0e2bbc2c0010f66349f0a435726a07aa164b92b26ebca3ded896a1694db",
-      "bytes": 1550
+      "sha256": "0709fed96802bfb1b910b23c02053b91a6cbd752165d61484cdb5295487c7cc2",
+      "bytes": 2962
     },
-    "subprojects/libdisplay-info/include/dmt.h": {
-      "sha256": "f470e580f302110a6dcb1f065c5a85839746f41c0d37f5ae64b9222a61036ee6",
-      "bytes": 249
+    "subprojects/libdisplay-info/include/displayid2.h": {
+      "sha256": "d5b0df9606f40710f79d6ca94d2925f061667f795a7ed7778797dd2c76eca10e",
+      "bytes": 1631
     },
     "subprojects/libdisplay-info/include/edid.h": {
-      "sha256": "f24e1ef9f4c8ee8b6f5cb80e9f5f2351a2a0aa084e043f365d0e43d024c1a9c0",
-      "bytes": 4603
+      "sha256": "0a336d9d8379937210f736b5f8bf441ec0d7d6c0295150e46994637af06c8858",
+      "bytes": 4933
     },
     "subprojects/libdisplay-info/include/info.h": {
-      "sha256": "9a928c50796f001c01aaf9d607a666a8c4c3b7ba3a6284e61eccafbec54e874f",
-      "bytes": 189
+      "sha256": "4accd7cc5a9d5b501ea63935e44df4e90a621db4e26ccae3f035b325f7425612",
+      "bytes": 679
+    },
+    "subprojects/libdisplay-info/include/libdisplay-info/cta-vic.h": {
+      "sha256": "5976c8d08e9186095cf839e2aeb07be40f0e239d063b8d04e69bbb344c70e075",
+      "bytes": 2040
     },
     "subprojects/libdisplay-info/include/libdisplay-info/cta.h": {
-      "sha256": "b8ab0749e373a37dba26393d3187a8c28af75b5152b404bfd15c846b4de80fdd",
-      "bytes": 9326
+      "sha256": "4b19776e9ca602a74cb2fd4bf3d4dc229d7098befd7fbbe26a6cdcc9732bc9ca",
+      "bytes": 52249
+    },
+    "subprojects/libdisplay-info/include/libdisplay-info/cvt.h": {
+      "sha256": "dd0d43bd02ca3aefbf8f5946235beca0746bbfe9b2ad9f05ce9dc69ce319bf13",
+      "bytes": 2224
     },
     "subprojects/libdisplay-info/include/libdisplay-info/displayid.h": {
-      "sha256": "f6a733d339606f49c2f64ed5194c238f02e796587e679b84f96974a8a66faf8f",
-      "bytes": 7657
+      "sha256": "a640b283c154b868c2e13344fcf8bb7b1d6e7f3d5af1a98a3145fb4a3ed45e8d",
+      "bytes": 13006
+    },
+    "subprojects/libdisplay-info/include/libdisplay-info/displayid2.h": {
+      "sha256": "144673554860416fb5e8ae92137e4f9b5203118935a918392894a5b980a31309",
+      "bytes": 3875
     },
     "subprojects/libdisplay-info/include/libdisplay-info/dmt.h": {
-      "sha256": "dcfa67ffd0462b4401256dfafdd2ac094504615edeed1bba918009a77e961198",
-      "bytes": 969
+      "sha256": "2c411aea64f28f883755255bf415e86acccc355913715aae7ffe5812ccb32ae1",
+      "bytes": 1926
     },
     "subprojects/libdisplay-info/include/libdisplay-info/edid.h": {
-      "sha256": "263ed413fcf4ccf5f26a29e1de5ec1feca72bc723b08d0a1212fc8787c38b09f",
-      "bytes": 22633
+      "sha256": "3cc7c93247fbb5affdbf8fd03c7b551bc95ada4e1e5bb6c67b60ff065e92dc56",
+      "bytes": 24394
     },
     "subprojects/libdisplay-info/include/libdisplay-info/gtf.h": {
       "sha256": "0e7fd036e5c48ce2dbc5be68948738faea1cf22731bd6bc184d16a5b0be1efa4",
       "bytes": 1699
     },
+    "subprojects/libdisplay-info/include/libdisplay-info/hdmi-vic.h": {
+      "sha256": "1dc5978279bf9140bae4c5bfb373a0d0c993ff59353ccd37ecdadadd47f7240a",
+      "bytes": 1217
+    },
     "subprojects/libdisplay-info/include/libdisplay-info/info.h": {
-      "sha256": "ec7e3bdb5c3b507f986977d5a3acf432ae32d958898eec743960f5e2982753a1",
-      "bytes": 2854
+      "sha256": "adf593a8eeb650baf3810fb03e94fa29433e6703a9cc08750fc84abc5b1b80f0",
+      "bytes": 8818
     },
     "subprojects/libdisplay-info/include/log.h": {
-      "sha256": "226b332bc676c4bf9ed98ca4389028c37bbd5de50aa04cc4e2e6765a28dbcf1a",
-      "bytes": 301
+      "sha256": "3d3306b12d15073f72bd39141d3b2286536bdc683b7d460406503f3389971595",
+      "bytes": 380
     },
     "subprojects/libdisplay-info/include/memory-stream.h": {
-      "sha256": "d3e44cdc1414e507e53000608be5a41d9ebde879aad67f709ec476b8b008d5a5",
-      "bytes": 447
+      "sha256": "b1cef5a1a8e58e7bcb47daebc5dff5bf4084791abd6ae564758335b57e0f359c",
+      "bytes": 542
     },
     "subprojects/libdisplay-info/info.c": {
-      "sha256": "003fdb985ec2e831e60d65a8c4eff562c8906443be2ec648c13eaa8a41efc5de",
-      "bytes": 3778
+      "sha256": "f3a7cba57a6927568e5d620c0eca9444e46c435b33f90964eee81102c72a197a",
+      "bytes": 14409
     },
     "subprojects/libdisplay-info/libdisplay-info.map": {
       "sha256": "b272f50d70a800388ef7fec6057e3c0570a418cee4a4dd58486b3dfc52f702d4",
@@ -4628,24 +4688,32 @@
       "bytes": 1089
     },
     "subprojects/libdisplay-info/log.c": {
-      "sha256": "f697fa790c165d03f4bac263e05bed2c4759159f2337019427d10562f4c4a388",
-      "bytes": 372
+      "sha256": "b980276fc222db6ac01e2b6f575aa75eb689351bbabea61f1bd962041072fd60",
+      "bytes": 840
     },
     "subprojects/libdisplay-info/memory-stream.c": {
-      "sha256": "d6ec8e5c930784310a176bd8b51bf059ec5bfe1b321da4e40d3a25361ff5aaaa",
-      "bytes": 1451
+      "sha256": "8d13cd1a413234fdc9ca9fc917cbc8ddb2fecbceedd3095bb5aa79b87d97212f",
+      "bytes": 1565
+    },
+    "subprojects/libdisplay-info/meson_options.txt": {
+      "sha256": "b40e449b1df3f18db176c06516730bfa3acdc2d20cb77298a1d3fd9ed7d85d2b",
+      "bytes": 216
     },
     "subprojects/libdisplay-info/meson.build": {
-      "sha256": "e0734c1f130c1ad20888367b484c5f8d0fe4619c85e110000c32e84aea59ce72",
-      "bytes": 1834
-    },
-    "subprojects/libdisplay-info/pnp.ids": {
-      "sha256": "a0dbf28dd17acf07eeec143e4233b128cd698d9dc3469cfd87178f8a25c7fd92",
-      "bytes": 62334
+      "sha256": "8892a6cb9e8c724121554136eea1a2efb42eabcf9d3d5eff923282b0afd8f285",
+      "bytes": 3507
     },
     "subprojects/libdisplay-info/README.md": {
-      "sha256": "f6ea96f50238359c9c84068bc76ed735ce463f70eb75982573671edd9af8863a",
-      "bytes": 3004
+      "sha256": "0e1a36e56ccf51b61738eeeedffd71e3ca56a785a4724204081042c929b5342a",
+      "bytes": 6041
+    },
+    "subprojects/libdisplay-info/release.sh": {
+      "sha256": "6ca9cf3e27ba9b94e7a8186747acbfdc1d98aa84ec68dd82026f97f480ac5c62",
+      "bytes": 1983
+    },
+    "subprojects/libdisplay-info/releasing.md": {
+      "sha256": "a093080d851b657a1a07152495c3f5ac90b76c5a88c8861d85358fb5c722e7ff",
+      "bytes": 1483
     },
     "subprojects/libdisplay-info/test/data/acer-p1276.diff": {
       "sha256": "d947b3978c255bbee9c4dd0060e0982e5d83bfd2f8524081299e3af8b8699ee6",
@@ -4656,80 +4724,320 @@
       "bytes": 256
     },
     "subprojects/libdisplay-info/test/data/acer-p1276.print": {
-      "sha256": "b7b0dab61bf851c6f1666720787bbbecf7640bec385291da67f4bd6955dacf0e",
-      "bytes": 58
+      "sha256": "f0eb194788c804abcefd287c3988a92a9ce7b58491e4dfa4a48b8bfd3cf06390",
+      "bytes": 340
+    },
+    "subprojects/libdisplay-info/test/data/acer-p1276.ref": {
+      "sha256": "bcced32ac138ad0a3863af7c6fa162a7ef601500ec7ea8ab6c8269b9251f1454",
+      "bytes": 3893
+    },
+    "subprojects/libdisplay-info/test/data/amazon-fire-tv-48.diff": {
+      "sha256": "79f8ad5551e48c30d9b4b5d85fae109a582e572d82bd76e3fc0c34ffe3d3ca04",
+      "bytes": 6580
+    },
+    "subprojects/libdisplay-info/test/data/amazon-fire-tv-48.edid": {
+      "sha256": "117344ce4d767f0f3863d92a8e002ba101a1a7c651284cbb7c601fc7d3f4caef",
+      "bytes": 512
+    },
+    "subprojects/libdisplay-info/test/data/amazon-fire-tv-48.print": {
+      "sha256": "c1870d9b650627cc7df90c5f018a507af3c9e849ad66ee231838d594852624a9",
+      "bytes": 368
+    },
+    "subprojects/libdisplay-info/test/data/amazon-fire-tv-48.ref": {
+      "sha256": "747c4296c03b98da0ba529a62db48da8a20647ae07cf7e73fbe3b58c584fc683",
+      "bytes": 9821
+    },
+    "subprojects/libdisplay-info/test/data/apple-studio-xdr.displayid": {
+      "sha256": "07db3db3cd3d7b38ce14dffa94cf5cb03870330a90f9ad94319c95d78746efbe",
+      "bytes": 512
+    },
+    "subprojects/libdisplay-info/test/data/apple-studio-xdr.print": {
+      "sha256": "b181662e21e2811496e45e613efcd31122219bbfb03ef48fd201b057549414b2",
+      "bytes": 342
     },
     "subprojects/libdisplay-info/test/data/apple-xdr-dp.diff": {
-      "sha256": "c4b345d57aed153e548e62e23b4b23ec22c82e2a7e60beb78fafbf689fd63372",
-      "bytes": 5755
+      "sha256": "d3a0e0fe49c4332d5918d2668433e39273ce533991a587c014f144c7f3bbca56",
+      "bytes": 5512
     },
     "subprojects/libdisplay-info/test/data/apple-xdr-dp.edid": {
       "sha256": "272dab96a48cc8d3b02cff93e946e92cc5131eadb99ecd918043ece09b0ed093",
       "bytes": 896
     },
     "subprojects/libdisplay-info/test/data/apple-xdr-dp.print": {
-      "sha256": "81c667d539032d8922299c2127385670b0b447c4c289339abd2659f2430fc4f0",
-      "bytes": 65
+      "sha256": "27700dee866f0a59bbbf3a737ebe9802552e90470610fa7163d9c02ddd5a38ab",
+      "bytes": 366
+    },
+    "subprojects/libdisplay-info/test/data/apple-xdr-dp.ref": {
+      "sha256": "af4743f95a8bc3e0b9f0eff848a98dbd7ebc4a8f445c4ff2d734de05ede0411a",
+      "bytes": 10768
+    },
+    "subprojects/libdisplay-info/test/data/asus-ux3405.diff": {
+      "sha256": "2251d944b3e84050e9f4d9c34133b92aaa7da9032d9fe2382a16e2b8df1636ef",
+      "bytes": 3525
+    },
+    "subprojects/libdisplay-info/test/data/asus-ux3405.edid": {
+      "sha256": "c277c86b04e5b09b5e347adc485a3f7f9271bad6121f6a28ae00a4eb842150ac",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/asus-ux3405.print": {
+      "sha256": "edf0cf9d8e7cd17fad1d14667610687013c302530fa76a687163e694863acd4d",
+      "bytes": 356
+    },
+    "subprojects/libdisplay-info/test/data/asus-ux3405.ref": {
+      "sha256": "fb31b53e780425f4e5be9453f01092b458fea5d721f465ca54397c395503258c",
+      "bytes": 4389
+    },
+    "subprojects/libdisplay-info/test/data/ayaneo-wxga.diff": {
+      "sha256": "a2dc6ff039cca5898b5dcbb1c4992326db38c6bc16e4d206d44407bba9b392f7",
+      "bytes": 3149
+    },
+    "subprojects/libdisplay-info/test/data/ayaneo-wxga.edid": {
+      "sha256": "847db288c70f197534a581b5807540df09273150e7577d650d42db935385a44b",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/ayaneo-wxga.print": {
+      "sha256": "9ebd112d2fc97060efdf18f848b1893d1499305eac0262993800410e55bff74f",
+      "bytes": 334
+    },
+    "subprojects/libdisplay-info/test/data/ayaneo-wxga.ref": {
+      "sha256": "5985413fb27cd1cdef9e003297ac51122f29c0ef9eb4a84109588d8c271dde7a",
+      "bytes": 4739
+    },
+    "subprojects/libdisplay-info/test/data/cta-timings.diff": {
+      "sha256": "609a9c53f6395ddaaf692c39262bf69df61165f43e256850dc6585c3aeedae42",
+      "bytes": 2409
+    },
+    "subprojects/libdisplay-info/test/data/cta-timings.edid": {
+      "sha256": "b6539dfb8567818d5a199277d68bf3b6f75a8058013bd7b8ff75670cb3aa347e",
+      "bytes": 512
+    },
+    "subprojects/libdisplay-info/test/data/cta-timings.print": {
+      "sha256": "1639cc7616f8bc34707b676328e2187841c4a23caf7fad82080b2dc7623f3196",
+      "bytes": 343
+    },
+    "subprojects/libdisplay-info/test/data/cta-timings.ref": {
+      "sha256": "8dcd4ed4c0d03749e9812cbff0c0f8b04e0eb8c7c372ab32dfe72c8025e72182",
+      "bytes": 7514
+    },
+    "subprojects/libdisplay-info/test/data/cta-vfpdb.diff": {
+      "sha256": "8ca766ba24ec52bc460eba7029fe14dce65f2c0ee0474c2400e4e41058414640",
+      "bytes": 999
+    },
+    "subprojects/libdisplay-info/test/data/cta-vfpdb.edid": {
+      "sha256": "88eadcb6e2fe7d7e20cef09a3b7e5ee1260a8aa2ef6dcd887e395c8f796922de",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/cta-vfpdb.print": {
+      "sha256": "bd83b2e1dfc4e2be172fc159d4bfac566701d9e1f14f31b9aa25b57a043e3120",
+      "bytes": 342
+    },
+    "subprojects/libdisplay-info/test/data/cta-vfpdb.ref": {
+      "sha256": "91c3d6378217953648d6ce5cc4f3e27ba1d8704df093d32b5343979a2a40a60b",
+      "bytes": 4070
     },
     "subprojects/libdisplay-info/test/data/custom-uncommon-cta-vesa.diff": {
-      "sha256": "bca5414d13ff15a563900d3bbe80fe64db4dbdd4081c2b37ee4f58299f1a8c05",
-      "bytes": 2743
+      "sha256": "0fb8e630820503c13402880501933071e37cf49f727859e73edf97c178dfaa85",
+      "bytes": 895
     },
     "subprojects/libdisplay-info/test/data/custom-uncommon-cta-vesa.edid": {
       "sha256": "fba45d4a42c93a08922e281fb9cd4961fcfebba2d69f3525e1b6b72abd81859a",
       "bytes": 256
     },
     "subprojects/libdisplay-info/test/data/custom-uncommon-cta-vesa.print": {
-      "sha256": "f88bd8a6275b44f613efceeccf901cd35cffe3e38944e2661a576138bc7db062",
-      "bytes": 61
+      "sha256": "1639cc7616f8bc34707b676328e2187841c4a23caf7fad82080b2dc7623f3196",
+      "bytes": 343
+    },
+    "subprojects/libdisplay-info/test/data/custom-uncommon-cta-vesa.ref": {
+      "sha256": "33f5bb0fce9eadf85ff8a5b9b3520bb8c2773a6ff16390c2917cffd5d8b43c63",
+      "bytes": 5382
+    },
+    "subprojects/libdisplay-info/test/data/cvt.edid": {
+      "sha256": "0404509f054fe108608c423ab6a917f8735e7937d344e2600b5739b8e130f623",
+      "bytes": 128
+    },
+    "subprojects/libdisplay-info/test/data/cvt.print": {
+      "sha256": "bd20a9da9400664f401959d563b7dcc2406ab264e7e2d52fb538266507a428af",
+      "bytes": 342
+    },
+    "subprojects/libdisplay-info/test/data/cvt.ref": {
+      "sha256": "e77ff8e409e9ed48eb7c4b4a4c2943ea5f5cdc97d54b149c9dcde32373959cee",
+      "bytes": 2918
     },
     "subprojects/libdisplay-info/test/data/dell-2408wfp-dp.edid": {
       "sha256": "f2e56b1da384377adb9b0639696e8dc60add5829e767cb1ae6879df6e3e8cebd",
       "bytes": 128
     },
     "subprojects/libdisplay-info/test/data/dell-2408wfp-dp.print": {
-      "sha256": "21c2587a6ba5c4bb071d81d0d08a2250cfd0dc889f9220f31089e0cdcda250c9",
-      "bytes": 57
+      "sha256": "1ab15f3e50d37beddc8f1ce49ed7c9f5ec285327ac7e37c18f9cc47f5e2089d0",
+      "bytes": 339
+    },
+    "subprojects/libdisplay-info/test/data/dell-2408wfp-dp.ref": {
+      "sha256": "b7e6a13e338ea8f036d897c101df0ebdf185c03945a6fe5cc4c753e868fa98cf",
+      "bytes": 2077
+    },
+    "subprojects/libdisplay-info/test/data/goldstar-37lg5000.diff": {
+      "sha256": "cdb05c1527f3136da43b23f382cf562ea9a53a69c696727728f4d10753946bb4",
+      "bytes": 3238
+    },
+    "subprojects/libdisplay-info/test/data/goldstar-37lg5000.edid": {
+      "sha256": "ea1b3168a59a212777218068961ae52e06eb7929e7142574afbe00099f0ad352",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/goldstar-37lg5000.print": {
+      "sha256": "20e00c9a0033fe3d04668bc1f0733306a6f8a4c990d640c0a8e502d20ebee986",
+      "bytes": 338
+    },
+    "subprojects/libdisplay-info/test/data/goldstar-37lg5000.ref": {
+      "sha256": "7ca6a26a7798f94d1410666d2583b2a4b75d97faf8bfcd93afadfe9706243b6d",
+      "bytes": 6848
+    },
+    "subprojects/libdisplay-info/test/data/goldstar-e2441.diff": {
+      "sha256": "d256bfc2322303edd7d6fe6b20726e74da8906081b5d3cb16e50b67ad30ec445",
+      "bytes": 2032
+    },
+    "subprojects/libdisplay-info/test/data/goldstar-e2441.edid": {
+      "sha256": "005f65510ff67daa47b4469758db67d471bb466ad01aac3f98587b70c49cf1df",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/goldstar-e2441.print": {
+      "sha256": "d19a536372420050a2373e00b815263fba001f61a9ad12d5dfba963d1880958e",
+      "bytes": 335
+    },
+    "subprojects/libdisplay-info/test/data/goldstar-e2441.ref": {
+      "sha256": "023cc7ca733736f6b91ee2974fbf29130fb582b32b64926f60c3cc33390e01c8",
+      "bytes": 5346
     },
     "subprojects/libdisplay-info/test/data/goldstar-ite6604-hdmi.diff": {
-      "sha256": "7db64edd36ad83715bae306838de63bf0cda7d6abc352d30a64b590d5e2055a3",
-      "bytes": 5457
+      "sha256": "56c52d584170931206f4ed484c18a3083255adc1199cf4216b9a1d2929e0adbb",
+      "bytes": 2685
     },
     "subprojects/libdisplay-info/test/data/goldstar-ite6604-hdmi.edid": {
       "sha256": "1d7bcd6af3a9ed1aef2d92f382245ecf907c65540741e9b9b4edc81fa952ea41",
       "bytes": 256
     },
     "subprojects/libdisplay-info/test/data/goldstar-ite6604-hdmi.print": {
-      "sha256": "b39259be8b525f313dea5d4f180f91414e2dda00adcb344bb5de0508205e8d49",
-      "bytes": 55
+      "sha256": "c89d39e41d848467a85c38e511462b0acffe9d0f4c2efb07be7c6d45035cd9dc",
+      "bytes": 337
+    },
+    "subprojects/libdisplay-info/test/data/goldstar-ite6604-hdmi.ref": {
+      "sha256": "613406652e583f92ce0c78dcddfac720ddf43769aa62d705f245e5b4fcc73807",
+      "bytes": 6623
+    },
+    "subprojects/libdisplay-info/test/data/hisense-55u8k.diff": {
+      "sha256": "83f2865a83c2a509b4d53f36e0ffaf29a52ff2965bd6d972985d146516d9d30e",
+      "bytes": 2962
+    },
+    "subprojects/libdisplay-info/test/data/hisense-55u8k.edid": {
+      "sha256": "868a5ea969931438bead5ae8f8b3f555946f282e6b24e690b875dd36a66d650d",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/hisense-55u8k.print": {
+      "sha256": "b93166b03f4c92dc122aab93ef026179e81e86bf4e09d991a5263b0695d0184a",
+      "bytes": 386
+    },
+    "subprojects/libdisplay-info/test/data/hisense-55u8k.ref": {
+      "sha256": "de6031962a2f889ae32fff1764cd06ec27aba903cff8189dcda6dbad914f24a5",
+      "bytes": 8587
+    },
+    "subprojects/libdisplay-info/test/data/hitachi-55r6+.diff": {
+      "sha256": "67aa2031a378361a3f06a8a65fc7bba0a1a848ddd21d51336e800ff138e828ca",
+      "bytes": 1850
+    },
+    "subprojects/libdisplay-info/test/data/hitachi-55r6+.edid": {
+      "sha256": "1f4d71081c26cdd88561ba721de7a993eebffd8d86634a46d25d82772cb5c8fc",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/hitachi-55r6+.print": {
+      "sha256": "e159f76fe4f7ff651a94fa85c2dd8645124ad1b5541966cfdcdc9000bca790a5",
+      "bytes": 372
+    },
+    "subprojects/libdisplay-info/test/data/hitachi-55r6+.ref": {
+      "sha256": "e63ae28c855bd74b0bc88854d2e7923da693c1dc9e99eb3cf99a6c93f8f9752c",
+      "bytes": 7834
     },
     "subprojects/libdisplay-info/test/data/hp-5dq99aa-hdmi.diff": {
-      "sha256": "866bef51b9d7a387972d7d1c11ed57d38009e17a1950fcc49ebfea7234f64476",
-      "bytes": 2969
+      "sha256": "f6d56aad403b2a7bea04513695abcf2c8108b4139fc5d83ffd5434baa8446b6e",
+      "bytes": 1449
     },
     "subprojects/libdisplay-info/test/data/hp-5dq99aa-hdmi.edid": {
       "sha256": "b9fc6837e8b5cc96d6e76ed13a3663ec2cd2a763390e4ba99b380668af2aada5",
       "bytes": 256
     },
     "subprojects/libdisplay-info/test/data/hp-5dq99aa-hdmi.print": {
-      "sha256": "829eda4f127ee919ef6aedb746f219a2ade1937968ae0008c8f79313875ae0e1",
-      "bytes": 49
+      "sha256": "7e609e21f8268da1f7959711efeb802d8cdf304f29d0c75609562e05d8ac255f",
+      "bytes": 372
+    },
+    "subprojects/libdisplay-info/test/data/hp-5dq99aa-hdmi.ref": {
+      "sha256": "09640d47091f9bc3b15005c08499b24a126dd5f80a775ccd3cf7ca75cd06e78c",
+      "bytes": 5605
+    },
+    "subprojects/libdisplay-info/test/data/jdi-lpm135m467-edp.diff": {
+      "sha256": "e083aad154347c7ed39b7632942ed0b7c29709fb8ae448b53c7a0e57bf26c45a",
+      "bytes": 1161
+    },
+    "subprojects/libdisplay-info/test/data/jdi-lpm135m467-edp.edid": {
+      "sha256": "cd1ecb025559fd46d56c35da7563ee51b2ed47f5ddc74a515b5f4c22fbe80db2",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/jdi-lpm135m467-edp.print": {
+      "sha256": "81d325bda9b1d667ea0d09a65a77ddbdc1b853a4e336d2bbc2f7ac2f410280f6",
+      "bytes": 336
+    },
+    "subprojects/libdisplay-info/test/data/jdi-lpm135m467-edp.ref": {
+      "sha256": "265b78c775d0e243fbfe1be1661c30d399a6db43fc488bdfd2cda04d3c8e23c3",
+      "bytes": 2282
+    },
+    "subprojects/libdisplay-info/test/data/lenovo-t24s28.diff": {
+      "sha256": "285863307cb3888a2b495fc1533eade62fa55787dc3bbf13cc1876bad27c40ea",
+      "bytes": 5600
+    },
+    "subprojects/libdisplay-info/test/data/lenovo-t24s28.edid": {
+      "sha256": "1104e9447610e3220b18d263e5b8b755d0382db59e21ed97df3ac846f9a4770f",
+      "bytes": 512
+    },
+    "subprojects/libdisplay-info/test/data/lenovo-t24s28.print": {
+      "sha256": "37aff1779a5ca537f2c9e14a885e9a7efe50b980f1b83ff22bfaae70eef8ff03",
+      "bytes": 341
+    },
+    "subprojects/libdisplay-info/test/data/lenovo-t24s28.ref": {
+      "sha256": "c48562b8aa0d345d2c6ae82177ffafbc39166907bbf2388204d120e45d904b9d",
+      "bytes": 8637
+    },
+    "subprojects/libdisplay-info/test/data/lenovo-t27p10.diff": {
+      "sha256": "d729cb5ec1dda516945272ec52cd8ee14d940b28aa790f15d11f20963087472d",
+      "bytes": 934
+    },
+    "subprojects/libdisplay-info/test/data/lenovo-t27p10.edid": {
+      "sha256": "4bab97351bad2b1697919cf54b3b4054798248f200ce1165b94954ec5f3f0b4e",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/lenovo-t27p10.print": {
+      "sha256": "72aa3a7ec5917a56bd314d4affc0225944c0cfa597b569df36d1194cdccc0acc",
+      "bytes": 347
+    },
+    "subprojects/libdisplay-info/test/data/lenovo-t27p10.ref": {
+      "sha256": "61b4d1c02dfb362b8fe5074466e70d4416e0ad5ab2250c4cea571eee5ccbe184",
+      "bytes": 5353
     },
     "subprojects/libdisplay-info/test/data/LICENSE.CC-BY-4.0": {
       "sha256": "4014722237c90b6f8effc35b6e04a47815c03ef14ee24683d6c1dfd0b9b644d0",
       "bytes": 18656
     },
     "subprojects/libdisplay-info/test/data/msi-mag321curv-dp.diff": {
-      "sha256": "d49adb45d9518d98c1add5bd3d38e070019c640ea2f00cb9f6acceff07fee91b",
-      "bytes": 4775
+      "sha256": "494af82319e844b0cb647235b1d005b09fb69d21c06656ab2f72b90e0788c09e",
+      "bytes": 2237
     },
     "subprojects/libdisplay-info/test/data/msi-mag321curv-dp.edid": {
       "sha256": "164413a5721f1909511f4384655d7506c1b104c88145fb4a2ae418a0af6aa8b6",
       "bytes": 256
     },
     "subprojects/libdisplay-info/test/data/msi-mag321curv-dp.print": {
-      "sha256": "964fb05847f016569b6aa121d89062f653326e238031ce6f4f8a3f9ef1f8eb64",
-      "bytes": 56
+      "sha256": "36ebdfa88934e906c75733743fe4576268e1671c0f93f2873fdacabf83f61433",
+      "bytes": 379
+    },
+    "subprojects/libdisplay-info/test/data/msi-mag321curv-dp.ref": {
+      "sha256": "1de194d832c1f9e2b8e06a07aa9d304258015b90e5c372132ed644691e46ea81",
+      "bytes": 8346
     },
     "subprojects/libdisplay-info/test/data/panasonic-mei96a2-dp.diff": {
       "sha256": "53093c144ff3a98150ccfd16516fe1bf1e1228f99beb1c7e39e7571da0c64948",
@@ -4740,24 +5048,144 @@
       "bytes": 128
     },
     "subprojects/libdisplay-info/test/data/panasonic-mei96a2-dp.print": {
-      "sha256": "720cc91c3572fa3bc9cf13d8a066a2b84bc366762102f11a50e862b125f76520",
-      "bytes": 62
+      "sha256": "11c288c8e688dbe88ea0c2e89c13cfa33dec2b59cdf8a369afbb68aa4cc8f82b",
+      "bytes": 344
+    },
+    "subprojects/libdisplay-info/test/data/panasonic-mei96a2-dp.ref": {
+      "sha256": "cc065473d7f8af6e298a7f268946c1238d381d9d6b12a8ed7b0dbc7303219270",
+      "bytes": 1373
+    },
+    "subprojects/libdisplay-info/test/data/philips-4k-2023.diff": {
+      "sha256": "57bb2a194c8286732cc6fe3e80d642ca83f30ce46a25ff092b58bcd0ec8dbed0",
+      "bytes": 2081
+    },
+    "subprojects/libdisplay-info/test/data/philips-4k-2023.edid": {
+      "sha256": "a03d6dcc1a3befefb1e97667ed5fd3886a1fb5912b6f113a09fe961e09a72048",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/philips-4k-2023.print": {
+      "sha256": "c99f8d1d7e9b163a4bc19f53f8e4cd7c3801518bc58ebb3356312b62f4c7858d",
+      "bytes": 390
+    },
+    "subprojects/libdisplay-info/test/data/philips-4k-2023.ref": {
+      "sha256": "db9afe333935a525ce9cc88c75d7514d47e9bb8c8164401f3ba6de172fec0ccc",
+      "bytes": 8249
+    },
+    "subprojects/libdisplay-info/test/data/philips-ftv-2017.diff": {
+      "sha256": "53cc485ccffc444def399f3033dd34a7a9e2ba5c94bf5361c866d4d487bce409",
+      "bytes": 2784
+    },
+    "subprojects/libdisplay-info/test/data/philips-ftv-2017.edid": {
+      "sha256": "98f5f25647eddc83a22af6855adc1ec43c9bc8c2f7cd92aa3744d44171b39618",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/philips-ftv-2017.print": {
+      "sha256": "63dfa31d3e599b285944bf861aec21801f4a5c07e83fdd86bbab05124b244498",
+      "bytes": 359
+    },
+    "subprojects/libdisplay-info/test/data/philips-ftv-2017.ref": {
+      "sha256": "086f7b2214f51cf9bb3c4246d015c23420d40834789388bf5f29358957efd1e8",
+      "bytes": 6079
+    },
+    "subprojects/libdisplay-info/test/data/philips-ftv-490.diff": {
+      "sha256": "88dec7e35db23dee564a5149eb30fa28316b592dc5999afcb2ccdfc8408cb029",
+      "bytes": 1885
+    },
+    "subprojects/libdisplay-info/test/data/philips-ftv-490.edid": {
+      "sha256": "fd1664cf24d003acff2d2ef2d50fb679beca6649b77a3d9291ad0dd91ad24311",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/philips-ftv-490.print": {
+      "sha256": "03ceac47e04ab6a0d19241d3459e940c79b0d7e28be1076f5790ee2cc09623ea",
+      "bytes": 388
+    },
+    "subprojects/libdisplay-info/test/data/philips-ftv-490.ref": {
+      "sha256": "2fe1014c9861330c6f88a5b770a6ac54835f1e630629d780c868c558c323e972",
+      "bytes": 8299
+    },
+    "subprojects/libdisplay-info/test/data/qemu.diff": {
+      "sha256": "8a395f1e890b8102f20f90a18711bb40d5de66c9de32825b3f00929fe8ea8ac4",
+      "bytes": 957
+    },
+    "subprojects/libdisplay-info/test/data/qemu.edid": {
+      "sha256": "e2020bcce3f0c2edfbd7be364150dd7d45e737f75df86433308bcba84f9079c1",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/qemu.print": {
+      "sha256": "22b511a7870b2db76c4e29df2b99365a173e06a3acd7bb9beb7a77bda39e11b6",
+      "bytes": 337
+    },
+    "subprojects/libdisplay-info/test/data/qemu.ref": {
+      "sha256": "6f928ad7ef8c9b11a702774d58a21cf11085b36ff03ea384544886919ec956eb",
+      "bytes": 3712
     },
     "subprojects/libdisplay-info/test/data/README.md": {
-      "sha256": "e9f51ace01d2569c8845b82e464361df654e3e08b5708c548ca830c94050fa42",
-      "bytes": 484
+      "sha256": "4df88b7f33ae0a9981f3f53c3d4145dcd7d3b6a826a3081146806ddee647984a",
+      "bytes": 2508
+    },
+    "subprojects/libdisplay-info/test/data/samsung-odyssey-g60sd.diff": {
+      "sha256": "4fdc2f79695dba553ba2a441beee62fce8ac08d1756d66a02b227a03b6aa4fa6",
+      "bytes": 2460
+    },
+    "subprojects/libdisplay-info/test/data/samsung-odyssey-g60sd.edid": {
+      "sha256": "e24eaf0f3b79f65fac92f4beb735cdc3f41019bb2ffc8ebc5ad4c373d5a1fe6f",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/samsung-odyssey-g60sd.print": {
+      "sha256": "c3854e1acd5fb9a39ef25bc037f0f58adecb770824855c3b2879869f0da19134",
+      "bytes": 381
+    },
+    "subprojects/libdisplay-info/test/data/samsung-odyssey-g60sd.ref": {
+      "sha256": "67ba1cbd3a935ec0fa0ffc56052eae34d8d8db00c2275ecd0edfaab0ede6a766",
+      "bytes": 6589
+    },
+    "subprojects/libdisplay-info/test/data/samsung-q800t-hdmi2.0.diff": {
+      "sha256": "047c014774922154e4b78c8dac32e7f5f7b4992e2231b2dd310576e28e6e5664",
+      "bytes": 2239
+    },
+    "subprojects/libdisplay-info/test/data/samsung-q800t-hdmi2.0.edid": {
+      "sha256": "194451a8d90a2ed97089cdfc1cfad4259ac4563328e9ddb04750c61dcb5778a4",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/samsung-q800t-hdmi2.0.print": {
+      "sha256": "52ed6649831b1e1ec4cbce7957f4a5d173dfb463a4108b95c2877a586ffe6d69",
+      "bytes": 350
+    },
+    "subprojects/libdisplay-info/test/data/samsung-q800t-hdmi2.0.ref": {
+      "sha256": "de432de9cf98ae8b56f41fe0279d23630f8cdadda61a7139be09d564a6a60d87",
+      "bytes": 8444
+    },
+    "subprojects/libdisplay-info/test/data/samsung-qn900b-8k.diff": {
+      "sha256": "c9cfd2a95ba6946e6d4396c0aaeb746bc8cdfb18c64bc0c78cd15c1678bc0295",
+      "bytes": 1627
+    },
+    "subprojects/libdisplay-info/test/data/samsung-qn900b-8k.edid": {
+      "sha256": "2f361213355d965776c513f051ed7562deb9daa12e93bc269d2bc58e566258dc",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/samsung-qn900b-8k.print": {
+      "sha256": "ceb33813385abb085567b92edb5e65e8700e070fa866ce7309f8a8f9412d532a",
+      "bytes": 372
+    },
+    "subprojects/libdisplay-info/test/data/samsung-qn900b-8k.ref": {
+      "sha256": "065340fddd78757f20f64e03dcfaf69e9903a6f6ac048fdb55e8fcef10e7a9ba",
+      "bytes": 10818
     },
     "subprojects/libdisplay-info/test/data/samsung-s27a950d-dp.diff": {
-      "sha256": "bef6561dc685c5c8b49fe0a29c6e0547845bb52ae7c186e38be478d88be08993",
-      "bytes": 1417
+      "sha256": "dff270a366f632a713f5f74a89604a93a97b4efeed3935f5c4c1bb49ecdda640",
+      "bytes": 1277
     },
     "subprojects/libdisplay-info/test/data/samsung-s27a950d-dp.edid": {
       "sha256": "fa43bcd6d13a5fe85acec312006f0b593cbc28c3456ea8289be3a24eaecfd418",
       "bytes": 256
     },
     "subprojects/libdisplay-info/test/data/samsung-s27a950d-dp.print": {
-      "sha256": "2cc419f6697f3a75cceb885a30d3125edfbafd524fe58bd6b57a276846117851",
-      "bytes": 62
+      "sha256": "881c2d14b5b2f5af35d1f045ccf6f5eeb1e1594c5a6a42ca309c9416de79442d",
+      "bytes": 344
+    },
+    "subprojects/libdisplay-info/test/data/samsung-s27a950d-dp.ref": {
+      "sha256": "7183807f47c8fab37612bd5359b62bb34cd5ecea2adaa241ee36255695041cb2",
+      "bytes": 2374
     },
     "subprojects/libdisplay-info/test/data/sun-gh19ps-dvi.diff": {
       "sha256": "bb3f1d5994d8cd2366124609327e7f32318c3514e62f42d77900b70fb8e39771",
@@ -4768,48 +5196,100 @@
       "bytes": 128
     },
     "subprojects/libdisplay-info/test/data/sun-gh19ps-dvi.print": {
-      "sha256": "7d7f502c3e489efd0c3048c77090be9b15c0dfbd289465364cb07356d720b0d4",
-      "bytes": 67
+      "sha256": "e25d50a88c2d2190ccd3f08ef07b0c9d247a1bc794dbba4c2903a9200b0c3f9b",
+      "bytes": 349
+    },
+    "subprojects/libdisplay-info/test/data/sun-gh19ps-dvi.ref": {
+      "sha256": "6768ff61c4b271fb43851025df650e4a0e4946ce392fe02cfac92e5f049b0037",
+      "bytes": 3025
+    },
+    "subprojects/libdisplay-info/test/data/tcl-smart-tv-5655.diff": {
+      "sha256": "42fc3df5075fc13c563913f5326753d92cae8e3f3aa31a29283b79c1485e4366",
+      "bytes": 1423
+    },
+    "subprojects/libdisplay-info/test/data/tcl-smart-tv-5655.edid": {
+      "sha256": "463c5bd2b6d25c2f2291c7924d3304dcd41ccf2841d9e83ff7726aabbc81dd3c",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/tcl-smart-tv-5655.print": {
+      "sha256": "24162dd6b8e360ab183dfd98ab1e99139c2b2b017ba41358a6c9d121db37be4b",
+      "bytes": 350
+    },
+    "subprojects/libdisplay-info/test/data/tcl-smart-tv-5655.ref": {
+      "sha256": "ca8cf04125195e7e46df0e0c58e0d20c3d4993935eb0b46eb360b2de9f4bfb2d",
+      "bytes": 6625
     },
     "subprojects/libdisplay-info/test/data/viewsonic-vp2768-dp.diff": {
-      "sha256": "35ca4e8ce7edc41a652fdc74de9e6c8ed309b052d24d03b0e82bd8c116f2754d",
-      "bytes": 4746
+      "sha256": "70d8ad4b3613827d6cea8eee84c46b99c9930274a82ed497facc9c60449608aa",
+      "bytes": 2311
     },
     "subprojects/libdisplay-info/test/data/viewsonic-vp2768-dp.edid": {
       "sha256": "b6312a246957fe92e20b21d64f2171d71a19beddb8534f379d60f97a1a310260",
       "bytes": 256
     },
     "subprojects/libdisplay-info/test/data/viewsonic-vp2768-dp.print": {
-      "sha256": "f77317a06ad33a5dd24859976daf7cb9ef4c7db47291c0f7d9b1da73767bbec4",
-      "bytes": 70
+      "sha256": "6a66214fd3d70e0f0877cdd629e37bc440459c12c346e3beef750d7f42692be5",
+      "bytes": 352
     },
-    "subprojects/libdisplay-info/test/di-edid-print.c": {
-      "sha256": "e014d4ba57520749f009b9b4cabb6b873927f31c21362f9167d5cd18a439e360",
-      "bytes": 1169
+    "subprojects/libdisplay-info/test/data/viewsonic-vp2768-dp.ref": {
+      "sha256": "b96a5f846adb97810311b9f0b26fb02fdf7fea01dac4f5eb695ca7c4a0745921",
+      "bytes": 7346
+    },
+    "subprojects/libdisplay-info/test/data/vizio-d40fj09.diff": {
+      "sha256": "2c27a2076778d13bdb322558b8ad26a9025dbcb8047fa224532d254596db7598",
+      "bytes": 2889
+    },
+    "subprojects/libdisplay-info/test/data/vizio-d40fj09.edid": {
+      "sha256": "27b906f960ae829b8a140181536ae4261c7946e4ff3167a54d405b9b60e060b7",
+      "bytes": 256
+    },
+    "subprojects/libdisplay-info/test/data/vizio-d40fj09.print": {
+      "sha256": "44518cb74b41458fb279b19159ef8bf8805ea40d6e6a438a78ca05e60ca30861",
+      "bytes": 330
+    },
+    "subprojects/libdisplay-info/test/data/vizio-d40fj09.ref": {
+      "sha256": "715dc8cd8f7b516eb9a786ae5847a3fd3e8844857ae34dd47d536aacf8bb9d0b",
+      "bytes": 7124
+    },
+    "subprojects/libdisplay-info/test/di-print-check.sh": {
+      "sha256": "60328d6a43725af5923e7e10c10680668c45f5027d04855d4ac603bfbd33ace8",
+      "bytes": 201
+    },
+    "subprojects/libdisplay-info/test/di-print-gen.sh": {
+      "sha256": "5ffa2f465a5e019d858da158110d09043087a720a4a8d2aa6366e373cdef3773",
+      "bytes": 241
+    },
+    "subprojects/libdisplay-info/test/di-print.c": {
+      "sha256": "3383a91bdab01e5ca6db5121139ab18bff6ee2a71653c848988e5260a10db7d1",
+      "bytes": 2981
     },
     "subprojects/libdisplay-info/test/edid-decode-check.sh": {
-      "sha256": "eeefc85f86fdff89863362b296bfe2229dfbd805dd1909f4186ece34547847ad",
-      "bytes": 375
+      "sha256": "4c2ee5921ce1069f9315e3840fad40e861a4165a21b421d6d06b9a3ce49baad4",
+      "bytes": 330
     },
-    "subprojects/libdisplay-info/test/edid-decode-diff.sh": {
-      "sha256": "e697a23ec23716b51d5e7cc554007933b24416ba1f470754d520ea9f1ed0d17e",
-      "bytes": 705
-    },
-    "subprojects/libdisplay-info/test/edid-print-check.sh": {
-      "sha256": "09df79c2f7a5ba8c2c8811a13caf40e18f0b5c5c0f44b835e4a742fe10459552",
-      "bytes": 209
+    "subprojects/libdisplay-info/test/edid-decode-gen.sh": {
+      "sha256": "ef178273dbd22fe2e731e1c66087b5ccad9d895988a1374ed40543e430f3c754",
+      "bytes": 643
     },
     "subprojects/libdisplay-info/test/meson.build": {
-      "sha256": "04820fa60e92e4ab7099318bc2c0ec99896fbc4a533a978b9696f4652881445e",
-      "bytes": 1148
+      "sha256": "b6025548235c25daa3b08d9170bee13c5b776d461a93db3abc0557f224d5d3a8",
+      "bytes": 3042
+    },
+    "subprojects/libdisplay-info/tool/dump-i2c.sh": {
+      "sha256": "6539d4260924a75275c9be09f26444f71c8cfffc6769d463f5bc93006eb304d6",
+      "bytes": 1089
+    },
+    "subprojects/libdisplay-info/tool/gen-cta-vic.py": {
+      "sha256": "2d216589b5c94ef5238ed79ee6658adf33540a14c7d563ea8fa8321cf2ee30f7",
+      "bytes": 3591
     },
     "subprojects/libdisplay-info/tool/gen-dmt.py": {
-      "sha256": "b1ab4adf70a8ee3d84c37011b4d071eeaf83abc6178d553865b5819f8dcbd855",
-      "bytes": 4730
+      "sha256": "6f020353b722acffdaa0f93f69d65cf74775ee29c1034f7c398feab91c48168b",
+      "bytes": 4902
     },
     "subprojects/libdisplay-info/tool/gen-search-table.py": {
-      "sha256": "a159cfb599b1a60ca32a51d5f3537c4e4a9832dbda19a9bca6267717778b0f93",
-      "bytes": 2433
+      "sha256": "b7cb8f062a331f5857ddf0c86cca98dd8bbc68f328b00dab8c77489b69843827",
+      "bytes": 2508
     },
     "version.h.in": {
       "sha256": "6174a1bb28239f841625d630f675c09f165922cd54f1ff7fe4ccdbbbd5edc3d4",

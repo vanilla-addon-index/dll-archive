@@ -1,0 +1,14 @@
+make: {null}
+model: {null}
+serial: {null}
+HDR static metadata:
+luminance 0.000000-2030.481567, maxFALL 603.665771
+metadata type1=yes
+EOTF tSDR=yes, tHDR=no, PQ=yes, HLG=no
+default color primaries:
+    red: 0.000, 0.000
+  green: 0.000, 0.000
+   blue: 0.000, 0.000
+default white: 0.000, 0.000
+default gamma: 0.00
+signal colorimetry: BT2020_RGB

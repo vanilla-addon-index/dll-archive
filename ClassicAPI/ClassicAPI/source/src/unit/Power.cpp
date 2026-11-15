@@ -268,11 +268,10 @@ static int __fastcall Script_UnitPowerMissing(void *L) {
 // read the just-pushed integer back off the top of the stack and
 // push the modern token alongside it. Lua callers that consume
 // only the first return are unaffected.
-constexpr uintptr_t kVanillaUnitPowerType = 0x00517940;
-
 static int __fastcall Script_UnitPowerType(void *L) {
     using Orig_t = int(__fastcall *)(void *L);
-    auto orig = reinterpret_cast<Orig_t>(kVanillaUnitPowerType);
+    auto orig = reinterpret_cast<Orig_t>(
+        static_cast<uintptr_t>(Offsets::FUN_SCRIPT_UNIT_POWER_TYPE));
     const int n = orig(L);
     if (n != 1)
         return n;
@@ -281,12 +280,55 @@ static int __fastcall Script_UnitPowerType(void *L) {
     return 2;
 }
 
+// --- Documentation ----------------------------------------------------------
+
+const Game::Doc::Field kPowerArgs[] = {
+    Game::Doc::Req("unitToken", "UnitToken"),
+    Game::Doc::Opt("powerType", "PowerType", nullptr,
+                   "Omitted or out of range uses the unit's primary power."),
+    Game::Doc::Opt("unmodified", "bool", "false",
+                   "True returns rage and happiness at their internal scale, such as rage 0 to "
+                   "1000."),
+};
+const Game::Doc::Field kPowerRets[] = {
+    Game::Doc::Req("power", "number", "0 when the token names no unit."),
+};
+const Game::Doc::Function kUnitPower{
+    "Returns a unit's current power of one type.", kPowerArgs, kPowerRets, "UnitGlobals"};
+
+const Game::Doc::Field kPowerMaxRets[] = {
+    Game::Doc::Req("maxPower", "number", "0 when the token names no unit."),
+};
+const Game::Doc::Function kUnitPowerMax{
+    "Returns a unit's maximum power of one type.", kPowerArgs, kPowerMaxRets, "UnitGlobals"};
+
+const Game::Doc::Field kPowerMissingRets[] = {
+    Game::Doc::Req("result", "number",
+                   "UnitPowerMax minus UnitPower; never negative, 0 when the token names no "
+                   "unit."),
+};
+const Game::Doc::Function kUnitPowerMissing{
+    "Returns how much power of one type a unit is missing.", kPowerArgs, kPowerMissingRets,
+    "UnitGlobals"};
+
+const Game::Doc::Field kPowerTypeArgs[] = {
+    Game::Doc::Req("unit", "UnitToken"),
+};
+const Game::Doc::Field kPowerTypeRets[] = {
+    Game::Doc::Req("powerType", "PowerType", "0 (Mana) when the token names no unit."),
+    Game::Doc::Req("powerTypeToken", "string", "For example \"MANA\" or \"RAGE\"."),
+};
+const Game::Doc::Function kUnitPowerType{
+    "Returns the type and token of a unit's primary power.", kPowerTypeArgs, kPowerTypeRets,
+    "UnitGlobals"};
+
 static void RegisterLuaFunctions() {
-    Game::Lua::RegisterGlobalFunction("UnitPower", &Script_UnitPower);
-    Game::Lua::RegisterGlobalFunction("UnitPowerMax", &Script_UnitPowerMax);
-    Game::Lua::RegisterGlobalFunction("UnitPowerMissing", &Script_UnitPowerMissing);
-    Game::Lua::RegisterGlobalFunction("UnitPowerType", &Script_UnitPowerType);
-    Game::Lua::RegisterIntegerEnum("Enum", "PowerType", kPowerTypeEntries);
+    Game::Lua::RegisterGlobalFunction("UnitPower", &Script_UnitPower, &kUnitPower);
+    Game::Lua::RegisterGlobalFunction("UnitPowerMax", &Script_UnitPowerMax, &kUnitPowerMax);
+    Game::Lua::RegisterGlobalFunction("UnitPowerMissing", &Script_UnitPowerMissing,
+                                      &kUnitPowerMissing);
+    Game::Lua::RegisterGlobalFunction("UnitPowerType", &Script_UnitPowerType, &kUnitPowerType);
+    Game::Lua::RegisterIntegerEnum("Enum", "PowerType", kPowerTypeEntries, "PowerTypeConstants");
 }
 
 static const Game::ModuleAutoRegister _autoreg{&RegisterLuaFunctions};

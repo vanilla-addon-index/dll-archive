@@ -31,6 +31,13 @@ public:
 
 private:
 
+  struct LoadInfo {
+    SsaDef    selectOp      = {};
+    SsaDef    selectArg     = {};
+    SsaDef    castOp        = {};
+    SsaDef    extractOp     = {};
+  };
+
   struct IndexedLoad {
     SsaDef    selectOp      = {};
     uint32_t  selectArg     = 0u;
@@ -41,7 +48,11 @@ private:
     SsaDef    indexBase     = {};
     uint32_t  indexOffset   = 0u;
 
-    bool isNextOf(const IndexedLoad& other) const;
+    bool canMergeWithStride(const IndexedLoad& other, uint32_t stride) const;
+
+    bool isMergeCandidate(const IndexedLoad& other) const;
+
+    uint32_t computeStride(const IndexedLoad& other) const;
 
     static bool compare(const IndexedLoad& a, const IndexedLoad& b);
   };
@@ -49,11 +60,15 @@ private:
   Builder&  m_builder;
   Options   m_options;
 
+  uint32_t getOptimalStride(size_t count, const IndexedLoad* loads);
+
   bool optimizeBuffer(SsaDef descriptor);
 
   bool rewriteLoadAsIndexed(const IndexedLoad& load, uint32_t stride);
 
   small_vector<SsaDef, 256> getBuffers();
+
+  void getLoadSelectInfos(SsaDef def, LoadInfo base, small_vector<LoadInfo, 1024>& loads) const;
 
   small_vector<IndexedLoad, 256> getIndexedLoads(SsaDef descriptor);
 

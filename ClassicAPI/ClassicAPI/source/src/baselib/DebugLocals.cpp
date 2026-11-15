@@ -193,7 +193,7 @@ int __fastcall Script_debuglocals(void *L) {
 
 const Game::Doc::Field kDebuglocalsArgs[] = {
     Game::Doc::Opt("level", "number", "1", "The call level, as debugstack counts it."),
-    Game::Doc::Opt("skipFunctionsAndUserdata", "boolean", "false",
+    Game::Doc::Opt("skipFunctionsAndUserdata", "bool", "false",
                    "Leaves out function and userdata values."),
 };
 const Game::Doc::Field kDebuglocalsRets[] = {
@@ -202,7 +202,7 @@ const Game::Doc::Field kDebuglocalsRets[] = {
                    "error handler."),
 };
 const Game::Doc::Function kDebuglocals{
-    "The local variables and upvalues of a call level as text, for an error report.",
+    "Returns the local variables and upvalues of a call level as text, for an error report.",
     kDebuglocalsArgs, kDebuglocalsRets, "LuaGlobals"};
 
 void RegisterInGame() {

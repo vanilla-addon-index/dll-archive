@@ -59,7 +59,6 @@ using Intersect_t = char(__fastcall *)(const Vec3 *start, const Vec3 *end,
                                        int unused, Vec3 *hitOut, float *tOut,
                                        uint32_t flags);
 
-constexpr uint32_t kLoSFlags = 0x100111;   // terrain + WMO (LoS combo)
 constexpr float kMaxTraceYards = 150.0f;   // guard: raw call can crash beyond
 constexpr float kSamePointYards = 0.05f;
 
@@ -100,7 +99,7 @@ bool SegmentClear(const Vec3 &a, const Vec3 &b) {
     Vec3 hit{};
     float t = 1.0f;
     auto intersect = reinterpret_cast<Intersect_t>(Offsets::FUN_CWORLD_INTERSECT);
-    const char hitGeometry = intersect(&a, &b, 0, &hit, &t, kLoSFlags);
+    const char hitGeometry = intersect(&a, &b, 0, &hit, &t, Offsets::WORLD_TRACE_CLASS_LOS);
     if (hitGeometry == 0)
         return true;
     return !(t >= 0.0f && t <= 1.0f);
@@ -147,9 +146,23 @@ int __fastcall Script_UnitInLineOfSight(void *L) {
     return 1;
 }
 
+// --- Documentation ----------------------------------------------------------
+
+const Game::Doc::Field kArgs[] = {
+    Game::Doc::Req("unit", "UnitToken"),
+};
+const Game::Doc::Field kRets[] = {
+    Game::Doc::Opt("inLineOfSight", "bool", nullptr,
+                   "False when terrain or a building blocks the view, or the unit is more than "
+                   "150 yards away; nil when the token names no unit."),
+};
+const Game::Doc::Function kUnitInLineOfSight{
+    "Returns whether the player has a clear line of sight to a unit.", kArgs, kRets,
+    "UnitGlobals", true};
+
 void RegisterLuaFunctions() {
-    Game::Lua::RegisterGlobalFunction("UnitInLineOfSight",
-                                      &Script_UnitInLineOfSight);
+    Game::Lua::RegisterGlobalFunction("UnitInLineOfSight", &Script_UnitInLineOfSight,
+                                      &kUnitInLineOfSight);
 }
 
 const Game::ModuleAutoRegister _autoreg{&RegisterLuaFunctions};

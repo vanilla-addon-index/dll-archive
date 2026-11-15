@@ -1,0 +1,21 @@
+## Interface: 11200
+## Title: Broodwatch
+## Notes: Hold Onyxia's Lair against an endless brood. /broodwatch starts a run.
+## Dependencies: !!!ClassicAPI
+Data.lua
+Core.lua
+Brood.lua
+Eggs.lua
+Mines.lua
+Spells.lua
+Kinds.lua
+Hud.lua
+Items.lua
+Chests.lua
+Vents.lua
+Foes.lua
+Onyxia.lua
+Gear.lua
+Markers.lua
+Broodwatch.lua
+Broodwatch.xml

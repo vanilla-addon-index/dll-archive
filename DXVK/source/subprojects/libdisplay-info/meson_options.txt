@@ -1,0 +1,2 @@
+option('tools', type: 'feature', value: 'auto', description: 'Build di-edid-decode and the tests')
+option('pnp-ids', type: 'feature', value: 'enabled', description: 'Look up manufacturer names in hwdata\'s pnp.ids')

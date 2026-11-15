@@ -58,6 +58,18 @@ inline T &Ref(uintptr_t address) {
     return *reinterpret_cast<T *>(address);
 }
 
+// An engine constant at a fixed VA, read each time it is used, so the value is
+// the one the engine's own code reads: a runtime patch shows, and so does a
+// global the engine's static initializers fill after this DLL loads. Converts
+// to T, so it stands in a float expression as a float would.
+//
+//   const Game::Live<float> kSkin{Offsets::VAR_MOVER_SKIN};
+template <typename T>
+struct Live {
+    uintptr_t address;
+    operator T() const { return Read<T>(address); }
+};
+
 // Calls `fn(object)` for each object of one of a frame's intrusive lists,
 // OFF_FRAME_REGION_LIST or OFF_FRAME_CHILD_LIST: node+4 next, node+8 object,
 // a NULL or low-bit-1 link ends it - the walk the engine's own frame code
@@ -89,8 +101,10 @@ void *ResolveUnitToken(const char *token);
 
 // UI pixels <-> internal layout (anchor) units. Script_SetPoint converts its
 // pixel offsets with `px * [VAR_COORD_DDC_WIDTH_SCALE] / ([VAR_COORD_ASPECT_COMPENSATION]
-// * UI_COORD_SCALE_UNIT)`; Script_GetLeft and Script_GetStringWidth push the
-// inverse. A region's LOCAL pixels must be multiplied by its effective scale
+// * [FLOAT_SCRIPT_COORD_SCALE])`; every script coordinate push (GetLeft,
+// GetStringWidth, GetFont's height, GetCursorPosition, OnCursorChanged) is the
+// inverse, `DivideByScreenScaleX(GetScaledScreenAspect() * 1024 * value)`,
+// which InternalToPixel calls in that order. A region's LOCAL pixels must be multiplied by its effective scale
 // (OFF_REGION_EFFECTIVE_SCALE) first. Both return 0 while the scale globals
 // are unset, so an early caller gets a zero offset rather than a wild one.
 float PixelToInternal(float px);
@@ -137,7 +151,8 @@ int StrCmpI(const char *a, const char *b, int n = 0x7FFFFFFF);
 //   - `type` uses Blizzard's spellings — "number", "string", "bool",
 //     "table", "luaIndex", "UnitToken", "SpellIdentifier", … — or the Name
 //     of a `Structure` / enumeration declared elsewhere, which the browser
-//     renders as a link.
+//     renders as a link. Lua's own spelling is wrong here: "bool", never
+//     "boolean".
 //   - `Function::system` names the System a GLOBAL belongs to; convention
 //     `<Area>Globals` ("SpellGlobals", "ItemGlobals"). Table functions
 //     derive theirs from the table ("C_Spell" → System "Spell", Namespace
@@ -503,14 +518,13 @@ void *ResolveDressUpModel(void *L, int idx = 1, bool raiseError = true);
 // each state records — later passes (every `/reload`) are no-ops — and a
 // registration made outside a `Run*Registrations` pass is not recorded at
 // all. The trailing `doc` argument is the descriptor (see `Game::Doc`
-// above); pass `nullptr` for a not-yet-documented registration and
-// `_classicapi_UndocumentedAPI()` lists it. The defaults exist only until
-// the sweep finishes; then they go and a missing descriptor stops compiling.
+// above). It has no default, so a registration without one does not
+// compile; only the `_classicapi_` debug functions, which the export skips,
+// pass `nullptr`.
 
 // Registers a single global Lua function (e.g. `GetSpellInfo`). The function
 // must use the WoW Lua C function ABI: `int __fastcall(void *L)`.
-void RegisterGlobalFunction(const char *name, CFunction func,
-                            const Doc::Function *doc = nullptr);
+void RegisterGlobalFunction(const char *name, CFunction func, const Doc::Function *doc);
 
 // Glue-state equivalent of `RegisterGlobalFunction`. Identical wire
 // (calls `FrameScript_RegisterFunction`); the engine routes the
@@ -520,8 +534,7 @@ void RegisterGlobalFunction(const char *name, CFunction func,
 // its own 109 glue functions, and `VAR_LUA_STATE` still points at the
 // glue state. Calling outside that window would silently target the
 // wrong state.
-void RegisterGlueFunction(const char *name, CFunction func,
-                          const Doc::Function *doc = nullptr);
+void RegisterGlueFunction(const char *name, CFunction func, const Doc::Function *doc);
 
 // Frame-method registration entry: { name, func } pairs walked by the engine's
 // per-frame-type method-table iterator. Layout matches what the engine expects
@@ -537,14 +550,14 @@ struct FrameMethodEntry {
 // `docs` are file-scope arrays; `docs` pairs descriptors to the entries by
 // NAME (any order, any subset).
 void RegisterFrameMethods(void *context, ArrayRef<FrameMethodEntry> methods,
-                          Doc::MethodList docs = {});
+                          Doc::MethodList docs);
 
 // Registers `func` at `_G[tableName][methodName]`, creating the namespace
 // table if it doesn't already exist. This is how modern WoW C_*-style APIs
 // are bound — the engine has no built-in support for table-bound Lua
 // functions, so we manipulate the globals table directly via the Lua C API.
 void RegisterTableFunction(const char *tableName, const char *methodName,
-                           CFunction func, const Doc::Function *doc = nullptr);
+                           CFunction func, const Doc::Function *doc);
 
 // Binds `_G[alias]` to the SAME closure as `_G[tableName][methodName]`, by
 // value — the way the engine's own Lua-init snippet binds its short aliases
@@ -553,7 +566,7 @@ void RegisterTableFunction(const char *tableName, const char *methodName,
 // captured, so the alias follows the replacement and `alias == table.method`
 // stays true. Mirrored under `_G.ClassicAPI` like every other registration.
 void RegisterGlobalAlias(const char *alias, const char *tableName, const char *methodName,
-                         const Doc::Function *doc = nullptr);
+                         const Doc::Function *doc);
 
 // Key/value pair for `RegisterIntegerEnum` and `RegisterConstants`. `key`
 // becomes a field name (PascalCase for Blizzard's `Enum.*`, UPPER_CASE for
@@ -570,7 +583,7 @@ struct EnumIntegerEntry {
 // ("SpellBook", "Item", …); the entries themselves are the documentation.
 // `entries` is a file-scope array.
 void RegisterIntegerEnum(const char *parent, const char *sub, ArrayRef<EnumIntegerEntry> entries,
-                         const char *docSystem = nullptr);
+                         const char *docSystem);
 
 // Registers `Constants[sub] = { entries }`, Blizzard's engine constant
 // tables (`Constants.MoneyFormattingConstants`). Documented as a "Constants"

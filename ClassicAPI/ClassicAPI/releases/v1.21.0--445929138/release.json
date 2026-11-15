@@ -1,0 +1,9 @@
+{
+  "id": "445929138",
+  "tag": "v1.21.0",
+  "name": "v1.21.0",
+  "body": "## What's Changed\n* feat(model): the ModelScene frame type, WMO backdrops, and the Broodwatch game by @brues-code in https://github.com/brues-code/ClassicAPI/pull/138\n* feat(model): scene:SetWorldTerrain, a map's ground, water and sky in a ModelScene by @brues-code in https://github.com/brues-code/ClassicAPI/pull/139\n* feat(addons): zhCN localization for ClassicAPI_DebugTools and 6 missing globals fix by @jilinge in https://github.com/brues-code/ClassicAPI/pull/141\n* docs: an API descriptor for every registration by @brues-code in https://github.com/brues-code/ClassicAPI/pull/144\n\n## New Contributors\n* @jilinge made their first contribution in https://github.com/brues-code/ClassicAPI/pull/141\n\n**Full Changelog**: https://github.com/brues-code/ClassicAPI/compare/v1.20.6...v1.21.0",
+  "published": "2026-11-15T09:03:17Z",
+  "prerelease": false,
+  "url": "https://github.com/brues-code/ClassicAPI/releases/tag/v1.21.0"
+}

@@ -7,14 +7,24 @@
  * The library implements VESA DMT version 1.0 revision 13.
  */
 
+#include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
+
+/**
+ * A DMT Timing Code.
+ */
+struct di_dmt_code {
+	/* Timing Code */
+	uint8_t code;
+};
 
 /**
  * A DMT timing.
  */
 struct di_dmt_timing {
-	/* DMT ID */
-	uint8_t dmt_id;
+	/* DMT Timing Code */
+	struct di_dmt_code dmt_code;
 	/* EDID standard timing 2-byte code, zero if unset */
 	uint16_t edid_std_id;
 	/* CVT 3-byte code, zero if unset */
@@ -33,6 +43,35 @@ struct di_dmt_timing {
 	int32_t horiz_sync_pulse, vert_sync_pulse;
 	/* Horizontal/Vertical Border in pixels/lines */
 	int32_t horiz_border, vert_border;
+	/* Whether the timing has reduced blanking */
+	bool reduced_blanking;
 };
+
+/**
+ * Get a VESA Display Monitor Timing (DMT) from a DMT Timing Code.
+ *
+ * Returns NULL if the DMT Timing Code is unknown.
+ */
+const struct di_dmt_timing *
+di_dmt_timing_from_code(struct di_dmt_code dmt_code);
+
+/**
+ * Get a DMT Timing Code from a VESA Display Monitor Timing (DMT).
+ *
+ * Returns a code of 0 if the DMT Timing Code is unknown.
+ */
+struct di_dmt_code
+di_dmt_timing_to_code(const struct di_dmt_timing *timing);
+
+/* See <libdisplay-info/edid.h> */
+struct di_edid_standard_timing;
+
+/**
+ * Get a VESA Display Monitor Timing (DMT), if any.
+ *
+ * NULL is returned if the standard timing doesn't have a DMT.
+ */
+const struct di_dmt_timing *
+di_dmt_timing_from_edid_standard_timing(const struct di_edid_standard_timing *t);
 
 #endif

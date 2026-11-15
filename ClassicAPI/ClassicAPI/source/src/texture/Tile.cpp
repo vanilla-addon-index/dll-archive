@@ -52,6 +52,7 @@
 
 #include "Game.h"
 #include "Offsets.h"
+#include "frame/Layout.h"
 #include "texture/Atlas.h"
 #include "texture/CornerStore.h"
 #include "texture/Wrap.h"
@@ -64,9 +65,6 @@ namespace Texture::Tile {
 
 namespace {
 
-using GetRect_t = int(__fastcall *)(void *anchor, void *edx, float *outRect);
-using ScreenAspect_t = float(__cdecl *)();
-using DivideByScreenScaleX_t = float(__stdcall *)(float value);
 using SetTexCoord_t = void(__fastcall *)(void *texture, void *edx, const float *values);
 using Emit_t = void(__fastcall *)(void *texture, void *edx, void *batch);
 
@@ -74,11 +72,7 @@ using Emit_t = void(__fastcall *)(void *texture, void *edx, void *batch);
 constexpr float kWholeImage[8] = {0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f};
 
 // A length in rect units as script units.
-float ScriptUnits(float length) {
-    const auto aspect = reinterpret_cast<ScreenAspect_t>(Offsets::FUN_COORD_GET_SCALED_SCREEN_ASPECT);
-    const auto divide = reinterpret_cast<DivideByScreenScaleX_t>(Offsets::FUN_COORD_DIVIDE_BY_SCREEN_SCALE_X);
-    return divide(aspect() * Game::Read<float>(Offsets::FLOAT_SCRIPT_COORD_SCALE) * length);
-}
+float ScriptUnits(float length) { return static_cast<float>(Game::InternalToPixel(length)); }
 
 // 4.3.4's rule on one axis (0 x, 1 y) of the four corner pairs.
 void Count(float *coords, int axis, float length, uint32_t texels) {
@@ -101,8 +95,7 @@ void Apply(void *texture) {
     if (device == nullptr)
         return; // the emit of the next batch build counts it
     float rect[4]; // bottom, left, top, right
-    if (reinterpret_cast<GetRect_t>(Offsets::FUN_REGION_GET_RECT)(
-            Game::Ptr<uint8_t>(texture, Offsets::OFF_REGION_ANCHOR), nullptr, rect) == 0)
+    if (!Frame::Layout::GetRect(texture, rect))
         return;
     const float scale = Game::Read<float>(texture, Offsets::OFF_REGION_EFFECTIVE_SCALE);
     if (!(scale > 0.0f))
@@ -202,9 +195,33 @@ const Game::Lua::FrameMethodEntry g_methods[] = {
     {"GetVertTile", &Script_GetVertTile},
 };
 
+const Game::Doc::Field kSetTileArgs[] = {
+    Game::Doc::Opt("tiling", "bool", "false"),
+};
+const Game::Doc::Field kGetTileRets[] = {
+    Game::Doc::Req("tiling", "bool"),
+};
+const Game::Doc::Function kSetHorizTile{
+    "Sets whether the texture repeats its image across its width at the image's own size.",
+    kSetTileArgs, {}};
+const Game::Doc::Function kGetHorizTile{
+    "Returns whether the texture repeats its image across its width.", {}, kGetTileRets};
+const Game::Doc::Function kSetVertTile{
+    "Sets whether the texture repeats its image down its height at the image's own size.",
+    kSetTileArgs, {}};
+const Game::Doc::Function kGetVertTile{
+    "Returns whether the texture repeats its image down its height.", {}, kGetTileRets};
+
+const Game::Doc::Method g_methodDocs[] = {
+    {"SetHorizTile", &kSetHorizTile},
+    {"GetHorizTile", &kGetHorizTile},
+    {"SetVertTile", &kSetVertTile},
+    {"GetVertTile", &kGetVertTile},
+};
+
 void RegisterLuaFunctions() {
     Game::Lua::RegisterFrameMethods(
-        reinterpret_cast<void *>(Offsets::VAR_TEXTURE_METHOD_REGISTRY), g_methods);
+        reinterpret_cast<void *>(Offsets::VAR_TEXTURE_METHOD_REGISTRY), g_methods, g_methodDocs);
 }
 
 const Game::ModuleAutoRegister _autoreg{&RegisterLuaFunctions};

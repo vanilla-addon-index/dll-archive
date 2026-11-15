@@ -15,3 +15,19 @@ _di_logger_va_add_failure(struct di_logger *logger, const char fmt[], va_list ar
 	vfprintf(logger->f, fmt, args);
 	fprintf(logger->f, "\n");
 }
+
+/**
+ * Sometimes calling the functions that wrap _di_logger_va_add_failure() (e.g.
+ * add_failure() in edid.c) is not possible, because we want to use a specific
+ * logger (and not e.g. edid->logger). This allow us to log with a custom
+ * logger. Avoid using this if not necessary.
+ */
+void
+_di_logger_add_failure(struct di_logger *logger, const char fmt[], ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	_di_logger_va_add_failure(logger, fmt, args);
+	va_end(args);
+}

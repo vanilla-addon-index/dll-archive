@@ -3,10 +3,12 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <libdisplay-info/dmt.h>
 #include <libdisplay-info/edid.h>
 #include <libdisplay-info/gtf.h>
+#include <libdisplay-info/cvt.h>
 
 #include "di-edid-decode.h"
 
@@ -39,7 +41,7 @@ print_standard_timing(const struct di_edid_standard_timing *t)
 	struct di_gtf_timing gtf;
 
 	vert_video = di_edid_standard_timing_get_vert_video(t);
-	dmt = di_edid_standard_timing_get_dmt(t);
+	dmt = di_dmt_timing_from_edid_standard_timing(t);
 
 	printf("    ");
 	if (dmt) {
@@ -51,7 +53,7 @@ print_standard_timing(const struct di_edid_standard_timing *t)
 		horiz_freq_hz = (double) dmt->pixel_clock_hz / horiz_total;
 		pixel_clock_mhz = (double) dmt->pixel_clock_hz / (1000 * 1000);
 
-		printf("DMT 0x%02x", dmt ? dmt->dmt_id : 0);
+		printf("DMT 0x%02x", dmt ? dmt->dmt_code.code : 0);
 	} else {
 		/* TODO: CVT timings */
 
@@ -85,35 +87,9 @@ print_standard_timing(const struct di_edid_standard_timing *t)
 	printf(" %10.6f Hz", refresh);
 	printf("  %s ", standard_timing_aspect_ratio_name(t->aspect_ratio));
 	printf(" %8.3f kHz %13.6f MHz", horiz_freq_hz / 1000, pixel_clock_mhz);
+	if (dmt != NULL && dmt->reduced_blanking)
+		printf(" (RB)");
 	printf("\n");
-}
-
-static int
-gcd(int a, int b)
-{
-	int tmp;
-
-	while (b) {
-		tmp = b;
-		b = a % b;
-		a = tmp;
-	}
-
-	return a;
-}
-
-static void
-compute_aspect_ratio(int width, int height, int *horiz_ratio, int *vert_ratio)
-{
-	int d;
-
-	d = gcd(width, height);
-	if (d == 0) {
-		*horiz_ratio = *vert_ratio = 0;
-	} else {
-		*horiz_ratio = width / d;
-		*vert_ratio = height / d;
-	}
 }
 
 /**
@@ -124,23 +100,27 @@ compute_aspect_ratio(int width, int height, int *horiz_ratio, int *vert_ratio)
 static char *
 join_str(const char *l[])
 {
-	char *out = NULL;
-	size_t out_size = 0, i;
-	FILE *f;
+	const char *sep = ", ";
+	char *out;
+	size_t len = 1, i;
 
-	f = open_memstream(&out, &out_size);
-	if (!f) {
+	for (i = 0; l[i] != NULL; i++) {
+		len += strlen(l[i]) + strlen(sep);
+	}
+
+	out = malloc(len);
+	if (!out) {
 		return NULL;
 	}
 
+	out[0] = '\0';
 	for (i = 0; l[i] != NULL; i++) {
 		if (i > 0) {
-			fprintf(f, ", ");
+			strcat(out, sep);
 		}
-		fprintf(f, "%s", l[i]);
+		strcat(out, l[i]);
 	}
 
-	fclose(f);
 	return out;
 }
 
@@ -357,7 +337,7 @@ display_range_limits_type_name(enum di_edid_display_range_limits_type type)
 {
 	switch (type) {
 	case DI_EDID_DISPLAY_RANGE_LIMITS_BARE:
-		return "Bare Limits";
+		return "Range Limits Only";
 	case DI_EDID_DISPLAY_RANGE_LIMITS_DEFAULT_GTF:
 		return "GTF";
 	case DI_EDID_DISPLAY_RANGE_LIMITS_SECONDARY_GTF:
@@ -408,6 +388,87 @@ print_color_point(const struct di_edid_color_point *c)
 }
 
 static void
+print_cvt_timing_code(const struct di_edid_cvt_timing_code *t)
+{
+	struct di_cvt_timing timing;
+	struct di_cvt_options options;
+	enum di_edid_cvt_timing_code_preferred_vrate pref = t->preferred_vertical_rate;
+	int hratio = 0, vratio = 0;
+
+	options.int_rqd = false;
+	options.margins_rqd = false;
+	options.v_lines = t->addressable_lines_per_field;
+
+	switch (t->aspect_ratio) {
+	case DI_EDID_CVT_TIMING_CODE_4_3:
+		hratio = 4;
+		vratio = 3;
+		break;
+	case DI_EDID_CVT_TIMING_CODE_16_9:
+		hratio = 16;
+		vratio = 9;
+		break;
+	case DI_EDID_CVT_TIMING_CODE_16_10:
+		hratio = 16;
+		vratio = 10;
+		break;
+	case DI_EDID_CVT_TIMING_CODE_15_9:
+		hratio = 15;
+		vratio = 9;
+		break;
+	}
+
+	options.h_pixels = 8 * (((options.v_lines * hratio) / vratio) / 8);
+
+	if (t->supports_50hz_sb) {
+		options.ip_freq_rqd = 50;
+		options.red_blank_ver = DI_CVT_REDUCED_BLANKING_NONE;
+
+		di_cvt_compute(&timing, &options);
+		print_cvt_timing(&timing, &options, hratio, vratio,
+				 pref == DI_EDID_CVT_TIMING_CODE_PREFERRED_VRATE_50HZ,
+				 false);
+	}
+	if (t->supports_60hz_sb) {
+		options.ip_freq_rqd = 60;
+		options.red_blank_ver = DI_CVT_REDUCED_BLANKING_NONE;
+
+		di_cvt_compute(&timing, &options);
+		print_cvt_timing(&timing, &options, hratio, vratio,
+				 pref == DI_EDID_CVT_TIMING_CODE_PREFERRED_VRATE_60HZ &&
+				 !t->supports_60hz_rb,
+				 false);
+	}
+	if (t->supports_75hz_sb) {
+		options.ip_freq_rqd = 75;
+		options.red_blank_ver = DI_CVT_REDUCED_BLANKING_NONE;
+
+		di_cvt_compute(&timing, &options);
+		print_cvt_timing(&timing, &options, hratio, vratio,
+				 pref == DI_EDID_CVT_TIMING_CODE_PREFERRED_VRATE_75HZ,
+				 false);
+	}
+	if (t->supports_85hz_sb) {
+		options.ip_freq_rqd = 85;
+		options.red_blank_ver = DI_CVT_REDUCED_BLANKING_NONE;
+
+		di_cvt_compute(&timing, &options);
+		print_cvt_timing(&timing, &options, hratio, vratio,
+				 pref == DI_EDID_CVT_TIMING_CODE_PREFERRED_VRATE_85HZ,
+				 false);
+	}
+	if (t->supports_60hz_rb) {
+		options.ip_freq_rqd = 60;
+		options.red_blank_ver = DI_CVT_REDUCED_BLANKING_V1;
+
+		di_cvt_compute(&timing, &options);
+		print_cvt_timing(&timing, &options, hratio, vratio,
+				 pref == DI_EDID_CVT_TIMING_CODE_PREFERRED_VRATE_60HZ,
+				 true);
+	}
+}
+
+static void
 print_display_desc(const struct di_edid *edid,
 		   const struct di_edid_display_descriptor *desc)
 {
@@ -417,8 +478,9 @@ print_display_desc(const struct di_edid *edid,
 	enum di_edid_display_range_limits_type range_limits_type;
 	const struct di_edid_standard_timing *const *standard_timings;
 	const struct di_edid_color_point *const *color_points;
-	const struct di_dmt_timing *const *established_timings_iii;
+	const struct di_edid_established_timings_iii *established_timings_iii;
 	const struct di_edid_color_management_data *color_management_data;
+	const struct di_edid_cvt_timing_code *const *cvt_timings;
 	size_t i;
 
 	tag = di_edid_display_descriptor_get_tag(desc);
@@ -451,7 +513,7 @@ print_display_desc(const struct di_edid *edid,
 		       range_limits->min_horiz_rate_hz / 1000,
 		       range_limits->max_horiz_rate_hz / 1000);
 		if (range_limits->max_pixel_clock_hz != 0) {
-			printf(", max dotclock %d MHz",
+			printf(", max dotclock %"PRIi64" MHz",
 			       range_limits->max_pixel_clock_hz / (1000 * 1000));
 		}
 		printf("\n");
@@ -538,9 +600,8 @@ print_display_desc(const struct di_edid *edid,
 		established_timings_iii = di_edid_display_descriptor_get_established_timings_iii(desc);
 
 		printf("\n");
-		for (i = 0; established_timings_iii[i] != NULL; i++) {
-			printf("      DMT 0x%02x\n",
-			       established_timings_iii[i]->dmt_id);
+		for (i = 0; i < established_timings_iii->dmt_codes_len; i++) {
+			print_dmt_timing_code(established_timings_iii->dmt_codes[i]);
 		}
 		break;
 	case DI_EDID_DISPLAY_DESCRIPTOR_DCM_DATA:
@@ -555,6 +616,13 @@ print_display_desc(const struct di_edid *edid,
 		printf("      Blue a2 : %.2f\n", color_management_data->blue_a2);
 
 		uncommon_features.color_management_data = true;
+		break;
+	case DI_EDID_DISPLAY_DESCRIPTOR_CVT_TIMING_CODES:
+		cvt_timings = di_edid_display_descriptor_get_cvt_timing_codes(desc);
+
+		printf("\n");
+		for (i = 0; cvt_timings[i] != NULL; i++)
+			print_cvt_timing_code(cvt_timings[i]);
 		break;
 	default:
 		printf("\n");
@@ -642,14 +710,17 @@ print_edid(const struct di_edid *edid)
 	printf("    Manufacturer: %.3s\n", vendor_product->manufacturer);
 	printf("    Model: %" PRIu16 "\n", vendor_product->product);
 	if (vendor_product->serial != 0) {
-		printf("    Serial Number: %" PRIu32 "\n", vendor_product->serial);
+		printf("    Serial Number: %" PRIu32 " (0x%08x)\n",
+		       vendor_product->serial, vendor_product->serial);
 	}
 	if (vendor_product->model_year != 0) {
 		printf("    Model year: %d\n", vendor_product->model_year);
-	} else {
+	} else if (vendor_product->manufacture_week != 0) {
 		printf("    Made in: week %d of %d\n",
 		       vendor_product->manufacture_week,
 		       vendor_product->manufacture_year);
+	} else {
+		printf("    Made in: %d\n", vendor_product->manufacture_year);
 	}
 
 	printf("  Basic Display Parameters & Features:\n");
@@ -766,7 +837,7 @@ print_edid(const struct di_edid *edid)
 		}
 	}
 	if (misc_features->continuous_freq) {
-		printf("    Display is continuous frequency\n");
+		printf("    Display supports continuous frequencies\n");
 	}
 	if (misc_features->default_gtf) {
 		printf("    Supports GTF timings within operating range\n");

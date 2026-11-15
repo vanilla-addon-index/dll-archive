@@ -5,6 +5,11 @@
 #include <stdlib.h>
 #include <getopt.h>
 
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#endif
+
 #include <libdisplay-info/displayid.h>
 #include <libdisplay-info/edid.h>
 #include <libdisplay-info/info.h>
@@ -56,6 +61,8 @@ static void
 print_ext(const struct di_edid_ext *ext, size_t ext_index)
 {
 	const char *tag_name;
+	const struct di_displayid *displayid;
+	const struct di_displayid2 *displayid2;
 
 	tag_name = ext_tag_name(di_edid_ext_get_tag(ext));
 	printf("\n----------------\n\n");
@@ -66,7 +73,12 @@ print_ext(const struct di_edid_ext *ext, size_t ext_index)
 		print_cta(di_edid_ext_get_cta(ext));
 		break;
 	case DI_EDID_EXT_DISPLAYID:
-		print_displayid(di_edid_ext_get_displayid(ext));
+		displayid = di_edid_ext_get_displayid(ext);
+		displayid2 = di_edid_ext_get_displayid2(ext);
+		if (displayid2)
+			print_displayid2(displayid2);
+		else if (displayid)
+			print_displayid(displayid);
 		break;
 	default:
 		break; /* Ignore */
@@ -86,6 +98,8 @@ main(int argc, char *argv[])
 	static uint8_t raw[32 * 1024];
 	size_t size = 0;
 	const struct di_edid *edid;
+	const struct di_displayid *displayid;
+	const struct di_displayid2 *displayid2;
 	struct di_info *info;
 	const struct di_edid_ext *const *exts;
 	const char *failure_msg;
@@ -109,8 +123,12 @@ main(int argc, char *argv[])
 		}
 	}
 
+#ifdef _WIN32
+	_setmode(_fileno(stdin), _O_BINARY);
+#endif
+
 	if (argc > 1) {
-		in = fopen(argv[1], "r");
+		in = fopen(argv[1], "rb");
 		if (!in) {
 			perror("failed to open input file");
 			return 1;
@@ -131,26 +149,42 @@ main(int argc, char *argv[])
 	fclose(in);
 
 	info = di_info_parse_edid(raw, size);
+	if (!info)
+		info = di_info_parse_displayid(raw, size);
 	if (!info) {
 		perror("di_edid_parse failed");
 		return 1;
 	}
 
 	edid = di_info_get_edid(info);
-	print_edid(edid);
+	if (edid) {
+		print_edid(edid);
 
-	exts = di_edid_get_extensions(edid);
+		exts = di_edid_get_extensions(edid);
 
-	for (i = 0; exts[i] != NULL; i++);
-	if (i > 0) {
-		printf("  Extension blocks: %zu\n", i);
+		for (i = 0; exts[i] != NULL; i++);
+		if (i > 0) {
+			printf("  Extension blocks: %zu\n", i);
+		}
+
+		printf("Checksum: 0x%02hhx\n", raw[edid_checksum_index(0)]);
+
+		for (i = 0; exts[i] != NULL; i++) {
+			print_ext(exts[i], i);
+			printf("Checksum: 0x%02hhx\n", raw[edid_checksum_index(i + 1)]);
+		}
 	}
 
-	printf("Checksum: 0x%02hhx\n", raw[edid_checksum_index(0)]);
+	displayid = di_info_get_displayid(info);
+	if (displayid) {
+		printf("DisplayID base section:\n");
+		print_displayid(displayid);
+	}
 
-	for (i = 0; exts[i] != NULL; i++) {
-		print_ext(exts[i], i);
-		printf("Checksum: 0x%02hhx\n", raw[edid_checksum_index(i + 1)]);
+	displayid2 = di_info_get_displayid2(info);
+	if (displayid2) {
+		printf("DisplayID base section:\n");
+		print_displayid2(displayid2);
 	}
 
 	printf("\n----------------\n\n");
@@ -158,9 +192,9 @@ main(int argc, char *argv[])
 	failure_msg = di_info_get_failure_msg(info);
 	if (failure_msg) {
 		printf("Failures:\n\n%s", failure_msg);
-		printf("EDID conformity: FAIL\n");
+		printf("%s conformity: FAIL\n", edid ? "EDID" : "DisplayID");
 	} else {
-		printf("EDID conformity: PASS\n");
+		printf("%s conformity: PASS\n", edid ? "EDID" : "DisplayID");
 	}
 
 	if (uncommon_features.color_point_descriptor) {

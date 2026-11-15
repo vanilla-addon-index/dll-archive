@@ -332,17 +332,6 @@ struct di_edid_standard_timing {
 int32_t
 di_edid_standard_timing_get_vert_video(const struct di_edid_standard_timing *t);
 
-/* See <libdisplay-info/dmt.h> */
-struct di_dmt_timing;
-
-/**
- * Get the VESA Display Monitor Timing (DMT), if any.
- *
- * NULL is returned if the standard timing doesn't have a DMT.
- */
-const struct di_dmt_timing *
-di_edid_standard_timing_get_dmt(const struct di_edid_standard_timing *t);
-
 /**
  * Get a list of EDID standard timings.
  *
@@ -606,7 +595,7 @@ struct di_edid_display_range_limits {
 	/* Maximum pixel clock in Hz, zero if unset, rounded to the nearest
 	 * multiple of 0.25 MHz if CVT, otherwise to the nearest multiple of
 	 * 10 MHz */
-	int32_t max_pixel_clock_hz;
+	int64_t max_pixel_clock_hz;
 
 	enum di_edid_display_range_limits_type type;
 
@@ -663,14 +652,20 @@ const struct di_edid_color_point *const *
 di_edid_display_descriptor_get_color_points(const struct di_edid_display_descriptor *desc);
 
 /**
- * Get a list of established timings III from an EDID display descriptor.
- *
- * The returned array is NULL-terminated.
+ * Established timings III
+ */
+struct di_edid_established_timings_iii {
+	size_t dmt_codes_len;
+	struct di_dmt_code *dmt_codes;
+};
+
+/**
+ * Get the established timings III from an EDID display descriptor.
  *
  * Returns NULL if the display descriptor tag isn't
  * DI_EDID_DISPLAY_DESCRIPTOR_ESTABLISHED_TIMINGS_III.
  */
-const struct di_dmt_timing *const *
+const struct di_edid_established_timings_iii *
 di_edid_display_descriptor_get_established_timings_iii(const struct di_edid_display_descriptor *desc);
 
 /**
@@ -709,6 +704,54 @@ struct di_edid_color_management_data {
  */
 const struct di_edid_color_management_data *
 di_edid_display_descriptor_get_color_management_data(const struct di_edid_display_descriptor *desc);
+
+/**
+ * Aspect ratio for an EDID CVT Timing Code.
+ */
+enum di_edid_cvt_timing_code_aspect_ratio {
+	DI_EDID_CVT_TIMING_CODE_4_3 = 0, /* 4:3 */
+	DI_EDID_CVT_TIMING_CODE_16_9 = 1, /* 16:9 */
+	DI_EDID_CVT_TIMING_CODE_16_10 = 2, /* 16:10 */
+	DI_EDID_CVT_TIMING_CODE_15_9 = 3, /* 15:9 */
+};
+
+/**
+ * Preferred Vertical Rate for an EDID CVT Timing Code.
+ */
+enum di_edid_cvt_timing_code_preferred_vrate {
+	DI_EDID_CVT_TIMING_CODE_PREFERRED_VRATE_50HZ = 0, /* 50 Hz */
+	DI_EDID_CVT_TIMING_CODE_PREFERRED_VRATE_60HZ = 1, /* 60 Hz */
+	DI_EDID_CVT_TIMING_CODE_PREFERRED_VRATE_75HZ = 2, /* 75 Hz */
+	DI_EDID_CVT_TIMING_CODE_PREFERRED_VRATE_85HZ = 3, /* 85 Hz */
+};
+
+/**
+ * EDID CVT Timing Code, defined in section 3.10.3.8
+ *
+ * For more information see VESA Coordinated Video Timings (CVT) Standard.
+ */
+struct di_edid_cvt_timing_code {
+	int32_t addressable_lines_per_field;
+	enum di_edid_cvt_timing_code_aspect_ratio aspect_ratio;
+	bool supports_50hz_sb;
+	bool supports_60hz_sb;
+	bool supports_75hz_sb;
+	bool supports_85hz_sb;
+	bool supports_60hz_rb;
+	enum di_edid_cvt_timing_code_preferred_vrate preferred_vertical_rate;
+};
+
+/**
+ * Get a list of CVT timing codes from an EDID display descriptor.
+ * The highest priority code comes first, the lowest priority code last.
+ *
+ * The returned array is NULL-terminated.
+ *
+ * Returns NULL if the display descriptor tag isn't
+ * DI_EDID_DISPLAY_DESCRIPTOR_CVT_TIMING_CODES.
+ */
+const struct di_edid_cvt_timing_code *const *
+di_edid_display_descriptor_get_cvt_timing_codes(const struct di_edid_display_descriptor *desc);
 
 /**
  * Get a list of EDID extensions.
@@ -769,9 +812,22 @@ struct di_displayid;
 /**
  * Get a DisplayID extension block.
  *
- * Returns NULL if the extension block tag is not DI_EDID_EXT_DISPLAYID.
+ * Returns NULL if the extension block tag is not DI_EDID_EXT_DISPLAYID or if
+ * the block does not contain a version 1 DisplayID blob.
  */
 const struct di_displayid *
 di_edid_ext_get_displayid(const struct di_edid_ext *ext);
+
+/* See <libdisplay-info/displayid2.h> */
+struct di_displayid2;
+
+/**
+ * Get a DisplayID v2 extension block.
+ *
+ * Returns NULL if the extension block tag is not DI_EDID_EXT_DISPLAYID or if
+ * the block does not contain a version 2 DisplayID blob.
+ */
+const struct di_displayid2 *
+di_edid_ext_get_displayid2(const struct di_edid_ext *ext);
 
 #endif

@@ -75,15 +75,22 @@ int __fastcall Script_IsPlayerInWorld(void *L) {
     return 1;
 }
 
+const Game::Doc::Field kLoggedInRets[] = {
+    Game::Doc::Req("result", "bool", "False on the login screens and while addons load."),
+};
+const Game::Doc::Function kIsLoggedIn{
+    "Returns whether PLAYER_LOGIN has fired for the current interface.", {}, kLoggedInRets,
+    "SystemGlobals"};
+
 const Game::Doc::Field kLoggingOutRets[] = {
-    Game::Doc::Req("isLoggingOut", "boolean", "True while a logout or quit countdown runs."),
+    Game::Doc::Req("isLoggingOut", "bool", "True while a logout or quit countdown runs."),
 };
 const Game::Doc::Function kIsLoggingOut{
     "Returns whether the player has asked to log out and the logout has not finished or been cancelled.",
     {}, kLoggingOutRets, "SystemGlobals"};
 
 const Game::Doc::Field kInWorldRets[] = {
-    Game::Doc::Req("isInWorld", "boolean", "False during a loading screen."),
+    Game::Doc::Req("isInWorld", "bool", "False during a loading screen."),
 };
 const Game::Doc::Function kIsPlayerInWorld{
     "Returns whether the player is in the world, that is, not on a loading screen.", {}, kInWorldRets,
@@ -92,13 +99,13 @@ const Game::Doc::Function kIsPlayerInWorld{
 void RegisterInGame() {
     Common::RedirectCall(Offsets::CALL_ENTER_WORLD_FIRE_PLAYER_LOGIN, Offsets::FUN_FIRE_EVENT_NO_ARGS,
                          reinterpret_cast<const void *>(&FirePlayerLogin));
-    Game::Lua::RegisterGlobalFunction("IsLoggedIn", &Script_IsLoggedIn);
+    Game::Lua::RegisterGlobalFunction("IsLoggedIn", &Script_IsLoggedIn, &kIsLoggedIn);
     Game::Lua::RegisterGlobalFunction("IsLoggingOut", &Script_IsLoggingOut, &kIsLoggingOut);
     Game::Lua::RegisterGlobalFunction("IsPlayerInWorld", &Script_IsPlayerInWorld, &kIsPlayerInWorld);
 }
 
 void RegisterGlue() {
-    Game::Lua::RegisterGlueFunction("IsLoggedIn", &Script_IsLoggedIn);
+    Game::Lua::RegisterGlueFunction("IsLoggedIn", &Script_IsLoggedIn, &kIsLoggedIn);
 }
 
 void PrepareForReload() {

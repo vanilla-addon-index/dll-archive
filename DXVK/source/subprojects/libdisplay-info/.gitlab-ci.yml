@@ -11,19 +11,24 @@ include:
 # $ git push -f -o ci.variable="FDO_FORCE_REBUILD=1"
 variables:
   FDO_UPSTREAM_REPO: 'emersion/libdisplay-info'
-  FDO_DISTRIBUTION_TAG: '2022-10-18.3-hwdata'
+  FDO_DISTRIBUTION_TAG: '2026-11-09.0'
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_PIPELINE_SOURCE == 'push'
 
 stages:
   - "Contribution checks"
   - "Prepare container"
   - "Build and test"
+  - "Publish"
 
 check-mr:
   extends: .fdo.ci-fairy
   stage: "Contribution checks"
   script:
    - ci-fairy check-commits --signed-off-by
-   - ci-fairy check-merge-request --require-allow-collaboration
   rules:
     - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
       when: always
@@ -33,27 +38,50 @@ prepare-container:
   extends: .fdo.container-build@alpine@x86_64
   stage: "Prepare container"
   variables:
+    V4L_UTILS_COMMIT: 1316a80455ef70889bea89491f37cd69170f3ee7
+    FDO_BASE_IMAGE: alpine:latest
     FDO_DISTRIBUTION_PACKAGES: |
-      build-base clang compiler-rt meson make git gcovr py3-pygments go
+      build-base clang compiler-rt meson make git gcovr py3-pygments go hwdata
+      perl argp-standalone gettext-dev linux-headers mingw-w64-gcc
     FDO_DISTRIBUTION_EXEC: |
-      git clone git://linuxtv.org/edid-decode.git
-      cd edid-decode
-      git checkout f63a945936ae6ecf91349aa0984facfbc96173bf
-      make
-      make install
+      grep $V4L_UTILS_COMMIT ./subprojects/v4l-utils.wrap >/dev/null || \
+        (echo "Keep v4l-utils.wrap and CI in sync!" && exit 1)
+      git clone https://git.linuxtv.org/v4l-utils.git
+      cd v4l-utils
+      git checkout $V4L_UTILS_COMMIT
+      meson setup build/ \
+        -Dauto_features=disabled \
+        -Dv4l-plugins=false \
+        -Dv4l-wrappers=false \
+        -Dv4l2-compliance-libv4l=false \
+        -Dv4l2-ctl-libv4l=false \
+        -Dv4l2-ctl-stream-to=false
+      ninja -C build/
+      ninja -C build/ install
       cd ..
       rm -rf edid-decode
 
       go install git.sr.ht/~emersion/gyosu@latest
       mv ~/go/bin/gyosu /usr/bin/
       rm -rf ~/go
+  rules:
+    - when: on_success
 
-      git clone https://github.com/vcrhonek/hwdata.git
-      cd hwdata
-      ./configure --disable-blacklist
-      make install
-      cd ..
-      rm -rf hwdata
+testing-check:
+  extends: .fdo.distribution-image@alpine
+  stage: "Build and test"
+  script:
+   - |
+     # Check if the origin of all test EDIDs is documented
+     for f in ./test/data/*.edid; do
+       grep -q "^$(basename ${f%.edid})\s" ./test/data/README.md ||
+         (echo "$f not in README.md" && exit 1)
+     done
+     # Check if the test references checked in the repo match what we have in CI
+     meson setup build/
+     ninja -C build/ gen-test-data
+     git diff --quiet ||
+       (echo "Checked in reference output does not match generated reference output" && exit 1)
   rules:
     - when: on_success
 
@@ -61,7 +89,12 @@ build-gcc:
   extends: .fdo.distribution-image@alpine
   stage: "Build and test"
   script:
-    - CC=gcc meson setup build/ --fatal-meson-warnings -Dwerror=true -Db_coverage=true
+    - CC=gcc
+      CFLAGS=" -Wnull-dereference -fanalyzer -O1"
+      meson setup build/
+        --fatal-meson-warnings
+        -Dwerror=true
+        -Db_coverage=true
     - ninja -C build/
     - ninja -C build/ test
     - ninja -C build/ -j1 coverage-xml coverage-html
@@ -81,9 +114,14 @@ build-clang:
   extends: .fdo.distribution-image@alpine
   stage: "Build and test"
   script:
-    - CC=clang meson setup build/ --fatal-meson-warnings -Dwerror=true -Db_sanitize=address,undefined -Db_lundef=false
+    - CC=clang
+      meson setup build/
+        --fatal-meson-warnings
+        -Dwerror=true
+        -Db_sanitize=address,undefined
+        -Db_lundef=false
     - ninja -C build/
-    - ninja -C build/ test
+    - UBSAN_OPTIONS=halt_on_error=1 ninja -C build/ test
   artifacts:
     when: always
     paths:
@@ -93,13 +131,77 @@ build-clang:
   rules:
     - when: on_success
 
-pages:
+build-mingw:
+  extends: .fdo.distribution-image@alpine
+  stage: "Build and test"
+  script:
+    - |
+      cat >mingw.txt <<EOF
+      [binaries]
+      c = 'x86_64-w64-mingw32-gcc'
+      ar = 'x86_64-w64-mingw32-ar'
+      strip = 'x86_64-w64-mingw32-strip'
+
+      [host_machine]
+      system = 'windows'
+      cpu_family = 'x86_64'
+      cpu = 'x86_64'
+      endian = 'little'
+      EOF
+    - meson setup build/
+        --cross-file mingw.txt
+        --fatal-meson-warnings
+        -Dwerror=true
+    - ninja -C build/
+  artifacts:
+    when: always
+    paths:
+      - build/meson-logs/
+  rules:
+    - when: on_success
+
+# Based on cairo's and GStreamer's Windows jobs.
+build-msvc:
+  image: 'registry.freedesktop.org/gstreamer/gstreamer/amd64/windows:2025-03-12.0-1.26'
+  stage: "Build and test"
+  tags:
+    - 'docker'
+    - 'windows'
+    - '2022'
+  timeout: '30min'
+  before_script:
+    - pip3 install -U meson
+  script:
+    - $ErrorActionPreference = "Stop"
+    # VsDevCmd.bat is a batch script, so run Meson from cmd.exe.
+    - cmd.exe /C "C:\BuildTools\Common7\Tools\VsDevCmd.bat -host_arch=amd64 -arch=amd64 &&
+        meson setup build --fatal-meson-warnings -Dwerror=true -Ddefault_library=static -Dpnp-ids=disabled &&
+        meson compile -C build"
+  artifacts:
+    when: always
+    paths:
+      - build/meson-logs/
+  rules:
+    - when: on_success
+
+build-docs:
   extends: .fdo.distribution-image@alpine
   stage: "Build and test"
   script:
     - gyosu -I$PWD/include/ -fexported-symbols='di_*'
       -ffile-prefix-map=$PWD/include/= -fsite-name=libdisplay-info
       -o public $PWD/include/libdisplay-info/
+  artifacts:
+    paths:
+      - public/
+  rules:
+    - when: on_success
+
+pages:
+  extends: .fdo.distribution-image@alpine
+  stage: "Publish"
+  script:
+    - "true"
   artifacts:
     paths:
       - public/
