@@ -17,7 +17,7 @@
 // Shared aura-table primitives consumed by `C_UnitAuras.*` (and any
 // future module that needs to inspect a unit's aura array). All
 // reads go through the unit's `m_objectFields` descriptor at
-// `unit + OFF_CGUNIT_OBJECT_FIELDS`; the layout is documented in
+// `Object::Fields(unit)`; the layout is documented in
 // `Offsets.h` under `OFF_UNIT_FIELD_AURA*`.
 //
 // Slots are absolute 0..47, and how polarity is read out of them DEPENDS ON THE
@@ -56,14 +56,21 @@ enum class Filter { Helpful, Harmful };
 
 // How a resolved aura is emitted onto the Lua stack by the single-aura push
 // paths. `Table` builds the modern `AuraData` table (net stack +1); `Positional`
-// pushes the Classic-Era `UnitAura` 15-value tuple (net stack +15) with NO table
-// allocation, for the `C_UnitAuras.UnitAura/UnitBuff/UnitDebuff` accessors that
+// pushes the Classic-Era `UnitAura` 15-value tuple plus `auraInstanceID` (net
+// stack +kPositionalValues) with NO table allocation, for the
+// `C_UnitAuras.UnitAura/UnitBuff/UnitDebuff/UnitAuraBySlot` accessors that
 // avoid the per-call GC churn. Selection + timing resolution are identical for
 // both — only the terminal leaf differs. `Fill` writes the `AuraData` fields
 // into the table already on top of the stack instead of a new one (net stack
 // 0), for getters that take a caller's table to reuse; fields the aura lacks
 // are cleared to nil.
 enum class Emit { Table, Positional, Fill };
+
+// The positional tuple's length: Classic Era's 15 `UnitAura` values, then
+// `auraInstanceID` (a ClassicAPI extension, nil where the AuraData table has
+// none), so a table-free caller can reach the GameTooltip *ByAuraInstanceID
+// setters.
+constexpr int kPositionalValues = 16;
 
 // Caster restriction from the `PLAYER` / `!PLAYER` aura filter tokens.
 // `Any` = no restriction; `PlayerOnly` = only auras the local player cast,
@@ -107,6 +114,34 @@ struct Match {
     bool raid = false;
 };
 
+// A parsed AuraFilters string: tokens separated by `|` and/or whitespace, each
+// optionally negated with a leading `!`, compared ignoring case (3.80.2's
+// FUN_141b7d560 and 4.3.4's parser both fold case). Whole-token matching, so
+// `RAID_PLAYER_DISPELLABLE` is not read as `PLAYER`. Tokens with no data here
+// (`INCLUDE_NAME_PLATE_ONLY`, `MAW`, …) are accepted and ignored.
+//
+// The range model is ClassicAPI's, kept on purpose: `helpful` / `harmful`
+// record which range tokens appeared, and they add up. A getter that reads one
+// range takes HARMFUL when only HARMFUL appeared, else HELPFUL (`Range`); a
+// getter that lists both takes both when neither appeared. 3.80.2 instead
+// lets the last range token win and matches no aura without one
+// (FUN_141b7d560 / FUN_141a26a60).
+struct ParsedFilter {
+    bool helpful = false;
+    bool harmful = false;
+    Match match;
+
+    bool NamesRange() const { return helpful || harmful; }
+    Filter Range() const { return harmful && !helpful ? Filter::Harmful : Filter::Helpful; }
+    // Whether an aura of this polarity passes the range under the listing
+    // reading (neither token = both).
+    bool AcceptsPolarity(bool isHarmful) const {
+        return !NamesRange() || (isHarmful ? harmful : helpful);
+    }
+};
+
+ParsedFilter ParseFilter(const char *filter);
+
 // The slot's descriptor flag nibble (0 for an empty slot or a null unit).
 // Bit `UNIT_AURA_FLAG_CANCELABLE` is the cancelable bit on every server.
 uint8_t SlotNibble(const uint8_t *unit, int slot);
@@ -144,8 +179,10 @@ bool IsSlotTooltipVisible(const uint8_t *unit, int slot);
 // Within each group, the polarity's home range comes first (helpful 0..31,
 // harmful 32..47), then the other range, where spilled debuffs live. Every
 // enumeration that hands out indices or slot lists uses this so they agree on
-// order. The groups are cached per unit and rebuilt when its aura array changes
-// or a new frame starts, so a by-index loop pays for them once.
+// order. The groups are built when the unit's aura array changes and hold
+// until it changes again, as 3.80.2 re-sorts only on an aura update — so a
+// caster learned later regroups its aura at the next change, and an index
+// stays valid between changes.
 void WalkOrder(const uint8_t *unit, Filter filter, int *out);
 
 // `SlotMatches` plus the polarity test: populated, of `filter`'s polarity, and
@@ -159,18 +196,16 @@ bool SlotMatchesFilter(const uint8_t *unit, int slot, Filter filter,
 int FindNthSlot(const uint8_t *unit, int oneBasedIndex, Filter filter,
                 Match match = {});
 
-// Finds the absolute slot of a populated aura with the given spell
-// ID, optionally restricted to one filter range. `filter` of
-// nullptr searches both ranges (helpful first, then harmful).
-// `playerOnly` restricts to player-cast auras. Returns -1 if not found.
-int FindSlotBySpellID(const uint8_t *unit, uint32_t spellID,
-                      const Filter *filter, Match match = {});
+// Finds the first populated slot holding `spellID`, in slot order (the unit's
+// storage order, as 3.80.2's GetUnitAuraBySpellID walks its aura array),
+// optionally restricted to one polarity (`filter` nullptr = either). Returns
+// -1 if not found.
+int FindSlotBySpellID(const uint8_t *unit, uint32_t spellID, const Filter *filter);
 
-// Finds the absolute slot of a populated aura whose locale-resolved
-// spell name matches `spellName`, ignoring case (Storm's SStrCmpI, as
-// 4.3.4's GetSortedAuraSlot compares names). Otherwise
-// same semantics as `FindSlotBySpellID`. Returns -1 if not found
-// or if `spellName` is null/empty.
+// Finds the first populated aura, in `WalkOrder`, whose locale-resolved spell
+// name equals `spellName` exactly — case included, as 3.80.2's by-name lookup
+// compares. `filter` nullptr searches buffs, then debuffs. Returns -1 if not
+// found or if `spellName` is null/empty.
 int FindSlotBySpellName(const uint8_t *unit, const char *spellName,
                         const Filter *filter, Match match = {});
 
@@ -187,6 +222,12 @@ bool IsPlayerCast(const uint8_t *unit, int slot);
 // slot has no running timer (empty, until-cancelled, or elapsed).
 // `outDurationMs` is 0 when no duration packet was seen for the slot.
 bool PlayerAuraTiming(int slot, uint32_t *outExpirationMs, uint32_t *outDurationMs);
+
+// The expiration `UnitAura` reports for the aura in absolute `slot` of `unit`
+// (a `Time::Clock` tick) — the same resolve, so a tooltip and the aura API
+// never disagree. False when that expiration is 0: empty slot, an aura with
+// no end, or a timing nobody observed.
+bool SlotExpiration(const uint8_t *unit, int slot, uint32_t *outExpirationMs);
 
 // Applies a `CasterMode` to a per-aura "was cast by the player or a unit
 // they own" answer. `Any` → always true; `PlayerOnly` → the answer;
@@ -251,20 +292,20 @@ const char *DispelName(uint32_t dispelTypeID);
 //   isFromPlayerOrPlayerPet (caster GUID is a player or a pet),
 //   canApplyAura (the player or pet knows the spell and it applies an aura),
 //   isRaid (the aura passes the RAID filter, `IsRaidAura`),
+//   canActivePlayerDispel (a debuff whose dispel type the player can
+//                          remove — the harmful half of `IsRaidAura`),
 //   isStealable (4.3.4's CanStealAura: a buff on an attackable unit whose
 //                dispel type a spell the player or pet knows removes from
 //                an enemy)
 //
-// And `auraInstanceID` from `Aura::Instance` (the table forms only).
+// And `auraInstanceID` from `Aura::Instance` (the 16th positional value too).
 //
-// And these with vanilla-truthful defaults (matches modern's
-// "field present but inapplicable" semantics):
-//   charges=0, maxCharges=0, points=nil,
-//   isBossAura=false, isNameplateOnly=false, nameplateShowAll=false,
-//   nameplateShowPersonal=false, shouldConsolidate=false
+// And these as false, since 1.12 spells carry no data for them:
+//   isBossAura, isNameplateOnly, nameplateShowAll, nameplateShowPersonal.
+// `points` is omitted (nil): the descriptor holds no effect amounts.
 //
-// Net stack effect: +1 for `Emit::Table` (the table), +15 for `Emit::Positional`
-// (the Classic-Era `UnitAura` tuple), 0 for `Emit::Fill` — see `Emit`.
+// Net stack effect: +1 for `Emit::Table` (the table), +kPositionalValues for
+// `Emit::Positional` (the `UnitAura` tuple), 0 for `Emit::Fill` — see `Emit`.
 void Push(void *L, const uint8_t *unit, int slot, Emit emit = Emit::Table);
 
 // Fallback for the index path when the descriptor has dropped an aura's slot
@@ -280,14 +321,6 @@ void Push(void *L, const uint8_t *unit, int slot, Emit emit = Emit::Table);
 bool PushNthCacheFallback(void *L, const uint8_t *unit, int oneBasedIndex,
                           Filter filter, Match match = {},
                           Emit emit = Emit::Table);
-
-// Appends every eligible `Aura::Source` cache fallback for `unit` matching
-// `filter` into the array table at `outerIdx`, continuing from `nextKey`
-// (updated in place). The bulk-enumeration analog of `PushNthCacheFallback`,
-// for `GetUnitAuras`. Skips entries already present in a populated descriptor
-// slot so it never double-lists.
-void AppendCacheFallbacks(void *L, const uint8_t *unit, Filter filter,
-                          Match match, int outerIdx, int &nextKey);
 
 // ── Out-of-range groupmate path ────────────────────────────────────────────
 //
@@ -314,22 +347,16 @@ void AppendCacheFallbacks(void *L, const uint8_t *unit, Filter filter,
 bool PushNthGroupAura(void *L, uint64_t guid, int oneBasedIndex, Filter filter,
                       Match match = {}, Emit emit = Emit::Table);
 
-// Pushes AuraData for the group-array aura with `spellID` on `guid`, optionally
-// restricted to one filter range (nullptr = both, helpful first). Returns true
-// on a hit (table pushed), false otherwise (nothing pushed).
-bool PushGroupAuraBySpellID(void *L, uint64_t guid, uint32_t spellID,
-                            const Filter *filter, Match match = {});
+// Pushes AuraData for the first group-array aura with `spellID` on `guid`, in
+// slot order (then the cache supplement). Returns true on a hit (table pushed),
+// false otherwise (nothing pushed).
+bool PushGroupAuraBySpellID(void *L, uint64_t guid, uint32_t spellID);
 
-// As `PushGroupAuraBySpellID` but matched by locale-resolved spell name
-// (ignoring case), mirroring `FindSlotBySpellName`.
+// Pushes AuraData for the group-array aura whose locale-resolved spell name
+// equals `spellName` exactly, mirroring `FindSlotBySpellName`; `filter`
+// restricts to one range (nullptr = both, helpful first).
 bool PushGroupAuraBySpellName(void *L, uint64_t guid, const char *spellName,
                               const Filter *filter, Match match = {});
-
-// Appends every group-array aura on `guid` matching `filter` into the array
-// table at `outerIdx`, continuing from `nextKey` (updated in place). The
-// bulk-enumeration analog of `PushNthGroupAura`, for `GetUnitAuras`.
-void AppendGroupAuras(void *L, uint64_t guid, Filter filter, Match match,
-                      int outerIdx, int &nextKey);
 
 // ── Opaque aura slots (GetAuraSlots / GetAuraDataBySlot) ────────────────────
 //
@@ -372,5 +399,31 @@ int CollectSlots(const uint8_t *unit, uint64_t guid, Filter filter, Match match,
 // returns true; pushes nothing and returns false for an id that names nothing
 // (stale, malformed, or the wrong path for the unit's current state).
 bool PushBySlot(void *L, const uint8_t *unit, uint64_t guid, int slot, Emit emit);
+
+// The `auraInstanceID` of the aura an opaque id names, or 0: only live
+// descriptor slots carry one (see `Aura::Instance`).
+uint32_t InstanceIDBySlot(const uint8_t *unit, int slot);
+
+// `Enum.UnitAuraSortRule`, the orders 3.80.2's GetUnitAuras family sorts by
+// (its comparators sit in the sort table at 0x144005140). "Own" is an aura the
+// local player cast — the caster GUID equals the player's, pets excluded.
+// "Expiration" puts the soonest end first and auras with no end last;
+// BigDefensive reverses that (no end first, then the latest end). Names compare
+// ignoring case, then by case. Every rule ends on `auraInstanceID`; ties beyond
+// it keep collection order.
+enum class SortRule {
+    Unsorted = 0,       // collection order
+    Default = 1,        // own, canApplyAura, instance ID
+    BigDefensive = 2,   // not own, expiration latest-first, instance ID
+    Expiration = 3,     // own, canApplyAura, expiration, instance ID
+    ExpirationOnly = 4, // expiration, instance ID
+    Name = 5,           // own, canApplyAura, name, instance ID
+    NameOnly = 6,       // name, instance ID
+};
+constexpr int SORT_RULE_COUNT = 7;
+
+// Reorders the opaque ids `ids[0..n)` (from `CollectSlots` on the same unit /
+// guid) by `rule`. Stable: ids the rule ranks equal keep their order.
+void SortSlots(const uint8_t *unit, uint64_t guid, int *ids, int n, SortRule rule);
 
 } // namespace Aura::Data

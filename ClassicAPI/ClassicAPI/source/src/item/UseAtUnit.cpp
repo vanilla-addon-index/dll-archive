@@ -39,6 +39,7 @@
 #include "Game.h"
 #include "item/Location.h"
 #include "item/Use.h"
+#include "object/Resolve.h"
 #include "spell/Placement.h"
 #include "unit/Identity.h"
 #include "unit/Position.h"
@@ -55,8 +56,7 @@ int __fastcall Script_C_Item_UseAtUnit(void *L) {
         return 1;
     }
 
-    // Read every argument before the item resolve, which stomps the Lua
-    // stack. Omitted or nil `placeGroundSpell` means place it; only an
+    // Omitted or nil `placeGroundSpell` means place it; only an
     // explicit false holds the reticle (`lua_type` reports NONE, not nil,
     // past the top of the stack, so test the top first).
     const bool placeGround = Game::Lua::GetTop(L) < 3 ||
@@ -66,13 +66,13 @@ int __fastcall Script_C_Item_UseAtUnit(void *L) {
     // Resolve the unit first — fail fast before firing the item if the unit
     // is absent. A string that is no unit token raises "Unknown unit", as
     // `C_Spell.CastAtUnit` does.
-    void *unitObj = Unit::Position::ResolveToken(Game::Lua::ToString(L, 2));
+    void *unitObj = Game::ResolveUnitToken(Game::Lua::ToString(L, 2));
     float pos[3];
     if (unitObj == nullptr || !Unit::Position::Read(unitObj, pos)) {
         Game::Lua::PushBool(L, false);
         return 1;
     }
-    const uint64_t targetGuid = Unit::Identity::GuidForObject(unitObj);
+    const uint64_t targetGuid = ::Object::Guid(unitObj);
 
     const uint8_t *item = Item::Location::ResolveItemArgOrLocation(L, 1);
     if (item == nullptr) {

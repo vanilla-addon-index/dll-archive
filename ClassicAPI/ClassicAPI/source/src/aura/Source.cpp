@@ -15,6 +15,7 @@
 
 #include "Source.h"
 
+#include "AreaCaster.h"
 #include "ComboDuration.h"
 #include "Data.h"
 #include "Game.h"
@@ -29,9 +30,11 @@
 #include "spell/Lookup.h"
 #include "tick/WorldTick.h"
 #include "time/Clock.h"
+#include "totem/Owner.h"
 #include "totem/Tracker.h"
 #include "unit/TokenEvents.h"
 #include "unit/Identity.h"
+#include "spell/CastPacket.h"
 
 #include <cstdint>
 #include <cstring>
@@ -66,11 +69,7 @@ using Time::Clock::NowMs;
 // only have the local player's mod tables. `pet = 0` selects the player
 // as the caster per FUN_GET_SPELL_DURATION's signature.
 uint32_t SpellDurationMs(const uint8_t *spellRecord, bool casterIsPlayer) {
-    using GetDuration_t = int(__fastcall *)(const uint8_t *spellRecord,
-                                            int pet, char skipMod);
-    const int ms = reinterpret_cast<GetDuration_t>(
-        static_cast<uintptr_t>(Offsets::FUN_GET_SPELL_DURATION))(
-        spellRecord, 0, casterIsPlayer ? 0 : 1);
+    const int ms = Spell::Lookup::DurationMs(spellRecord, casterIsPlayer);
     return ms > 0 ? static_cast<uint32_t>(ms) : 0;
 }
 
@@ -202,8 +201,7 @@ bool DescriptorListsAura(uint64_t guid, uint32_t spellId) {
         Object::ByGuid(kUnitOrPlayerMask, guid, nullptr, 0));
     if (unit == nullptr)
         return false;
-    const auto *desc = *reinterpret_cast<const uint8_t *const *>(
-        unit + Offsets::OFF_CGUNIT_OBJECT_FIELDS);
+    const auto *desc = Object::Fields(unit);
     if (desc == nullptr)
         return false;
     for (int slot = 0; slot < Offsets::UNIT_AURA_TOTAL; ++slot) {
@@ -619,7 +617,7 @@ bool TriggerMatches(const DurationMod &m, uint32_t triggerSpellId,
         return false;
     if (m.triggerSchool >= 0 &&
         static_cast<int32_t>(*reinterpret_cast<const uint32_t *>(
-            triggerRec + Offsets::OFF_SPELL_SCHOOL)) != m.triggerSchool)
+            triggerRec + Offsets::OFF_SPELL_RECORD_SCHOOL)) != m.triggerSchool)
         return false;
     return true;
 }
@@ -1227,11 +1225,10 @@ constexpr uint32_t kSpellJudgement = 20271; // server SPELL_PALADIN_JUDGEMENT
 // verified); no shared family-flag mask exists (each seal's debuff has its
 // own bit), which is why this isn't an AddDurationMod rule.
 bool IsJudgementSpell(const uint8_t *rec) {
-    constexpr uint32_t kPaladinFamily = 10; // SPELLFAMILY_PALADIN
     if (rec == nullptr)
         return false;
     if (*reinterpret_cast<const uint32_t *>(
-            rec + Offsets::OFF_SPELL_RECORD_FAMILY_NAME) != kPaladinFamily)
+            rec + Offsets::OFF_SPELL_RECORD_FAMILY_NAME) != Offsets::SPELLFAMILY_PALADIN)
         return false;
     return (*reinterpret_cast<const uint32_t *>(
                 rec + Offsets::OFF_SPELL_RECORD_ATTRIBUTES_EX3) &
@@ -1636,12 +1633,21 @@ void HandleSpellGo(uint64_t caster, uint32_t spellId, const uint64_t *targets,
         numAuraTargets = 1;
     }
 
-    ApplyTriggeredAuras(caster, spellId, rec, auraTargets, numAuraTargets);
+    // An aura a totem casts (Earthbind, Stoneclaw's taunt) is attributed to the
+    // totem's owner — a ClassicAPI extension; the server's caster is the
+    // totem. The owner is also whose duration mods the server applies (a
+    // totem's spell-mod owner is its owner). The cast events above keep the
+    // totem: it is what cast the spell. A separate variable, because a cast
+    // with no hit list lands on the totem itself through `auraTargets`.
+    const uint64_t totemOwner = Totem::Owner::OfTotem(caster);
+    const uint64_t auraCaster = totemOwner != 0 ? totemOwner : caster;
+
+    ApplyTriggeredAuras(auraCaster, spellId, rec, auraTargets, numAuraTargets);
 
     if (!SpellAppliesAura(rec))
         return;
 
-    const bool casterIsPlayer = (caster == Unit::Identity::PlayerGuid());
+    const bool casterIsPlayer = (auraCaster == Unit::Identity::PlayerGuid());
     const uint32_t durationMs = CastDurationMs(rec, spellId, casterIsPlayer);
     const uint32_t expirationMs = durationMs > 0 ? NowMs() + durationMs : 0;
 
@@ -1652,36 +1658,17 @@ void HandleSpellGo(uint64_t caster, uint32_t spellId, const uint64_t *targets,
         RememberPlayerCast(spellId);
 
     for (int i = 0; i < numAuraTargets; ++i)
-        StoreFromCast(auraTargets[i], spellId, caster, expirationMs, durationMs);
+        StoreFromCast(auraTargets[i], spellId, auraCaster, expirationMs, durationMs);
 }
 
-// SMSG_SPELL_GO parse (funnel subscriber). At the leaf handler the engine has
-// pre-decoded itemGuid/casterGuid/spellId; here we're at the raw body, so we
-// decode them ourselves before the hit list:
-//   itemGuid(packed), casterGuid(packed), spellId(u32), castFlags(i16),
-//   numHit(u8), hitGuids(u64 × numHit).
-void ParseSpellGo(CDataStore *packet) {
-    Net::ReadPackedGuid(packet); // itemGuid (unused)
-    const uint64_t caster = Net::ReadPackedGuid(packet);
-    const uint32_t spellId = Net::Read<uint32_t>(packet);
-    Net::Read<int16_t>(packet); // castFlags (unused)
-    const uint8_t numHit = Net::Read<uint8_t>(packet);
-    uint64_t targets[kMaxTargets];
-    int numTargets = 0;
-    for (int i = 0; i < numHit; ++i) {
-        const uint64_t guid = Net::Read<uint64_t>(packet);
-        if (numTargets < kMaxTargets)
-            targets[numTargets++] = guid;
-    }
-    HandleSpellGo(caster, spellId, targets, numTargets);
+// SMSG_SPELL_GO, decoded once by Spell::CastPacket: the caster, the spell and
+// the units it hit.
+void OnSpellGo(const Spell::CastPacket::Go &g) {
+    HandleSpellGo(g.header.caster, g.header.spellId, g.hits,
+                  g.hitCount < kMaxTargets ? g.hitCount : kMaxTargets);
 }
 
-void SpellGoSub(uint32_t opcode, CDataStore *packet) {
-    if (opcode == Offsets::SMSG_SPELL_GO && packet != nullptr)
-        ParseSpellGo(packet);
-}
-
-const Net::PacketDispatch::AutoSubscribe _spellGoSub{&SpellGoSub};
+const Spell::CastPacket::AutoGo _spellGo{&OnSpellGo};
 
 // ---- Aura-application co-hooks (timing for proc / triggered auras) -------
 
@@ -1707,7 +1694,7 @@ void StampApplication(void *unit, uint32_t spellId, int slot) {
     const uint8_t *rec = Spell::Lookup::RecordForID(static_cast<int>(spellId));
     if (!SpellAppliesAura(rec))
         return;
-    const uint64_t unitGuid = Unit::Identity::GuidForObject(unit);
+    const uint64_t unitGuid = ::Object::Guid(unit);
     if (unitGuid == 0)
         return;
     // If the local player just cast this aura, use its player-talented duration
@@ -1756,6 +1743,15 @@ void StampApplication(void *unit, uint32_t spellId, int slot) {
         if (caster == 0 && IsJudgementSpell(rec))
             caster = ConsumeJudgementAttribution(unitGuid, NowMs());
     }
+    // A party area aura reaches the caster's group with no packet that names
+    // its caster: a totem's (attributed to its owner, as every totem aura is;
+    // see the SpellGo path) or a player's (Leader of the Pack, the paladin
+    // auras). The visible unit that carries it names it.
+    if (caster == 0) {
+        caster = AreaCaster::OfPartyAura(unitGuid, spellId);
+        if (caster != 0)
+            durationMs = SpellDurationMs(rec, caster == Unit::Identity::PlayerGuid());
+    }
     const uint32_t expirationMs = durationMs > 0 ? NowMs() + durationMs : 0;
     StoreFromApplication(unitGuid, spellId, caster, expirationMs, durationMs,
                          slot, KindForSlot(unit, slot));
@@ -1770,11 +1766,9 @@ void NotifyIfPlayer(void *unit) {
         Player::StatSignal::Notify();
 }
 
-const AutoObserve *g_observers = nullptr;
-
 void NotifyObservers(const Change &change) {
-    for (const AutoObserve *o = g_observers; o != nullptr; o = o->next)
-        o->callback(change);
+    for (const AutoObserve *o = AutoObserve::head; o != nullptr; o = o->next)
+        o->fn(change);
 }
 
 // The change for the aura in `slot`, with the caster and polarity of the
@@ -1782,7 +1776,7 @@ void NotifyObservers(const Change &change) {
 // next aura's flags, so its polarity is the one recorded when it landed.
 Change MakeChange(ChangeType type, void *unit, int slot, uint32_t spellId) {
     Change c{type, unit, slot, spellId, 0, false, 0, 0};
-    const Entry *e = FindInstance(Unit::Identity::GuidForObject(unit), spellId, slot);
+    const Entry *e = FindInstance(::Object::Guid(unit), spellId, slot);
     if (e != nullptr)
         c.caster = e->casterGuid;
     if (type != ChangeType::Removed)
@@ -1860,7 +1854,7 @@ void __fastcall OnAuraRemoved_h(void *unit, void *edx, uint32_t slot,
                                 uint32_t spellId) {
     g_origOnAuraRemoved(unit, edx, slot, spellId);
     NotifyObservers(MakeChange(ChangeType::Removed, unit, static_cast<int>(slot), spellId));
-    Evict(Unit::Identity::GuidForObject(unit), spellId, static_cast<int>(slot));
+    Evict(::Object::Guid(unit), spellId, static_cast<int>(slot));
     NotifyIfPlayer(unit);
 }
 
@@ -2171,10 +2165,6 @@ void ObserveGroupAuras(uint64_t guid, const uint16_t *auraArray) {
     for (int i = 0; i < total; ++i)
         snap->ids[i] = auraArray[i];
     snap->touchMs = now;
-}
-
-AutoObserve::AutoObserve(ChangeCallback cb) : callback(cb), next(g_observers) {
-    g_observers = this;
 }
 
 void SignalRefreshed(uint64_t unitGuid, uint32_t spellId, int slot) {

@@ -53,6 +53,8 @@
 #include "../tick/WorldTick.h"
 #include "../time/Clock.h"
 #include "Request.h"
+#include "loot/Window.h"
+#include "unit/Identity.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -77,15 +79,6 @@ const Event::Custom::AutoReserve _reserve{kEventCompleted, &kEventCompletedDoc};
 // (the player is moving). Long enough for high-latency servers, short
 // enough that a dropped response doesn't hang the walk.
 constexpr uint32_t kStepTimeoutMs = 3000;
-
-// Event IDs the engine fires through `FUN_FIRE_EVENT_NO_ARGS` for
-// loot-window transitions. The hook swallows these only when the
-// scanner has the suppression flag raised — normal play sees them
-// fire unmodified.
-constexpr int EVENT_LOOT_OPENED = 0x10B;
-constexpr int EVENT_LOOT_CLOSED = 0x10D;
-// Observed, never swallowed (see `s_emptyCorpses`).
-constexpr int EVENT_QUEST_LOG_UPDATE = 0x134;
 
 enum class State {
     Idle,
@@ -135,21 +128,9 @@ bool IsKnownEmpty(uint64_t guid) {
 
 // === Typedefs for engine helpers ===
 
-using ClntObjMgrEnumVisibleObjectsCallback_t = int(__fastcall *)(void *ctx,
-                                                                  void *unusedEdx,
-                                                                  uint64_t guid);
-using ClntObjMgrEnumVisibleObjects_t =
-    int(__fastcall *)(ClntObjMgrEnumVisibleObjectsCallback_t cb, void *ctx);
-using CloseLootInner_t = void(__fastcall *)(int sendRelease,
-                                             char earlyReturnOnGameObject,
-                                             char showError);
 using LootSlotLinkBuilder_t = const char *(__fastcall *)(uint32_t userFacingSlot,
                                                           char *outBuf,
                                                           int bufSize);
-// `FUN_CMSG_LOOT_ITEM` — `__stdcall(uint8_t wireSlot)`, sends CMSG_LOOT_ITEM
-// for one slot of the open window (see the offset comment for the
-// __stdcall-vs-__fastcall stack-corruption hazard).
-using SendLootItem_t = void(__stdcall *)(uint8_t wireSlot);
 // `FUN_CMSG_LOOT_MONEY` — `__fastcall(player)`, sends the coin request.
 using LootMoney_t = void(__fastcall *)(void *player);
 // `FUN_LOOT_CONTROLLER` is `__fastcall(int, undefined4, int)` — three
@@ -191,16 +172,13 @@ void ScrapeCurrentLoot(LootEntry *out) {
         Offsets::FUN_LOOT_SLOT_LINK_BUILDER);
 
     for (int slot = 0; slot < Offsets::LOOT_MAX_SLOTS; ++slot) {
-        auto *entry = reinterpret_cast<const uint8_t *>(
-            Offsets::VAR_LOOT_SLOTS + slot * Offsets::LOOT_SLOT_STRIDE);
-        const uint32_t itemID = *reinterpret_cast<const uint32_t *>(entry);
-        if (itemID == 0)
+        Window::Slot row;
+        if (!Window::ReadSlot(slot, &row))
             continue;
-        const uint32_t count = *reinterpret_cast<const uint32_t *>(entry + 8);
 
         SlotItem item;
-        item.itemID = itemID;
-        item.count = count;
+        item.itemID = row.itemID;
+        item.count = row.count;
 
         char linkBuf[0x400];
         const uint32_t slotArg = hasCoin ? static_cast<uint32_t>(slot + 1)
@@ -217,7 +195,7 @@ void ScrapeCurrentLoot(LootEntry *out) {
 // populated item slot. Called from the controller hook (loot mode) after the
 // original populated `VAR_LOOT_SLOTS`, so the slot table is fully filled in.
 //
-// Items go through `FUN_CMSG_LOOT_ITEM` directly — the same silent path
+// Items go through `Window::SendLootItem` directly — the same silent path
 // `C_Loot.LootUnitItem` uses, which bypasses the BoP/unique confirm dialog
 // the Lua `LootSlot` wrapper would raise (appropriate for a programmatic
 // loot-all; the server still enforces real permissions). Coin goes through
@@ -237,14 +215,10 @@ void LootCurrentWindow() {
         LootMoney(s_scan.player);
     }
 
-    auto SendItem = reinterpret_cast<SendLootItem_t>(Offsets::FUN_CMSG_LOOT_ITEM);
     for (int slot = 0; slot < Offsets::LOOT_MAX_SLOTS; ++slot) {
-        auto *entry = reinterpret_cast<const uint8_t *>(
-            Offsets::VAR_LOOT_SLOTS + slot * Offsets::LOOT_SLOT_STRIDE);
-        const uint32_t itemID = *reinterpret_cast<const uint32_t *>(entry);
-        if (itemID == 0)
-            continue;
-        SendItem(*(entry + Offsets::OFF_LOOT_SLOT_WIRE_INDEX));
+        Window::Slot row;
+        if (Window::ReadSlot(slot, &row))
+            Window::SendLootItem(row.wireIndex);
     }
 }
 
@@ -254,8 +228,7 @@ void StartLoot(uint64_t guid);
 void TryStartNext();
 
 void SendCloseLoot() {
-    auto Close = reinterpret_cast<CloseLootInner_t>(Offsets::FUN_CLOSE_LOOT_INNER);
-    Close(1, '\0', '\0');
+    Window::Close(true);
 }
 
 void Complete() {
@@ -327,7 +300,7 @@ LootController_t s_lootController_o = nullptr;
 // PLAYER_ENTERING_WORLD payload). Return true to swallow.
 bool SuppressLootEvents(int eventID) {
     return s_scan.suppressEvents &&
-           (eventID == EVENT_LOOT_OPENED || eventID == EVENT_LOOT_CLOSED);
+           (eventID == Offsets::EVENT_LOOT_OPENED || eventID == Offsets::EVENT_LOOT_CLOSED);
 }
 
 // Intercepts the engine's loot-window state controller. Two paths:
@@ -405,14 +378,10 @@ const Game::HookAutoRegister _hookController{
 
 const Event::SignalHook::AutoSubscribe _lootIntercept{&SuppressLootEvents};
 
-// Observes only: the event still fires.
-bool ForgetEmptyCorpsesOnQuestChange(int eventID) {
-    if (eventID == EVENT_QUEST_LOG_UPDATE)
-        s_emptyCorpses.clear();
-    return false;
-}
+void ForgetEmptyCorpses() { s_emptyCorpses.clear(); }
 
-const Event::SignalHook::AutoSubscribe _questIntercept{&ForgetEmptyCorpsesOnQuestChange};
+const Event::SignalHook::AutoObserve _questObserve{Offsets::EVENT_QUEST_LOG_UPDATE,
+                                                   &ForgetEmptyCorpses};
 
 // === Tick (memory upkeep, refusals and timeouts) ===
 
@@ -453,33 +422,15 @@ const Tick::WorldTick::AutoSubscribe _tick{&OnTick};
 
 // === Enumeration ===
 
-struct EnumCtx {
-    void *player;
-    std::vector<uint64_t> *out;
-    bool skipKnownEmpty;
-};
-
-int __fastcall EnumCallback(EnumCtx *ctx, void * /*unusedEdx*/, uint64_t guid) {
-    void *obj = Object::ByGuid(Offsets::TYPEMASK_UNIT, guid, nullptr, 0);
-    if (obj == nullptr)
-        return 1;
-    if (!Request::IsLootable(obj))
-        return 1;
-    if (ctx->skipKnownEmpty && IsKnownEmpty(guid))
-        return 1;
-    if (!Request::InReach(ctx->player, obj))
-        return 1;
-    ctx->out->push_back(guid);
-    return 1;
-}
-
 void BuildQueue(void *player, size_t maxCount, bool skipKnownEmpty) {
     s_scan.queue.clear();
-    auto Enum = reinterpret_cast<ClntObjMgrEnumVisibleObjects_t>(
-        Offsets::FUN_CLNT_OBJ_MGR_ENUM_VISIBLE_OBJECTS);
-    EnumCtx ctx{player, &s_scan.queue, skipKnownEmpty};
-    Enum(reinterpret_cast<ClntObjMgrEnumVisibleObjectsCallback_t>(&EnumCallback),
-         &ctx);
+    Object::ForEachVisible([&](uint64_t guid) {
+        void *obj = Object::ByGuid(Offsets::TYPEMASK_UNIT, guid, nullptr, 0);
+        if (obj != nullptr && Request::IsLootable(obj) &&
+            !(skipKnownEmpty && IsKnownEmpty(guid)) && Request::InReach(player, obj))
+            s_scan.queue.push_back(guid);
+        return true;
+    });
     // Cap to `maxCount` corpses (0 = unlimited). Order is engine
     // enumeration order, not distance-sorted, so the truncation is
     // arbitrary among in-range corpses.
@@ -494,9 +445,7 @@ void BuildQueue(void *player, size_t maxCount, bool skipKnownEmpty) {
 bool BeginWalk(bool lootMode, size_t maxCount) {
     if (s_scan.state != State::Idle)
         return false;
-    if (*reinterpret_cast<void *volatile *>(Offsets::VAR_LOCAL_PLAYER_PTR) == nullptr)
-        return false;
-    void *player = Game::ResolveUnitToken("player");
+    void *player = const_cast<uint8_t *>(Unit::Identity::PlayerObject());
     if (player == nullptr || Request::IsMounted(player))
         return false;
 

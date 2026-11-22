@@ -11,6 +11,8 @@
 // You should have received a copy of the GNU General Public License along with
 // ClassicAPI. If not, see <https://www.gnu.org/licenses/>.
 
+#include "storm/HashTable.h"
+#include "storm/String.h"
 #include "xml/FrameLoad.h"
 
 #include "Game.h"
@@ -26,9 +28,7 @@ namespace {
 
 using GetAttr_t = const char *(__thiscall *)(const void *node, const char *name);
 using TemplateLookup_t = const void *(__fastcall *)(const char *name);
-using Hash_t = uint32_t(__stdcall *)(const char *s);
 using StatusAdd_t = void(__cdecl *)(void *status, int level, const char *fmt, ...);
-using ToFloat_t = float(__stdcall *)(const char *s);
 
 void Report(void *status, int level, const char *fmt, const char *a, const char *b, const char *c) {
     if (status == nullptr)
@@ -68,22 +68,8 @@ const void *Template(const char *name) {
 // FUN_XML_TEMPLATE_LOOKUP's own walk — hash, masked bucket, chain compare on
 // hash then SStrCmpI — returning the node's context instead of its definition.
 const char *TemplateContext(const char *name) {
-    const uint32_t mask = Game::Read<uint32_t>(Offsets::VAR_XML_TEMPLATE_MASK);
-    const uint8_t *base = Game::Read<const uint8_t *>(Offsets::VAR_XML_TEMPLATE_TABLE);
-    if (name == nullptr || mask == 0xFFFFFFFFu || base == nullptr)
-        return nullptr;
-    const uint32_t hash = reinterpret_cast<Hash_t>(Offsets::FUN_SSTR_HASH_HT)(name);
-    const uint8_t *bucket = base + (hash & mask) * Offsets::XML_TEMPLATE_BUCKET_STRIDE;
-    const int linkOff = Game::Read<int>(bucket, Offsets::OFF_XML_TEMPLATE_BUCKET_LINKOFF);
-    for (const uint8_t *node = Game::Read<const uint8_t *>(bucket, Offsets::OFF_XML_TEMPLATE_BUCKET_HEAD);
-         node != nullptr && (reinterpret_cast<uintptr_t>(node) & 1) == 0;
-         node = Game::Read<const uint8_t *>(node, linkOff + 4)) {
-        if (Game::Read<uint32_t>(node, Offsets::OFF_XML_TEMPLATE_NODE_HASH) == hash &&
-            Game::StrCmpI(Game::Read<const char *>(node, Offsets::OFF_XML_TEMPLATE_NODE_NAME),
-                          name) == 0)
-            return Game::Read<const char *>(node, Offsets::OFF_XML_TEMPLATE_NODE_CONTEXT);
-    }
-    return nullptr;
+    const uint8_t *node = Storm::HashTable::FindStri(Offsets::VAR_XML_TEMPLATE_TABLE, name);
+    return node != nullptr ? Game::Read<const char *>(node, Offsets::OFF_XML_TEMPLATE_NODE_CONTEXT) : nullptr;
 }
 
 void LoadNode(void *object, const void *node, void *status) {
@@ -97,7 +83,7 @@ bool FloatAttr(const void *node, const char *name, float &out) {
     const char *value = Attr(node, name);
     if (value == nullptr || *value == '\0')
         return false;
-    out = reinterpret_cast<ToFloat_t>(Offsets::FUN_SSTR_TO_FLOAT)(value);
+    out = Storm::ToFloat(value);
     return true;
 }
 
@@ -140,13 +126,13 @@ bool PushWrapper(void *L, void *object) {
 void AppendToArray(void *L, int parentIdx, const char *key) {
     const int value = Game::Lua::GetTop(L);        // [.., value]
     Game::Lua::PushString(L, key);
-    Game::Lua::GetTable(L, parentIdx);             // [.., value, array?]
+    Game::Lua::RawGet(L, parentIdx);               // [.., value, array?]
     if (Game::Lua::Type(L, -1) != Game::Lua::TYPE_TABLE) {
         Game::Lua::SetTop(L, value);
         Game::Lua::NewTable(L);                    // [.., value, array]
         Game::Lua::PushString(L, key);
         Game::Lua::PushValue(L, -2);
-        Game::Lua::SetTable(L, parentIdx);         // parent[key] = array
+        Game::Lua::RawSet(L, parentIdx);           // parent[key] = array
     }
     int n = 0;
     for (;;) {
@@ -169,8 +155,6 @@ namespace {
 
 // Chained at static-init time by each `AutoSubscribe` constructor, before
 // `DllMain`; zero-initialized ahead of any dynamic init.
-AutoSubscribe *g_head = nullptr;
-AutoSubscribeBefore *g_beforeHead = nullptr;
 
 using Loader_t = uintptr_t(__fastcall *)(void *self, void *edx, const void *node, void *status);
 Loader_t g_orig = nullptr;
@@ -180,11 +164,11 @@ uintptr_t __fastcall Hook(void *self, void *edx, const void *node, void *status)
     if (self == nullptr || node == nullptr)
         return Inherits::LoadFrame(g_orig, self, edx, node, status);
     void *object = static_cast<uint8_t *>(self) - Offsets::OFF_XML_LOADER_SUBOBJECT;
-    for (AutoSubscribeBefore *s = g_beforeHead; s != nullptr; s = s->next)
+    for (AutoSubscribeBefore *s = AutoSubscribeBefore::head; s != nullptr; s = s->next)
         s->fn(object, node, status);
     const Intrinsics::LoadScope intrinsic(object, node, status);
     const uintptr_t r = Inherits::LoadFrame(g_orig, self, edx, node, status);
-    for (AutoSubscribe *s = g_head; s != nullptr; s = s->next)
+    for (AutoSubscribe *s = AutoSubscribe::head; s != nullptr; s = s->next)
         s->fn(object, node, status);
     return r;
 }
@@ -194,12 +178,6 @@ const Game::HookAutoRegister _hook{
     reinterpret_cast<void **>(&g_orig)};
 
 } // namespace
-
-AutoSubscribe::AutoSubscribe(Observer f) : fn(f), next(g_head) { g_head = this; }
-
-AutoSubscribeBefore::AutoSubscribeBefore(Observer f) : fn(f), next(g_beforeHead) {
-    g_beforeHead = this;
-}
 
 } // namespace FrameLoad
 

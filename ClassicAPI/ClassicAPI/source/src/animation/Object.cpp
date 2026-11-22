@@ -17,6 +17,7 @@
 #include "Offsets.h"
 #include "baselib/Ascii.h"
 #include "frame/ScriptArgs.h"
+#include "frame/ScriptSlots.h"
 
 #include <cstring>
 
@@ -29,7 +30,6 @@ using Destruct_t = void(__fastcall *)(void *object);
 using Lock_t = void(__fastcall *)(void *object, void *edx, const char *name);
 using Unlock_t = void(__fastcall *)(void *object, void *edx, const char *name);
 using BaseResolve_t = uint32_t *(__fastcall *)(void *object, void *edx, const char *name);
-using Release_t = void(__stdcall *)(uint32_t *slot);
 using GetName_t = const char *(__fastcall *)(const void *object);
 
 // 4.3.4's CScriptObject type name, which every class's IsA(name) accepts.
@@ -117,7 +117,7 @@ Object::~Object() {
     if (s_detached)
         return;
     for (auto &slot : scripts)
-        reinterpret_cast<Release_t>(Offsets::FUN_SCRIPT_RELEASE)(slot);
+        Frame::ScriptSlots::Release(slot);
     while (holders > 1)
         reinterpret_cast<Unlock_t>(Offsets::FUN_SCRIPT_OBJECT_UNLOCK)(this, nullptr, nullptr);
     if (holders > 0)
@@ -152,13 +152,19 @@ void Object::RunScript(int index, int nargs) {
 
 int TypeId(Class &cls) { return Game::Lua::FrameScriptTypeId(reinterpret_cast<uintptr_t>(&cls.typeId)); }
 
-Object *Resolve(void *L, int idx, Class &cls) {
-    return static_cast<Object *>(Game::Lua::ResolveTypedObject(L, idx, reinterpret_cast<uintptr_t>(&cls.typeId)));
+Object *Resolve(void *L, int idx, Class &cls, bool raiseError) {
+    return static_cast<Object *>(
+        Game::Lua::ResolveTypedObject(L, idx, reinterpret_cast<uintptr_t>(&cls.typeId), raiseError));
 }
 
 void Push(void *L, Object *object) { Game::Lua::PushObject(L, object); }
 
 bool IsOurs(const void *object) { return object != nullptr && Game::Read<void **>(object, 0) == g_vtable; }
+
+void *ParentOf(const void *object) {
+    return IsOurs(object) ? static_cast<const Object *>(object)->parent
+                          : Game::Read<void *>(object, Offsets::OFF_REGION_PARENT);
+}
 
 std::string CreateName(const char *source, const void *parent) {
     constexpr const char kParent[] = "$parent";
@@ -174,7 +180,7 @@ std::string CreateName(const char *source, const void *parent) {
             name = pname;
             break;
         }
-        p = IsOurs(p) ? static_cast<const Object *>(p)->parent : Game::Read<void *>(p, Offsets::OFF_REGION_PARENT);
+        p = ParentOf(p);
     }
     return name + (source + kParentLen);
 }
@@ -221,10 +227,7 @@ int __fastcall Script_IsObjectType(void *L) {
         Game::Lua::Error(L, "Usage: %s:IsObjectType(\"TYPE\")", object->DisplayName());
         return 0;
     }
-    if (V_IsAName(object, nullptr, Game::Lua::ToString(L, 2)))
-        Game::Lua::PushNumber(L, 1.0);
-    else
-        Game::Lua::PushNil(L);
+    Game::Lua::PushFlag(L, V_IsAName(object, nullptr, Game::Lua::ToString(L, 2)));
     return 1;
 }
 
@@ -256,10 +259,7 @@ int __fastcall Script_HasScript(void *L) {
         Game::Lua::Error(L, "Usage: %s:HasScript(\"type\")", object->DisplayName());
         return 0;
     }
-    if (V_ResolveScript(object, nullptr, Game::Lua::ToString(L, 2)) != nullptr)
-        Game::Lua::PushNumber(L, 1.0);
-    else
-        Game::Lua::PushNil(L);
+    Game::Lua::PushFlag(L, V_ResolveScript(object, nullptr, Game::Lua::ToString(L, 2)) != nullptr);
     return 1;
 }
 
@@ -302,7 +302,7 @@ int __fastcall Script_SetScript(void *L) {
         Game::Lua::Error(L, "%s doesn't have a \"%s\" script", object->DisplayName(), Game::Lua::ToString(L, 2));
         return 0;
     }
-    reinterpret_cast<Release_t>(Offsets::FUN_SCRIPT_RELEASE)(slot);
+    Frame::ScriptSlots::Release(slot);
     Game::Lua::SetTop(L, 3);
     const int ref = Game::Lua::Ref(L, Game::Lua::REGISTRY_INDEX);
     slot[0] = ref > 0 ? static_cast<uint32_t>(ref) : 0;
@@ -321,18 +321,15 @@ int __fastcall Script_HookScript(void *L) {
         return 0;
     }
     Game::Lua::SetTop(L, 3); // (self, type, hook)
+    const uint32_t hookWord = Game::Read<uint32_t>(Offsets::VAR_FRAMESCRIPT_EXEC_CONTEXT);
     Game::Lua::PushValue(L, 1);
     Game::Lua::PushValue(L, 2);
     Game::Lua::PushCClosure(L, &Script_GetScript, 0);
     Game::Lua::Insert(L, -3);
     Game::Lua::Call(L, 2, 1); // (self, type, hook, old)
-    if (Game::Lua::Type(L, 4) == Game::Lua::TYPE_FUNCTION) {
-        Game::Lua::Insert(L, 3);        // (self, type, old, hook)
-        HookSecureFunc::PushWrapper(L); // (self, type, wrapper)
-    } else {
-        Game::Lua::SetTop(L, 3);
-    }
-    return Script_SetScript(L);
+    // Script_GetScript raised for an unknown name, so the slot exists.
+    const uint32_t *slot = V_ResolveScript(object, nullptr, Game::Lua::ToString(L, 2));
+    return HookSecureFunc::SetHookedScript(L, hookWord, slot[1], &Script_SetScript);
 }
 
 } // namespace Animation

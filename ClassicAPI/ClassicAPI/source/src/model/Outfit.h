@@ -14,6 +14,7 @@
 #pragma once
 
 #include "Offsets.h"
+#include "model/DisplayInfo.h"
 
 #include <cstdint>
 
@@ -133,8 +134,10 @@ struct HeldTryOn {
 // ready byte) must allow; a held item evicts an other-lane item it cannot be
 // held with, then takes its lane and hangs. The inventory slot (1-based) the
 // item went on, or 0.
+// A tabard whose display has the emblem flag takes `emblem` when it is
+// known, as the worker's tabard arm takes the pane's player's.
 int TryOn(void *model, void *component, bool armorReady, Lanes &lanes, Weapons &weapons,
-          const uint8_t *record, const HeldTryOn &held);
+          const uint8_t *record, const HeldTryOn &held, const DisplayInfo::Emblem &emblem);
 
 // UndressSlot: the item in one inventory slot (1-based) off the model. A
 // held lane is detached and zeroed, an armor slot cleared on the component.
@@ -154,6 +157,18 @@ int InvSlotOfComponent(uint32_t componentSlot);
 // hand takes any held item, an armor slot needs `armorReady` (a component the
 // model's ready gate allows).
 bool SlotAllowed(int invSlot, bool armorReady);
+
+// Whether an inventory slot (1-based) is one the character component dresses:
+// head, shoulder, shirt, chest, waist, legs, feet, wrist, hands, back,
+// tabard. They are the slots 3.80.2's slot-mask bits cover (0x140350520).
+inline bool ArmorSlot(int invSlot) { return ComponentSlotOf(invSlot) >= 0; }
+
+// A hand (lane 0 or 1) holding `lane` with ItemDisplayInfo row `display`, as
+// DressSlot's hand leg puts a unit's lane on: the old item off, the lane, row
+// and no glow taken, then hung. An empty lane or no row leaves the hand
+// empty.
+void HoldLane(void *model, Lanes &lanes, Weapons &weapons, int i, const HeldLane &lane, const void *display,
+              bool sheathed, bool hide);
 
 // What `unit` wears in one inventory slot (1-based), back on the model: an
 // armor slot takes the unit's component record (empty when the unit hides
@@ -180,6 +195,11 @@ using Worn = Appearance[kInventorySlots]; // inventory slot n at [n - 1]
 // component shows and each hand `weapons` (ReadWeapons) holds. Nothing for a
 // unit that is not a player, which has no visible items.
 void ReadWorn(void *unit, uint64_t guid, const Weapons &weapons, Worn &worn);
+
+// The SpellItemEnchantment whose glow a visible-item entry
+// (Item::ID::VisibleEntry) shows: GetItemDescVisual's walk, the first of its
+// enchants with an ItemVisual. 0 for none.
+uint32_t ShownEnchant(const uint8_t *visibleItem);
 
 // Zeroes each slot of `worn` the model no longer shows: an armor slot the
 // component holds no record for (every one without a component), an empty

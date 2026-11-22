@@ -28,7 +28,7 @@
 //   per-char: WTF\Account\<account>\<realm>\<character>\SavedVariables\<Name>.lua,
 //             falling back to WTF\Account\<account>\<character>\SavedVariables\<Name>.lua
 // (account = *VAR_ACCOUNT_NAME_PTR, realm = FUN_GET_REALM_NAME,
-// character = FUN_GET_LOGIN_ACCOUNT_NAME) — then call the original so the
+// character = FUN_GET_SELECTED_CHARACTER_NAME) — then call the original so the
 // files run with SV present. `FUN_LUA_LOAD_FILE` no-ops on a missing file, and
 // `FUN_FILE_EXISTS` picks the same per-char variant the engine would.
 //
@@ -45,7 +45,9 @@
 
 #include "Game.h"
 #include "Offsets.h"
-#include "addons/EngineIO.h"
+#include "baselib/Ascii.h"
+#include "storm/File.h"
+#include "addons/SavedVarsFiles.h"
 #include "addons/Toc.h"
 #include "script/LoadFile.h"
 #include "storm/Memory.h"
@@ -64,9 +66,7 @@ namespace {
 constexpr size_t NPOS = static_cast<size_t>(-1);
 
 // Engine file I/O via the hooked FUN_FILE_READ (so a flavor TOC's flag is read —
-// FlavorToc applies), the exists-check, and the Storm free. See addons/EngineIO.h.
-using AddOns::EngineIO::FileExistsFn;
-using AddOns::EngineIO::FileReadFn;
+// FlavorToc applies), the exists-check, and the Storm free. See storm/File.h.
 using LoadTocFilesFn = uint32_t(__fastcall *)(char *tocPath, int *a2, int *a3);
 using NameFn = const char *(*)(); // no-arg readers (return in EAX)
 
@@ -77,22 +77,14 @@ LoadTocFilesFn g_orig = nullptr;
 // a handful of entries (one addon's SV files, briefly). Main-thread only.
 std::vector<std::string> g_pendingSuppress;
 
-using AddOns::Toc::EqCI;
-using AddOns::Toc::Lower;
-
-bool SamePathCI(const char *a, const char *b) {
-    for (; *a != '\0' && *b != '\0'; ++a, ++b)
-        if (Lower(*a) != Lower(*b)) return false;
-    return *a == *b;
-}
 
 // Extract "<Name>" from an addon base-TOC path `…\AddOns\<Name>\<Name>.toc`.
 // Returns false for anything else (FrameXML.toc, nested paths, …) so the
 // SavedVariables reorder only touches real addon loads.
 bool AddonNameFromToc(const char *path, char *out, size_t outSize) {
     const size_t len = std::strlen(path);
-    if (len < 4 || !(path[len - 4] == '.' && Lower(path[len - 3]) == 't' &&
-                     Lower(path[len - 2]) == 'o' && Lower(path[len - 1]) == 'c'))
+    if (len < 4 || !(path[len - 4] == '.' && Ascii::ToLower(path[len - 3]) == 't' &&
+                     Ascii::ToLower(path[len - 2]) == 'o' && Ascii::ToLower(path[len - 1]) == 'c'))
         return false;
     size_t lastSep = NPOS;
     for (size_t i = len; i-- > 0;)
@@ -106,7 +98,7 @@ bool AddonNameFromToc(const char *path, char *out, size_t outSize) {
     for (size_t i = prevSep; i-- > 0;)
         if (path[i] == '\\' || path[i] == '/') { gpSep = i; break; }
     if (gpSep == NPOS) return false;
-    if (prevSep - (gpSep + 1) != 6 || !EqCI(path + gpSep + 1, 6, "AddOns"))
+    if (prevSep - (gpSep + 1) != 6 || !Ascii::EqualCI(path + gpSep + 1, 6, "AddOns"))
         return false;
     const size_t nameLen = lastSep - (prevSep + 1);
     if (nameLen == 0 || nameLen + 1 > outSize) return false;
@@ -115,20 +107,9 @@ bool AddonNameFromToc(const char *path, char *out, size_t outSize) {
     return true;
 }
 
-// True iff the leading integer of a TOC value is nonzero (WoW numeric flag).
-bool NonzeroFlag(const char *v, size_t n) {
-    long val = 0;
-    bool digit = false;
-    for (size_t i = 0; i < n && v[i] >= '0' && v[i] <= '9'; ++i) {
-        val = val * 10 + (v[i] - '0');
-        digit = true;
-    }
-    return digit && val != 0;
-}
-
 // The SavedVariables directives that decide what LoadSavedVarsEarly does.
 struct SvFlags {
-    bool first = false;   // `## LoadSavedVariablesFirst:` is nonzero
+    bool first = false;   // a `## LoadSavedVariablesFirst:` line is true (Toc::Truthy)
     bool account = false; // `## SavedVariables:` declares at least one variable
     bool perChar = false; // `## SavedVariablesPerCharacter:` declares at least one
 };
@@ -137,18 +118,15 @@ struct SvFlags {
 // TOC's directives are honored) and extract the three flags above.
 SvFlags ReadSvFlags(const char *tocPath) {
     SvFlags f;
-    auto FileRead =
-        reinterpret_cast<FileReadFn>(static_cast<uintptr_t>(Offsets::FUN_FILE_READ));
     void *buf = nullptr;
     size_t size = 0;
-    if (FileRead(0, tocPath, &buf, &size, 1, 1, 0) == 0 || buf == nullptr)
+    if (!Storm::File::Read(tocPath, &buf, &size, 1))
         return f;
     const char *b = static_cast<const char *>(buf);
 
     const char *v = nullptr;
     size_t n = 0;
-    if (AddOns::Toc::FindValue(b, size, "LoadSavedVariablesFirst", &v, &n))
-        f.first = NonzeroFlag(v, n);
+    f.first = AddOns::Toc::AnyTrue(b, size, "LoadSavedVariablesFirst");
     // Gate each SV file on the DECLARATION, not mere file existence — mirroring
     // the engine, which loads the account file iff `## SavedVariables` is
     // declared and the per-char file iff `## SavedVariablesPerCharacter` is.
@@ -164,9 +142,10 @@ SvFlags ReadSvFlags(const char *tocPath) {
     return f;
 }
 
-bool FileExists(const char *path) {
-    return reinterpret_cast<FileExistsFn>(
-               static_cast<uintptr_t>(Offsets::FUN_FILE_EXISTS))(path, 1) != 0;
+// The loader's own test (AddOns::SavedVarsFiles): `path` becomes
+// `<path>.bak` when only the backup exists, as the engine's load of it will.
+bool FileExists(char *path, size_t cap) {
+    return AddOns::SavedVarsFiles::ResolveExisting(path, cap);
 }
 
 // Load a SavedVariables file we found, then mark its path so the engine's own
@@ -194,7 +173,7 @@ void LoadSavedVarsEarly(const char *addonName, bool hasAccount, bool hasPerChar)
     if (hasAccount) {
         std::snprintf(path, sizeof path, "WTF\\Account\\%s\\SavedVariables\\%s.lua",
                       account, addonName);
-        if (FileExists(path))
+        if (FileExists(path, sizeof path))
             RunLuaFile(path);
     }
 
@@ -203,7 +182,7 @@ void LoadSavedVarsEarly(const char *addonName, bool hasAccount, bool hasPerChar)
     if (!hasPerChar)
         return;
     const char *character = reinterpret_cast<NameFn>(
-        static_cast<uintptr_t>(Offsets::FUN_GET_LOGIN_ACCOUNT_NAME))();
+        static_cast<uintptr_t>(Offsets::FUN_GET_SELECTED_CHARACTER_NAME))();
     if (character == nullptr || *character == '\0')
         return;
     const char *realm = reinterpret_cast<NameFn>(
@@ -213,14 +192,14 @@ void LoadSavedVarsEarly(const char *addonName, bool hasAccount, bool hasPerChar)
         std::snprintf(path, sizeof path,
                       "WTF\\Account\\%s\\%s\\%s\\SavedVariables\\%s.lua", account,
                       realm, character, addonName);
-        if (FileExists(path)) {
+        if (FileExists(path, sizeof path)) {
             RunLuaFile(path);
             return;
         }
     }
     std::snprintf(path, sizeof path, "WTF\\Account\\%s\\%s\\SavedVariables\\%s.lua",
                   account, character, addonName);
-    if (FileExists(path))
+    if (FileExists(path, sizeof path))
         RunLuaFile(path);
 }
 
@@ -240,7 +219,7 @@ uint32_t __fastcall LoadTocFiles_h(char *tocPath, int *a2, int *a3) {
 // affected. Our own early load bypasses this through Original.
 bool SuppressReload(const char *path) {
     for (size_t i = 0; i < g_pendingSuppress.size(); ++i) {
-        if (SamePathCI(g_pendingSuppress[i].c_str(), path)) {
+        if (Ascii::EqualCI(g_pendingSuppress[i].c_str(), path)) {
             g_pendingSuppress.erase(g_pendingSuppress.begin() +
                                     static_cast<std::ptrdiff_t>(i));
             return true; // suppress — the addon's file-scope SV writes survive

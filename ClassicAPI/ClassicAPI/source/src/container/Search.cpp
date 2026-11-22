@@ -56,6 +56,7 @@
 #include "item/Record.h"
 #include "item/TypeInfo.h"
 #include "localization/Locale.h"
+#include "object/Resolve.h"
 #include "unit/Identity.h"
 
 #include <algorithm>
@@ -180,7 +181,7 @@ bool Contains(const char *text) {
 // Whether an equipment set that holds this very item has a matching name.
 // The GUID test goes first: it is cheap, and most items are in no set.
 bool InMatchingSet(const uint8_t *item) {
-    const uint64_t guid = Item::Guid(item);
+    const uint64_t guid = ::Object::Guid(item);
     if (guid == EquipmentSet::GUID_EMPTY || guid == EquipmentSet::GUID_IGNORED)
         return false;
     for (const EquipmentSet::Set &set : EquipmentSet::Data::All()) {
@@ -230,7 +231,8 @@ const Game::Doc::Event kSearchUpdateDoc{
     "Container", "Fires when the bag search text changes.", {}};
 const Event::Custom::AutoReserve _evt{"INVENTORY_SEARCH_UPDATE", &kSearchUpdateDoc};
 
-// How many slots of `bagID` to walk. PackBagSlot bounds a bag by the bag's
+// How many slots of `bagID` to walk. The engine's bag map
+// (`Item::Location::ResolveBagSlotDetail`) bounds a bag by the bag's
 // own size, but the backpack and the main bank are ranges of the player's
 // inventory that it bounds only by the whole inventory's size, so those two
 // get their fixed sizes. The keyring is the inventory's last range, so the
@@ -280,7 +282,7 @@ int __fastcall Script_IsContainerFiltered(void *L) {
     const int slots = SlotsToWalk(bagID);
     Item::Location::BagSlotDetail d;
     for (int slot = 1;
-         slot <= slots && Item::Location::ResolveBagSlotDetail(L, bagID, slot, &d); ++slot) {
+         slot <= slots && Item::Location::ResolveBagSlotDetail(bagID, slot, &d); ++slot) {
         if (d.item != nullptr && !Filtered(d.item)) {
             Game::Lua::PushBool(L, false);
             return 1;

@@ -36,7 +36,9 @@
 #include "Pending.h"
 #include "Set.h"
 #include "Text.h"
+#include "container/Bag.h"
 #include "item/CGItem.h"
+#include "item/ID.h"
 #include "item/Location.h"
 #include "item/Swap.h"
 #include "unit/Identity.h"
@@ -71,16 +73,6 @@ const char *ArgString(void *L, int idx) {
     if (!Game::Lua::IsString(L, idx))
         return nullptr;
     return Game::Lua::ToString(L, idx);
-}
-
-int ResolveItemID(const uint8_t *cgItem) {
-    if (cgItem == nullptr)
-        return 0;
-    auto *instance = Item::InstanceBlock(cgItem);
-    if (instance == nullptr)
-        return 0;
-    return static_cast<int>(*reinterpret_cast<const uint32_t *>(
-        instance + Offsets::OFF_INSTANCE_BLOCK_ITEM_ID));
 }
 
 void PushTableEntry(void *L, int key, double value) {
@@ -186,7 +178,7 @@ int __fastcall Script_GetItemIDs(void *L) {
         const uint64_t g = s->items[i];
         int value = static_cast<int>(g); // GUID_EMPTY 0 / GUID_IGNORED 1
         if (g != GUID_EMPTY && g != GUID_IGNORED) {
-            value = ResolveItemID(Locations::ResolveItemByGUID(g));
+            value = Item::ID::FromCGItem(Locations::ResolveItemByGUID(g));
             if (value == 0)
                 value = static_cast<int>(s->itemIDs[i]);
             if (value == 0)
@@ -390,8 +382,7 @@ int __fastcall Script_UseEquipmentSet(void *L) {
         return 1;
     }
 
-    // Copy what the swap needs: the free-slot scan below stomps the Lua
-    // stack, and the error messages run Lua handlers.
+    // Copy what the swap needs: the error messages run Lua handlers.
     const std::string name = s->name;
     uint64_t guids[SLOT_COUNT];
     std::memcpy(guids, s->items, sizeof(guids));
@@ -452,11 +443,16 @@ int __fastcall Script_UseEquipmentSet(void *L) {
     };
     FreeSlot freeSlots[SLOT_COUNT];
     int freeSlotCount = 0;
+    // Normal bags only, as Blizzard's EquipmentManager_UpdateFreeBagSpace takes
+    // a slot only when GetContainerNumFreeSlots' bagType is 0: a quiver or
+    // soul bag cannot hold the gear that comes off.
     for (int bag = 0; bag <= 4 && freeSlotCount < SLOT_COUNT; ++bag) {
-        const int slots = Item::Location::GetBagSlotCount(bag);
-        for (int slot = 1; slot <= slots && freeSlotCount < SLOT_COUNT; ++slot) {
-            if (Item::Location::ResolveBag(L, bag, slot) == nullptr)
-                freeSlots[freeSlotCount++] = {bag, slot};
+        Container::Bag::View view;
+        if (!Container::Bag::ViewFor(bag, &view) || view.family != 0)
+            continue;
+        for (int i = 0; i < view.slotCount && freeSlotCount < SLOT_COUNT; ++i) {
+            if (Container::Bag::SlotGuid(view, i) == 0)
+                freeSlots[freeSlotCount++] = {bag, i + 1};
         }
     }
     int nextFreeSlot = 0;

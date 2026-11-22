@@ -21,7 +21,8 @@
 #include "Offsets.h"
 #include "dbc/Lookup.h"
 #include "net/PacketReader.h"
-#include "net/SendObserver.h"
+#include "player/Combo.h"
+#include "spell/CastPacket.h"
 #include "spell/Mod.h"
 #include "time/Clock.h"
 #include "unit/Identity.h"
@@ -36,22 +37,6 @@ using Net::CDataStore;
 using Time::Clock::NowMs;
 
 // ---- Combo-point snapshot (NetClient send co-hook) ------------------------
-
-// The player's live combo points, read the same way Script_GetComboPoints
-// (0x0051A190) does: the CP byte on the CGPlayer +0xE68 sub-struct. The player
-// comes from the shared Unit::Identity::PlayerObject() (the object-manager GUID
-// resolve, our fastest player-object path — returns null pre-world rather than
-// throwing), so this stays safe from any context the send hook can fire in.
-uint8_t CurrentComboPoints() {
-    const uint8_t *player = Unit::Identity::PlayerObject();
-    if (player == nullptr)
-        return 0;
-    const uint8_t *info = *reinterpret_cast<const uint8_t *const *>(
-        player + Offsets::OFF_CGPLAYER_INFO);
-    if (info == nullptr)
-        return 0;
-    return *(info + Offsets::OFF_CGPLAYER_COMBO_POINTS);
-}
 
 // Keyed by spellID, because a finisher's own SMSG_SPELL_GO is not reliably
 // the next one to arrive after its cast. A talent that procs an aura on the
@@ -108,16 +93,12 @@ int ConsumeCapturedCP(uint32_t spellId) {
 // Snapshot the combo points at the moment the cast request leaves: the
 // server consumes them before SMSG_SPELL_GO arrives, so reading at
 // SpellGo time is too late. We watch sends through the shared
-// `Net::SendObserver` rather than owning the funnel hook ourselves.
-void OnSend(uint32_t opcode, Net::CDataStore *packet) {
-    if (opcode != Offsets::OP_CMSG_CAST_SPELL)
-        return;
-    const uint32_t spellId = Net::Read<uint32_t>(packet);
-    if (spellId != 0)
-        RememberCapture(spellId, CurrentComboPoints(), NowMs());
+// `Spell::CastPacket` decoder rather than owning the funnel hook ourselves.
+void OnSend(const Spell::CastPacket::Sent &s) {
+    RememberCapture(s.spellId, Player::Combo::Points(), NowMs());
 }
 
-const Net::SendObserver::AutoSubscribe _sendSub{&OnSend};
+const Spell::CastPacket::AutoSent _sendSub{&OnSend};
 
 // ---- Duration data (SpellDuration.dbc + Lua overrides) --------------------
 
@@ -147,10 +128,9 @@ const Override *FindOverride(uint32_t spellId) {
 // their own module (e.g. `src/turtle/ComboDuration.cpp` for Turtle's
 // reworked Rip); this stock module only owns the mechanism and the
 // dangling-condition gate. Chained at static-init by `AutoDanglingResolver`.
-AutoDanglingResolver *g_danglingResolvers = nullptr;
 
 bool ResolveDangling(uint32_t spellId, int32_t *baseMs, int32_t *maxMs) {
-    for (AutoDanglingResolver *r = g_danglingResolvers; r != nullptr;
+    for (AutoDanglingResolver *r = AutoDanglingResolver::head; r != nullptr;
          r = r->next)
         if (r->fn(spellId, baseMs, maxMs))
             return true;
@@ -215,11 +195,6 @@ void RegisterLuaFunctions() {
 const Game::ModuleAutoRegister _autoreg{&RegisterLuaFunctions};
 
 } // namespace
-
-AutoDanglingResolver::AutoDanglingResolver(DanglingResolver f)
-    : fn(f), next(g_danglingResolvers) {
-    g_danglingResolvers = this;
-}
 
 uint32_t TryComboScaledMs(const uint8_t *spellRecord, uint32_t spellId) {
     if (spellRecord == nullptr || spellId == 0)

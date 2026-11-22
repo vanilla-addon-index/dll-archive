@@ -38,11 +38,18 @@ uint64_t PlayerGuid();
 // CGPlayer-local fields are readable (see Offsets.h).
 const uint8_t *PlayerObject();
 
-// The local player's `m_objectFields` descriptor (`PlayerObject() +
-// OFF_UNIT_DESCRIPTOR`), or null. This is the broadcast UpdateField block
+// The local player's `m_objectFields` descriptor
+// (`Object::Fields(PlayerObject())`), or null. This is the broadcast UpdateField block
 // (health / power / flags / UNIT_FIELD_CHANNEL_SPELL / …). Prefer this over
 // re-deriving the player object + descriptor offset in each module.
 const uint8_t *PlayerDescriptor();
+
+// A unit's race, class and sex (UNIT_FIELD_BYTES_0 bytes 0, 1 and 2) from its
+// descriptor block (`Object::Fields`), or 0 for a null block. Sex is 0 male,
+// 1 female.
+uint8_t Race(const uint8_t *fields);
+uint8_t Class(const uint8_t *fields);
+uint8_t Sex(const uint8_t *fields);
 
 // The local player's inventory manager (`PlayerObject() +
 // OFF_PLAYER_INVENTORY_MANAGER`), or null. Layout: slot count at `+0x00`,
@@ -55,20 +62,17 @@ const uint8_t *PlayerDescriptor();
 // (null pre-world). Prefer this over re-deriving `player + 0x1D38` per module.
 const uint8_t *PlayerInventoryManager();
 
-// The 64-bit GUID of a resolved CGUnit/CGObject pointer, read through the
-// pointer at `+0x08` to an instance block whose first 8 bytes are the GUID
-// (verified in `Script_GetInventoryItemLink`; see `OFF_UNIT_GUID_PTR`).
-// Returns 0 if `unitObject` or the block pointer is null. Use this for any
-// "GUID of this object pointer" read so callers stay consistent (the aura
-// caster cache keys on it from both the lookup and the OnAuraAdded hook).
-uint64_t GuidForObject(const void *unitObject);
-
 // A unit's owner or controller: UNIT_FIELD_CHARMEDBY, else
 // UNIT_FIELD_CREATEDBY — the charmer-or-creator pair the engine itself reads
 // for ownership (a pet, guardian or totem names its summoner in CREATEDBY; a
 // charmed unit its charmer in CHARMEDBY). 0 for players, world creatures,
 // anything unowned, and a null object or descriptor.
 uint64_t OwnerGuid(const void *unitObject);
+
+// The spell that summoned a unit (UNIT_CREATED_BY_SPELL): the totem-drop spell
+// for a totem, the summon spell for a pet or guardian. 0 for a unit no spell
+// summoned (players, world creatures) and a null object or descriptor.
+uint32_t CreatedBySpell(const void *unitObject);
 
 // Case-insensitive match against the literal `"player"` token, mirroring
 // the engine's `SStrCmpI(token, "player")` fast-path tests (e.g.
@@ -82,8 +86,8 @@ bool IsPlayerToken(const char *token);
 // read from the canonical local-player pointer so it works regardless of
 // object-manager state; everything else goes through the engine's
 // token→GUID resolver (so out-of-range party/raid members resolve too).
-// NOTE: raises a Lua error for tokens the engine doesn't recognize — only
-// pass known unit tokens.
+// A string the resolver doesn't know answers 0, as any absent unit does
+// (unit/TokenExtensions.cpp catches the engine's "Unknown unit name" raise).
 uint64_t GuidForToken(const char *token);
 
 // The engine's by-name unit search (`FUN_UNIT_FIND_BY_NAME`, behind
@@ -109,13 +113,28 @@ const char *TokenFromGUID(uint64_t guid, char *buf, size_t bufSize);
 // first, unlike `TokenFromGUID`). Writes each token string into `out[i]`
 // (each row must hold >= 32 bytes) and returns the count, capped at
 // `maxTokens`. Engine-native tokens (player/pet/target/party/partypet/raid/
-// raidpet/npc/mouseover) come from the engine's reverse map
-// (`FUN_UNIT_TOKENS_FROM_GUID`); ClassicAPI's own tokens
-// (`Unit::TokenEvents::TokensOf`) are appended on top. The result is
-// snapshotted into `out` (safe to fire re-entrant Lua events while
-// iterating). Returns 0 pre-world or when no token maps to `guid`. Used to
-// fire ClassicAPI's own unit events once per token, as the engine fires its.
+// raidpet/npc) come from the engine's reverse map
+// (`FUN_UNIT_TOKENS_FROM_GUID`), less mouseover; ClassicAPI's tokens
+// (`Unit::TokenEvents::TokensOf`) join them, and the list is in the 3.80.2
+// client's unit-event order (its builder 0x141B90E10): player, pet,
+// party/partypet, raid/raidpet, nameplate, boss, target, targettarget, focus,
+// focustarget, npc, softenemy, softfriend, softinteract, then markN, totemN.
+// The result is snapshotted into `out` (safe to fire re-entrant Lua events
+// while iterating). Returns 0 pre-world or when no token maps to `guid`. Used
+// to fire ClassicAPI's own unit events once per token, as 3.80.2 fires them.
 int TokensForGUID(uint64_t guid, char (*out)[32], int maxTokens);
+
+// Room for every token one unit can have at once.
+constexpr int kMaxUnitTokens = 16;
+
+// Calls `fn(token)` for every token naming `guid` (TokensForGUID). The tokens
+// are snapshotted first, so `fn` may fire re-entrant events.
+template <class Fn> void ForEachToken(uint64_t guid, Fn &&fn) {
+    char tokens[kMaxUnitTokens][32];
+    const int n = TokensForGUID(guid, tokens, kMaxUnitTokens);
+    for (int i = 0; i < n; ++i)
+        fn(static_cast<const char *>(tokens[i]));
+}
 
 // The engine's cached player-info record for `guid` — the NameCache data block
 // (name @ `OFF_PLAYER_INFO_NAME`, realm, race @ `_RACE`, sex, class @ `_CLASS`),

@@ -13,6 +13,10 @@
 
 #pragma once
 
+#include "AutoList.h"
+
+#include "storm/List.h"
+
 #include <cstddef>
 #include <cstdint>
 
@@ -77,7 +81,7 @@ struct Live {
 template <typename Fn>
 void ForEachFrameListObject(void *frame, uintptr_t listOffset, Fn fn) {
     uintptr_t link = Read<uintptr_t>(frame, listOffset);
-    while (link != 0 && (link & 1) == 0) {
+    while (Storm::IsNode(link)) {
         void *obj = *reinterpret_cast<void *const *>(link + 8);
         const uintptr_t next = *reinterpret_cast<const uintptr_t *>(link + 4);
         if (obj != nullptr)
@@ -94,9 +98,7 @@ void ForEachFrameListObject(void *frame, uintptr_t listOffset, Fn fn) {
 // has no unit (e.g. `"target"` with nothing targeted). NOTE: the engine
 // RAISES a Lua error for a string that isn't a valid token form (an arbitrary
 // name like `"Bob"`), so only pass real unit tokens — the same contract every
-// stock `Unit*` global carries. Centralizes the
-// `reinterpret_cast<…>(FUN_RESOLVE_UNIT_TOKEN)` idiom that was copy-pasted
-// across a dozen modules.
+// stock `Unit*` global carries. Null for a null token.
 void *ResolveUnitToken(const char *token);
 
 // UI pixels <-> internal layout (anchor) units. Script_SetPoint converts its
@@ -109,6 +111,11 @@ void *ResolveUnitToken(const char *token);
 // are unset, so an early caller gets a zero offset rather than a wild one.
 float PixelToInternal(float px);
 double InternalToPixel(float internal);
+
+// Drops one reference on an engine handle (FUN_HANDLE_RELEASE,
+// `__fastcall(handle)`): textures, text blocks, cameras and the rest of the
+// ref-counted HANDLE objects. Null is a no-op.
+void ReleaseHandle(void *handle);
 
 using FrameScript_Initialize_t = bool(__fastcall *)();
 using LoadScriptFunctions_t = void(__fastcall *)();
@@ -130,6 +137,15 @@ bool StringToFlag(const char *text);
 // Always call it through here: the engine function is `__stdcall` (RET 0xC),
 // and a `__cdecl` declaration drifts ESP by 12 per call.
 int StrCmpI(const char *a, const char *b, int n = 0x7FFFFFFF);
+
+// Squared distance between two 3D points, summed x, y, z in float like the
+// engine's own distance tests.
+inline float DistanceSq(const float a[3], const float b[3]) {
+    const float dx = a[0] - b[0];
+    const float dy = a[1] - b[1];
+    const float dz = a[2] - b[2];
+    return dx * dx + dy * dy + dz * dz;
+}
 
 // --- API documentation descriptors -----------------------------------------
 //
@@ -213,6 +229,12 @@ struct Function {
     bool extension;      // a ClassicAPI-original API, not a Blizzard one
 };
 
+// The descriptor of a DEPRECATED registration: a name kept working for code
+// written against it, superseded by another API. Passing it in place of a
+// real descriptor records nothing, so the name lists in no system and the
+// coverage report does not count it as undocumented.
+extern const Function Deprecated;
+
 // Pairs a frame method with its descriptor BY NAME (the engine's method
 // tables are name-keyed; `SetShown` exists on four registries with four
 // function pointers). Order is free; unmatched names are reported.
@@ -247,6 +269,12 @@ struct Event {
 
 namespace Lua {
 using CFunction = int(__fastcall *)(void *L);
+
+// Runs the engine's Lua C function at `fn` (a FUN_SCRIPT_* or other Script_
+// address) on L's current stack; returns its result count.
+inline int CallScript(uintptr_t fn, void *L) {
+    return reinterpret_cast<CFunction>(fn)(L);
+}
 
 // Lua 5.0 pseudo-index used to read/write entries on the globals table.
 constexpr int GLOBALS_INDEX = -10001;
@@ -330,6 +358,9 @@ using lua_tocfunction_t = CFunction(__fastcall *)(void *L, int idx);
 // with the fields `what` names. Level 0 is the running C function.
 using lua_getstack_t = int(__fastcall *)(void *L, int level, void *ar);
 using lua_getinfo_t = int(__fastcall *)(void *L, const char *what, void *ar);
+// Pushes the environment of the Lua function at `idx`; the globals for any
+// other value.
+using lua_getfenv_t = void(__fastcall *)(void *L, int idx);
 using lua_xmove_t = void(__fastcall *)(void *from, void *to, int n);
 // `lua_newthread` returns the new `lua_State *` in eax, but Ghidra
 // infers `void` because the inner call's value just flows through.
@@ -340,6 +371,8 @@ using lua_newthread_t = void *(__fastcall *)(void *L);
 using lua_resume_t = int(__fastcall *)(void *L, int nargs);
 using lua_yield_t = int(__fastcall *)(void *L, int nresults);
 using luaL_argerror_t = void(__fastcall *)(void *L, int narg, const char *msg);
+using luaL_checktype_t = void(__fastcall *)(void *L, int narg, int t);
+using lua_equal_t = int(__fastcall *)(void *L, int index1, int index2);
 // The auxlib argument readers: each raises the engine's own "bad argument"
 // error. CheckLString's `len` may be null.
 using luaL_checklstring_t = const char *(__fastcall *)(void *L, int narg, unsigned int *len);
@@ -375,6 +408,14 @@ extern const lua_pushboolean_t PushBoolean;
 // engine's `lua_pushboolean` ABI wants `int` (any non-zero = true), so
 // this just funnels through the raw binding with a single conversion.
 inline void PushBool(void *L, bool b) { PushBoolean(L, static_cast<int>(b)); }
+// The 1.12 engine's boolean: 1 for true, nil for false (what its own
+// Script_ functions push, and what vanilla-shaped globals return).
+inline void PushFlag(void *L, bool on) {
+    if (on)
+        PushNumber(L, 1.0);
+    else
+        PushNil(L);
+}
 // The engine's script-flag argument reader (FUN_LUA_TO_BOOLEAN_LOOSE, 4.3.4's
 // `StringToBOOL(L, index, default)`), which every engine method taking an
 // optional flag uses: nil is false, a boolean is itself, a number is its
@@ -382,6 +423,7 @@ inline void PushBool(void *L, bool b) { PushBoolean(L, static_cast<int>(b)); }
 // text it does not recognize is `defaultValue`, and any other type is
 // `defaultValue`.
 bool ToFlag(void *L, int index, bool defaultValue = false);
+// A null string pushes nil (the TEST EDX / JMP lua_pushnil at 0x006F3890).
 extern const lua_pushstring_t PushString;
 extern const lua_pushlstring_t PushLString;
 extern const lua_pushvalue_t PushValue;
@@ -412,11 +454,16 @@ extern const lua_iscfunction_t IsCFunction;
 extern const lua_tocfunction_t ToCFunction;
 extern const lua_getstack_t GetStack;
 extern const lua_getinfo_t GetInfo;
+extern const lua_getfenv_t GetFenv;
 extern const lua_xmove_t XMove;
 extern const lua_newthread_t NewThread;
 extern const lua_resume_t Resume;
 extern const lua_yield_t Yield;
 extern const luaL_argerror_t ArgError;
+// "bad argument #n to `fn' (<type> expected, got <type>)" unless lua_type == t.
+extern const luaL_checktype_t CheckType;
+// Equality with `__eq`, as the `==` operator compares.
+extern const lua_equal_t Equal;
 extern const luaL_checklstring_t CheckLString;
 extern const luaL_checknumber_t CheckNumber;
 extern const luaL_optnumber_t OptNumber;
@@ -427,6 +474,12 @@ extern const lua_checkstack_t CheckStack;
 extern const lua_concat_t Concat;
 extern const lua_newuserdata_t NewUserdata;
 extern const lua_touserdata_t ToUserdata;
+
+// Lua 5.1's `lua_createtable`: pushes a new table with room for `narr` array
+// slots and `nrec` hash nodes. lua_newtable's own body with the sizes passed
+// through. 5.0 sizes the hash part as a power of two and 0 means "none", so
+// `nrec` rounds up to one (1 gets 2 nodes). Negative counts mean 0.
+void CreateTable(void *L, int narr, int nrec);
 
 // Returns the global `lua_State *` (read on demand from the engine's global).
 // Callable outside a Lua callback, e.g. during LoadScriptFunctions setup.
@@ -446,7 +499,13 @@ void *ResolveObject(void *L, int idx);
 // the engine does it (GetMouseFocus and the script runners register an
 // object with FUN_FRAMESCRIPT_OBJECT_SCRIPT_REGISTER when its refcount is 0).
 int ObjectLuaRef(void *object);
-// Pushes the object's Lua table (registry[ObjectLuaRef(object)]).
+// Pushes the object's Lua table (registry[ObjectLuaRef(object)]), as the
+// engine's own pushers do (GetRegions 0x0077404C). Every path that pushes an
+// object gets that one table, so fields an addon sets on it survive (pfUI's
+// `plate.nameplate`). A frame the engine built in C++ without CreateFrame
+// (nameplates, chat bubbles) gets its table on the first push.
+// ScriptRegister bumps the refcount, which pins the object against GC: benign
+// for those pooled, permanent frames.
 void PushObject(void *L, void *object);
 
 // The object's global name (VTBL_SCRIPTOBJECT_GET_NAME), or nullptr when it
@@ -456,6 +515,30 @@ const char *ObjectName(void *object);
 // How the engine names an object in its frame-script usage errors:
 // `GetName() ?: "<unnamed>"`.
 const char *ObjectDisplayName(void *object);
+
+// The frame's type name ("Frame", "Button", …), what Script GetObjectType
+// pushes (VTBL_FRAME_GET_OBJECT_TYPE). Frames only.
+const char *FrameObjectType(void *frame);
+
+// A method's own error as the 3.80.2 client words it (0x1405AC570 /
+// 0x1405AC990): "<name>:<fn>(): <message>", or "<fn>(): <message>" when `name`
+// is null, cut at 199 characters. Format writes it for a raise made after the
+// caller's C++ scope ends; Raise formats and raises it now.
+constexpr size_t kClientErrorSize = 200;
+void FormatClientMethodError(char (&out)[kClientErrorSize], const char *name, const char *fn,
+                             const char *message);
+void RaiseClientMethodError(void *L, const char *name, const char *fn, const char *message);
+
+// An error through 3.80.2's pending-error formatter (0x1405AC380) as its
+// reporter (0x1405AC990) raises it: `message`, then "\nLua Taint: <word>"
+// while the running code is tainted, else "\nNo Lua Taint". 1.12's taint is
+// the context word (VAR_FRAMESCRIPT_EXEC_CONTEXT; see Offsets.h), only read
+// here. Prefixed as FormatClientMethodError does when `fn` is set, verbatim
+// when it is null; cut at 199 characters. 0x1405AC570 (the method-error
+// setter FormatClientMethodError copies) adds no taint line.
+void FormatClientPendingError(char (&out)[kClientErrorSize], const char *name, const char *fn,
+                              const char *message);
+void RaiseClientPendingError(void *L, const char *name, const char *fn, const char *message);
 
 // Same resolve, then the type gate every engine frame method applies to its
 // `self` before touching it: `lua_type == table`, resolve to the object, then
@@ -492,6 +575,12 @@ int FrameScriptTypeId(uintptr_t typeIdVar);
 
 // The object's `IsA(typeId)` vmethod for a class's `VAR_*_LUA_TYPE_ID`.
 bool IsA(void *object, uintptr_t typeIdVar);
+
+// Pushes the engine's script error handler (the seterrorhandler function,
+// held at registry ref VAR_FRAMESCRIPT_ERROR_HANDLER_REF) and returns its
+// absolute stack index, the errfunc for PCall. Returns 0, with nothing
+// pushed, before the engine has set one.
+int PushErrorHandler(void *L);
 
 // Per-type sugar over `ResolveTypedObject`, so a call site cannot pair a
 // method with the wrong class's id. `idx` defaults to the `self` slot.
@@ -603,6 +692,9 @@ void SetFieldBool(void *L, const char *key, bool value);
 // hold from an earlier fill. Not for fresh tables: Lua 5.0 inserts a node for
 // a missing key even when the value is nil.
 void SetFieldNil(void *L, const char *key);
+// `t[key]` of the table at the absolute (positive) stack `index`, when it is
+// a number, else `fallback`. Leaves the stack as it was.
+double GetFieldNumber(void *L, int index, const char *key, double fallback = 0.0);
 
 // Sets `_G[name] = value` via `lua_rawset` on the globals
 // pseudo-index. `RawSet` over `SetTable` because the globals table has
@@ -611,29 +703,19 @@ void SetFieldNil(void *L, const char *key);
 // `CLASSIC_API_VERSION` and the `LE_ITEM_QUALITY_*` family.
 void SetGlobalNumber(void *L, const char *name, double value);
 
-// Pushes `_G[globalName]` onto the stack if it resolves to a string
-// (Blizzard's FrameXML globals like `ITEMS_EQUIPPED`, addon-defined
-// localization tables, etc.); otherwise pushes `fallback`. Either way
-// leaves exactly one string at the top of the stack. The canonical
-// pattern is "look up a localized format string with an English
-// fallback for stripped servers / pre-init states":
-//
-//   Game::Lua::PushLocalizedString(L, "ITEMS_EQUIPPED", "%d equipped");
-//   Game::Lua::PushNumber(L, count);
-//   // … then string.format / sprintf-style consume
-void PushLocalizedString(void *L, const char *globalName, const char *fallback);
+// The global string `name` through the engine's own lookup (FrameScript_GetText,
+// `FUN_FRAMESCRIPT_GET_TEXT`, with no count or gender: a plain `_G[name]` read
+// that also takes a number), or "" when unset. Never null. The pointer is the
+// Lua string's, valid while the global holds it.
+const char *GlobalText(const char *name);
 
-// Pushes `string.format(_G[globalName] or fallback, n)` — the result
-// of formatting a single integer into a localized string. Leaves the
-// formatted string on top of the stack. Common shape: most
-// FrameXML count-style strings (`ITEMS_EQUIPPED = "%d equipped"`,
-// `ITEM_SLOTS_IGNORED = "%d slot(s) ignored"`, etc.). Callers that
-// need string or float args, or multiple args, can build their own
-// using `PushLocalizedString` + manual `string.format` invocation.
-// A `|4singular:plural;` in the string stays; the engine's grammar pass
+// `GlobalText(name)`, or `fallback` when the global string is unset or
+// empty. A format template is used the way the engine uses its own:
+// `SStrPrintf(buf, n, GetText(key), ...)`, so a format global
+// (`ITEMS_EQUIPPED = "%d equipped"`) goes straight to snprintf. A
+// `|4singular:plural;` in the string stays; the engine's grammar pass
 // (Text::Grammar) expands it when the text is set.
-void PushLocalizedFormatInt(void *L, const char *globalName,
-                            const char *fallback, int n);
+const char *GlobalTextOr(const char *name, const char *fallback);
 
 // Pushes `_G[name]` and returns true only if it resolved to a function
 // (leaving it on the stack, ready to be called); otherwise pops it and
@@ -726,12 +808,7 @@ extern void(__cdecl *const Printf)(const char *format, ...);
 //
 // Order is unspecified (LIFO of static-init order across TUs). Modules must
 // not depend on each other's registration side effects.
-struct ModuleAutoRegister {
-    using Fn = void (*)();
-    explicit ModuleAutoRegister(Fn fn);
-    Fn fn;
-    ModuleAutoRegister *next;
-};
+using ModuleAutoRegister = AutoList<struct ModuleAutoRegisterTag, void (*)()>;
 
 void RunModuleRegistrations();
 
@@ -742,12 +819,7 @@ void RunModuleRegistrations();
 // callbacks run from the `FUN_LOAD_GLUE_SCRIPT_FUNCTIONS` post-hook,
 // once per glue boot (game launch + every world→glue return). Use
 // `Game::Lua::RegisterGlueFunction` from inside the callback.
-struct GlueModuleAutoRegister {
-    using Fn = void (*)();
-    explicit GlueModuleAutoRegister(Fn fn);
-    Fn fn;
-    GlueModuleAutoRegister *next;
-};
+using GlueModuleAutoRegister = AutoList<struct GlueModuleAutoRegisterTag, void (*)()>;
 
 void RunGlueModuleRegistrations();
 
@@ -771,17 +843,25 @@ void RunGlueModuleRegistrations();
 // DllMain (FrameScript_Initialize / LoadScriptFunctions /
 // LoadGlueScriptFunctions / Frame::RegisterEvent) have inline logic that
 // interleaves with the hook chain and stays with the installer.
+//
+// `file` / `line` default to the declaration's own site (the compiler
+// builtins evaluate at the caller), so an install failure names the module
+// that registered the hook without any call site spelling it out.
 struct HookAutoRegister {
-    HookAutoRegister(uintptr_t target, void *hook, void **original);
+    HookAutoRegister(uintptr_t target, void *hook, void **original,
+                     const char *file = __builtin_FILE(), int line = __builtin_LINE());
     uintptr_t target;
     void *hook;
     void **original;
+    const char *file;
+    int line;
     HookAutoRegister *next;
 };
 
 // Creates and QUEUE-enables every registered hook (no `MH_ApplyQueued`
 // here — the caller applies the whole batch at once). Returns `false`
-// and stops on first failure.
+// and stops on first failure, after logging the failing hook's target,
+// MinHook status and declaring site to the debug log.
 bool RunHookRegistrations();
 
 // Self-registration for per-/reload state cleanup. A module that keeps
@@ -812,13 +892,20 @@ bool RunHookRegistrations();
 // state. This is the "clear stale state" category only; a save-before-teardown
 // like Player::NameCache::Flush stays an explicit DllMain call (it persists
 // rather than clears, and also runs on the glue-return path).
-struct ReloadAutoRegister {
-    using Fn = void (*)();
-    explicit ReloadAutoRegister(Fn fn);
-    Fn fn;
-    ReloadAutoRegister *next;
-};
+using ReloadAutoRegister = AutoList<struct ReloadAutoRegisterTag, void (*)()>;
 
 void RunReloadCleanups();
+
+// A cleanup that runs AGAIN when the glue UI boots (RunGlueBootCleanups, from
+// the FUN_LOAD_GLUE_SCRIPT_FUNCTIONS hook). World→glue destroys every world
+// fontstring and texture, and a bulk teardown can bypass the per-object
+// hooks, so a module that keeps maps keyed by those pointers declares
+// `static const Game::GlueBootAutoRegister _glueBootReg{&PrepareForReload};`
+// next to its ReloadAutoRegister. Only for a cleanup that forgets pointers
+// (or releases engine handles) and touches no Lua: the glue Lua state is a
+// fresh one.
+using GlueBootAutoRegister = AutoList<struct GlueBootAutoRegisterTag, void (*)()>;
+
+void RunGlueBootCleanups();
 
 } // namespace Game

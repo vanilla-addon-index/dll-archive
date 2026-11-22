@@ -38,6 +38,7 @@
 #include "Game.h"
 #include "Offsets.h"
 #include "cache/QueryLoad.h"
+#include "cache/Record.h"
 #include "event/Custom.h"
 
 #include <cstdint>
@@ -49,8 +50,7 @@ namespace {
 constexpr const char *kGameObjectDataLoadResult = "GAMEOBJECT_DATA_LOAD_RESULT";
 const Game::Doc::Field kLoadResultPayload[] = {
     Game::Doc::Req("gameObjectID", "number"),
-    Game::Doc::Opt("success", "number", nullptr,
-                   "1 when the data loaded, nil when the server did not send it."),
+    Game::Doc::Req("success", "bool", "False when the server did not send the data."),
 };
 const Game::Doc::Event kLoadResultDoc{
     "GameObjectInfo",
@@ -60,16 +60,15 @@ const Game::Doc::Event kLoadResultDoc{
 const Event::Custom::AutoReserve _reserveLoadResult{kGameObjectDataLoadResult,
                                                     &kLoadResultDoc};
 
-using GetCacheRecord_t = const uint8_t *(__thiscall *)(void *cache, uint32_t id,
-                                                       const uint64_t *guid, void *callback,
-                                                       void *userData, char dedup);
+void OnLoadDone(uint32_t goID, bool success, int /*requests*/, bool /*implicit*/) {
+    Event::Custom::FireIdSuccess(_reserveLoadResult.Slot(), static_cast<int>(goID), success);
+}
+const Cache::QueryLoad::Client _queryClient{Cache::QueryLoad::KIND_GAMEOBJECT, &OnLoadDone};
 
 // Peek the GO cache (no network query).
 const uint8_t *PeekGameObject(uint32_t goID) {
-    auto fn = reinterpret_cast<GetCacheRecord_t>(Offsets::FUN_GAMEOBJECT_GET_RECORD);
-    auto *cache = reinterpret_cast<void *>(Offsets::VAR_GAMEOBJECT_CACHE);
-    const uint64_t zeroGuid = 0;
-    return fn(cache, goID, &zeroGuid, nullptr, nullptr, 0);
+    return Cache::Record::Peek(Offsets::FUN_GAMEOBJECT_GET_RECORD,
+                               Offsets::VAR_GAMEOBJECT_CACHE, goID);
 }
 
 int __fastcall Script_GetGameObjectInfoByID(void *L) {
@@ -106,8 +105,8 @@ int __fastcall Script_RequestLoadGameObjectByID(void *L) {
         Game::Lua::PushBool(L, false);
         return 1;
     }
-    auto *cache = reinterpret_cast<void *>(Offsets::VAR_GAMEOBJECT_CACHE);
-    const bool accepted = Cache::QueryLoad::RequestLoad(cache, static_cast<uint32_t>(goID));
+    const bool accepted = Cache::QueryLoad::Track(Cache::QueryLoad::KIND_GAMEOBJECT,
+                                                  static_cast<uint32_t>(goID), true);
     Game::Lua::PushBool(L, accepted);
     return 1;
 }
@@ -149,8 +148,6 @@ void RegisterLuaFunctions() {
     Game::Lua::RegisterTableFunction("C_GameObjectInfo", "RequestLoadGameObjectByID",
                                      &Script_RequestLoadGameObjectByID,
                                      &kRequestLoadGameObjectByID);
-    Cache::QueryLoad::Register(reinterpret_cast<void *>(Offsets::VAR_GAMEOBJECT_CACHE),
-                               &_reserveLoadResult, Offsets::FUN_GAMEOBJECT_GET_RECORD);
 }
 
 const Game::ModuleAutoRegister _autoreg{&RegisterLuaFunctions};

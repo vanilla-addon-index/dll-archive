@@ -87,15 +87,13 @@ namespace {
 bool g_enabled = true;
 
 // Chained at static-init time by each `AutoObserve` constructor.
-AutoObserve *g_observers = nullptr;
 
 void Notify(bool begin, int handlerRef, void *frame) {
-    for (AutoObserve *o = g_observers; o != nullptr; o = o->next)
+    for (AutoObserve *o = AutoObserve::head; o != nullptr; o = o->next)
         o->fn(begin, handlerRef, frame);
 }
 
 // Chained at static-init time by each `AutoTrailingBool` constructor.
-AutoTrailingBool *g_trailing = nullptr;
 
 using Game::Lua::RawGetI;
 
@@ -192,13 +190,7 @@ void RunCore(void *L, int handlerRef, void *frame, int firstArgIdx, int n, bool 
 
     // --- call handler(self, [event,] arg1..argN) ---------------------------
     const int callBase = GetTop(L); // == base + saved-block size
-    const int errRef = Game::Read<int>(
-        static_cast<uintptr_t>(Offsets::VAR_FRAMESCRIPT_ERROR_HANDLER_REF));
-    int errIdx = 0;
-    if (errRef > 0) {
-        RawGetI(L, REGISTRY_INDEX, errRef); // message handler
-        errIdx = callBase + 1;              // absolute index of the errfunc
-    }
+    const int errIdx = Game::Lua::PushErrorHandler(L); // message handler, or 0
     RawGetI(L, REGISTRY_INDEX, handlerRef); // handler
     int nargs = 0;
     if (positional) {
@@ -230,7 +222,7 @@ void RunCore(void *L, int handlerRef, void *frame, int firstArgIdx, int n, bool 
 // Asks the providers for this run's trailing boolean; false when none takes
 // one.
 bool FindTrailing(int handlerRef, void *frame, bool *value) {
-    for (AutoTrailingBool *t = g_trailing; t != nullptr; t = t->next)
+    for (AutoTrailingBool *t = AutoTrailingBool::head; t != nullptr; t = t->next)
         if (t->fn(handlerRef, frame, value))
             return true;
     return false;
@@ -502,10 +494,6 @@ void RunWithValues(void *L, int handlerRef, void *frame, int firstArgIdx, int na
     RestoreEvent(L, savedEvent);
     Notify(false, handlerRef, frame);
 }
-
-AutoObserve::AutoObserve(Observer f) : fn(f), next(g_observers) { g_observers = this; }
-
-AutoTrailingBool::AutoTrailingBool(TrailingBool f) : fn(f), next(g_trailing) { g_trailing = this; }
 
 void RunSlotWithValues(void *L, const uint32_t *slot, void *frame, int firstArgIdx, int nargs) {
     if (slot == nullptr || slot[0] == 0)

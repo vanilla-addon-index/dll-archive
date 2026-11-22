@@ -95,13 +95,13 @@ void OnPacket(uint32_t opcode, Net::CDataStore *packet) {
         t.scale = Net::Read<int32_t>(packet);
         t.paused = Net::Read<uint8_t>(packet);
         t.spellID = Net::Read<uint32_t>(packet);
-        if (packet->m_read > packet->m_size || t.type >= Offsets::MIRROR_TIMER_SLOT_COUNT)
+        if (Net::Overrun(packet) || t.type >= Offsets::MIRROR_TIMER_SLOT_COUNT)
             return;
         t.startMs = Time::Clock::NowMs();
         g_timers[t.type] = t;
     } else if (opcode == Offsets::SMSG_OPCODE_MIRROR_TIMER_STOP) {
         const uint32_t type = Net::Read<uint32_t>(packet);
-        if (packet->m_read > packet->m_size || type >= Offsets::MIRROR_TIMER_SLOT_COUNT)
+        if (Net::Overrun(packet) || type >= Offsets::MIRROR_TIMER_SLOT_COUNT)
             return;
         g_timers[type] = Timer{};
     }
@@ -109,19 +109,13 @@ void OnPacket(uint32_t opcode, Net::CDataStore *packet) {
 
 const Net::PacketDispatch::AutoSubscribe _sub{&OnPacket};
 
-int g_leavingWorldId = -1;
-
-bool OnSignal(int eventID) {
-    if (g_leavingWorldId < 0)
-        g_leavingWorldId = Event::Custom::LookupByName("PLAYER_LEAVING_WORLD");
-    if (eventID == g_leavingWorldId) {
-        for (Timer &t : g_timers)
-            t = Timer{};
-    }
-    return false;
+void OnLeavingWorld() {
+    for (Timer &t : g_timers)
+        t = Timer{};
 }
 
-const Event::SignalHook::AutoSubscribe _leavingWorld{&OnSignal};
+const Event::SignalHook::AutoObserve _leavingWorld{Offsets::EVENT_PLAYER_LEAVING_WORLD,
+                                                   &OnLeavingWorld};
 
 // Returns 3.3.5's six values plus retail's seventh (spellID). An empty slot
 // returns "UNKNOWN" and zeros, which retail's MirrorTimer.lua tests for on

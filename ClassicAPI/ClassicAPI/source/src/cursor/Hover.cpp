@@ -42,6 +42,7 @@
 #include "Game.h"
 #include "Offsets.h"
 #include "cursor/Extended.h"
+#include "object/Resolve.h"
 
 #include <cstdio>
 
@@ -81,8 +82,7 @@ uint32_t Capture(uintptr_t classifier, void *worldFrame, void *object) {
 }
 
 uint32_t TypeWord(const void *object) {
-    const auto *fields = Game::Read<const uint8_t *>(object, Offsets::OFF_UNIT_GUID_PTR);
-    return fields == nullptr ? 0 : Game::Read<uint32_t>(fields, Offsets::OFF_OBJECT_FIELD_TYPE);
+    return ::Object::Type(object);
 }
 
 bool IsMouseoverable(void *object) {
@@ -114,6 +114,22 @@ uint32_t Mode(void *object) {
     default:
         return 0;
     }
+}
+
+Reach InteractReach(void *object) {
+    const uint32_t mode = Mode(object);
+    if (mode == 0 || mode == Game::Read<uint32_t>(Offsets::VAR_CURSOR_BASE_MODE))
+        return Reach::None;
+    if (mode == Offsets::CURSOR_MODE_CUSTOM)
+        return IsUsable(object) ? Reach::Now : Reach::Out;
+    if (Extended::Is(mode))
+        return Extended::IsUnable(mode) ? Reach::Out : Reach::Now;
+    const bool unable = mode > Offsets::CURSOR_MODE_LAST_NAMED;
+    const uint32_t kind = unable ? mode - Offsets::CURSOR_MODE_UNABLE_OFFSET : mode;
+    if (kind == 0 || kind > Offsets::CURSOR_MODE_LAST_NAMED || kind == Offsets::CURSOR_MODE_POINT ||
+        kind == Offsets::CURSOR_MODE_CAST || kind == Offsets::CURSOR_MODE_ATTACK)
+        return Reach::None;
+    return unable ? Reach::Out : Reach::Now;
 }
 
 bool IsUsable(void *object) {

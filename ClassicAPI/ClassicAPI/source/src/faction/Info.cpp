@@ -14,6 +14,7 @@
 #include "Game.h"
 #include "Offsets.h"
 #include "dbc/Lookup.h"
+#include "unit/Identity.h"
 
 #include <cstdint>
 
@@ -42,14 +43,6 @@ const uint8_t *FactionRecord(int factionID) {
                        static_cast<uint32_t>(factionID));
 }
 
-// Reads `record[offset + locale*4]` as a localized C string pointer.
-const char *LocalizedString(const uint8_t *record, int offset) {
-    const int locale = *reinterpret_cast<const int *>(
-        static_cast<uintptr_t>(Offsets::VAR_LOCALE_INDEX));
-    auto *strings = reinterpret_cast<const char *const *>(record + offset);
-    return strings[locale];
-}
-
 // Pushes 1.0 for true and nil for false — the convention
 // Script_GetFactionInfo uses for atWar/canToggleAtWar/etc. (engine
 // pushes lua_pushnumber(1.0) or lua_pushnil at 0x004D65F2 /
@@ -58,18 +51,12 @@ const char *LocalizedString(const uint8_t *record, int offset) {
 // the number-or-nil shape here so encountered and unencountered
 // factions return identically and addons can use a single
 // comparison path.
-void PushFlag(void *L, bool value) {
-    if (value)
-        Game::Lua::PushNumber(L, 1.0);
-    else
-        Game::Lua::PushNil(L);
-}
 
 // Resolves the local player's CGPlayer-side info sub-struct at
 // `[player + 0xE68]`. Returns nullptr if "player" isn't resolvable
 // or the sub-struct is uninitialized (pre-login / glue).
 const uint8_t *PlayerInfo() {
-    auto *player = static_cast<const uint8_t *>(Game::ResolveUnitToken("player"));
+    auto *player = Unit::Identity::PlayerObject();
     if (player == nullptr)
         return nullptr;
     return *reinterpret_cast<const uint8_t *const *>(
@@ -138,8 +125,11 @@ bool ReadFactionData(int factionID, FactionData *out) {
     out->factionID = factionID;
     out->repListIndex = *reinterpret_cast<const int32_t *>(
         record + Offsets::OFF_FACTION_REP_LIST_INDEX);
-    out->name = LocalizedString(record, Offsets::OFF_FACTION_NAMES);
-    out->description = LocalizedString(record, Offsets::OFF_FACTION_DESCRIPTIONS);
+    // "" for an empty name or description, which the returns push as strings.
+    out->name = DBC::LocalizedString(record, Offsets::OFF_FACTION_NAMES);
+    if (out->name == nullptr)
+        out->name = "";
+    out->description = DBC::LocalizedString(record, Offsets::OFF_FACTION_DESCRIPTIONS);
     if (out->description == nullptr)
         out->description = "";
 
@@ -301,11 +291,11 @@ static int __fastcall Script_GetFactionInfoByID(void *L) {
         static_cast<double>(d.nextReactionThreshold));             // 5
     Game::Lua::PushNumber(L,
         static_cast<double>(d.currentStanding));                   // 6
-    PushFlag(L, d.atWarWith);                                       // 7
-    PushFlag(L, d.canToggleAtWar);                                  // 8
-    PushFlag(L, d.isHeader);                                        // 9
-    PushFlag(L, d.isCollapsed);                                     // 10
-    PushFlag(L, d.isWatched);                                       // 11
+    Game::Lua::PushFlag(L, d.atWarWith);                                       // 7
+    Game::Lua::PushFlag(L, d.canToggleAtWar);                                  // 8
+    Game::Lua::PushFlag(L, d.isHeader);                                        // 9
+    Game::Lua::PushFlag(L, d.isCollapsed);                                     // 10
+    Game::Lua::PushFlag(L, d.isWatched);                                       // 11
     return 11;
 }
 

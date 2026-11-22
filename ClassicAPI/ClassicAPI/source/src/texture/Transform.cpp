@@ -46,12 +46,9 @@
 // those slots via VertexSlot(); the UPPER_LEFT_VERTEX / … globals are published
 // so addons pass names, not magic numbers.
 //
-// Known limitation (accepted): the table keys on the raw region pointer. `/reload`
-// and world→glue clear it (PrepareForReload), but a texture freed mid-session
-// whose pointer the pool immediately reuses could carry a stale transform until
-// its next corner store. Transforms are an explicit addon opt-in on long-lived
-// textures, so this is unlikely; the clean fix (evict on the CSimpleTexture
-// destructor) is a later hardening.
+// The tables key on the raw region pointer. A region's entries go when it is
+// destroyed (Frame::RegionDestruction), since the pool can hand the address to
+// a new region, and `/reload` and world→glue clear them all (PrepareForReload).
 
 #include "Game.h"
 #include "Offsets.h"
@@ -59,7 +56,9 @@
 
 #include "animation/Region.h"
 #include "frame/Layout.h"
+#include "frame/RegionDestruction.h"
 #include "texture/CornerStore.h"
+#include "texture/Line.h"
 #include "xml/FrameLoad.h"
 #include "xml/TypeLoad.h"
 
@@ -89,8 +88,6 @@ struct Xf {
 
 std::unordered_map<void *, Xf> g_xf;
 
-// FUN_REGION_TEXCOORD_CROP — __thiscall(region, float rect[4]) (rect in/out).
-using Crop_t = void(__fastcall *)(void *region, void *edx, float *rect);
 
 // Retail vertex index → our +0xD4 corner slot (BL=0, TL=1, BR=2, TR=3). The
 // index values (UPPER_LEFT_VERTEX = 1, …) are the FrameXML-style globals defined
@@ -125,25 +122,27 @@ int VertexSlot(int vertexIndex) {
 // first. Without it a region scaled 0.9 got every offset 1/0.9 too large
 // (verified in-game: a 24px offset landed at 26.7px). Reading the scale at
 // write time keeps offsets correct across later scale changes.
-void WriteCorners(void *region, float *base, float left, float right, float top, float bottom,
-                  const Xf &xf) {
+// Each corner's TARGET rect-space position (BL, TL, BR, TR).
+void Targets(void *region, float left, float right, float top, float bottom, const Xf &xf,
+             float tx[4], float ty[4]) {
     const float cx = left + xf.cxN * (right - left);
     const float cy = bottom + xf.cyN * (top - bottom);
     const float c = std::cos(xf.angle);
     const float s = std::sin(xf.angle);
-    float scale = Game::Read<float>(region, Offsets::OFF_REGION_EFFECTIVE_SCALE);
-    if (!(scale > 0.0f))
-        scale = 1.0f;
     const float xs[4] = {left, left, right, right};
     const float ys[4] = {bottom, top, bottom, top};
-    // Compute each corner's TARGET rect-space position first.
-    float tx[4], ty[4];
     for (int i = 0; i < 4; ++i) {
         const float dx = xs[i] - cx;
         const float dy = ys[i] - cy;
-        tx[i] = cx + dx * c + dy * s + Game::PixelToInternal(xf.offX[i] * scale);
-        ty[i] = cy - dx * s + dy * c - Game::PixelToInternal(xf.offY[i] * scale);
+        tx[i] = cx + dx * c + dy * s + Frame::Layout::FromLocalUnits(region, xf.offX[i]);
+        ty[i] = cy - dx * s + dy * c - Frame::Layout::FromLocalUnits(region, xf.offY[i]);
     }
+}
+
+void WriteCorners(void *region, float *base, float left, float right, float top, float bottom,
+                  const Xf &xf) {
+    float tx[4], ty[4];
+    Targets(region, left, right, top, bottom, xf, tx, ty);
     // The draw consumes this array with y INVERTED about the rect's horizontal
     // midline (a vertex stored at rect-space y renders at (top+bottom)-y), and
     // it CULLS a quad whose slot parity flips (mirroring values in place made
@@ -174,8 +173,8 @@ bool ApplyFromRect(void *region, const Xf &xf) {
     float rect[4];
     if (!Frame::Layout::GetRect(region, rect))
         return false;
-    // Apply the texcoord crop (FUN_REGION_TEXCOORD_CROP) exactly as the
-    // engine's own store paths do: gated on the region's
+    // Apply the texcoord crop exactly as the engine's own store paths do
+    // (Texture::CornerStore::CropInput): gated on the region's
     // SetTexCoordModifiesRect flag (+0x124), which is off by default. With the
     // flag clear, a plain texture with a partial or corner-form texcoord draws
     // at its FULL size — verified in-game against .25-span, inset, sheared and
@@ -191,8 +190,7 @@ bool ApplyFromRect(void *region, const Xf &xf) {
     // BOTH states, so this immediate apply and the corner-store co-hook below
     // (which re-derives edges from whatever rect the engine stored) can never
     // disagree about the base rect.
-    if (Game::Read<int>(region, Offsets::OFF_REGION_TEXCOORD_MODIFIES_RECT) != 0)
-        reinterpret_cast<Crop_t>(Offsets::FUN_REGION_TEXCOORD_CROP)(region, nullptr, rect);
+    Texture::CornerStore::CropInput(region, rect);
     // rect = {top, left, bottom, right}. While a position animation plays,
     // each update draws it on top of the corners it stored, so the new shape
     // goes there and shows from the next update on.
@@ -214,7 +212,10 @@ void UpdateAndApply(void *region, const Xf &xf) {
         g_xf[region] = xf;
     else
         g_xf.erase(region); // future stores stay axis-aligned
-    ApplyFromRect(region, xf); // identity xf restores the plain quad
+    if (Texture::Line::Is(region))
+        Texture::Line::Rebuild(region); // a line builds its own quad from the offsets
+    else
+        ApplyFromRect(region, xf); // identity xf restores the plain quad
 }
 
 // After the corner store: the engine wrote axis-aligned corners, and we
@@ -226,7 +227,7 @@ void OnCornersStored(void *region) {
     if (g_xf.empty())
         return;
     auto it = g_xf.find(region);
-    if (it == g_xf.end() || !it->second.active())
+    if (it == g_xf.end() || !it->second.active() || Texture::Line::Is(region))
         return;
     const float *base = Game::Ptr<const float>(region, Offsets::OFF_SIMPLETEXTURE_CORNERS);
     const float left = base[0];   // corner0 BL.x
@@ -816,14 +817,25 @@ void RegisterLuaFunctions() {
 const Game::ModuleAutoRegister _autoreg{&RegisterLuaFunctions};
 const Texture::CornerStore::AutoSubscribe _cornerSub{&OnCornersStored};
 
+void OnRegionDestroyed(void *region) {
+    g_xf.erase(region);
+    g_fsBaseline.erase(region);
+}
+
+const Frame::RegionDestruction::AutoSubscribe _destructionSub{&OnRegionDestroyed};
+
 } // namespace
 
+// /reload and world→glue destroy every addon texture and fontstring, and the
+// region pool reuses their addresses: a stale entry must not transform a new
+// region that lands on the same pointer.
 void PrepareForReload() {
     g_xf.clear();
     g_fsBaseline.clear();
 }
 
 static const Game::ReloadAutoRegister _reloadReg{&PrepareForReload};
+static const Game::GlueBootAutoRegister _glueBootReg{&PrepareForReload};
 
 // Fresh-bake entry (the inline-texture DrawBuilder co-hook): the emitter just
 // baked axis-aligned verts, so capture the baseline and apply the rotation. See
@@ -846,6 +858,11 @@ void ScaleRotateFontStringNode(void *node, float scale, float angle) {
         InsetGlyphUVs(n);
 }
 
+void TargetCorners(void *region, float left, float right, float top, float bottom, float tx[4],
+                   float ty[4]) {
+    Targets(region, left, right, top, bottom, Current(region), tx, ty);
+}
+
 bool GetRotation(void *region, float *angleRad, float *cxN, float *cyN) {
     auto it = g_xf.find(region);
     if (it == g_xf.end() || it->second.angle == 0.0f)
@@ -854,6 +871,19 @@ bool GetRotation(void *region, float *angleRad, float *cxN, float *cyN) {
     *cxN = it->second.cxN;
     *cyN = it->second.cyN;
     return true;
+}
+
+bool VertexOffsets(const void *region, float offX[4], float offY[4]) {
+    auto it = g_xf.find(const_cast<void *>(region));
+    if (it == g_xf.end())
+        return false;
+    bool any = false;
+    for (int i = 0; i < 4; ++i) {
+        offX[i] = it->second.offX[i];
+        offY[i] = it->second.offY[i];
+        any = any || offX[i] != 0.0f || offY[i] != 0.0f;
+    }
+    return any;
 }
 
 } // namespace Texture::Transform

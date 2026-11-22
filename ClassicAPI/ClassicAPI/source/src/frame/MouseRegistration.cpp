@@ -11,29 +11,32 @@
 // You should have received a copy of the GNU General Public License along with
 // ClassicAPI. If not, see <https://www.gnu.org/licenses/>.
 
-// `button:RegisterForMouse(...buttons)` — which mouse buttons run the
-// button's OnMouseDown / OnMouseUp scripts. Retail-only (no decomp); the
-// contract is retail's: AnyUp + AnyDown by default, each call replaces the
-// last, no argument registers nothing, OnMouseUp needs its button's down
-// registered too, and only those two scripts are affected — clicks keep
-// RegisterForClicks, drags RegisterForDrag.
+// `button:RegisterForMouse(...buttons)` — which mouse buttons the button
+// takes at all. The 3.80.2 client's (FUN_140ACB390, mask at button +0x280):
+// AnyUp + AnyDown by default, each call replaces the last, no argument
+// registers nothing, a name that is not a string or not a click name raises
+// the usage error.
 //
-// 1.12 has no such filter: the frame's button-down / button-up slots
-// (0x0076BF70 / 0x0076C040, shared by every frame type and called first by
-// the button's own pair) run OnMouseDown / OnMouseUp for any button, through
-// the variadic forwarder with ("%s", the engine's name literal). That fire is
-// the one place the script — and only the script — can be refused while the
-// drag arming before it and the click logic after it run untouched, and
-// `Frame::ClickEvents` already owns both slots on the shared runner hook, so
-// it asks `Accepts` there. No hook of our own.
+// What it gates is 3.80.2's too (CSimpleButton OnMouseDown FUN_1428B6AC0 /
+// OnMouseUp FUN_1428B6BF0): a press of a button whose down is not registered
+// returns at once from the button's down slot, so there is no OnMouseDown, no
+// drag arming, no click on down and no PUSHED state; a release whose up is
+// not registered returns at once from the up slot, so there is no
+// OnMouseUp, no drag stop, no click and no return to NORMAL. 1.12's button
+// classes share those two slots (0x00779210 / 0x007792D0), which call the
+// base frame's pair first; the co-hooks return before them. OnMouseUp also
+// needs the down registered (3.80.2 fires it only for a frame its press
+// reached): `Frame::ClickEvents` asks `Accepts` when the script fires. A
+// synthetic release (SetMouseFocus's, with no button) goes through, so a
+// pushed button still returns to NORMAL.
 //
 // The mask is the engine's own click-mask encoding (down bits 0x1F, up bits
-// the same << 8; FUN_BUTTON_CLICK's 1/2/4/8/0x10 order) and the names are
-// RegisterForClicks's, parsed the way the engine parses those: case-
-// insensitive, unknown names add nothing, the scan stops at the first
-// non-string. Only buttons that called RegisterForMouse with something other
-// than the default get an entry; Frame::Destruction drops it with the button.
-// MaskForName also parses the XML `registerForClicks` names (Frame::ClickMask).
+// the same << 8; FUN_BUTTON_CLICK's 1/2/4/8/0x10 order); the names are
+// 3.80.2's, Button6 to Button31 included, which add no bit: 1.12 has no
+// such buttons. Only buttons that called RegisterForMouse with something
+// other than the default get an entry; Frame::Destruction drops it with the
+// button. MaskForName also parses the XML `registerForClicks` names
+// (Frame::ClickMask), where an unknown name adds nothing.
 
 #include "frame/MouseRegistration.h"
 
@@ -44,6 +47,7 @@
 #include "frame/Destruction.h"
 
 #include <cstdint>
+#include <cstring>
 #include <unordered_map>
 
 namespace Frame::MouseRegistration {
@@ -54,20 +58,44 @@ constexpr uint32_t kAnyDown = 0x001F;
 constexpr uint32_t kAnyUp = 0x1F00;
 constexpr uint32_t kDefault = kAnyDown | kAnyUp;
 
-struct Name {
-    const char *name;
-    uint32_t bits;
-};
-constexpr Name kNames[] = {
-    {"AnyDown", kAnyDown},           {"AnyUp", kAnyUp},
-    {"LeftButtonDown", 0x01},        {"LeftButtonUp", 0x0100},
-    {"MiddleButtonDown", 0x02},      {"MiddleButtonUp", 0x0200},
-    {"RightButtonDown", 0x04},       {"RightButtonUp", 0x0400},
-    {"Button4Down", 0x08},           {"Button4Up", 0x0800},
-    {"Button5Down", 0x10},           {"Button5Up", 0x1000},
-};
 
 std::unordered_map<const void *, uint32_t> g_masks;
+
+bool Registered(const void *button, uint32_t bits) {
+    if (g_masks.empty())
+        return true;
+    const auto it = g_masks.find(button);
+    return it == g_masks.end() || (it->second & bits) != 0;
+}
+
+// The event's button bit: 1, 2, 4, 8 or 0x10; 0 for a synthetic event.
+uint32_t EventBit(const void *event) {
+    return Game::Read<uint32_t>(event, Offsets::OFF_UI_MOUSE_EVENT_BUTTON) & 0x1F;
+}
+
+using Slot_t = int(__fastcall *)(void *button, void *edx, const void *event);
+Slot_t g_origDown = nullptr;
+Slot_t g_origUp = nullptr;
+
+int __fastcall OnMouseDown_h(void *button, void *edx, const void *event) {
+    const uint32_t bit = EventBit(event);
+    if (bit != 0 && !Registered(button, bit))
+        return 0;
+    return g_origDown(button, edx, event);
+}
+
+int __fastcall OnMouseUp_h(void *button, void *edx, const void *event) {
+    const uint32_t bit = EventBit(event);
+    if (bit != 0 && !Registered(button, bit << 8))
+        return 0;
+    return g_origUp(button, edx, event);
+}
+
+const Game::HookAutoRegister _downHook{Offsets::FUN_BUTTON_ON_MOUSE_DOWN,
+                                       reinterpret_cast<void *>(&OnMouseDown_h),
+                                       reinterpret_cast<void **>(&g_origDown)};
+const Game::HookAutoRegister _upHook{Offsets::FUN_BUTTON_ON_MOUSE_UP, reinterpret_cast<void *>(&OnMouseUp_h),
+                                     reinterpret_cast<void **>(&g_origUp)};
 
 // The down bit of the button a fire names; 0 for "UNKNOWN".
 uint32_t DownBitFor(const char *name) {
@@ -84,8 +112,14 @@ int __fastcall Script_RegisterForMouse(void *L) {
         return 0;
     uint32_t mask = 0;
     const int top = GetTop(L);
-    for (int i = 2; i <= top && IsString(L, i); ++i)
-        mask |= MaskForName(ToString(L, i));
+    for (int i = 2; i <= top; ++i) {
+        uint32_t bits = 0;
+        if (Type(L, i) != TYPE_STRING || !ParseName(ToString(L, i), bits)) {
+            Error(L, "Usage: self:RegisterForMouse([button1, ...])");
+            return 0;
+        }
+        mask |= bits;
+    }
     if (mask == kDefault)
         g_masks.erase(button);
     else
@@ -100,7 +134,9 @@ const Game::Lua::FrameMethodEntry kMethods[] = {
 const Game::Doc::Field kArgs[] = {
     Game::Doc::Vararg("string", "The mouse buttons and actions, such as \"LeftButtonDown\" or \"AnyUp\"."),
 };
-const Game::Doc::Function kDoc{"Sets which mouse buttons run the OnMouseDown and OnMouseUp scripts.", kArgs, {}};
+const Game::Doc::Function kDoc{"Sets which mouse buttons the button takes: presses and releases of any other "
+                               "button do nothing.",
+                               kArgs, {}};
 const Game::Doc::Method kDocs[] = {{"RegisterForMouse", &kDoc}};
 
 void RegisterLuaFunctions() {
@@ -116,11 +152,34 @@ const Frame::Destruction::AutoSubscribe _destructionSub{&OnFrameDestroyed};
 
 } // namespace
 
+bool ParseName(const char *name, uint32_t &mask) {
+    mask = 0;
+    if (Ascii::EqualCI(name, "AnyDown")) {
+        mask = kAnyDown;
+        return true;
+    }
+    if (Ascii::EqualCI(name, "AnyUp")) {
+        mask = kAnyUp;
+        return true;
+    }
+    const size_t len = std::strlen(name);
+    uint32_t bit = 0;
+    if (len > 4 && Ascii::EqualCI(name + len - 4, "Down") &&
+        Frame::ClickEvents::ParseButtonName(name, len - 4, bit)) {
+        mask = bit;
+        return true;
+    }
+    if (len > 2 && Ascii::EqualCI(name + len - 2, "Up") &&
+        Frame::ClickEvents::ParseButtonName(name, len - 2, bit)) {
+        mask = bit << 8;
+        return true;
+    }
+    return false;
+}
+
 uint32_t MaskForName(const char *name) {
-    for (const Name &n : kNames)
-        if (Ascii::EqualCI(name, n.name))
-            return n.bits;
-    return 0;
+    uint32_t mask = 0;
+    return ParseName(name, mask) ? mask : 0;
 }
 
 bool Accepts(void *frame, bool down, const char *name) {

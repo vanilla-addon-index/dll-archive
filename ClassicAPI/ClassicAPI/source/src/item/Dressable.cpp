@@ -49,12 +49,8 @@ uint32_t CreatedItem(int teachID) {
     if (teach == nullptr ||
         Game::Read<int>(teach, Offsets::OFF_SPELL_RECORD_EFFECT) != Offsets::SPELL_EFFECT_LEARN_SPELL)
         return 0;
-    const uint8_t *learned = Spell::Lookup::RecordForID(
-        Game::Read<int>(teach, Offsets::OFF_SPELL_RECORD_EFFECT_TRIGGER_SPELL));
-    if (learned == nullptr ||
-        Game::Read<int>(learned, Offsets::OFF_SPELL_RECORD_EFFECT) != Offsets::SPELL_EFFECT_CREATE_ITEM)
-        return 0;
-    return Game::Read<uint32_t>(learned, Offsets::OFF_SPELL_RECORD_EFFECT_ITEM_TYPE);
+    return Spell::Lookup::CreatedItemID(Spell::Lookup::RecordForID(
+        Game::Read<int>(teach, Offsets::OFF_SPELL_RECORD_EFFECT_TRIGGER_SPELL)));
 }
 
 bool IsDressable(int itemID) {
@@ -75,10 +71,7 @@ bool IsDressable(int itemID) {
 }
 
 int __fastcall Script_IsDressableItem(void *L) {
-    if (IsDressable(Item::Location::IDForArg(L, 1, Offsets::INVMGR_SEARCH_BANK)))
-        Game::Lua::PushNumber(L, 1.0);
-    else
-        Game::Lua::PushNil(L);
+    Game::Lua::PushFlag(L, IsDressable(Item::Location::IDForArg(L, 1, Offsets::INVMGR_SEARCH_BANK)));
     return 1;
 }
 

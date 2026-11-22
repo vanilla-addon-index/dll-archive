@@ -53,27 +53,15 @@
 #include "equipmentset/Data.h"
 #include "item/ID.h"
 #include "item/Link.h"
+#include "macro/Slot.h"
 #include "spell/Lookup.h"
+#include "object/Resolve.h"
 
 #include <cstdint>
 
 namespace Cursor::Info {
 
 namespace {
-
-// Engine signature is `__thiscall(this = typeFilter, guidLo, guidHi,
-// unused)`. The "this" param is just a small integer filter — Ghidra
-// shows it cast as `(void *)0x2` at every call site for items. The
-// function reads only the first two stack args (`[ebp+8]` and
-// `[ebp+0xC]`) but cleans 12 bytes via `ret 0xc`, so the caller must
-// push a third dword for stack balance — engine callers push a
-// scratch dword (`0x90`, `0x1C13`, etc.) for this. Declaring a 4th
-// arg here makes MSVC emit the matching push; without it, stack
-// imbalance of -4 bytes silently corrupts the caller's frame and
-// (downstream) wedges things like chat input.
-using ObjectFromGUID_t = uint8_t *(__thiscall *)(uintptr_t typeFilter,
-                                                  uint32_t guidLo, uint32_t guidHi,
-                                                  uint32_t unused);
 
 constexpr uint32_t TYPE_EMPTY = 0;
 constexpr uint32_t TYPE_BAG_ITEM = 1;
@@ -114,7 +102,6 @@ constexpr int UI_MACRO = 7;
 constexpr int UI_PET = 9;
 constexpr int UI_EQUIPMENT_SET = 12;
 
-constexpr uint32_t GUID_TYPE_FILTER_ITEM = 0x2;
 
 uint32_t ReadVar(uintptr_t va) {
     return *reinterpret_cast<const uint32_t *>(va);
@@ -130,11 +117,8 @@ uint32_t CursorMacroSlot() {
     const uint32_t macroID = ReadVar(Offsets::VAR_CURSOR_MACRO_ID);
     if (macroID == 0)
         return 0;
-    using IdToSlot_t = uint32_t(__fastcall *)(int macroID);
-    const uint32_t slot0 = reinterpret_cast<IdToSlot_t>(
-        static_cast<uintptr_t>(Offsets::FUN_MACRO_ID_TO_SLOT))(
-        static_cast<int>(macroID));
-    return (slot0 == 0xFFFFFFFFu) ? 0 : slot0 + 1;
+    const uint32_t slot0 = ::Macro::Slot::ForId(macroID);
+    return slot0 == ::Macro::Slot::kMiss ? 0 : slot0 + 1;
 }
 
 int PushItem(void *L, const uint8_t *cgItem) {
@@ -151,7 +135,7 @@ int PushItem(void *L, const uint8_t *cgItem) {
     // (plus a virtual call into the sub-object at `+0x110`, whose
     // vftable is also untouched while held on the cursor). Earlier
     // crash repros were the stack-imbalance bug in the GUID resolver
-    // — see Offsets::FUN_OBJECT_FROM_GUID.
+    // — Object::ByGuid now owns that call.
     const char *link = Item::Link::FromCGItem(cgItem);
     if (link != nullptr && *link != '\0') {
         Game::Lua::PushString(L, link);
@@ -165,8 +149,8 @@ int PushBagItemCursor(void *L) {
     const uint32_t hi = ReadVar(Offsets::VAR_CURSOR_ITEM_GUID_HI);
     if (lo == 0 && hi == 0)
         return 0;
-    auto resolver = reinterpret_cast<ObjectFromGUID_t>(Offsets::FUN_OBJECT_FROM_GUID);
-    const uint8_t *cgItem = resolver(GUID_TYPE_FILTER_ITEM, lo, hi, 0);
+    const uint8_t *cgItem = static_cast<const uint8_t *>(Object::ByGuid(
+        Offsets::TYPEMASK_ITEM, (static_cast<uint64_t>(hi) << 32) | lo, nullptr, 0));
     return PushItem(L, cgItem);
 }
 
@@ -323,6 +307,11 @@ bool HasItem() {
            ReadVar(Offsets::VAR_CURSOR_ITEM_GUID_HI) != 0;
 }
 
+void Clear() {
+    using CursorClear_t = void(__fastcall *)(int returnItem, int fireMoneyEvent);
+    reinterpret_cast<CursorClear_t>(Offsets::FUN_CURSOR_CLEAR)(1, 1);
+}
+
 State Current() {
     const uint32_t type = ReadVar(Offsets::VAR_CURSOR_TYPE);
     switch (type) {
@@ -335,9 +324,8 @@ State Current() {
             // FrameXML already calls into it from a CURSOR_UPDATE
             // handler, so the object manager is queryable at this point
             // in the dispatch.
-            auto resolver =
-                reinterpret_cast<ObjectFromGUID_t>(Offsets::FUN_OBJECT_FROM_GUID);
-            const uint8_t *cgItem = resolver(GUID_TYPE_FILTER_ITEM, lo, hi, 0);
+            const uint8_t *cgItem = static_cast<const uint8_t *>(Object::ByGuid(
+                Offsets::TYPEMASK_ITEM, (static_cast<uint64_t>(hi) << 32) | lo, nullptr, 0));
             const int itemID =
                 (cgItem != nullptr) ? Item::ID::FromCGItem(cgItem) : 0;
             return {UI_ITEM, itemID > 0 ? static_cast<uint32_t>(itemID) : 0u};

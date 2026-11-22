@@ -17,7 +17,6 @@
 #include "item/ID.h"
 #include "item/Link.h"
 #include "item/Location.h"
-#include "item/QualityColor.h"
 #include "item/Record.h"
 #include "item/TooltipItem.h"
 #include "object/Resolve.h"
@@ -68,9 +67,7 @@ static int __fastcall Script_GameTooltipSetItemByID(void *L) {
     Game::Lua::SetTop(L, 1);            // keep self at stack[1]
     Game::Lua::PushString(L, hyperlink); // stack[2] = hyperlink
 
-    using Script_t = int(__fastcall *)(void *L);
-    auto fn = reinterpret_cast<Script_t>(Offsets::FUN_SCRIPT_GAMETOOLTIP_SET_HYPERLINK);
-    return fn(L);
+    return Game::Lua::CallScript(Offsets::FUN_SCRIPT_GAMETOOLTIP_SET_HYPERLINK, L);
 }
 
 // `GameTooltip:SetInventoryItemByID(itemID)` — modern method that
@@ -134,9 +131,7 @@ static int __fastcall Script_GameTooltipSetInventoryItemByID(void *L) {
     Game::Lua::PushString(L, "player");
     Game::Lua::PushNumber(L, static_cast<double>(foundSlot));
 
-    using Script_t = int(__fastcall *)(void *L);
-    auto fn = reinterpret_cast<Script_t>(Offsets::FUN_SCRIPT_GAMETOOLTIP_SET_INVENTORY_ITEM);
-    return fn(L);
+    return Game::Lua::CallScript(Offsets::FUN_SCRIPT_GAMETOOLTIP_SET_INVENTORY_ITEM, L);
 }
 
 
@@ -242,22 +237,22 @@ static int __fastcall Script_GameTooltipGetItem(void *L) {
         Item::Data::WarmCache(static_cast<uint32_t>(itemID));
         return 0;
     }
-    const char *name = Game::Read<const char *>(
-        record, Offsets::OFF_ITEMSTATS_NAME);
-    if (name == nullptr || *name == '\0')
-        return 0;
-    const uint32_t quality = Game::Read<uint32_t>(
-        record, Offsets::OFF_ITEMSTATS_QUALITY);
-
     int suffix = 0;
     if (Game::Read<int>(base, Offsets::OFF_TOOLTIP_COMPARE_FLAG) != 0)
         suffix = Game::Read<int>(base, Offsets::OFF_TOOLTIP_COMPARE_SUFFIX);
 
+    // The engine's own name builder gives a suffixed item its full name
+    // ("Iridium Chain of the Owl"), in both the return and the link text.
     char link[256];
-    std::snprintf(link, sizeof(link),
-                  "%s|Hitem:%d:0:%d:0:0:0:0:0|h[%s]|h|r",
-                  Item::QualityColor::Prefix(static_cast<int>(quality)),
-                  itemID, suffix, name);
+    if (!Item::Link::BasicFromIDSuffix(static_cast<uint32_t>(itemID), suffix, link,
+                                       sizeof(link)))
+        return 0;
+    char name[128];
+    if (!Item::Link::NameFromIDSuffix(static_cast<uint32_t>(itemID), suffix, name,
+                                      sizeof(name))) {
+        const char *baseName = Game::Read<const char *>(record, Offsets::OFF_ITEMSTATS_NAME);
+        std::snprintf(name, sizeof(name), "%s", baseName != nullptr ? baseName : "");
+    }
 
     Game::Lua::PushString(L, name);
     Game::Lua::PushString(L, link);
@@ -352,9 +347,7 @@ static int __fastcall Script_GameTooltipSetItemByGUID(void *L) {
     Game::Lua::SetTop(L, 1);
     Game::Lua::PushString(L, payload);
 
-    using Script_t = int(__fastcall *)(void *L);
-    auto fn = reinterpret_cast<Script_t>(Offsets::FUN_SCRIPT_GAMETOOLTIP_SET_HYPERLINK);
-    return fn(L);
+    return Game::Lua::CallScript(Offsets::FUN_SCRIPT_GAMETOOLTIP_SET_HYPERLINK, L);
 }
 
 static const Game::Lua::FrameMethodEntry g_methods[] = {

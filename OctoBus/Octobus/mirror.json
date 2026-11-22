@@ -9,7 +9,7 @@
     "url": "https://octowow.st/git/OEVG/Octobus",
     "api": "https://octowow.st/git/api/v1/repos/OEVG/Octobus"
   },
-  "commit": "cf8b9d01bab852c5cc352da114ea078b968b3f3e",
+  "commit": "c3455b32169f7464068f26c043976aa888a15af1",
   "sourceFiles": {
     ".gitattributes.upstream": {
       "sha256": "d60f352d0db1404c70afb4bb8b2ca3fd1c610572aa40720e8a0b7baa7885418c",
@@ -20,16 +20,16 @@
       "bytes": 9
     },
     "CHANGELOG.md": {
-      "sha256": "7f61cb5986c8354446fde43e02dafcfbc54da192f7e468ac4de21de32274d73f",
-      "bytes": 10956
+      "sha256": "6f4009d816d820544be0662614084dda4f306c7684576a5ca82339565fd41ea9",
+      "bytes": 11075
     },
     "OctoBus.lua": {
-      "sha256": "57a74838f19d923d2cb50253df66426cd1334f922bad6a8963306e8a122857fd",
-      "bytes": 89193
+      "sha256": "708ddf9f7a877a97a83f7385f2f184f974ab27dba20280dc6ac70749df477f75",
+      "bytes": 89826
     },
     "OctoBus.toc": {
-      "sha256": "b970505a51cfa1a20b97226f46bc7008f272993642d270e5d3ef6025c650b164",
-      "bytes": 287
+      "sha256": "a3ac54c41b7c987d40310b638ca3866f35449c84f880424383249bade65884a8",
+      "bytes": 292
     },
     "OctoBusOptions.lua": {
       "sha256": "30f361f58f331d6bf77312ac825b4581305533983e434846375a759e4878f703",

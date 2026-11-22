@@ -30,11 +30,7 @@ namespace Talent::SpellSet {
 namespace {
 
 const char *Name(int spellID) {
-    const uint8_t *rec = Spell::Lookup::RecordForID(spellID);
-    if (rec == nullptr)
-        return nullptr;
-    const int locale = Game::Read<int>(Offsets::VAR_LOCALE_INDEX);
-    return Game::Read<const char *>(rec, Offsets::OFF_SPELL_NAMES + locale * 4);
+    return Spell::Lookup::Name(Spell::Lookup::RecordForID(spellID));
 }
 
 // Every spellID in a Talent.dbc rank column. Each record stores rank-N
@@ -112,7 +108,7 @@ const std::unordered_set<int> &LineSet() {
 // 0 in that column, so `LineSet` holds only rank 1). The engine's own
 // notion of a rank set is "same name in the spellbook": a name-cast
 // resolves to the highest same-named spell in the book
-// (`Spell::Lookup::SpellNameToID` mirrors it), so a book spell that shares
+// (FUN_RESOLVE_SPELL_NAME_TO_BOOK_ID), so a book spell that shares
 // a talent rank's name is a rank of that talent.
 const std::unordered_set<std::string> &NameSet() {
     static std::unordered_set<std::string> set;

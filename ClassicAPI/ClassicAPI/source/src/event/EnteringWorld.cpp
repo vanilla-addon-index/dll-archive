@@ -47,29 +47,17 @@ namespace Event::EnteringWorld {
 namespace {
 
 // Chained at static init by each `AutoObserve`, before `DllMain`.
-const AutoObserve *g_observers = nullptr;
 
 // Set on glue-screen boot; a pending latch means the next enter-world is a
 // fresh character login (from the login/char-select screen).
 bool g_atGlue = false;
 // Set when the in-game Lua state is (re)built (login or /reload).
 bool g_scriptReloaded = false;
-// Cached PLAYER_ENTERING_WORLD event-table slot; -1 = unresolved. Reset per
-// in-game init (the table is rebuilt, though engine slots are stable) and
-// re-resolved lazily at fire time.
-int g_pewId = -1;
-
-int PewId() {
-    if (g_pewId < 0)
-        g_pewId = Event::Custom::LookupByName("PLAYER_ENTERING_WORLD");
-    return g_pewId;
-}
-
 // Shared-hook interceptor. For PEW, re-broadcast with the payload and
 // suppress the engine's no-arg fire; everything else passes through.
 bool Intercept(int eventID) {
-    const int pew = PewId();
-    if (pew < 0 || eventID != pew)
+    const int pew = Offsets::EVENT_PLAYER_ENTERING_WORLD;
+    if (eventID != pew)
         return false;
 
     const bool isInitialLogin = g_atGlue;
@@ -90,7 +78,7 @@ bool Intercept(int eventID) {
     else
         Event::Custom::Fire(pew, "%s%s", kNil, kNil);
 
-    for (const AutoObserve *o = g_observers; o != nullptr; o = o->next)
+    for (const AutoObserve *o = AutoObserve::head; o != nullptr; o = o->next)
         o->fn();
     return true; // handled — suppress the original no-arg PEW fire
 }
@@ -98,11 +86,9 @@ bool Intercept(int eventID) {
 const Event::SignalHook::AutoSubscribe _intercept{&Intercept};
 
 // In-game Lua (re)init: login or /reload rebuilt the script state (never a
-// zone transition). Also re-arm the PEW slot lookup — the event table was
-// rebuilt.
+// zone transition).
 void OnInGameInit() {
     g_scriptReloaded = true;
-    g_pewId = -1;
 }
 
 // Glue-screen boot: we're at the login/char-select screen, so the next
@@ -113,7 +99,5 @@ const Game::ModuleAutoRegister _inGame{&OnInGameInit};
 const Game::GlueModuleAutoRegister _glue{&OnGlueInit};
 
 } // namespace
-
-AutoObserve::AutoObserve(Observer f) : fn(f), next(g_observers) { g_observers = this; }
 
 } // namespace Event::EnteringWorld

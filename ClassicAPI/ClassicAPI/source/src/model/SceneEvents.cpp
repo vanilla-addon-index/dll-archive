@@ -46,9 +46,14 @@
 //   at the actor, heard from the scene camera. An actor with neither ground
 //   has no footsteps and no death thud, as nothing tells it what it stands on.
 //
-// Not played: the combat tags $CSS, $CAH and $AH0..$AH3 present a pending
-// swing (0x006247D0) and play nothing without one, and an actor never swings
-// at anything; footprints and splashes are world effects, and so are the
+// - The combat tags present the pending swing (PlaySwing) on its victim, as
+//   OnCombatModelEvent (0x006247D0) presents a unit's: $CPP the parry, dodge
+//   or block pose (0x00624A01), $CAH and $AH0..$AH3 the attacker's half-speed
+//   follow-through of an avoided swing and the wound of a hit, which end the
+//   swing (0x006249B0). Nothing without one.
+//
+// Not played: $CSS (the swing's whoosh), the swing's impact sounds, its
+// blood and its floating text; footprints and splashes are world effects, and so are the
 // footstep shake (CreatureModelData +0x2C, 0x005FBF70) and the swing shake
 // (+0x30, 0x00625C30), which stock scenes, unlike the world, do not show.
 
@@ -58,6 +63,7 @@
 #include "Offsets.h"
 #include "cvar/Factory.h"
 #include "dbc/Lookup.h"
+#include "model/DisplayInfo.h"
 #include "model/M2.h"
 #include "sound/Play.h"
 #include "time/Clock.h"
@@ -93,6 +99,12 @@ constexpr uint32_t kWGG = Tag('$', 'W', 'G', 'G');
 constexpr uint32_t kCSD = Tag('$', 'C', 'S', 'D');
 constexpr uint32_t kTRD = Tag('$', 'T', 'R', 'D');
 constexpr uint32_t kSHK = Tag('$', 'S', 'H', 'K');
+constexpr uint32_t kCPP = Tag('$', 'C', 'P', 'P');
+constexpr uint32_t kCAH = Tag('$', 'C', 'A', 'H');
+constexpr uint32_t kAH0 = Tag('$', 'A', 'H', '0');
+constexpr uint32_t kAH3 = Tag('$', 'A', 'H', '3');
+static_assert(kCPP == 0x50504324 && kCAH == 0x48414324 && kAH0 == 0x30484124 && kAH3 == 0x33484124,
+              "the combat tags as OnCombatModelEvent compares them");
 static_assert(Offsets::M2_EVENT_TAG_SND == Tag('$', 'S', 'N', 'D'), "$SND as the engine compares it");
 static_assert(kSHK == 0x4B485324, "$SHK as the dynamic object compares it (0x005D58E9)");
 static_assert(kCSR == 0x52534324 && kWNG == 0x474E5724, "tags compare as the engine's dwords");
@@ -104,8 +116,7 @@ bool g_standPlayed = false;
 
 // The display's sound data row, else its model data's.
 const uint8_t *SoundData(uint32_t displayID) {
-    const uint8_t *display = DBC::Record(Offsets::VAR_CREATUREDISPLAYINFO_RECORDS,
-                                         Offsets::VAR_CREATUREDISPLAYINFO_COUNT, displayID);
+    const uint8_t *display = Model::DisplayInfo::Record(displayID);
     if (display == nullptr)
         return nullptr;
     auto row = [](uint32_t id) {
@@ -114,9 +125,7 @@ const uint8_t *SoundData(uint32_t displayID) {
     };
     if (const uint8_t *own = row(Game::Read<uint32_t>(display, Offsets::OFF_CREATUREDISPLAYINFO_SOUND_ID)))
         return own;
-    const uint8_t *modelData =
-        DBC::Record(Offsets::VAR_CREATUREMODELDATA_RECORDS, Offsets::VAR_CREATUREMODELDATA_COUNT,
-                    Game::Read<uint32_t>(display, Offsets::OFF_CREATUREDISPLAYINFO_MODEL_ID));
+    const uint8_t *modelData = Model::DisplayInfo::ModelData(display);
     return modelData != nullptr
                ? row(Game::Read<uint32_t>(modelData, Offsets::OFF_CREATUREMODELDATA_SOUND_ID))
                : nullptr;
@@ -125,16 +134,13 @@ const uint8_t *SoundData(uint32_t displayID) {
 // GetUnitSoundSize: the display's size class unless -1, else its model
 // data's; -1 when neither is known.
 int SizeClass(uint32_t displayID) {
-    const uint8_t *display = DBC::Record(Offsets::VAR_CREATUREDISPLAYINFO_RECORDS,
-                                         Offsets::VAR_CREATUREDISPLAYINFO_COUNT, displayID);
+    const uint8_t *display = Model::DisplayInfo::Record(displayID);
     if (display == nullptr)
         return -1;
     const auto size = Game::Read<int32_t>(display, Offsets::OFF_CREATUREDISPLAYINFO_SIZE_CLASS);
     if (size != -1)
         return size;
-    const uint8_t *modelData =
-        DBC::Record(Offsets::VAR_CREATUREMODELDATA_RECORDS, Offsets::VAR_CREATUREMODELDATA_COUNT,
-                    Game::Read<uint32_t>(display, Offsets::OFF_CREATUREDISPLAYINFO_MODEL_ID));
+    const uint8_t *modelData = Model::DisplayInfo::ModelData(display);
     return modelData != nullptr
                ? Game::Read<int32_t>(modelData, Offsets::OFF_CREATUREMODELDATA_SIZE_CLASS)
                : -1;
@@ -145,7 +151,7 @@ bool CVarOn(const char *name) { return CVar::Factory::GetInt(CVar::Factory::Find
 // A unit's animation sounds play at the unit (heard from the scene camera).
 void Play(const Actor &actor, int32_t soundID) {
     if (soundID > 0)
-        Sounds::Play(actor.SceneFrame(), soundID, actor.position);
+        Sounds::Play(actor.SceneFrame(), soundID, actor.Origin().p);
 }
 
 void PlayStand(const Actor &actor, const uint8_t *soundData) {
@@ -257,6 +263,49 @@ void BowReleasePoint(const Actor &actor, float (&point)[3]) {
         M2::GetAttachmentPosition(actor.model, attachment, point);
 }
 
+// $CPP (0x00624A01): the victim's pose for a parried (state 3), dodged or
+// deflected (2, 8) or blocked (5) swing, through the unit's play. The swing
+// stays pending for its hit event.
+void PresentAvoid(const Actor &attacker) {
+    Actor *victim = attacker.pendingSwing.victim;
+    if (victim == nullptr)
+        return;
+    switch (attacker.pendingSwing.result) {
+    case Actor::SwingResult::Parry:
+        victim->PlayParryAnimation();
+        break;
+    case Actor::SwingResult::Dodge:
+    case Actor::SwingResult::Deflect:
+        victim->PlayUnitAnimation(Offsets::ANIM_DODGE);
+        break;
+    case Actor::SwingResult::Block:
+        victim->PlayUnitAnimation(Offsets::ANIM_SHIELD_BLOCK);
+        break;
+    default:
+        break;
+    }
+}
+
+// $CAH, $AH0..$AH3 (0x00624930 to 0x006249C0), with a swing pending: a
+// missed, dodged or evaded swing (states 0, 2, 6, 0x00624CA0) slows the
+// attacker's bone 0 to half speed for its follow-through; ShowSwingOnVictim
+// (0x00624530) wounds the victim of a hit (hit info 0x2, critical 0x80);
+// then the swing ends.
+constexpr float kAvoidedSwingSpeed = 0.5f; // 0x3F000000 at 0x00624993
+
+void PresentHit(Actor &attacker) {
+    const Actor::PendingSwing swing = attacker.pendingSwing;
+    if (!swing.pending)
+        return;
+    attacker.pendingSwing = {};
+    if ((swing.result == Actor::SwingResult::Miss || swing.result == Actor::SwingResult::Dodge ||
+         swing.result == Actor::SwingResult::Evade) &&
+        attacker.model != nullptr)
+        M2::SetAnimSpeed(attacker.model, -1, kAvoidedSwingSpeed);
+    if (swing.victim != nullptr && swing.result == Actor::SwingResult::Hit)
+        swing.victim->PlayWoundAnimation(swing.critical);
+}
+
 } // namespace
 
 void __stdcall OnModelEvent(uint32_t tag, uint32_t data, const float *point, uint32_t /*unknown*/,
@@ -290,6 +339,14 @@ void __stdcall OnModelEvent(uint32_t tag, uint32_t data, const float *point, uin
     }
     if (tag == kBWP) {
         Casts::BowPull(*actor);
+        return;
+    }
+    if (tag == kCPP) {
+        PresentAvoid(*actor);
+        return;
+    }
+    if (tag == kCAH || (tag >= kAH0 && tag <= kAH3 && (tag & 0x00FFFFFF) == (kAH0 & 0x00FFFFFF))) {
+        PresentHit(*actor);
         return;
     }
     if (actor->playAnimationSounds)

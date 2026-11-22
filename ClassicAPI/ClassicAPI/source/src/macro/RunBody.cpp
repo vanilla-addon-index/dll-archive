@@ -45,6 +45,7 @@
 // action-bar macro) runs with none, as each run sets its own and restores the
 // outer one when it ends.
 
+#include "baselib/Ascii.h"
 #include "macro/RunBody.h"
 
 #include "action/Slot.h"
@@ -52,17 +53,14 @@
 #include "Game.h"
 #include "Offsets.h"
 #include "event/Custom.h"
+#include "storm/String.h"
 
 namespace Macro::RunBody {
 
 namespace {
 
-using Tokenize_t = void(__stdcall *)(const char **cursor, char *out, unsigned outSize,
-                                     const char *delims, int *outQuoted);
 
 constexpr unsigned kLineBufferSize = Offsets::MACRO_LINE_BUFFER_SIZE;
-
-bool IsBlank(char c) { return c == ' ' || c == '\t'; }
 
 // Set by `StopMacro()`, read after each dispatched line. Scoped to the macro
 // currently running: a line that runs ANOTHER macro (a `/click` on a button
@@ -83,7 +81,6 @@ void __fastcall RunBody_h(int macroEntry) {
     if (macroEntry == 0)
         return;
 
-    auto tokenize = reinterpret_cast<Tokenize_t>(Offsets::FUN_STORM_STR_TOKENIZE);
     const char *delims = reinterpret_cast<const char *>(Offsets::VAR_MACRO_LINE_DELIMS);
     const char *cursor = reinterpret_cast<const char *>(macroEntry + Offsets::OFF_MACRO_BODY);
 
@@ -97,13 +94,13 @@ void __fastcall RunBody_h(int macroEntry) {
 
     char line[kLineBufferSize];
     while (cursor != nullptr && *cursor != '\0') {
-        tokenize(&cursor, line, kLineBufferSize, delims, nullptr);
+        Storm::Tokenize(&cursor, line, kLineBufferSize, delims, nullptr);
         // The tokenizer splits on `\r\n` only, so a directive typed with a
         // leading space still arrives with it. Find the first real character
         // before deciding the line is a comment — otherwise ` #showtooltip`
         // goes to chat as a /say.
         const char *text = line;
-        while (IsBlank(*text))
+        while (Ascii::IsBlank(*text))
             ++text;
         if (*text == '\0' || *text == '#')
             continue;
@@ -129,10 +126,7 @@ int __fastcall Script_StopMacro(void * /*L*/) {
 // `GetRunningMacroButton()` — the button the running macro was started with,
 // or nil.
 int __fastcall Script_GetRunningMacroButton(void *L) {
-    if (g_runningButton != nullptr)
-        Game::Lua::PushString(L, g_runningButton);
-    else
-        Game::Lua::PushNil(L);
+    Game::Lua::PushString(L, g_runningButton);
     return 1;
 }
 

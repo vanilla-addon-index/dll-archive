@@ -27,6 +27,7 @@
 #include "Offsets.h"
 #include "object/Resolve.h"
 #include "unit/Identity.h"
+#include "unit/Relation.h"
 
 #include <cstdint>
 
@@ -34,9 +35,7 @@ namespace Unit::RaidTargetEligible {
 
 namespace {
 
-using TokenToGuid_t = uint64_t(__fastcall *)(const char *token);
 using IsPlayerOrPet_t = int(__fastcall *)(const uint64_t *guid);
-using CanCooperate_t = bool(__fastcall *)(const void *self, void *, const void *other);
 
 bool CanBeRaidTarget(uint64_t guid) {
     if (guid == 0)
@@ -50,12 +49,9 @@ bool CanBeRaidTarget(uint64_t guid) {
     if (player == nullptr || unit == nullptr)
         return false;
 
-    const auto *fields = Game::Read<const uint8_t *>(unit, Offsets::OFF_UNIT_GUID_PTR);
-    if ((Game::Read<uint32_t>(fields, Offsets::OFF_OBJECT_FIELD_TYPE) &
-         Offsets::TYPEMASK_PLAYER) == 0)
+    if ((::Object::Type(unit) & Offsets::TYPEMASK_PLAYER) == 0)
         return true;
-    return reinterpret_cast<CanCooperate_t>(Offsets::FUN_UNIT_CAN_COOPERATE)(player, nullptr,
-                                                                           unit) ||
+    return ::Unit::Relation::CanCooperate(player, unit) ||
            unit == player;
 }
 
@@ -64,8 +60,7 @@ int __fastcall Script_CanBeRaidTarget(void *L) {
         Game::Lua::Error(L, "Usage: CanBeRaidTarget(\"unit\")");
         return 0;
     }
-    const uint64_t guid = reinterpret_cast<TokenToGuid_t>(Offsets::FUN_TOKEN_TO_GUID)(
-        Game::Lua::ToString(L, 1));
+    const uint64_t guid = ::Unit::Identity::GuidForToken(Game::Lua::ToString(L, 1));
     Game::Lua::PushBool(L, CanBeRaidTarget(guid));
     return 1;
 }

@@ -17,12 +17,12 @@
 #include "Offsets.h"
 
 #include <cstdint>
+#include <cstring>
 
 namespace Texture {
 
 namespace {
 
-using HandleRelease_t = void(__fastcall *)(void *handle);
 using SysMsgAdd_t = int(__fastcall *)(void *status, uint32_t level);
 using StatusDestroy_t = void(__thiscall *)(void *status);
 using TexFlagsInit_t = void *(__thiscall *)(void *self, uint32_t blend, int, int, int, int, int,
@@ -66,9 +66,11 @@ uint32_t DefaultFlags() {
     return Flags(Game::Read<uint32_t>(Offsets::VAR_TEXTURE_BLEND_DEFAULT), false, false);
 }
 
-void ReleaseHandle(void *handle) {
-    if (handle != nullptr)
-        reinterpret_cast<HandleRelease_t>(Offsets::FUN_HANDLE_RELEASE)(handle);
+uint32_t SetFile(void *texture, const char *path) {
+    using SetTexture_t = uint32_t(__thiscall *)(void *texture, const char *path, uint32_t wrap,
+                                                uint32_t filter, uint32_t shader);
+    return reinterpret_cast<SetTexture_t>(Offsets::FUN_SIMPLETEXTURE_SET_TEXTURE)(
+        texture, path, 0, Game::Read<uint32_t>(Offsets::VAR_TEXTURE_BLEND_DEFAULT), 0);
 }
 
 void *DeviceTexture(void *handle) {
@@ -89,12 +91,39 @@ void *LoadByPath(const char *path, uint32_t flags) {
     void *handle = reinterpret_cast<void *>(reinterpret_cast<TextureLoad_t>(
         Offsets::FUN_TEXTURE_LOAD_BY_PATH)(path, &desc, flags, 0, 1));
     if (desc.field10 >= 2) {
-        ReleaseHandle(handle);
+        Game::ReleaseHandle(handle);
         handle = nullptr;
         reinterpret_cast<SysMsgAdd_t>(Offsets::FUN_SYSMSG_ADD_STATUS)(&desc, 4);
     }
     reinterpret_cast<StatusDestroy_t>(Offsets::FUN_FRAMESCRIPT_STATUS_RESET)(&desc);
     return handle;
+}
+
+// TextureCreate's candidates in its order, each resolved as its loader would
+// open it; the first that resolves decides.
+bool IsLooseFile(const char *path) {
+    using Split_t = int(__fastcall *)(const char *name, char *buffer, char **split);
+    using Resolve_t = int(__fastcall *)(const char *name, char *out, uint32_t size, uint32_t flags,
+                                        uint32_t *kind, void **archive);
+    if (path == nullptr || *path == '\0')
+        return false;
+    // The engine's buffer is TEXTURE_NAME_BUFFER; the slack keeps a name of
+    // the full length from running its extension past the end.
+    char name[Offsets::TEXTURE_NAME_BUFFER + 8] = {};
+    char *split = nullptr;
+    const int first = reinterpret_cast<Split_t>(Offsets::FUN_TEXTURE_NAME_SPLIT)(path, name, &split);
+    const auto *extensions = reinterpret_cast<const char *const *>(Offsets::VAR_TEXTURE_NAME_EXTENSIONS);
+    for (int i = 0; i < 2; ++i) {
+        const char *extension = extensions[i == 0 ? first : 1 - first];
+        std::memcpy(split, extension, std::strlen(extension) + 1);
+        char resolved[Offsets::TEXTURE_NAME_BUFFER];
+        uint32_t kind = 0;
+        void *archive = nullptr;
+        if (reinterpret_cast<Resolve_t>(Offsets::FUN_SFILE_RESOLVE_OPEN)(
+                name, resolved, sizeof resolved, Offsets::SFILE_OPEN_LOOSE, &kind, &archive) != 0)
+            return kind != Offsets::SFILE_KIND_ARCHIVE;
+    }
+    return false;
 }
 
 void *CreateFromPixels(const char *name, uint32_t width, uint32_t height,

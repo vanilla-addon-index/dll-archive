@@ -34,9 +34,11 @@
 #include "Game.h"
 #include "Offsets.h"
 #include "item/CGItem.h"
+#include "item/ID.h"
 #include "item/Link.h"
 #include "item/Location.h"
 #include "item/Record.h"
+#include "object/Resolve.h"
 #include "unit/Identity.h"
 #include "tick/WorldTick.h"
 
@@ -58,29 +60,6 @@ bool MerchantOpen(uint32_t &outGuidLo, uint32_t &outGuidHi) {
     return (outGuidLo | outGuidHi) != 0;
 }
 
-// CGItem +0x08 → instance block → +0x0C = itemID. Same chain
-// EquipmentSet uses for set-membership lookups.
-int ItemIDFromCGItem(const uint8_t *cgItem) {
-    if (cgItem == nullptr)
-        return 0;
-    auto *instance = Item::InstanceBlock(cgItem);
-    if (instance == nullptr)
-        return 0;
-    return static_cast<int>(*reinterpret_cast<const uint32_t *>(
-        instance + Offsets::OFF_INSTANCE_BLOCK_ITEM_ID));
-}
-
-// Item GUID — same instance block, `+0x00` = uint64 GUID.
-uint64_t ItemGUIDFromCGItem(const uint8_t *cgItem) {
-    if (cgItem == nullptr)
-        return 0;
-    auto *instance = Item::InstanceBlock(cgItem);
-    if (instance == nullptr)
-        return 0;
-    return *reinterpret_cast<const uint64_t *>(
-        instance + Offsets::OFF_INSTANCE_BLOCK_GUID);
-}
-
 // Looks up `itemID` in the ItemStats cache and reads quality from
 // `+0x1C`. Quality 0 = Poor (grey junk). Returns -1 on cache miss
 // so callers can distinguish "not loaded" from "loaded poor-quality".
@@ -95,13 +74,12 @@ int ItemQuality(uint32_t itemID) {
 // Player invMgr lives inline at player + 0x1D38. First uint32 is the
 // max slot count; +0x04 is the GUID array pointer.
 // Walk a single bag, invoking `cb(cgItem)` for each non-empty slot.
-// `cb` returns true to continue, false to stop iteration. Stomps
-// the Lua stack — caller must own it (`ResolveBag` does the stomping).
+// `cb` returns true to continue, false to stop iteration.
 template <typename Cb>
-void ForEachItemInBag(void *L, int bagID, Cb &&cb) {
+void ForEachItemInBag(int bagID, Cb &&cb) {
     const int slotCount = Item::Location::GetBagSlotCount(bagID);
     for (int slot = 1; slot <= slotCount; ++slot) {
-        const uint8_t *item = Item::Location::ResolveBag(L, bagID, slot);
+        const uint8_t *item = Item::Location::ResolveBag(bagID, slot);
         if (item == nullptr)
             continue;
         if (!cb(bagID, slot, item))
@@ -155,7 +133,7 @@ int __fastcall Script_GetBuybackItemID(void *L) {
         return 0;
     }
     const int slot = static_cast<int>(Game::Lua::ToNumber(L, 1)) - 1;
-    const int itemID = ItemIDFromCGItem(BuybackItem(slot));
+    const int itemID = Item::ID::FromCGItem(BuybackItem(slot));
     if (itemID == 0)
         return 0;
     Game::Lua::PushNumber(L, static_cast<double>(itemID));
@@ -238,8 +216,8 @@ int __fastcall Script_GetNumJunkItems(void *L) {
 
     int junkCount = 0;
     for (int bag = 0; bag <= 4; ++bag) {
-        ForEachItemInBag(L, bag, [&](int, int, const uint8_t *item) {
-            const int itemID = ItemIDFromCGItem(item);
+        ForEachItemInBag(bag, [&](int, int, const uint8_t *item) {
+            const int itemID = Item::ID::FromCGItem(item);
             if (itemID > 0 && ItemQuality(static_cast<uint32_t>(itemID)) == 0)
                 ++junkCount;
             return true;
@@ -347,11 +325,11 @@ int __fastcall Script_SellAllJunkItems(void *L) {
     g_pending.merchantHi = merchantHi;
 
     for (int bag = 0; bag <= 4; ++bag) {
-        ForEachItemInBag(L, bag, [&](int, int, const uint8_t *item) {
-            const int itemID = ItemIDFromCGItem(item);
+        ForEachItemInBag(bag, [&](int, int, const uint8_t *item) {
+            const int itemID = Item::ID::FromCGItem(item);
             if (itemID <= 0 || ItemQuality(static_cast<uint32_t>(itemID)) != 0)
                 return true;
-            const uint64_t guid = ItemGUIDFromCGItem(item);
+            const uint64_t guid = ::Object::Guid(item);
             if (guid != 0)
                 g_pending.queue.push_back(guid);
             return true;

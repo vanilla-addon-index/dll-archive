@@ -25,7 +25,9 @@
 //     and power changes, retests each such spell and glows what its mask
 //     selects while it is usable.
 // GLOW_SHOW / GLOW_HIDE fire on a spell's glowing ↔ not-glowing transitions,
-// and `IsSpellOverlayed` answers "glowing now". After PLAYER_ENTERING_WORLD,
+// and `IsSpellOverlayed` answers "glowing now". A spellbook change
+// (SPELLS_CHANGED) recomputes which spells glow, as 3.80.2 recounts on learn
+// and unlearn. After PLAYER_ENTERING_WORLD,
 // `EnterWorld` fires HIDE with no spell, fires SHOW again for every active
 // aura row, and reconciles the glows (which survive a /reload — FrameXML's
 // action buttons ask `IsSpellOverlayed` when they update).
@@ -68,6 +70,7 @@
 #include "event/SignalHook.h"
 #include "spell/Lookup.h"
 #include "unit/Identity.h"
+#include "object/Resolve.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -165,17 +168,13 @@ std::vector<uint32_t> g_glowing;
 
 bool g_reconciling = false;
 bool g_again = false;
-
-const char *SpellName(const uint8_t *rec) {
-    const int locale = Game::Read<int>(Offsets::VAR_LOCALE_INDEX);
-    return Game::Read<const char *>(rec, Offsets::OFF_SPELL_NAMES + locale * 4);
-}
+bool g_againBook = false;
 
 uint32_t ActiveRows() {
     const uint8_t *player = Unit::Identity::PlayerObject();
     if (player == nullptr)
         return 0;
-    const auto *desc = Game::Read<const uint8_t *>(player, Offsets::OFF_UNIT_DESCRIPTOR);
+    const auto *desc = Object::Fields(player);
     if (desc == nullptr)
         return 0;
     uint32_t rows = 0;
@@ -224,35 +223,35 @@ std::vector<uint32_t> GlowTargets(uint32_t rows, const std::vector<uint32_t> &us
     std::vector<const char *> names;
     for (uint32_t id : usable) {
         const uint8_t *rec = Spell::Lookup::RecordForID(static_cast<int>(id));
-        if (rec != nullptr && SpellName(rec) != nullptr)
-            names.push_back(SpellName(rec));
+        if (rec != nullptr && Spell::Lookup::Name(rec) != nullptr)
+            names.push_back(Spell::Lookup::Name(rec));
     }
 
-    const int count = std::min(Game::Read<int>(Offsets::VAR_PLAYER_SPELLBOOK_COUNT),
-                               static_cast<int>(Offsets::SPELLBOOK_MAX_SLOTS));
-    for (int slot = 0; slot < count; ++slot) {
-        const int id = Game::Read<int>(Offsets::VAR_PLAYER_SPELLBOOK + slot * 4);
+    Spell::Lookup::ForEachBookSpell(0, [&](int, int id) {
         const uint8_t *rec = Spell::Lookup::RecordForID(id);
         if (rec == nullptr)
-            continue;
+            return true;
         bool glow = false;
         for (const Mask &m : masks)
             glow = glow || Spell::Lookup::IsFitToFamily(rec, m.family, m.flags);
-        const char *name = SpellName(rec);
+        const char *name = Spell::Lookup::Name(rec);
         for (const char *n : names)
             glow = glow || (name != nullptr && std::strcmp(name, n) == 0);
         if (glow)
             out.push_back(static_cast<uint32_t>(id));
-    }
+        return true;
+    });
     std::sort(out.begin(), out.end());
     out.erase(std::unique(out.begin(), out.end()), out.end());
     return out;
 }
 
-void Step(bool enterWorld) {
+// `bookChanged`: the spellbook changed, so the same sources can glow other
+// spells.
+void Step(bool enterWorld, bool bookChanged) {
     const uint32_t rows = ActiveRows();
     UsableReactive(g_read);
-    if (!enterWorld && rows == g_activeRows && g_read == g_usable)
+    if (!enterWorld && !bookChanged && rows == g_activeRows && g_read == g_usable)
         return;
     g_activeRows = rows;
     g_usable.swap(g_read);
@@ -293,27 +292,35 @@ void Step(bool enterWorld) {
 
 // A handler of one of our events can change what we read (a target change
 // re-runs FireUsableEvents); that request runs once the outer pass is done.
-void Reconcile(bool enterWorld) {
+void Reconcile(bool enterWorld, bool bookChanged = false) {
     if (g_reconciling) {
         g_again = true;
+        g_againBook = g_againBook || bookChanged;
         return;
     }
     g_reconciling = true;
-    Step(enterWorld);
+    Step(enterWorld, bookChanged);
     while (g_again) {
+        const bool book = g_againBook;
         g_again = false;
-        Step(false);
+        g_againBook = false;
+        Step(false, book);
     }
     g_reconciling = false;
 }
 
-bool OnSignal(int eventID) {
-    if (eventID == Offsets::EVENT_SPELL_UPDATE_USABLE)
-        Reconcile(false);
-    return false;
-}
+void OnSpellUpdateUsable() { Reconcile(false); }
 
-const Event::SignalHook::AutoSubscribe _usable{&OnSignal};
+const Event::SignalHook::AutoObserve _usable{Offsets::EVENT_SPELL_UPDATE_USABLE,
+                                             &OnSpellUpdateUsable};
+
+// 3.80.2 recounts the glows when a spell is learned or unlearned
+// (FUN_14174f940 / FUN_14174fe00 → FUN_1418835a0): a rank learned while its
+// proc is up glows, and an unlearned spell stops. 1.12 signals a spellbook
+// change with SPELLS_CHANGED.
+void OnSpellsChanged() { Reconcile(false, true); }
+
+const Event::SignalHook::AutoObserve _book{Offsets::EVENT_SPELLS_CHANGED, &OnSpellsChanged};
 
 void OnAuraChange(const Aura::Source::Change &c) {
     if (c.type != Aura::Source::ChangeType::Added && c.type != Aura::Source::ChangeType::Removed)

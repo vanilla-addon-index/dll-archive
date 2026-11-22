@@ -75,7 +75,7 @@ const char *Name(int event);
 // The INFO_MISS value as 4.3.4's g_spellMissStrings names it.
 const char *MissName(int missType);
 
-// The INFO_ENVIRONMENTAL value as 4.3.4's s_environmentalDamageTypes names it.
+// The INFO_ENVIRONMENTAL value as retail's CLEU and log file name it.
 const char *EnvironmentalName(int type);
 
 // 4.3.4's m_infoFlags: which suffix blocks the event carries, pushed in
@@ -96,6 +96,9 @@ enum Info : uint32_t {
     INFO_ITEM = 0x200,        // itemId, itemName
     INFO_AURA_TYPE = 0x400,   // auraType
     INFO_AURA_AMOUNT = 0x800, // amount (stacks)
+    // recapID (v[0]), unconsciousOnDeath — 3.80.2's death suffix (the bit its
+    // UNIT_DIED handler FUN_1414407d0 sets). 4.3.4 has no death recap.
+    INFO_DEATH = 0x80000,
 };
 
 // 4.3.4's miss types (g_spellMissStrings), in the server's numbering.
@@ -113,6 +116,35 @@ enum MissType : int {
     MISS_REFLECT = 11,
     MISS_COUNT = 12,
 };
+
+// COMBATLOG_OBJECT_* — 4.3.4's GetCombatLogObjectFlags, the bits of an
+// entry's sourceFlags / destFlags.
+namespace ObjectFlag {
+constexpr uint32_t AFFILIATION_MINE = 0x1;
+constexpr uint32_t AFFILIATION_PARTY = 0x2;
+constexpr uint32_t AFFILIATION_RAID = 0x4;
+constexpr uint32_t AFFILIATION_OUTSIDER = 0x8;
+constexpr uint32_t AFFILIATION_MASK = 0xF;
+// The player, a party or raid member, or a unit one of them controls.
+constexpr uint32_t AFFILIATION_GROUP = AFFILIATION_MINE | AFFILIATION_PARTY | AFFILIATION_RAID;
+constexpr uint32_t REACTION_FRIENDLY = 0x10;
+constexpr uint32_t REACTION_NEUTRAL = 0x20;
+constexpr uint32_t REACTION_HOSTILE = 0x40;
+constexpr uint32_t REACTION_MASK = 0xF0;
+// A unit the player can fight: hostile or neutral (a neutral creature the
+// group attacks is its enemy all the same).
+constexpr uint32_t REACTION_ENEMY = REACTION_NEUTRAL | REACTION_HOSTILE;
+constexpr uint32_t CONTROL_PLAYER = 0x100;
+constexpr uint32_t CONTROL_NPC = 0x200;
+constexpr uint32_t TYPE_PLAYER = 0x400;
+constexpr uint32_t TYPE_NPC = 0x800;
+constexpr uint32_t TYPE_PET = 0x1000;
+constexpr uint32_t TYPE_GUARDIAN = 0x2000;
+constexpr uint32_t TYPE_OBJECT = 0x4000;
+constexpr uint32_t TARGET = 0x10000;
+constexpr uint32_t FOCUS = 0x20000;
+constexpr uint32_t NONE = 0x80000000;
+} // namespace ObjectFlag
 
 struct Entry {
     uint32_t timeMs = 0;
@@ -145,17 +177,29 @@ struct Entry {
     bool glancing = false;
     bool crushing = false;
     bool offHand = false;
+    // A damage entry's target health before the hit, as the tick's earlier
+    // messages leave it — 3.80.2's entry +0x180, which its damage builder
+    // (FUN_14143b030) reads before it predicts the hit. 0 when the target is
+    // out of view. The death recap's currentHP.
+    int currentHP = 0;
 };
 
 // The Spell.dbc record of `spellId`, or nullptr.
 const uint8_t *SpellRecord(int spellId);
 
-// The spell's name in the client's locale, or nullptr when it has none.
-const char *SpellName(const uint8_t *spell);
-
 // 4.3.4's rule for a spell that writes nothing: no record, Attributes 0x80 or
 // 0x100, or no name in the client's locale.
 bool Hidden(const uint8_t *spell);
+
+// Whether the log writes an aura's arrival and loss (SPELL_AURA_APPLIED,
+// _REMOVED, _REFRESH): 4.3.4's UnitCombatLogAuraAddedOrRemoved writes none
+// for a hidden or a passive spell.
+bool LogsAura(const uint8_t *spell);
+
+// Whether the log writes an aura's stack changes (SPELL_AURA_APPLIED_DOSE,
+// _REMOVED_DOSE): 4.3.4's UnitCombatLogAuraModifiedApplications writes them
+// for a spell that stacks and is not hidden, passive or not.
+bool LogsAuraStacks(const uint8_t *spell);
 
 // AttributesEx3 0x8000: the spell is a ranged attack (Auto Shot, Shoot,
 // Throw), logged as RANGE_* instead of SPELL_*.
@@ -166,6 +210,17 @@ uint32_t SchoolMask(uint32_t school);
 
 // The spell's school as a mask (4.3.4's SpellRec m_schoolMask), 0 for nullptr.
 uint32_t SpellSchoolMask(const uint8_t *spell);
+
+// The GUID the object answers to, the one its flags take their affiliation
+// from: a unit's charmer or creator (Unit::Identity::OwnerGuid), a game
+// object's creator, and for a minion's minion (a totem's totem) its master's
+// controller. The object itself when nothing controls it; 0 for a game object
+// nobody created.
+uint64_t Controller(uint64_t guid);
+
+// The object's name as an entry names it: the combat log namer's steps, else
+// UNKNOWNOBJECT.
+std::string NameOf(uint64_t guid);
 
 // GetCombatLogEntry: an entry for `event` from `source` to `dest` (either may
 // be 0), with the spell prefix when `spell` is a record.
@@ -193,6 +248,12 @@ constexpr int MAX_EVENT_VALUES = 32;
 // CombatLogEntry::PushEvent: pushes the entry's values in 4.3.4's layout and
 // returns their count. The stack must have room for MAX_EVENT_VALUES.
 int PushEvent(void *L, const Entry &entry);
+
+// Pushes the entry as one table keyed by field name: 3.80.2's entry
+// serializer (FUN_1414331b0), the one C_DeathRecap.GetRecapEvents uses. Its
+// key names are kept as they are, quirks included (a heal's "crit", the text
+// suffix's "extraAmount").
+void PushTable(void *L, const Entry &entry);
 
 // QueueCombatLogEntry + SendCombatLogEvents: stamps the entry, keeps it and
 // sends it.

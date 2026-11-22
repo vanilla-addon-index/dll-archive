@@ -39,7 +39,7 @@ void *PaneUnit(void *pane) {
 }
 
 int __fastcall Script_SetUnit(void *L) {
-    reinterpret_cast<Game::Lua::CFunction>(Offsets::FUN_SCRIPT_PLAYERMODEL_SET_UNIT)(L);
+    Game::Lua::CallScript(Offsets::FUN_SCRIPT_PLAYERMODEL_SET_UNIT, L);
     void *pane = Game::Lua::ResolvePlayerModel(L);
     if (pane == nullptr)
         return 0;
@@ -67,7 +67,7 @@ int __fastcall Script_GetDisplayInfo(void *L) {
             Game::Read<const uint8_t *>(pane, Offsets::OFF_PLAYERMODEL_DISPLAY_RECORD)) {
         displayID = Game::Read<uint32_t>(record, Offsets::OFF_CREATURE_DISPLAYID);
     } else if (void *unit = PaneUnit(pane)) {
-        displayID = Game::Read<uint32_t>(Game::Read<const uint8_t *>(unit, Offsets::OFF_UNIT_DESCRIPTOR),
+        displayID = Game::Read<uint32_t>(Object::Fields(unit),
                                          Offsets::OFF_UNIT_FIELD_DISPLAYID);
     }
     Game::Lua::PushNumber(L, displayID);

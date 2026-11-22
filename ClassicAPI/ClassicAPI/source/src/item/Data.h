@@ -13,6 +13,8 @@
 
 #pragma once
 
+#include "AutoList.h"
+
 #include <cstdint>
 
 namespace Item::Data {
@@ -33,9 +35,21 @@ namespace Item::Data {
 // ITEM_DATA_LOAD_RESULT), use `C_Item.RequestLoadItemData(ByID)` from
 // Lua.
 //
-// Returns true when the item is cached or its load is queued, false when
-// the queue is full and nothing will report on it.
+// Returns true when the item is cached or its load is queued; false only
+// for itemID 0.
 bool WarmCache(uint32_t itemID);
+
+// WarmCache for an item a model on screen waits to put on (a scene actor's
+// try-on): its query goes on the priority lane with the player's carried
+// items, as the engine queries a player's visible items as soon as it sees
+// the player (the visible-item watcher 0x005DEE30), instead of waiting its
+// turn behind the background rate floor.
+bool WarmCacheShown(uint32_t itemID);
+
+// The cached item record (Item::PeekRecord), or nullptr after asking for it
+// through WarmCache. For a reader that wants the record now and will look
+// again later.
+const uint8_t *RecordOrRequest(uint32_t itemID);
 
 // C++ observer of every queued load's completion: called with the itemID
 // and the outcome each time this module fires GET_ITEM_INFO_RECEIVED or
@@ -43,12 +57,7 @@ bool WarmCache(uint32_t itemID);
 // or the server refused it / every resend went unanswered (failure). Place
 // a file-scope `static const Item::Data::LoadSubscriber`; order across
 // subscribers is unspecified.
-struct LoadSubscriber {
-    using Callback = void (*)(uint32_t itemID, bool success);
-    explicit LoadSubscriber(Callback cb);
-    Callback cb;
-    LoadSubscriber *next;
-};
+using LoadSubscriber = AutoList<struct LoadSubscriberTag, void (*)(uint32_t itemID, bool success)>;
 
 // Hook for `Script_GetItemInfo` (`0x0048E070`). Pre-warms the cache
 // from arg 1 (number or `"item:NNN..."` string), then runs the

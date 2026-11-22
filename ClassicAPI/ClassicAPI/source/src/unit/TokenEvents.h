@@ -13,26 +13,40 @@
 
 #pragma once
 
+#include "AutoList.h"
+
 #include <cstdint>
 
 namespace Unit::TokenEvents {
 
 // Re-evaluates whether the engine watches `guid`'s unit for ClassicAPI's
-// tokens (focus, nameplateN, markN, softenemy, softfriend). The owner of a
-// token calls it after the token is given to or taken from a unit; 0 and units
-// out of range are no-ops (a unit coming into range is evaluated by the engine
-// itself).
+// tokens (TokensOf's list) or a GUID registration (Frame::GuidEvent). The
+// owner of a token or registration calls it after giving or taking it; 0 and
+// units out of range are no-ops (a unit coming into range is evaluated by the
+// engine itself).
 void Refresh(uint64_t guid);
 
-// The ClassicAPI tokens `guid` has right now — nameplateN, focus, markN,
-// softenemy, softfriend, in that order — written into `out` (rows of 32
-// bytes), at most `maxTokens` of them. Returns the count: 0 for guid 0, and
-// before the world is up. These are the tokens the engine's unit events reach.
+// The ClassicAPI tokens `guid` has right now — nameplateN, bossN,
+// targettarget, focus, focustarget, softenemy, softfriend, softinteract,
+// pettarget, markN, totemN, in that order — written into `out` (rows of 32
+// bytes), at most
+// `maxTokens` of them. Returns the count: 0 for guid 0, and before the world
+// is up. These are the tokens the engine's unit events reach.
 int TokensOf(uint64_t guid, char (*out)[32], int maxTokens);
 
 // The engine's per-token unit-event broadcast, then the same event for each
 // ClassicAPI token `*guid` has. ClassicAPI code that re-fires a unit event
 // calls this instead of FUN_UNIT_EVENT_BROADCAST.
 void __fastcall Broadcast(const uint64_t *guid, uint32_t eventId);
+
+// Runs after each per-unit event the engine broadcasts (every call of
+// FUN_UNIT_EVENT_BROADCAST goes through Broadcast), with the unit's GUID and
+// the event id (the unit field index: UNIT_EVENT_UNIT_LEVEL, ...), for a
+// module that reacts to one unit field the way the engine's own events do.
+// Place a static instance at file scope:
+//
+//   static const Unit::TokenEvents::AutoObserve _sub{&OnUnitEvent};
+using Observer = void (*)(uint64_t guid, uint32_t eventId);
+using AutoObserve = AutoList<struct AutoObserveTag, Observer>;
 
 } // namespace Unit::TokenEvents

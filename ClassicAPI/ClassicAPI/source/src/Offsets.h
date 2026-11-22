@@ -83,8 +83,16 @@ enum Offsets {
     // floors the depth back to 0. `Bindings::Api` mirrors this when it runs an
     // override command outside the engine's own dispatch. Verified in that
     // disassembly.
+    // 1.12's taint: 0 while FrameXML runs, the addon's name pointer for addon
+    // code, VAR_MACRO_EXEC_CONTEXT's value for macros and /run (the macro
+    // runner 0x0048B9BB sets it with the depth). FUN_CURSOR_EDIT_ALLOWED
+    // refuses under any nonzero word: MACRO_ACTION_FORBIDDEN when it equals
+    // the macro context, else ADDON_ACTION_FORBIDDEN with the word as its
+    // `%s` (0x00494AC6). So the word is always a C string or 0.
     VAR_FRAMESCRIPT_EXEC_CONTEXT = 0x00CEEAC0,
     VAR_FRAMESCRIPT_EXEC_CONTEXT_DEPTH = 0x00CEEAC4,
+    // The macro context: holds 0x00882748, the binary's shared "" literal.
+    VAR_MACRO_EXEC_CONTEXT = 0x0083DE24,
 
     // The binding manager — 4.3.4's CGUIBindings, minus its modified clicks.
     // `*VAR_BINDINGS_MANAGER`, a 0xDC-byte object made by FUN_004B6050 (FrameXML
@@ -146,6 +154,15 @@ enum Offsets {
     OFF_BINDINGS_COMMAND_TABLE = 0x08,
     OFF_HASHTABLE_SLOTS = 0x1C,
     OFF_HASHTABLE_MASK = 0x24,
+    // A TSHashTable bucket, 0xC bytes: { link offset @+0x0, ? @+0x4, first
+    // node @+0x8 }. A node's next is `*(node + linkOffset + 4)`; a null or odd
+    // pointer ends the chain. A HASHKEY_STRI node keeps its SStrHashHT hash
+    // @+0x0 and its name @+0x14. The XML template and frame factory tables
+    // below have the same shape. Storm::HashTable reads it.
+    HASHTABLE_BUCKET_STRIDE = 0xC,
+    OFF_HASHTABLE_BUCKET_LINK = 0x0,
+    OFF_HASHTABLE_BUCKET_HEAD = 0x8,
+    OFF_HASHTABLE_NODE_HASH = 0x0,
     OFF_HASHTABLE_NODE_NAME = 0x14,
     // Storm SStrHashHT — `uint32_t __stdcall(const char *)` (callee pops its
     // one argument; FUN_BINDINGS_GET_COMMAND_ACTION calls it with no cleanup).
@@ -164,23 +181,84 @@ enum Offsets {
     // OsWriteFile — `int __fastcall(HANDLE /*ecx*/, const void *buffer /*edx*/,
     // uint32_t size, uint32_t *written)`, `ret 8`.
     FUN_OS_WRITE_FILE = 0x0042A5D0,
+    // The other OS file wrappers, all UTF-8 paths converted for the W calls:
+    //   CREATE `HANDLE __fastcall(path, access, 4 stack args)`, `ret 0x10`
+    //          (CreateFileW; the SV writer passes GENERIC_WRITE, CREATE_ALWAYS);
+    //   CLOSE  `void __fastcall(HANDLE)`;
+    //   EXISTS `int __fastcall(path)`, the OS test (not the VFS one);
+    //   MOVE   `int __fastcall(from, to)`, MoveFileW's result, which fails
+    //          when `to` exists;
+    //   DELETE `int __fastcall(path)`.
+    FUN_OS_CREATE_FILE = 0x0042A460,
+    FUN_OS_CLOSE_FILE = 0x0042A4D0,
+    FUN_OS_FILE_EXISTS = 0x0042A4E0,
+    FUN_OS_MOVE_FILE = 0x0042A820,
+    FUN_OS_DELETE_FILE = 0x0042A910,
+    // Writes one saved variable, `\r\n<name> = <value>`, from the global of
+    // that name - `void __fastcall(HANDLE, const char *name)`.
+    FUN_SV_WRITE_VARIABLE = 0x007043F0,
+    // The addon SavedVariables writer at UI shutdown (after PLAYER_LOGOUT):
+    // for each loaded entry, the account file (`+0x6C` names) then the
+    // character file (`+0x7C` names); with names it renames an existing file
+    // to `.bak`, creates the file and writes each name and the line end;
+    // without names it deletes the file. Its E8 calls, account / character
+    // (AddOns::SavedVarsFiles):
+    FUN_ADDON_SAVE_VARIABLES = 0x0051F650,
+    CALL_SV_WRITE_ACCOUNT_BACKUP = 0x0051F794,
+    CALL_SV_WRITE_CHAR_BACKUP = 0x0051F8EB,
+    CALL_SV_WRITE_ACCOUNT_CREATE = 0x0051F7BB,
+    CALL_SV_WRITE_CHAR_CREATE = 0x0051F911,
+    CALL_SV_WRITE_ACCOUNT_VARIABLE = 0x0051F7FC,
+    CALL_SV_WRITE_CHAR_VARIABLE = 0x0051F94F,
+    CALL_SV_WRITE_ACCOUNT_CLOSE = 0x0051F81D,
+    CALL_SV_WRITE_CHAR_CLOSE = 0x0051F970,
+    // The writer's line-end writes (FUN_OS_WRITE_FILE of 0x0082EDFC, 2 / 1
+    // bytes) before each close, and the ten FUN_OS_WRITE_FILE calls of the
+    // variable serializer FUN_SV_WRITE_VARIABLE and its value writer
+    // (0x00704480 and the table / other-type writers under it), the only
+    // writes that reach a SavedVariables file. The flat SavedVariables.lua
+    // writer (0x00491730) uses the same serializer on its own handle.
+    CALL_SV_WRITE_ACCOUNT_LINE_END = 0x0051F816,
+    CALL_SV_WRITE_CHAR_LINE_END = 0x0051F969,
+    CALL_SV_SERIALIZE_WRITE_1 = 0x00704422,
+    CALL_SV_SERIALIZE_WRITE_2 = 0x00704436,
+    CALL_SV_SERIALIZE_WRITE_3 = 0x00704448,
+    CALL_SV_SERIALIZE_WRITE_4 = 0x007045B1,
+    CALL_SV_SERIALIZE_WRITE_5 = 0x00704714,
+    CALL_SV_SERIALIZE_WRITE_6 = 0x0070481D,
+    CALL_SV_SERIALIZE_WRITE_7 = 0x00704861,
+    CALL_SV_SERIALIZE_WRITE_8 = 0x007048EB,
+    CALL_SV_SERIALIZE_WRITE_9 = 0x00704955,
+    CALL_SV_SERIALIZE_WRITE_10 = 0x00704A30,
+    // FUN_ADDON_LOAD_ONE's SavedVariables read tests each file with
+    // FUN_FILE_EXISTS before it runs it from the same 0x104-byte buffer
+    // (FUN_LUA_LOAD_FILE at 0x0051F4B5 / 0x0051F53B): the account file, the
+    // realm character file, then the realm-less one.
+    CALL_SV_READ_ACCOUNT_EXISTS = 0x0051F4A2,
+    CALL_SV_READ_CHAR_EXISTS = 0x0051F4F0,
+    CALL_SV_READ_CHAR_NO_REALM_EXISTS = 0x0051F529,
+    // "config-cache.wtf" — the file of account-data sections 0 (account) and
+    // 1 (character): the +8 name pointer of records 0x0085DCF0 and 0x0085DD1C
+    // in the 44-byte section table (read from the image). 1.12 lists both
+    // sections in its server sync but never reads or writes the file; 3.3.5
+    // keeps its character-scoped cvars in section 1
+    // (CVar::SaveAll(file, CVAR_SCOPE_CHARACTER)).
+    VAR_STR_CONFIG_CACHE_FILE = 0x0085DEB0,
     // " " — the token delimiter LoadBindings splits a `bind` line's key with.
     VAR_STR_SPACE_DELIM = 0x0082EE00,
+    // " ,;\t\"\r\n" — the console `set` command's token delimiters, which it
+    // splits a Config.wtf `SET name "value"` line with (bytes read from the
+    // image; benilla-re cvar/config, 0x0063D51D and 0x0063D539).
+    VAR_CONSOLE_SET_DELIMS = 0x0080E1D4,
 
-    // GameTooltip script-method prologue helpers (used to resolve self → CFrameScriptObject*).
-    // Underlying Lua C API names per [[docs/LuaCAPI.md]] are `lua_rawgeti`
-    // (0x6F3BC0) and `lua_touserdata` (0x6F3740). The Set* method prologue's
-    // call sequence
-    //   PushObject(L, idx, 0);  // == lua_rawgeti(L, idx, 0) — pushes the
-    //                             // lightuserdata at table[0]
-    //   GetObject(L, -1);       // == lua_touserdata(L, -1) — extracts
-    //                             // the raw CFrameScriptObject *
-    // is the canonical "Lua frame table → C++ object" path. The reverse
-    // (`GameTooltip:GetOwner` etc.) is just `lua_rawgeti(L, REGISTRY,
-    // [cobj+OFF_COBJECT_LUA_REF])` — the engine pre-allocates
-    // the registry handle when the frame is created from Lua.
-    FUN_FRAMESCRIPT_PUSH_OBJECT = 0x6F3BC0,
-    FUN_FRAMESCRIPT_GET_OBJECT = 0x6F3740,
+    // `lua_touserdata` (per [[docs/LuaCAPI.md]]). With `lua_rawgeti`
+    // (LUA_RAWGETI) it is the Set* method prologue's "Lua frame table → C++
+    // object" path: rawgeti(L, idx, 0) pushes the lightuserdata at table[0],
+    // touserdata(L, -1) extracts the CFrameScriptObject * (Game::Lua::
+    // ResolveObject). The reverse (`GameTooltip:GetOwner` etc.) is
+    // rawgeti(L, REGISTRY, [cobj+OFF_COBJECT_LUA_REF]) — the engine
+    // pre-allocates the registry handle when the frame is created from Lua.
+    LUA_TO_USERDATA = 0x6F3740,
 
     // Within a CGFrame, the embedded LayoutFrame sub-object starts here.
     // Engine code that wants to invoke LayoutFrame methods polymorphically
@@ -539,6 +617,22 @@ enum Offsets {
     //     GO field at +0x370.
     FUN_GAMETOOLTIP_BUILD_UNIT = 0x00529FE0,
     FUN_GAMETOOLTIP_BUILD_GAMEOBJECT = 0x0052AA20,
+    // The tooltip's fade — `void __thiscall(tooltip)`: hides at once when the
+    // anchor is the cursor (6), else arms a 2-second fade. The mouseover
+    // publisher (0x00492890) calls it on GameTooltip when the hovered object
+    // changes (benilla-re ui/mouseover.md "The tooltip stays put").
+    FUN_GAMETOOLTIP_FADE_OUT = 0x00530AE0,
+    // SetOwner's core — `void __thiscall(tooltip, void *ownerLayout, int
+    // anchor, float x, float y)`, `ret 0x10`: clears the tooltip, then stores
+    // the owner (a frame + OFF_FRAME_LAYOUT_SUBOBJECT, or 0) and the anchor.
+    // The mouseover publisher calls it as (UIParent + 0x24, 6, 0, 0) at
+    // 0x00492A1E (disassembled; benilla-re ui/mouseover.md).
+    FUN_GAMETOOLTIP_SET_OWNER = 0x0052FFE0,
+    // A game object's floating-tooltip test — vtable slot, `int
+    // __thiscall(object)`: nonzero for the generic type with its first data
+    // word set. The publisher (0x004929FA) gives such an object's tooltip to
+    // UIParent at the cursor instead of firing OnTooltipSetDefaultAnchor.
+    OFF_CGOBJECT_VTBL_FLOATING_TOOLTIP = 0x5C,
     // Pointer to the GameTooltip CFrameScriptObject the engine's mouseover
     // setter builds into (`DAT_00b4b3c4`; the value at this address is the
     // tooltip object). `Frame::Attributes` reads it to build the unit tooltip
@@ -553,6 +647,14 @@ enum Offsets {
     // FUN_FRAME_INVOKE_SCRIPT) before the offline roster build.
     OFF_TOOLTIP_SET_DEFAULT_ANCHOR_HANDLER = 0x444,
     FUN_GAMETOOLTIP_ADD_LINE = 0x00530270,        // __thiscall(self, left, right, lColorBGRA*, rColorBGRA*, wrap)
+    // FormatDuration — 4.3.4's CGTooltip::GetDurationString (0x004652A0):
+    // `char *__fastcall(char *out /*ecx*/, uint32_t size /*edx*/, uint32_t ms,
+    // const char *token, const char *prefix, int roundUp)`, `ret 0x10`.
+    // Formats through the global `<token>_DAYS/_HOURS/_MIN/_SEC`; roundUp
+    // counts days/hours/minutes up, seconds always down. SetPlayerBuff's
+    // time-left line calls it as (ms, "SPELL_TIME_REMAINING", 0, 1) into a
+    // 32-byte buffer (0x00532BE8..0x00532BFA, verified by disassembly).
+    FUN_TOOLTIP_FORMAT_DURATION = 0x0052FA50,
     OFF_GAMETOOLTIP_NUM_LINES = 0x31C,            // int — live line count (AddLine index; +0x320 is the cap)
     // The displayed item's identity is read via the existing
     // OFF_TOOLTIP_ITEM_ID (+0x398) / OFF_TOOLTIP_ITEM_GUID_LO (+0x380) —
@@ -577,11 +679,11 @@ enum Offsets {
     // 0x00CF1CC8 (0x1000 bytes): |1 Korean particles, |2 French articles.
     FUN_EXPAND_KOREAN_PARTICLES = 0x00771770,
     FUN_EXPAND_FRENCH_ARTICLES = 0x007719A0,
-    FUN_FONTSTRING_SET_COLOR = 0x0077F750,        // __thiscall(region, colorBGRA*) — generic region color setter (fontstrings + textures)
+    FUN_REGION_SET_COLOR = 0x0077F750,            // __thiscall(region, colorBGRA*) — generic region color setter (fontstrings + textures)
     // Generic region color GETTER — `void __thiscall(region, uint32* outBGRA)`,
     // writes the packed {b,g,r,a} (0xFFFFFFFF when the region has no explicit
     // color). The read half of Texture:GetVertexColor (FUN_0079aa50); paired
-    // with FUN_FONTSTRING_SET_COLOR above. Backs EditBox:GetHighlightColor.
+    // with FUN_REGION_SET_COLOR above. Backs EditBox:GetHighlightColor.
     FUN_REGION_GET_COLOR = 0x0077F8C0,
     OFF_FONTSTRING_TEXT = 0xF0,                   // char* — current text buffer
     // The fixed text size (XML `bytes`, 0 = none): SetText (FUN_FONTSTRING_SET_TEXT)
@@ -634,11 +736,17 @@ enum Offsets {
     // Game::PixelToInternal does, parses the flags (FONT_FLAG_*), and on
     // success clears bit 0 of OFF_FONTSTRING_FONT_FLAGS (benilla-re ui/fonttext).
     FUN_SIMPLEFONTSTRING_SET_FONT = 0x007714F0,
-    // CSimpleFontString::SetAlphaGradient - `int __thiscall(fs, int start, int
-    // length)`, ret 8: stores the pair at +0x118 / +0x11C, rebuilding a built
-    // string. The constructor stores start -1 (no gradient) (benilla-re
-    // ui/fonttext; 0x00770D30).
+    // CSimpleFontString::SetAlphaGradient - `bool __thiscall(fs, int start, int
+    // length)`, ret 8: stores the pair at OFF_FONTSTRING_GRADIENT_START /
+    // _LENGTH and, with a built string (OFF_FONTSTRING_TEXT_BLOCK), hands it to
+    // TextBlockSetGradient (0x0044DC40) and answers its result < 2 (start is
+    // inside the text), else 1 (disassembled 0x00772460-0x00772496). What the
+    // stock Lua method (0x0079CC80) calls; RebuildString re-applies the pair
+    // while start >= 0 (0x00772711). The constructor stores start -1 (no
+    // gradient) (0x00770DC9; benilla-re ui/fonttext).
     FUN_FONTSTRING_SET_ALPHA_GRADIENT = 0x00772460,
+    OFF_FONTSTRING_GRADIENT_START = 0x118,
+    OFF_FONTSTRING_GRADIENT_LENGTH = 0x11C,
     OFF_FONTSTRING_FONT_FLAGS = 0xD4,
     FONT_FLAG_OUTLINE = 1, // ParseFontFlags 0x006F1A90: OUTLINE 1, MONOCHROME 2, THICKOUTLINE 4
     FUN_REGION_SET_POINT = 0x00767C70,            // __thiscall(region+OFF_REGION_ANCHOR, point, relAnchor, relPoint, x, y, flag=1)
@@ -779,7 +887,10 @@ enum Offsets {
     VAR_TEXT_RASTER_Y = 0x00C2B9A0,
     VAR_TEXT_RASTER_X = 0x00C2B9A4,
     // GxCapsWindowSize — `__fastcall(float rect[4])`: the graphics device's
-    // live render-window rectangle (device vtable +0x5C), the source the
+    // draw rectangle (device vtable +0x5C, both backends 0x005A1A30 /
+    // 0x005A0180 copy CGxDevice::DrawRect +0x1EC) — the window rectangle,
+    // except while a render target is bound (SetRenderTarget 0x00592230 sets
+    // it to the target's size). The source the
     // two globals above are read from by GxuFontUpdateViewport
     // (0x005C2B50). Layout {y0, x0, y1, x1}: width = r[3] - r[1], height =
     // r[2] - r[0] — the font code's fallback writes {0, 0, 480, 640}, and
@@ -863,7 +974,7 @@ enum Offsets {
     // docs/InlineTextureResidency.md). Mirrors Script_CreateTexture
     // (FUN_00773A20) and the Texture frame-method handlers; the sibling of the
     // CSimpleFontString path above. Same FUN_REGION_POOL_ALLOC / SetPoint /
-    // Show / Hide / SetColor (FUN_FONTSTRING_SET_COLOR) as the FontString pool.
+    // Show / Hide / SetColor (FUN_REGION_SET_COLOR) as the FontString pool.
     VAR_SIMPLETEXTURE_POOL = 0x00CF4CE0,      // &DAT_00cf4ce0 CSimpleTexture free-list pool (`this`)
     VAR_SIMPLETEXTURE_CLASS_TAG = 0x00846588, // ".?AVCSimpleTexture@@" (alloc debug tag)
     FUN_SIMPLETEXTURE_CTOR = 0x0076FC40,      // __thiscall(mem, parent, layer, sublayer) -> tex
@@ -917,6 +1028,17 @@ enum Offsets {
     // with an image it runs the quad append FUN_00772FD0, whose device-texture
     // lookup loads the texture, so after it the device texture exists.
     FUN_SIMPLETEXTURE_EMIT = 0x007706E0,
+    // The quad append the emit runs — `void __thiscall(batch, texture)`,
+    // `ret 4` (0x007706F1: ecx = the batch, the texture pushed): resolves the
+    // image's device texture (0x00770700), returns with nothing added when it
+    // has none, else reserves one record (FUN_RENDERBATCH_RESERVE_QUADS),
+    // fills it from the texture (handle, &+0xD4, &+0x104, blend +0xD0, the
+    // colour pointer +0xB8 or 0 by the count +0xB4, stride 4 or 0, shader
+    // +0x128) and bumps both counts (OFF_RENDERBATCH_QUAD_COUNT,
+    // OFF_RENDERBATCH_ENTRY_COUNT). Verified by disassembly (0x00772FD0 ..
+    // 0x00773071). Texture::Slice calls it again per extra piece so every
+    // piece record carries the engine's own fields.
+    FUN_SIMPLETEXTURE_APPEND_QUAD = 0x00772FD0,
     // CSimpleFontString::Emit — `void __thiscall(fs, batch)`, `ret 4`, the
     // font string's slot of the same call (4.3.4's CSimpleFontString::Draw):
     // with a font and a nonempty text it runs AppendToBatch (0x00773080),
@@ -1046,7 +1168,7 @@ enum Offsets {
     // CSimpleFontString live text color: count at +0xB4, array pointer at +0xB8
     // (uint32 BGRA per slot; slot 0 = the base color, alpha = byte 3; a parallel
     // per-glyph alpha-byte array hangs off +0xA8/+0xA4). Written by the fs
-    // SetColor (FUN_FONTSTRING_SET_COLOR 0x0077F750: stores the dword at
+    // SetColor (FUN_REGION_SET_COLOR 0x0077F750: stores the dword at
     // (*(u32**)(fs+0xB8))[0] + the alpha byte at (*(u8**)(fs+0xA8))[0], then
     // fires the color-update vmethod +0x20). Count 0 = never colored = default
     // opaque white. THE CHAT-FADE SIGNAL: the ScrollingMessageFrame's fader
@@ -1355,6 +1477,16 @@ enum Offsets {
     // for tooltips set via SetMerchantItem / SetLootItem / etc. where
     // the item isn't in the player's bag/equipment.
     FUN_GAMETOOLTIP_BUILD_ITEM_LINK = 0x0052AE00,
+
+    // The link formatter behind it, for an item with no CGItem:
+    // `const char *__fastcall(uint32 itemID /*ecx*/, uint32 quality /*edx*/,
+    // uint32 enchant, int suffix, uint32 unique, const char *name)`, RET 0x10.
+    // sprintf's the quality colour + `|Hitem:id:enchant:suffix:unique|h[name]|h|r`
+    // into the same global buffer DAT_00C0CF68 and returns it.
+    // Script_GetLootRollItemLink (0x004C31F0) calls it with enchant 0, the
+    // roll's +0x20 / +0x24 words, and the FUN_ITEM_BUILD_NAME_FROM_ID name
+    // (0x004C3279-0x004C32AB). Disassembled.
+    FUN_ITEM_FORMAT_LINK = 0x0052ADB0,
 
     // CGItem → decorated instance display name. __thiscall(ecx = CGItem *,
     // char *outBuf, uint outSize). Reads the instance's random-suffix ID
@@ -1877,6 +2009,8 @@ enum Offsets {
     FUN_TARGET_CANDIDATE_VALID = 0x00493E40,
     TARGET_MODE_ENEMY = 1,
     TARGET_MODE_FRIEND = 2,
+    TARGET_MODE_PARTY = 3,
+    TARGET_MODE_RAID = 4,
     // ClassicAPI modes (4.3.4's types 0 / 2 / 4); values past the engine's.
     TARGET_MODE_ANY = 5,
     TARGET_MODE_ENEMY_PLAYER = 6,
@@ -1923,6 +2057,12 @@ enum Offsets {
     // The world frame is `*VAR_GAME_STATE_PTR`.
     FUN_WORLDFRAME_GET_SCREEN_COORDS = 0x00483EE0,
     OFF_WORLDFRAME_VIEW_PROJECTION = 0x3B0,
+    // The world frame's own mouseover GUID (uint64): CGWorldFrame::
+    // PublishMouseover (0x00482090) publishes only when its pick differs from
+    // it, then stores it; its leave (0x00483B10) publishes null and zeroes it.
+    // A mouseover any other setter wrote (a nameplate, an addon through
+    // FUN_SET_MOUSEOVER_UNIT) is not here. Ghidra.
+    OFF_WORLDFRAME_MOUSEOVER_GUID = 0x340,
     // C4Vector × C44Matrix — `C4Vector *__fastcall(C4Vector *out /*ecx*/,
     // const C4Vector *v /*edx*/, const C44Matrix *m)`, `ret 4`.
     FUN_C44_TRANSFORM = 0x007BCB40,
@@ -1932,6 +2072,15 @@ enum Offsets {
     // world frame's camera update adds it to the position for the look-at
     // point (0x004830CA). Camera vtable 0x00808A9C, slot 0x00511F40.
     VTBL_CAMERA_FORWARD = 0x04,
+    // The camera basis's second row, the same way: slot 0x00511FE0 (vtable
+    // 0x00808A9C read from the exe: 0x50D6D0, 0x511F40, 0x511FE0, 0x512080;
+    // benilla-re uicamera/driver.md "Riding a transport": the slots return the
+    // rows forward, left, up). 4.3.4 names it CGCamera::Right (row b of the
+    // facing matrix); in WoW's axes the row points left.
+    VTBL_CAMERA_LEFT = 0x08,
+    // The camera's near clip, the value CGWorldFrame::GetScreenCoordinates
+    // culls against (`znear > clip.z`, benilla-re ui screen_projection.rs).
+    OFF_CAMERA_NEAR_CLIP = 0x38,
     OFF_CAMERA_POSITION = 0x08,
     // `FUN_SET_SELECTION_BY_GUID` (0x00493540) — canonical target setter the
     // native tab-cycle commits through. `__stdcall(uint32_t guidLo, uint32_t
@@ -1948,6 +2097,9 @@ enum Offsets {
     // stopAutoAttackOnTargetChange test at the same point. Both E8 calls,
     // targets checked against the exe.
     CALL_SET_SELECTION_FIRE_TARGET_CHANGED = 0x0049389C,
+    // The event both of those fire: PLAYER_TARGET_CHANGED (`mov ecx,0xC3`
+    // at 0x00493897 before the FUN_FIRE_EVENT_NO_ARGS call above).
+    EVENT_PLAYER_TARGET_CHANGED = 0xC3,
     CALL_SET_SELECTION_ATTACK_START = 0x004938C8,
     // CGGameUI::OnSpriteRightClick — the world right-click on an object:
     // `int __stdcall(uint32_t guidLo, uint32_t guidHi)`, `ret 8`. No active
@@ -1959,15 +2111,36 @@ enum Offsets {
     // an aura-334 gate and skips the target for creatures with type flag
     // 0x20000000; 1.12 has neither. nampower detours it (its offsets.hpp).
     FUN_ON_SPRITE_RIGHT_CLICK = 0x00492820,
-    // The object right-click virtual FUN_ON_SPRITE_RIGHT_CLICK calls after the
-    // select: `void __thiscall(CGObject_C *, int modifier)`, the modifier
-    // being FUN_GAMEUI_IS_KEY_DOWN(0) (`call [edi+0x60]` at 0x00492881).
-    OFF_OBJECT_VTABLE_ON_RIGHT_CLICK = 0x60,
     // Current target-selection GUID (lo/hi), written by
     // `FUN_SET_SELECTION_BY_GUID` — 4.3.4's CGGameUI::m_lockedTarget. The tab
     // cycle compares it with its cursor entry; TargetDirection starts from it.
     VAR_CURRENT_SELECTION_GUID_LO = 0x00B4E2D8,
     VAR_CURRENT_SELECTION_GUID_HI = 0x00B4E2DC,
+    // Script_ClearTarget: `int __fastcall(lua_State *)`. Clears the target
+    // (FUN_SET_SELECTION_BY_GUID(0, 0)) and returns 1 when there was one,
+    // else nil (disassembled 0x00489FF0..; raw_globals batch entry 69).
+    // ToggleGameMenu reads the result: true ends the Escape press.
+    FUN_SCRIPT_CLEAR_TARGET = 0x00489FF0,
+    // The previous target (lo/hi), TargetLastTarget's: the setter stores the
+    // old selection here (`mov [0xB4E2E0], ecx` at 0x00493622) before taking
+    // the new one.
+    VAR_LAST_SELECTION_GUID_LO = 0x00B4E2E0,
+    // Return addresses of the setter's two world-click calls (both E8,
+    // checked against the exe): the left-click select 0x004925D0 calls it at
+    // 0x0049280C, FUN_ON_SPRITE_RIGHT_CLICK at 0x00492870. A select that
+    // returns to one of them is a click on the object.
+    RET_CLICK_SELECT = 0x00492811,
+    RET_SPRITE_RIGHT_CLICK_SELECT = 0x00492875,
+    // Return addresses of 1.12's own attacker auto-targets (E8 calls of the
+    // setter; benilla-re tables/signatures.tsv call offsets): the attacker
+    // state handler 0x006255B0 selects the attacker of the active player
+    // with no selection (0x006259FE, objectlayer/unitcombat), and the spell
+    // start handler 0x006E7700 a caster that cannot assist the player and
+    // targets it, with no selection (0x006E799C, spell/handlers "Spell
+    // start"). 3.80.2 makes both behind TargetEnemyAttacker with reason 1
+    // (FUN_1415a04d0, FUN_1413d66b0); Target::AutoTarget does that.
+    RET_ATTACKER_STATE_SELECT = 0x00625A03,
+    RET_SPELL_START_SELECT = 0x006E79A1,
 
     // ── Hover cursor (the engine's "can I interact with this" verdict) ───
     // SetCursorMode: `void __fastcall(uint32_t mode)` — `cmp [0xBE2C2C],ecx;
@@ -2078,6 +2251,24 @@ enum Offsets {
     // liquid surface (0x0060A7BF).
     VAR_NAME_HEIGHT_FACTOR = 0x0080C5D0,
     VAR_TWO_THIRDS = 0x0080ABFC,
+    // CGUnit_C::GetNamePosition — `void __thiscall(unit, float out[3])`,
+    // ret 4 (0x0060868D): the point above, before the plate lift. Called by
+    // GetNamePlateScreenPos (0x0060F7FD) and the name draw (0x006C6F00).
+    FUN_UNIT_GET_NAME_POSITION = 0x00608640,
+    // The unit's name record (PLAYERNAMEDESC *), stored by the name-record
+    // create at 0x00607021; benilla-re playername/plates "Name record
+    // layout": +0x08 the name text handle (0 while the name is hidden; the
+    // plate update destroys it), +0x30 the name block height (lines x the
+    // plate scale). The plate update raises the text by the block height
+    // (0x006C7071) and the raid marker by one more plate scale when the name
+    // shows (0x006C70D8).
+    OFF_UNIT_NAME_DESC = 0xC7C,
+    OFF_NAMEDESC_TEXT = 0x08,
+    OFF_NAMEDESC_BLOCK_HEIGHT = 0x30,
+    // IsDeadOrGhost — `bool __thiscall(unit)`: health 0 or below, or a
+    // player with PLAYER_FLAGS 0x10. The plate update draws no raid marker
+    // for such a unit (0x006C70C2). benilla-re symbols, verified.
+    FUN_UNIT_IS_DEAD_OR_GHOST = 0x00605F30,
     // GetNamePosition's attachments (0x00608640): PlayerName on the unit's
     // model, PlayerNameMounted when the unit is mounted (its model is then
     // the mount's).
@@ -2124,6 +2315,10 @@ enum Offsets {
     // no-attachment inputs (benilla-re objectbase / unitnames).
     OFF_CGOBJECT_SCALE = 0x90,
     OFF_CGOBJECT_BOX_HEIGHT = 0xBC,
+    // The model's bounding box beside it, six floats {min xyz, max xyz} in
+    // model space: 0x615150 copies it there when the model loads (benilla-re
+    // objectlayer/objectbase.md).
+    OFF_CGOBJECT_BOUNDS = 0xC0,
     // CLayoutFrame::SetWidth / SetHeight — `void __thiscall(region +
     // OFF_REGION_ANCHOR, float internal)`, ret 4: store +0x50 / +0x54 and
     // lay the frame out.
@@ -2187,8 +2382,20 @@ enum Offsets {
     // object table: ClearTarget(guid) unless FUN_UNIT_IS_GROUP_MEMBER_OR_PET,
     // then UnregisterScript(0xFFFFFFFF). 4.3.4's version (via BreakTarget)
     // also drops the focus, and also when the unit is dueling you; 1.12's
-    // has no duel exception.
+    // has no duel exception. Vtable slot 1 (benilla-re's CGUnit_C::Release);
+    // CGPlayer_C's slot 1 (0x005E9AA0) runs it after its own release. Plain
+    // `ret` (0x005FBD51).
     FUN_UNIT_DISABLE = 0x005FBB60,
+    // CGUnit_C::Reactivate — `void __thiscall(unit)`, plain `ret` (0x005FBDF7),
+    // vtable slot 2: a released unit coming back into the object table.
+    // CGPlayer_C's slot 2 (0x005E9BC0) runs it (benilla-re
+    // objectlayer/units#lifecycle, players#release-and-reactivation).
+    FUN_UNIT_REACTIVATE = 0x005FBD60,
+    // CGUnit_C::PostInit — `void __thiscall(unit, uint32_t time, uint32_t a,
+    // uint32_t spawned)`, `ret 0xC` (0x005FBB4E): sets a new unit up once it is
+    // created. The object manager's create path (0x00465DD7) and the player's
+    // (0x005DEC09) call it (benilla-re objectlayer/units#lifecycle).
+    FUN_UNIT_POST_INIT = 0x005FB880,
     // ClearTarget — `void __fastcall(int sendPacket /*ecx*/, int /*edx*/,
     // uint32_t guidLo, uint32_t guidHi)`, RET 8: clears the target when it is
     // that GUID (or any target for 0), UnregisterScript(0x1000) on the unit,
@@ -2249,21 +2456,6 @@ enum Offsets {
     // nonzero while the combat log is written to a file. Cleared by the chat
     // teardown (0x00498700). Disassembled, 0x0049FE70 / 0x0049B1D3.
     VAR_COMBAT_LOGGING = 0x00B4FDB8,
-    // Storm SLogCreate — `bool __stdcall(const char *path, uint32_t flags,
-    // uint32_t *log)`. Flag 4 appends; the file is opened (and its folders
-    // made) on the first write. LoggingCombat opens Logs\WoWCombatLog.txt with
-    // it (0x0049FEA2). Storm closes every open log at exit (0x0065A4B0).
-    // benilla-re storm/log.
-    FUN_SLOG_CREATE = 0x0065A0C0,
-    // Storm SLogWrite — `void __cdecl(uint32_t log, const char *format, ...)`:
-    // one line, prefixed with "M/D HH:MM:SS.mmm  " and ended with "\r\n". The
-    // combat log's own line writer (0x0049B1E8) calls it with "%s".
-    // benilla-re storm/log.
-    FUN_SLOG_WRITE = 0x0065ACE0,
-    // Storm SLogClose — `void __stdcall(uint32_t log)`: writes the buffered
-    // lines to the file, flushes and closes it. The chat teardown closes the
-    // chat and combat logs with it (0x0049871B). benilla-re storm/log.
-    FUN_SLOG_CLOSE = 0x00659EC0,
     // A unit's death — `void __fastcall(CGUnit *unit)`: writes the death
     // line (0x0062C160), shows the pending XP gain, plays the death animation
     // and sound. Its one caller is CGUnit_C::OnDied (0x006058AE), from the
@@ -2348,12 +2540,10 @@ enum Offsets {
     //                            semantics as the existing
     //                            `UnitGUID` documented behavior).
     //
-    // Don't use this from code paths that need to handle literal
-    // character names — see CLAUDE.md "Resolving input to a name"
-    // for the `lua_pcall(UnitName)` workaround. For pure unit-token
-    // input it's the right primitive. To ask "is this string a unit
-    // token?" without eating that error, use
-    // `Unit::TokenResolve::IsUnitToken` (protected probe).
+    // ClassicAPI's hook on it (`unit/TokenExtensions.cpp`) adds the name of
+    // you, a group member or a pet, and catches that raise so an unknown
+    // string answers 0, as 4.3.4 and retail do. To ask "is this string a
+    // unit token?", use `Unit::TokenResolve::IsUnitToken`.
     //
     // Verified on the Turtle build: the unknown-token fallthrough
     // (`jne` at 0x00515C14) is patched to `jmp 0x00D06670`, in the
@@ -2454,6 +2644,23 @@ enum Offsets {
     // sits between them at +0x18 (the binary's UpdateField table at
     // 0x0083D940: index 6, count 2); the combat log reads it to tell a pet
     // from a guardian, as 4.3.4's GetCombatLogObjectFlags does.
+    // The unit tooltip's owner line (benilla-re ui/tooltipunit "The subtitle
+    // and owner lines"; disassembled): `__fastcall(unit, char *buffer, int
+    // size)` ret 4 (0x0052FD30) formats the owner's name (0x00609210) into
+    // UNITNAME_TITLE_PET / _MINION (a charmer: a beast, else) or, for a
+    // creator, _GUARDIAN / _CREATION by its UNIT_CREATED_BY_SPELL's first
+    // effect (42; 50, 74, 87..90, 104..107), else the charmer's pair. It
+    // writes nothing with no owner, or one not in sight.
+    FUN_UNIT_OWNER_TITLE = 0x0052FD30,
+    // CGUnit_C::GetPvPName `__thiscall(unit, char *buffer, uint size, bool
+    // rank, int *lines)` ret 0x10 (0x00609370, disassembled): with `rank`, a
+    // player's name in UNIT_PVP_NAME with its rank text (0x005EFE60, rank
+    // byte player block +0x1F), then a new line and PVP_MEDAL%d for a medal
+    // byte (+0x1E, *lines = 2); without, the plain name. The unit tooltip's
+    // name line passes rank 1 (0x0052A1AB) and the overhead name passes
+    // UnitNamePlayerPVPTitle's mask (0x00608F50). In this client the jump
+    // that skips the title for rank 0 is NOPed (0x006093B0..0x006093B5).
+    FUN_UNIT_PVP_NAME = 0x00609370,
     OFF_UNIT_FIELD_CHARMEDBY = 0x10,
     OFF_UNIT_FIELD_SUMMONEDBY = 0x18,
     OFF_UNIT_FIELD_CREATEDBY = 0x20,
@@ -2461,6 +2668,26 @@ enum Offsets {
     // index 0, count 2), the first field of the block a CGGameObject_C holds
     // at `+0x110` — the same slot as a unit's descriptor (OFF_UNIT_DESCRIPTOR).
     OFF_GAMEOBJECT_FIELD_CREATED_BY = 0x00,
+    // The rest of that block, by the client's own field table (20-byte
+    // records from 0x0083B894: name, index, count, type; offset = index*4).
+    OFF_GAMEOBJECT_FIELD_DISPLAYID = 0x08,
+    OFF_GAMEOBJECT_FIELD_FLAGS = 0x0C,
+    OFF_GAMEOBJECT_FIELD_ROTATION = 0x10, // 4 floats, the quaternion x, y, z, w
+    OFF_GAMEOBJECT_FIELD_STATE = 0x20,
+    OFF_GAMEOBJECT_FIELD_TYPE_ID = 0x3C,
+    // A game object's typed data, the engine's own way (GameObjectUsableInCombat
+    // 0x005F5970 is the model): `int __fastcall(type, propertyId)` gives the
+    // data column a type uses for a property id (3.3.5's CGameObjectDef
+    // PROPERTY_ID numbering), or -1; then `uint32_t __thiscall(go, column)`
+    // reads that column of the cached record (`[go+0x214]+0x1C+column*4`),
+    // 0 without a record or for a column past 23, -1 included.
+    FUN_GAMEOBJECT_FIND_TYPE_COLUMN = 0x00621B00,
+    FUN_GAMEOBJECT_GET_DATA_COLUMN = 0x005F8150,
+    // A dynamic object's block at the same `+0x110` (records from 0x0083B9C0).
+    OFF_DYNAMICOBJECT_FIELD_CASTER = 0x00, // GUID
+    OFF_DYNAMICOBJECT_FIELD_BYTES = 0x08,  // low byte: 1 a spell's area, 2 far sight
+    OFF_DYNAMICOBJECT_FIELD_SPELLID = 0x0C,
+    OFF_DYNAMICOBJECT_FIELD_RADIUS = 0x10, // float, yards
 
     // UNIT_CREATED_BY_SPELL — the spell that summoned this unit (descriptor
     // byte +0x230, field index 0x8C). Set for every spell-summoned unit:
@@ -2491,7 +2718,6 @@ enum Offsets {
     // pets are Beasts, warlock minions are Demons (type 3) — so `!= 1`
     // cleanly separates them, which neither the GUID (pets and guardians
     // share the 0xF14… prefix) nor UNIT_FLAG_PLAYER_CONTROLLED reliably does.
-    FUN_UNIT_PET_MINION_CLASS = 0x00605570,
     FUN_UNIT_CREATURE_TYPE = 0x00605570,
 
     // Party / raid roster counts and the party GUID array referenced
@@ -2580,6 +2806,39 @@ enum Offsets {
     // handler and its pending-emote queue; fires through FUN_CHAT_EVENT_FIRE
     // without passing the GUID on.
     FUN_CHAT_TEXT_EMOTE = 0x0049B200,
+    // Chat colour registry (benilla-re ui/chatcolors): CHAT_TYPE_COUNT entries
+    // of CHAT_COLOR_STRIDE bytes, a 64-byte name then red, green and blue bytes
+    // at +0x40..+0x42. The extra CHANNEL1..CHANNELn entries have the same
+    // layout, held by pointer with their count beside it (10 after start-up).
+    // ChangeChatColor (0x004A07F0) matches a name against both.
+    VAR_CHAT_COLORS = 0x00B4E518,
+    CHAT_COLOR_STRIDE = 0x43,
+    VAR_CHAT_CHANNEL_COLORS_COUNT = 0x00B4E500,
+    VAR_CHAT_CHANNEL_COLORS_PTR = 0x00B4E504,
+    // CGChat::InitializeGame, `void __cdecl()` (no register arguments, plain
+    // RET). Seeds the colour registry and the extra channel colours from the
+    // static defaults and registers FUN_CHAT_SETTINGS_LOAD, which can run
+    // before it returns.
+    FUN_CHAT_INITIALIZE_GAME = 0x004982C0,
+    // chat-cache.txt reader, `void __fastcall(int, HANDLE file, void *arg)`,
+    // RET 4 (registered by 0x00498A20 as the reader of cache section 7). Parses
+    // the file or applies the defaults, then fires UPDATE_CHAT_WINDOWS and one
+    // UPDATE_CHAT_COLOR per registry and extra entry (0x004996B9..0x004997A6).
+    FUN_CHAT_SETTINGS_LOAD = 0x00498A60,
+    // The COLORS arm of FUN_CHAT_SETTINGS_LOAD takes three words per line,
+    // red, green and blue, and goes to the next line (0x004990C9), so later
+    // words are ignored. This is its blue `SStrToInt(word)` (E8 →
+    // FUN_STORM_SSTR_TO_INT), with ESI = the matched entry and the line
+    // cursor (`char *`, the tokenizer's first argument) at [EBP-8].
+    CALL_CHAT_SETTINGS_READ_COLOR_BLUE = 0x004990C1,
+    OFF_CHAT_SETTINGS_LOAD_LINE_CURSOR = -0x08,
+    VAR_CHAT_SETTINGS_WORD_DELIMS = 0x00844418, // " \r\n" (bytes 20 0D 0A 00 verified)
+    // The two COLORS line writes of the chat-cache.txt writer 0x00499A80:
+    // `SStrPrintf(buf, 0x100, "%s %d %d %d\n", name, r, g, b)` (E8 →
+    // FUN_STORM_SSTR_PRINTF, caller pops 0x1C), `name` being the entry
+    // itself. The first walks the registry, the second the extra entries.
+    CALL_CHAT_SETTINGS_WRITE_COLOR = 0x00499CAE,
+    CALL_CHAT_SETTINGS_WRITE_CHANNEL_COLOR = 0x00499D21,
     // Per-player inventory manager lives at this offset on the player object.
     // +0x00 = u32 slot count (OFF_INVMGR_SLOT_COUNT), +0x04 = u64* GUID
     // array (see OFF_INVMGR_GUID_ARRAY below for the slot-range map).
@@ -2647,7 +2906,7 @@ enum Offsets {
     // The live (new) value is NOT passed — read it from the object (the
     // engine's bag callback reads the invMgr GUID array).
 
-    // ---- Unit-event token observers (Unit::TokenObserver) ---------------
+    // ---- Unit-event field watchers ----------------------------------------
     // The engine makes target/party/raid/pet/mouseover units fire per-token
     // unit events (UNIT_HEALTH, UNIT_MANA, UNIT_AURA, …) by watching bank-UNIT
     // descriptor fields: FUN_0051bbb0 loops event index i in
@@ -2655,18 +2914,48 @@ enum Offsets {
     // registers a bank-3 observer on field i*4 (per-index size below) with
     // callback FUN_0051bd50 → the broadcast FUN_00515e50(guid, i), which fires
     // event i once per token referencing the guid. The FIELD INDEX IS THE EVENT
-    // ID (health field +0x40 → event 16 = UNIT_HEALTH). Unit::TokenObserver
-    // replicates that exact loop with a caller's own callback to make synthetic
-    // tokens (focus, nameplateN) first-class; the registrar always appends a
-    // fresh node (FUN_00467f00, no dedup), so ours coexists with the engine's —
-    // a unit that is also the target fires both "target" and our token. The
-    // broadcast always fires with format "%s" + the token (DAT_0082e280).
+    // ID (health field +0x40 → event 16 = UNIT_HEALTH). The registrar always
+    // appends a fresh node (FUN_00467f00, no dedup). The broadcast always fires
+    // with format "%s" + the token (DAT_0082e280).
     //   Per-index watched size (FUN_0051bbb0's switch): i∈{0,2,4,10}=8,
     //   0x29=0xD8 (UNIT_FIELD_AURA), 0x6B=0x30, 0xA7/0xAE=0x1C, else 4.
     VAR_EVENT_NAME_TABLE_STATIC = 0x00BE1198, // char*[] boot name array; slot i (base+i*4) non-null ⇒ real event i
     // Its length: world init builds the table from it with
     // `mov edx,0x225; mov ecx,0xBE1198; call 0x703D90` (0x0048FEA1).
     EVENT_NAME_TABLE_STATIC_COUNT = 0x225,
+    // Game-state engine event ids: each one's slot in the static name array,
+    // read from the boot initializer's `mov [0xBE1198 + id*4], "NAME"` store
+    // (FUN_0051AB30). Fixed for the binary. Glue state has its own table
+    // (GLUE_EVENT_COUNT ids), so code that also runs on glue looks events up
+    // by name instead.
+    EVENT_UNIT_FACTION = 0x1D,
+    // Signalled (FUN_FIRE_EVENT_NO_ARGS) by CGUnit_C::OnActivePlayerFlagsChanged
+    // at 0x005FF527 when the player's UNIT_FLAG_IN_COMBAT bit changes: 0xBE
+    // when it is set, 0xBF when it clears (boot stores at 0x0051AD25/0x0051AD2F).
+    EVENT_PLAYER_REGEN_DISABLED = 0xBE,
+    EVENT_PLAYER_REGEN_ENABLED = 0xBF,
+    EVENT_UI_ERROR_MESSAGE = 0xE0,
+    EVENT_SPELLS_CHANGED = 0x104,
+    EVENT_LOOT_OPENED = 0x10B,
+    EVENT_LOOT_CLOSED = 0x10D,
+    EVENT_PLAYER_ENTERING_WORLD = 0x110,
+    // Fired alone by the zone commit FUN_00494780 when the zone ID changes
+    // (benilla-re ui/zonetext), after the zone name caches are stored.
+    EVENT_ZONE_CHANGED_NEW_AREA = 0xCD,
+    EVENT_PLAYER_LEAVING_WORLD = 0x111,
+    EVENT_QUEST_LOG_UPDATE = 0x134,
+    EVENT_FRIENDLIST_UPDATE = 0x15F,
+    // The roster signals. Both no-arg (FUN_FIRE_EVENT_NO_ARGS): the pending-name
+    // countdown 0x004BAD90 ends `mov ecx,0x1F3; call 0x703E50; mov ecx,0xDA;
+    // jmp 0x703E50`, and a roster rebuild signals only once every member's
+    // name is in the name cache (benilla-re ui/raid, ui/party).
+    EVENT_PARTY_MEMBERS_CHANGED = 0xDA,
+    EVENT_RAID_ROSTER_UPDATE = 0x1F3,
+    // PLAYER_LOGIN, once per UI instance (CALL_ENTER_WORLD_FIRE_PLAYER_LOGIN).
+    EVENT_PLAYER_LOGIN = 0x10E,
+    // DISPLAY_SIZE_CHANGED, no-arg; its one engine fire site is
+    // OnDisplaySizeChanged's 0x00492F5C (benilla-re tables/event_sites).
+    EVENT_DISPLAY_SIZE_CHANGED = 0x1FF,
     // UnitWatchedIndex — the position of unit field `field` (bank-relative
     // index, the unit-field event id) in the unit's watched-field table
     // (0x00839E48, 0xA7 entries), the slot of its 4 bytes in the watch copy
@@ -2780,12 +3069,15 @@ enum Offsets {
     OFF_VISIBLE_ITEM_ENCHANTS = 0x0C,
     VISIBLE_ITEM_ENCHANT_COUNT = 7,
 
-    // CGUnit m_objectFields pointer offset. Different from CGItem's
-    // descriptor at +0x114 — these are sibling classes under CGObject
-    // with class-specific descriptor offsets.
-    OFF_UNIT_DESCRIPTOR = 0x110,
+    // m_objectFields — the descriptor pointer of a unit, player, game object
+    // or corpse (Object::Fields). Different from CGItem's at +0x114: sibling
+    // classes under CGObject with class-specific descriptor offsets. Verified
+    // at 0x005183FE-0x00518404 in Script_UnitClass's general-unit-token path:
+    //   mov edx, [eax + 0x110]      ; descriptor
+    //   movzx eax, byte [edx + 0x79] ; class
+    OFF_OBJECT_FIELDS = 0x110,
     // A creature's LIVE creature_template entry — in the INSTANCE BLOCK at
-    // `[unit + OFF_UNIT_GUID_PTR]` (GUID @+0x00, entry @+0x0C), the same
+    // `[unit + OFF_OBJECT_DATA]` (GUID @+0x00, entry @+0x0C), the same
     // shape as CGItem's block (GUID @+0x00, itemID @+0x0C). NOT the
     // descriptor's OBJECT_FIELD_ENTRY slot (+0xC), which reads 0 for
     // creatures exactly as it does for items (in-game probe: a Gordunni
@@ -2800,8 +3092,8 @@ enum Offsets {
     // template with `UpdateEntry` → `SetEntry` only, so multi-id spawns (6,935
     // Turtle rows) and respawn re-rolls put a different template behind the
     // same GUID entry — Turtle's Gordunni rows are {5236, 5238, 5239} and
-    // every one of them carries 5236 in its GUID. Read by `Unit::CreatureID`.
-    OFF_UNIT_INSTANCE_ENTRY = 0x0C,
+    // every one of them carries 5236 in its GUID. Read by `Unit::CreatureID`
+    // as OFF_OBJECT_FIELD_ENTRY in the OFF_OBJECT_DATA block.
 
     // ── Nameplates (CGNamePlateFrame) ──────────────────────────────────
     //
@@ -2849,6 +3141,47 @@ enum Offsets {
     OFF_NAMEPLATE_LINK_NEXT = 0x4E0,
     OFF_NAMEPLATE_GUID = 0x4E8,
     OFF_UNIT_NAMEPLATE = 0xE60,
+    // CGUnit_C::ReleaseNamePlate — `void __thiscall(CGUnit_C *)`, plain RET:
+    // returns at once when unit+0xE60 is 0, else links the plate onto the
+    // free list's tail, hides it and zeroes unit+0xE60 (disassembled; the
+    // callers are listed in the block above).
+    FUN_UNIT_RELEASE_NAMEPLATE = 0x00608A10,
+    // The plate gate (benilla-re objectlayer/unitnames "Nameplates";
+    // disassembled) — `void __thiscall(CGUnit_C *, CSimpleFrame *parent)`,
+    // RET 4, run for each unit every frame. Its only ends are
+    // FUN_UNIT_RELEASE_NAMEPLATE (0x0060F742) and UpdateNamePlate (0x006086E0,
+    // 0x0060F7D9). A friendly unit's creature type is asked at
+    // CALL_NAMEPLATE_GATE_CREATURE_TYPE (`mov ecx,esi; call
+    // FUN_UNIT_CREATURE_TYPE`), and type 11, a totem, takes no plate
+    // (0x0060F757). The gate also skips a unit with UNIT_FIELD_CREATEDBY, no
+    // UNIT_FIELD_SUMMONEDBY and UNIT_FIELD_FLAGS bit 9 (0x0060F70B..2D).
+    FUN_NAMEPLATE_GATE = 0x0060F600,
+    CALL_NAMEPLATE_GATE_CREATURE_TYPE = 0x0060F752,
+    // CGNamePlateFrame::Initialize, the bind — `void __thiscall(plate,
+    // CGUnit_C *)`, RET 4 (called from UpdateNamePlate at 0x00608707). It
+    // sets the plate's size from VAR_NAMEPLATE_WIDTH / VAR_NAMEPLATE_HEIGHT
+    // (0.1 and 0.025 layout units) through the layout's SetWidth /
+    // SetHeight (+0x24 vtable +0x14 / +0x18), then sizes and places the
+    // health bar and the level text from the same two floats. Nothing else
+    // in .text reads them: their only operands are the eight
+    // SITE_NAMEPLATE_BIND_*_OPERAND addresses (a `mov eax,[imm32]` and three
+    // `fld [imm32]` each; scanned).
+    FUN_NAMEPLATE_BIND = 0x007CB6D0,
+    VAR_NAMEPLATE_WIDTH = 0x0087D9CC,
+    VAR_NAMEPLATE_HEIGHT = 0x0087D9D0,
+    SITE_NAMEPLATE_BIND_WIDTH_OPERAND_1 = 0x007CB72A,
+    SITE_NAMEPLATE_BIND_WIDTH_OPERAND_2 = 0x007CB749,
+    SITE_NAMEPLATE_BIND_WIDTH_OPERAND_3 = 0x007CB784,
+    SITE_NAMEPLATE_BIND_WIDTH_OPERAND_4 = 0x007CB7C1,
+    SITE_NAMEPLATE_BIND_HEIGHT_OPERAND_1 = 0x007CB73B,
+    SITE_NAMEPLATE_BIND_HEIGHT_OPERAND_2 = 0x007CB75A,
+    SITE_NAMEPLATE_BIND_HEIGHT_OPERAND_3 = 0x007CB7A8,
+    SITE_NAMEPLATE_BIND_HEIGHT_OPERAND_4 = 0x007CB7D2,
+    // CGNamePlateFrame's hit test — `int __thiscall(plate, const event *)`,
+    // RET 4 (disassembled): 0 while the pending spell wants a location and
+    // not a unit, else the base frame's (0x0076B320), which tests the
+    // event's cursor (OFF_UI_MOUSE_EVENT_X / _Y) against OFF_FRAME_HIT_RECT.
+    FUN_NAMEPLATE_HIT_TEST = 0x007CBA30,
     // unit+0xE64 is the unit's chat bubble (0x608AC0 fills it, 0x608C00
     // releases it; benilla-re objectlayer/unitnames.md "Chat bubbles").
     OFF_UNIT_CHAT_BUBBLE = 0xE64,
@@ -2864,6 +3197,14 @@ enum Offsets {
     // this image: slot 10 reads 0x0076A690. A frame whose vfptr is this
     // address is a live default plate (addon-built plates are normal frames).
     VAR_NAMEPLATE_VTABLE = 0x0081DE50,
+    // CGNamePlateFrame::OnUpdate (0x007CB950) dims the plate: with its unit
+    // looked up (EAX), `mov ecx,[0xB4E2D8]; mov edx,[0xB4E2DC]` (8B 0D …
+    // 8B 15 …, 12 bytes) loads the selection, then no selection or the
+    // unit's GUID == it → alpha 0xFF, else 0x7F, written through vtable
+    // +0x28 when it changed; the button's OnUpdate (Lua scripts) runs after.
+    // benilla-re ui/nameplates "Name, flash and dim"; bytes from its
+    // tables/signatures.tsv row for 0x7cb950 (offset 0x87).
+    SITE_NAMEPLATE_DIM_SELECTION = 0x007CB9D7,
 
     // CGCreature client-side creature-data cache row. Populated by the
     // engine when an NPC GUID becomes visible (the same row the
@@ -2889,14 +3230,16 @@ enum Offsets {
     // returns the raw id. Same field as `OFF_CREATURE_FAMILY` in the creature
     // cache data block, reached through the unit here.
     OFF_CREATURE_CACHE_FAMILY = 0x1C,
-    // Pointer to the CGUnit's 8-byte GUID at `*(CGUnit + 0x08)`. Verified
-    // in `Script_GetInventoryItemLink` at `0x004C8CB0`-`0x004C8CB5`:
-    // `mov eax, [esi+8]; mov edi, [eax]; mov ecx, [eax+4]` reads the
-    // GUID's lo+hi dwords through this indirection. CGItem uses the same
-    // offset for its instance block (also containing a GUID + itemID),
-    // so the layout is consistent across CGObject subclasses — but the
-    // contents differ per class.
-    OFF_UNIT_GUID_PTR = 0x08,
+    // The object's own field block, the pointer at CGObject + 0x08 on every
+    // object type: OBJECT_FIELD_GUID @+0x00, OBJECT_FIELD_TYPE @+0x08,
+    // OBJECT_FIELD_ENTRY @+0x0C, OBJECT_FIELD_SCALE_X @+0x10. Verified in
+    // `Script_GetInventoryItemLink` at `0x004C8CB0`-`0x004C8CB5`
+    // (`mov eax, [esi+8]; mov edi, [eax]; mov ecx, [eax+4]` reads the GUID),
+    // and for an item at 0x004C8B1F-2D (the inventory→cache lookup reads the
+    // itemID at `[[item+8]+0xC]` right after GetItemBySlot). Distinct from
+    // the subclass descriptor at OFF_OBJECT_FIELDS (+0x110; an item's at
+    // OFF_ITEM_DESCRIPTOR, +0x114). Read through Object::Data.
+    OFF_OBJECT_DATA = 0x08,
     // UNIT_FIELD_FLAGS within m_objectFields. Bit 3 (`0x08`) is
     // `UNIT_FLAG_PLAYER_CONTROLLED`, which `Script_UnitPlayerControlled`
     // (`0x00516410`) tests via `mov eax, [m_objectFields + 0xA0];
@@ -2957,6 +3300,10 @@ enum Offsets {
     // `Unit::Power::DisplayDivisor`.
     FUN_POWER_DISPLAY_DIVISOR = 0x006E7130,
     OFF_UNIT_FIELD_LEVEL = 0x70,
+    // UNIT_FIELD_FACTIONTEMPLATE: the unit's FactionTemplate.dbc id, which
+    // Script_UnitFactionGroup reads for a unit in view (descriptor +0x74; see
+    // FUN_SCRIPT_UNIT_FACTION_GROUP).
+    OFF_UNIT_FIELD_FACTIONTEMPLATE = 0x74,
     // UNIT_FIELD_BYTES_0 dword at +0x78; byte 3 (= +0x7B) is the unit's
     // primary power type (one of UNIT_POWER_MIN_TYPE..MAX_TYPE).
     // Verified at `0x005179E6` in vanilla's `Script_UnitPowerType`:
@@ -2971,6 +3318,12 @@ enum Offsets {
     // server-side; used by GetSpellBonusHealing for the Spiritual-Guidance
     // (aura 175) spirit→healing conversion.
     OFF_UNIT_FIELD_STAT_SPIRIT = 0x250,
+    // STAT0 (Strength), fieldIndex 0x90 -> +0x240: the five stats are
+    // consecutive UpdateFields (tortoise-wow UpdateFields.h UNIT_FIELD_STAT0..4),
+    // so Str/Agi/Sta/Int/Spirit are +0x240/+0x244/+0x248/+0x24C/+0x250, the
+    // last being the verified OFF_UNIT_FIELD_STAT_SPIRIT. The server sends
+    // them only to the unit itself.
+    OFF_UNIT_FIELD_STAT0 = 0x240,
     // UNIT_FIELD_RESISTANCES[0] = armor (the fully-computed total), fieldIndex
     // 0x95 → +0x254 (7 resistances: armor, then the 6 magic schools). What
     // GetArmor() / GetResistance(SPELL_SCHOOL_NORMAL) returns; used by
@@ -2992,6 +3345,10 @@ enum Offsets {
     // UNIT_FIELD_PETNUMBER: nonzero for a hunter / warlock pet.
     // CheckSpellTargetRange reads it at 0x006E4645 (`[fields+0x214]`).
     OFF_UNIT_FIELD_PETNUMBER = 0x214,
+    // UNIT_FIELD_PET_NAME_TIMESTAMP: the stamp of the pet's current name.
+    // CGUnit_C::GetUnitName (FUN_OBJECT_GET_NAME) drops a pet name cache
+    // record whose OFF_PET_NAME_RECORD_TIMESTAMP differs (0x006092D9).
+    OFF_UNIT_FIELD_PET_NAME_TIMESTAMP = 0x218,
     // The active mover's GUID (u64): the unit the client moves, the player
     // or a unit it controls. SetActiveMover 0x006006E0 writes it,
     // ReleaseActiveMover 0x006006B0 zeroes both halves (disassembled).
@@ -3013,6 +3370,9 @@ enum Offsets {
     // secure-frame system here, so the modern lockdown semantics
     // reduce to a plain combat flag check.
     UNIT_FLAG_IN_COMBAT = 0x00080000,
+    // vmangos UNIT_FLAG_PET_IN_COMBAT; the 3.80.2 client's priority targeting
+    // tests the same bit of the same field for "the player is engaged".
+    UNIT_FLAG_PET_IN_COMBAT = 0x00000800,
     // Bit 24 of UNIT_FIELD_FLAGS — set by the engine when a player is
     // possessed (priest's `Mind Control`, warlock's `Subjugate Demon`).
     // Standard vanilla `UNIT_FLAG_POSSESSED = 0x01000000` per emulator
@@ -3082,6 +3442,13 @@ enum Offsets {
     // separate haste multiplier, so there is no client-side way to recover
     // the UNHASTED weapon delay from these — that has to come from the
     // weapon's own `OFF_ITEMSTATS_DELAY`. Used by `Combat::Swing`.
+    // `UNIT_FIELD_AURASTATE` (field 0x77): the unit's aura-state bits, bit
+    // n−1 set while aura state n holds (1 defense after a dodge / parry /
+    // block, 2 health below 20%, ...). FUN_SPELL_IS_USABLE tests a record's
+    // CasterAuraState against the player's word and its TargetAuraState
+    // against the target's (`test [eax+0x1dc],edx` at 0x006E3F1E /
+    // 0x006E3F6F; benilla-re spell/checks). Read by `Spell::Reactive`.
+    OFF_UNIT_FIELD_AURASTATE = 0x1DC,
     OFF_UNIT_FIELD_BASEATTACKTIME = 0x1E0,     // main-hand swing time, ms
     OFF_UNIT_FIELD_OFFHANDATTACKTIME = 0x1E4,  // off-hand swing time, ms
     OFF_UNIT_FIELD_RANGEDATTACKTIME = 0x1E8,   // ranged swing time, ms
@@ -3106,8 +3473,11 @@ enum Offsets {
     OFF_UNIT_FIELD_AURA = 0xA4,                // u32 spell ID per slot, 48 slots total
     // UNIT_AURA event id for FUN_UNIT_EVENT_BROADCAST. The per-token unit
     // events use field-index == event-id; the aura field is index 0x29
-    // (OFF_UNIT_FIELD_AURA 0xA4 >> 2), per Unit::TokenObserver's watched set.
+    // (OFF_UNIT_FIELD_AURA 0xA4 >> 2), in FUN_0051bbb0's watched set.
     UNIT_EVENT_UNIT_AURA = 0x29,
+    // UNIT_LEVEL: OFF_UNIT_FIELD_LEVEL 0x70 >> 2, and slot 0x1C of the boot
+    // event-name array (the store at 0x0051AC7B).
+    UNIT_EVENT_UNIT_LEVEL = 0x1C,
     OFF_UNIT_FIELD_AURAFLAGS = 0x164,          // 4 bits per aura, 2 per byte, covers all 48
     OFF_UNIT_FIELD_AURALEVELS = 0x17C,         // u8 caster level per aura, 48 bytes
     OFF_UNIT_FIELD_AURAAPPLICATIONS = 0x1AC,   // u8 (stacks-1) per aura, display value = byte+1
@@ -3432,6 +3802,8 @@ enum Offsets {
     // 1 helpful, 0 neither, from the Targets word and the implicit targets
     // (benilla-re spell/handlers#hostility-classifier).
     FUN_SPELL_HOSTILITY = 0x006EA280,
+    SPELL_HOSTILITY_HELPFUL = 1,
+    SPELL_HOSTILITY_HARMFUL = 2,
     // Inside it: the mounted rung's `mov edx,[ecx+0x1FC]` (8B 91 FC 01 00
     // 00, then `test edx,edx; jle pass`; refuses 0x39) and the stand rung's
     // `call [edx+0xA4]` (FF 92 A4 00 00 00, GetStandState, then `test
@@ -3451,6 +3823,9 @@ enum Offsets {
     // Vanilla SpellCastResult codes (vmangos SpellDefines.h order, matching
     // the rung reasons above).
     SPELL_FAILED_NOT_SHAPESHIFT = 0x3D,
+    // "You can't use that here" (benilla-re tables/spell_failed.tsv: the
+    // reason byte whose GlobalStrings key 0x6e23e0 returns).
+    SPELL_FAILED_NOT_HERE = 0x35,
     SPELL_FAILED_ONLY_SHAPESHIFT = 0x56,
     // CGPlayer_C::SendStandStateChange — `void __thiscall(void *player,
     // uint32_t state)`, ret 4. Sends CMSG_STANDSTATECHANGE and applies the
@@ -3484,7 +3859,6 @@ enum Offsets {
     // 4.3.4's IsUsableMounted — `bool __thiscall(const void *const *fields)`,
     // ECX = &object->descriptor: GAMEOBJECT_TYPE_ID is 19, the mailbox.
     FUN_GAMEOBJECT_USABLE_MOUNTED = 0x0047CFF0,
-    OFF_GAMEOBJECT_DESCRIPTOR = 0x110,
     // A type handler's object pointer (benilla-re objectlayer/gameobjects).
     OFF_GAMEOBJECT_HANDLER_OBJECT = 0x4,
     // The default use (slot 7, 0x005F33E0, 4.3.4's TypeBase::Use): its
@@ -3571,11 +3945,10 @@ enum Offsets {
     // The taxi map opener (0x004DB710) ends like 4.3.4's: TAXIMAP_OPENED,
     // then tutorial 34 through FUN_TRIGGER_TUTORIAL (`void __fastcall(int
     // id, int)`) at this call; 4.3.4 then stands, dismounts and leaves the
-    // form when the map has more than one node (VAR_TAXI_MAP_NODE_COUNT,
+    // form when the map has more than one node (VAR_TAXI_NODE_COUNT,
     // the count the opener's TaxiNodeSetCurrent loop runs to).
     CALL_TAXI_MAP_OPENED_TUTORIAL = 0x004DBAA2,
     FUN_TRIGGER_TUTORIAL = 0x004B5390,
-    VAR_TAXI_MAP_NODE_COUNT = 0x00BB4AA8,
 
     // Effective spell/channel duration (ms):
     // `__fastcall int(const void *spellRecord, int pet /*0 = player,
@@ -3812,6 +4185,9 @@ enum Offsets {
     // `+0xD3C`). `Unit::Sheath::GetSheathState` reads the local player's value
     // and returns it 1-based (Lua's GetSheathState is 1=None/2=Melee/3=Ranged).
     OFF_UNIT_SHEATH_STATE = 0xD40,
+    SHEATH_STATE_NONE = 0,
+    SHEATH_STATE_MELEE = 1,
+    SHEATH_STATE_RANGED = 2,
 
     // NetClient message dispatch — `__thiscall void(void *conn, uint32_t
     // arg, CDataStore *packet)`. Reads the u16 opcode off the packet
@@ -3854,6 +4230,16 @@ enum Offsets {
     // SpellCastTargets::write). A resurrect aimed at a released player
     // carries the corpse.
     SPELL_TARGET_FLAGS_OBJECT = 0x8A02,
+    // The other SpellCastTargets bits a reader needs (vmangos SpellDefines.h
+    // SpellCastTargetFlags; written in this order by SpellCastTargets::write
+    // after the object GUID): TARGET_FLAG_UNIT alone, the item and trade-item
+    // bits that carry a packed item GUID, the source and destination
+    // locations (3 floats each) and a string target.
+    SPELL_TARGET_FLAG_UNIT = 0x2,
+    SPELL_TARGET_FLAGS_ITEM = 0x1010,
+    SPELL_TARGET_FLAG_SOURCE_LOCATION = 0x20,
+    SPELL_TARGET_FLAG_DEST_LOCATION = 0x40,
+    SPELL_TARGET_FLAG_STRING = 0x2000,
     // Melee swing result broadcast. Body (verified against the server's own
     // writer, tortoise-wow Unit::SendAttackStateUpdate): u32 hitInfo,
     // packedGuid attacker, packedGuid victim, u32 totalDamage, u8 subCount,
@@ -3910,12 +4296,16 @@ enum Offsets {
     // targetFlags(u16), <target per flags>`.
     OP_CMSG_CAST_SPELL = 0x12E,
 
-    // Outgoing opcode: CMSG_SPLIT_ITEM, built by FUN_INVENTORY_SPLIT (body
-    // documented there): u8 srcBag, u8 srcSlot, u8 dstBag, u8 dstSlot,
-    // u8 count. The server answers a successful split with a NEW item
-    // object for the split-off half (tortoise-wow `Player::SplitItem` →
-    // `CloneItem`), or SMSG_INVENTORY_CHANGE_FAILURE.
-    OP_CMSG_SPLIT_ITEM = 0x10E,
+    // An item the server gave the player (loot, craft, purchase, reward).
+    // Routed to the shared handler `FUN_005E38C0`, which reads: u64 player,
+    // u32 received, u32 created, u32 show-in-chat, u8 bag (the
+    // INVENTORY_SLOT_BAG_0 form below), u32 slot (0xFFFFFFFF when the items
+    // went onto existing stacks), u32 item ID, u32 suffix factor, u32 random
+    // property, u32 count, and passes them to `0x491A60` (benilla-re
+    // objectlayer/playermessages "Item push"; tortoise-wow
+    // `Player::SendNewItem` writes the same). Loot is sent to the whole
+    // group. `Item::NewItems` flags the pushed item.
+    SMSG_ITEM_PUSH_RESULT = 0x166,
 
     // The bag byte the item packets use for the player's own inventory
     // (paperdoll, backpack, bank main slots); any other bag byte is the
@@ -3958,6 +4348,9 @@ enum Offsets {
     // reports a non-zero count).
     OFF_CGPLAYER_COMBO_POINTS = 0x1029,
     OFF_CGPLAYER_COMBO_TARGET = 0x838,
+    // Script_GetComboPoints: `int __fastcall(lua_State *)`, pushes one number,
+    // never nil (benilla-re ui/actionuse "GetComboPoints").
+    FUN_SCRIPT_GET_COMBO_POINTS = 0x0051A190,
 
     // ---- Frame-method registries beyond GameTooltip's ------------------
     // Same per-type registry mechanism as VAR_GAMETOOLTIP_METHOD_REGISTRY
@@ -4019,6 +4412,11 @@ enum Offsets {
     OFF_BUTTON_STATE = 0x328,        // 0 disabled, 1 normal, 2 pushed
     OFF_BUTTON_STATE_LOCKED = 0x32C,
     OFF_BUTTON_CLICK_MASK = 0x330,   // press bits low byte, release bits << 8
+    // The two slots themselves, shared by all five button classes' vtables
+    // (benilla-re ui/mouse.md "Who overrides the mouse slots": 0x779210 and
+    // 0x7792D0 in 5 tables).
+    FUN_BUTTON_ON_MOUSE_DOWN = 0x00779210,
+    FUN_BUTTON_ON_MOUSE_UP = 0x007792D0,
     OFF_BUTTON_LAST_CLICK_MS = 0x334,
     BUTTON_STATE_DISABLED = 0,
     BUTTON_STATE_NORMAL = 1,
@@ -4131,8 +4529,31 @@ enum Offsets {
     // then with VALUE_FLAG_VALUE_SET calls FUN_SLIDER_SET_VALUE on the value.
     // Called by Slider:SetMinMaxValues (0x00790874), LoadXML and SetValueStep.
     FUN_SLIDER_SET_MIN_MAX_VALUES = 0x007898F0,
-    // CSimpleSlider::SetValue — `void __thiscall(slider, float)`, `ret 4`.
+    // CSimpleSlider::SetValue — `void __thiscall(slider, float)`, `ret 4`:
+    // with a range, clamps, rounds to the step, returns on an equal value,
+    // else stores it, ORs VALUE_FLAG_CHANGED | VALUE_FLAG_VALUE_SET and fires
+    // OFF_SLIDER_ONVALUECHANGED_SLOT with VAR_SCRIPT_FMT_F (0x00789A2A, 0x00789A44).
     FUN_SLIDER_SET_VALUE = 0x00789930,
+    // Its callers' return addresses: CSimpleSlider::OnMouseMove (0x00789BA0,
+    // vtable +0x3C, which OnLayerMouseDown also runs for the press) after its
+    // cursor-to-value call, and FUN_SCRIPT_SLIDER_SET_VALUE.
+    RET_SLIDER_DRAG_SET_VALUE = 0x00789C5A,
+    RET_SCRIPT_SLIDER_SET_VALUE = 0x00790A34,
+    // Script Slider:SetValue — `int __fastcall(lua_State *)`: checks self and
+    // a number at 2, then calls FUN_SLIDER_SET_VALUE with it (0x00790A2F).
+    FUN_SCRIPT_SLIDER_SET_VALUE = 0x00790980,
+    // The rest of the slider's block (benilla-re ui/slider; OnMouseMove reads
+    // them at 0x00789BB7..0x00789C3F): the step, the thumb (CSimpleTexture *),
+    // the orientation (0 HORIZONTAL, 1 VERTICAL) and the OnValueChanged slot.
+    OFF_SLIDER_STEP = 0x324,
+    OFF_SLIDER_THUMB = 0x328,
+    OFF_SLIDER_ORIENTATION = 0x32C,
+    OFF_SLIDER_ONVALUECHANGED_SLOT = 0x330,
+    // Flags bit 3: the mouse is dragging the slider. OnLayerMouseDown sets it,
+    // the mouse-up (slot 27) and hide (slot 13) clear it; OnMouseMove acts only with it.
+    VALUE_FLAG_DRAGGING = 0x8,
+    // The engine's "%f" format literal, the fmt SetValue fires OnValueChanged with.
+    VAR_SCRIPT_FMT_F = 0x00835160,
     // CSimpleStatusBar::SetMinMaxValues — `void __thiscall(bar, float min,
     // float max)`, `ret 8`: stores min (max when min > max) and max, ORs 0x3
     // into the flags, then with VALUE_FLAG_VALUE_SET clears it and calls the
@@ -4349,6 +4770,10 @@ enum Offsets {
     // fingers of CloseHand, 8..17) is stopped when it ends, except
     // HandsClosed (15), which stays.
     M2_KEY_BONE_ROOT = 0x1A,
+    // A unit's split key bone, the upper body: the display apply 0x0060ABE0
+    // stores 6 at +0xD5C, where CGUnit_C::PlayWoundAnimation plays a moving
+    // or attacking unit's wound (0x0060EADA).
+    M2_KEY_BONE_UPPER_BODY = 6,
     ANIM_HANDS_CLOSED = 15,
     // CM2Model::SetAnimDoneCallback — `__thiscall(model, callback, uint64
     // userData)`, ret 0xC. AttachDisplayModel passes the pane sign-extended
@@ -4612,6 +5037,16 @@ enum Offsets {
     // equipment piece (validated against ItemDisplayInfo.dbc, no-op for 0 /
     // out-of-range). Units pass CreatureDisplayInfoExtra +0x20..+0x44.
     FUN_CHARCOMP_SET_ITEM = 0x00478AA0,
+    // SetCharacterComponentEmblem, __thiscall(builder, style, colour,
+    // border, borderColour, background) ret 0x14: the guild emblem a tabard
+    // with the emblem flag shows (ApplyTabard 0x005E07B2).
+    FUN_CHARCOMP_SET_EMBLEM = 0x0047A610,
+    // GetGuildEmblem, __fastcall(guildID, callback, guidLow, guidHigh, data,
+    // &style, &colour, &border, &borderColour, &background) ret 0x20
+    // (benilla objectlayer/party "The emblem lookup"): the guild cache's
+    // record (0x00C0E1EC, emblem at +0x2E4..+0x2F4); all five -1 and false
+    // with no record (a null callback asks for none) or any value -1.
+    FUN_GET_GUILD_EMBLEM = 0x006D6D20,
     // UpdateCharacterComponent — `bool __thiscall(builder, int force)`.
     // The per-frame pump: composites pending texture regions; the baked-NPC
     // path short-circuits to the geoset apply (FUN_00477520) and returns 1 on
@@ -4714,6 +5149,11 @@ enum Offsets {
     // cursor is over no mouse-enabled frame. `Frame::Attributes` polls this to
     // drive the `mouseover` override from the hovered frame's `unit` attribute.
     OFF_UI_CONTEXT_MOUSE_FOCUS = 0x7C,
+    // The frame that holds the press: the release goes to it and to nothing
+    // else, and the engine clears it to null when the frame leaves the mouse
+    // lists (benilla-re ui/mouse.md: 0x0076642B reads it, 0x00764CAD /
+    // 0x00764CB8 clear it).
+    OFF_UI_CONTEXT_PRESSED_FRAME = 0x80,
     // The mouse-focus pass — `int __fastcall(const MouseEvent *event,
     // context)`, an input handler (registered by 0x00765C6C) that also runs
     // from the layout update 0x007657BE when the re-pick flag (+0x1100) is
@@ -4763,6 +5203,11 @@ enum Offsets {
     // the payload's button (OFF_MOUSE_EVENT_BUTTON 0x04) sits at +0x14 and its
     // held mask at +0x18. 0x0076BF70 ANDs +0x14 with the drag mask.
     OFF_UI_MOUSE_EVENT_BUTTON = 0x14,
+    // The cursor in the same copy, in the units of OFF_REGION_RECT, y up:
+    // CSimpleSlider::OnMouseMove reads x at +0x24 (0x00789BFE) and y at +0x28
+    // (0x00789C2D) against the slider's rect.
+    OFF_UI_MOUSE_EVENT_X = 0x24,
+    OFF_UI_MOUSE_EVENT_Y = 0x28,
     OFF_MOUSE_EVENT_BUTTONS = 0x18,
     // CSimpleFrame::EnableEvent `__thiscall(frame, kind, priority)`, ret 8:
     // sets the kind's bit in OFF_FRAME_ENABLED_EVENTS and, when the frame is
@@ -5000,12 +5445,72 @@ enum Offsets {
     OFF_FRAME_CHILD_LIST = 0x300,
     VTBL_FRAME_SET_FRAME_ALPHA = 0x28,
     VTBL_REGION_RECOLOR = 0x20,
+    // Region vtable+0x28 — `void __thiscall Emit(batch)`, ret 4: the region's
+    // append to its layer batch. The frame's layer walk (0x0076B3A0) calls
+    // this slot on every registered region of an enabled layer (0x0076B3E1);
+    // CSimpleTexture's is FUN_SIMPLETEXTURE_EMIT (slot 10 of
+    // VTBL_SIMPLETEXTURE, read from the exe). Texture::Mask gives a
+    // MaskTexture a no-op here, as 3.80.2's batch slot skips a mask.
+    VTBL_REGION_EMIT = 0x28,
     // CScriptObject vtable+0x04 — `const char *__thiscall GetName()`, NULL for
     // an unnamed object. The frame-script usage errors (Script_GetScript
     // 0x00774780, Script_SetScript 0x007748D0, ~90 more sites) format the
     // object as `GetName() ?: VAR_STR_UNNAMED` — 4.3.4's
     // FrameScript_Object::GetDisplayName, inlined.
     VTBL_SCRIPTOBJECT_GET_NAME = 0x04,
+    // CSimpleTexture's main vtable: 13 slots, written only by its constructor
+    // (0x0076FCB7) and destructor (0x0076FD4B). +0x08 GetScriptMethod
+    // `int __thiscall(this, lua_State *L, const char *name)`, ret 8 (0x0079C620:
+    // the Texture registry 0x00CF5434, then the Region's); +0x10 IsA (typeId);
+    // +0x18 IsObjectType `int __thiscall(this, const char *)`, ret 4 (0x00773430:
+    // "Texture" or "Region"); +0x1C GetObjectType `const char *__thiscall(this)`
+    // (0x00773480: the "Texture" string at [0x00878CE4]). Texture::Mask gives a
+    // MaskTexture a copy with its own slots 2, 6, 7 and 10. The slot offsets are
+    // the frame's (VTBL_FRAME_GET_SCRIPT_METHOD / _IS_OBJECT_TYPE /
+    // _GET_OBJECT_TYPE) and VTBL_REGION_EMIT.
+    VTBL_SIMPLETEXTURE = 0x0081C718,
+    VTBL_SIMPLETEXTURE_SLOTS = 13,
+    // CSimpleTexture's layout vtable, stored at +0x24 by the same constructor:
+    // 11 slots (benilla-re ui/regions "The layout vtable"), read from the exe:
+    // +0x00 OnFrameSizeChanged 0x00770670, +0x04 the deleting destructor thunk
+    // 0x007733C0, +0x08 the XML loader 0x0076FE20, +0x0C GetLayoutParent
+    // 0x0076C6E0, +0x10 SetLayoutScale 0x00768360 (CLayoutFrame's own), +0x14 /
+    // +0x18 SetWidth / SetHeight, +0x1C / +0x20 GetWidth / GetHeight 0x00770720 /
+    // 0x00770790, +0x24 0x0046FF60, +0x28 FUN_REGION_LAYOUT_FRAME_BY_NAME.
+    // Texture::Line gives a Line a copy with its own slots 0, 4, 0x1C and 0x20.
+    VTBL_SIMPLETEXTURE_LAYOUT = 0x0081C6EC,
+    VTBL_SIMPLETEXTURE_LAYOUT_SLOTS = 11,
+    // A bare CLayoutFrame: 0x74 bytes (benilla-re structs CLayoutFrame, 116).
+    // The constructor `void *__thiscall(this)` zeroes the points, rect, size
+    // and links, sets the scale +0x58 to 1.0 and the vtable 0x0081C400; the
+    // destructor `void __thiscall(this)` frees the points, clears the points
+    // of every dependent that names it (0x00768E20) and leaves the layout
+    // queue. CSimpleTop is built on one with no script object in front
+    // (0x00764160). Disassembled 0x00767680 / 0x00767720.
+    LAYOUT_FRAME_SIZE = 0x74,
+    FUN_LAYOUT_CONSTRUCTOR = 0x00767680,
+    FUN_LAYOUT_DESTRUCTOR = 0x00767720,
+    // CLayoutFrame::SetLayoutScale — `uint32_t __thiscall(layout, float scale,
+    // uint32_t force)`, ret 8: refuses 0, ignores a change below 2^-22 unless
+    // forced, else stores +0x58, invalidates the rect and lays the frame out
+    // (benilla-re ui/anchors "Size, scale and stored rectangle").
+    FUN_LAYOUT_SET_LAYOUT_SCALE = 0x00768360,
+    // CLayoutFrame::IsAnchoredTo — `int __thiscall(layout, void *target)`,
+    // ret 4: 1 when a point of `layout`, or of a frame a point names, through
+    // any chain, is relative to the layout `target` (disassembled 0x00768010).
+    FUN_LAYOUT_IS_ANCHORED_TO = 0x00768010,
+    // CLayoutFrame's own width / height getters, `float __thiscall(layout)`:
+    // the explicit size +0x50 / +0x54, the plain frame's slots +0x1C / +0x20
+    // (benilla-re ui/anchors "Size, scale and stored rectangle"). The
+    // texture's own pair (0x00770720 / 0x00770790) answers the image's size
+    // in its place when that is 0 (disassembled 0x00770720).
+    FUN_LAYOUT_GET_WIDTH = 0x00768420,
+    FUN_LAYOUT_GET_HEIGHT = 0x00768410,
+    // CScriptRegion::GetLayoutFrameByName — `void *__thiscall(layout, const char
+    // *name)`, ret 4: the layout part of the region `name` names, `$parent`
+    // expanded against the region (0x0076C5B0), or 0 (disassembled 0x0076C700).
+    // Slot +0x28 of a region's layout vtable; Script SetPoint's name lookup.
+    FUN_REGION_LAYOUT_FRAME_BY_NAME = 0x0076C700,
     FUN_FRAME_SET_FRAME_ALPHA = 0x0076A690,
     // CSimpleFrame::SetParent — `void __thiscall(frame, CSimpleFrame *parent)`,
     // `ret 4`; Script SetParent reaches it through vtable+0x14. No-op for the
@@ -5101,6 +5606,9 @@ enum Offsets {
     // calls vtable +0x8C (the rescale). Frame:SetScale (0x00775140) calls it
     // with force 0 after rejecting a negative scale (Ghidra).
     FUN_FRAME_SET_SCALE = 0x0076AC10,
+    // The frame's own scale (float), what SetFrameScale stores and Script
+    // Frame:GetScale (0x00775080) pushes: `fld [frame + 0xB8]` at 0x0077511F.
+    OFF_FRAME_SCALE = 0xB8,
     // 4.3.4's disabled bit: CSimpleFrame::RunOnEnableScript sets it for a
     // disabled Button or EditBox, and EditBox:IsEnabled reads it.
     FRAME_FLAG_DISABLED = 0x400,
@@ -5144,6 +5652,11 @@ enum Offsets {
     // UpdateScrollChildRect 0x007918B0, as VAR_FRAME_LUA_TYPE_ID is by the
     // Frame methods).
     OFF_SCROLLFRAME_SCROLL_CHILD = 0x318,
+    // The ScrollFrame's draw of its scroll child — `void __thiscall(scrollFrame)`,
+    // the render callback its layer emit (0x007871C0) queues with `push esi`
+    // (the ScrollFrame) at 0x007871DA. Frame::ClipChildren wraps it to draw the
+    // scroll child's alpha gradient.
+    FUN_SCROLLFRAME_DRAW_SCROLL_CHILD = 0x00787220,
     VAR_SCROLLFRAME_LUA_TYPE_ID = 0x00CF4F14,
     FUN_SCRIPT_TEXTURE_SHOW = 0x0079B770,
     FUN_SCRIPT_TEXTURE_HIDE = 0x0079B830,
@@ -5304,6 +5817,11 @@ enum Offsets {
 
     // PendingLootRoll message field offsets, derived from the SMSG_LOOT_ROLL
     // deserializer FUN_0061BFA0 (reads GUID/u32/byte fields off the packet).
+    // The roll's client-side id, the rollID START_LOOT_ROLL / CANCEL_LOOT_ROLL
+    // carry: the START_ROLL handler stores the serial 0xC4DDA4 here and
+    // increments it (0x0061B38C-0x0061B394). The list link sits at +0, so the
+    // store head is the record itself.
+    OFF_LOOTROLL_ID = 0x08,          // u32 rollID
     OFF_LOOTROLL_SOURCE_GUID = 0x10, // u64 looted-object GUID (roll identity)
     OFF_LOOTROLL_SLOT = 0x18,        // u32 loot slot
     OFF_LOOTROLL_ITEM_ID = 0x1C,     // u32 itemID
@@ -5427,6 +5945,10 @@ enum Offsets {
     // (0.5, 0x200122). The decal's vertices carry the full ARGB, and the
     // circle blends (source alpha, one), so the alpha byte is its brightness.
     FUN_CGOBJECT_FRAME_UPDATE = 0x00614A90,
+    // A unit's slot 12 itself, CGUnit_C::DrawSelectionCircle: `void
+    // __thiscall(unit)`, plain `ret` (benilla-re crates/objectlayer
+    // unitm1_fp.rs). Slot 12 is called only for the target (0x00614ADA).
+    FUN_UNIT_DRAW_SELECTION_CIRCLE = 0x00608E00,
     // CGObject_C::SetLight / ClearLight — `void __thiscall(obj, int bit)`.
     // SetLight ORs the bit into the object's light bits (+0xB8) and gives the
     // model the light state's emissive colour (+0x178..+0x17A / 255); ClearLight
@@ -5453,7 +5975,7 @@ enum Offsets {
     OFF_CGOBJECT_OVERRIDE_MODEL = 0xDC,
     OFF_CGOBJECT_VTBL_SELECTION_COLOR = 0x2C,
     OFF_CGUNIT_SELECTION_RADIUS = 0xCF0,
-    OFF_OBJECT_FIELD_SCALE_X = 0x10, // in the block at OFF_UNIT_GUID_PTR
+    OFF_OBJECT_FIELD_SCALE_X = 0x10, // in the block at OFF_OBJECT_DATA
     FUN_BUILD_YAW_MATRIX = 0x00615070,
     FUN_SELECTION_CIRCLE_STATE = 0x00614E00,
     FUN_DRAW_DECAL = 0x006D7330,
@@ -5519,12 +6041,15 @@ enum Offsets {
     // cast-start line drops a spell it gives 0 (0x0062B460 pushes the
     // record's id and calls [vtbl+0xB4]); 4.3.4's GetSpellCastingTime.
     OFF_CGUNIT_VTBL_GET_SPELL_CASTING_TIME = 0xB4,
-    // OBJECT_FIELD_TYPE, the type word, in the block at OFF_UNIT_GUID_PTR
-    // (the GUID is its +0): the hover dispatch reads `[[obj+8]+8]`.
+    // The fields of the block at OFF_OBJECT_DATA (UpdateField table
+    // 0x0083DB64, indices 0..4). OBJECT_FIELD_GUID is a qword.
+    OFF_OBJECT_FIELD_GUID = 0x00,
+    // The TYPEMASK_* word: the hover dispatch reads `[[obj+8]+8]`.
     OFF_OBJECT_FIELD_TYPE = 0x08,
-    // OBJECT_FIELD_ENTRY in the same block (UpdateField table 0x0083DB64:
-    // index 3): an item's template id, read by the combat log namer as
-    // `[[obj+8]+0xC]`.
+    // The template id: an item's itemID, a creature's or game object's entry
+    // (the combat log namer reads `[[obj+8]+0xC]`). For a creature this is the
+    // template actually applied, which the GUID's entry bits are not; see
+    // Unit::CreatureID.
     OFF_OBJECT_FIELD_ENTRY = 0x0C,
 
     // World line-segment collision test (client-side LoS core):
@@ -5577,6 +6102,45 @@ enum Offsets {
     OFF_QUEST_SLOT_STATE = 0x07,
     QUEST_SLOT_STATE_COMPLETE = 0x02,
     OFF_PLAYER_INFO_FLAGS = 0x08,
+    // PLAYER_DUEL_ARBITER (player index 0, a GUID) and PLAYER_DUEL_TEAM
+    // (index 8, 0 outside a duel, else 1 or 2): the binary's UpdateField table
+    // (0x0083D26C / 0x0083D1F4 entries), public fields of this block.
+    OFF_PLAYER_INFO_DUEL_ARBITER = 0x00,
+    OFF_PLAYER_INFO_DUEL_TEAM = 0x20,
+    // PLAYER_GUILDID (player index 3): CGPlayer_C::ApplyTabard (0x005E0762)
+    // and the dressing room's tabard arm (0x00504894) read it here.
+    OFF_PLAYER_INFO_GUILD_ID = 0x0C,
+    // PLAYER_GUILDRANK (player index 4), which Script_GetGuildInfo
+    // (0x004C9330, disassembled) reads here for the rank number and the
+    // rank name's index.
+    OFF_PLAYER_INFO_GUILD_RANK = 0x10,
+    // The guild cache (benilla-re ui/guild "The guild cache", dbcache
+    // "Asking for a record"): GuildGetRecord `__thiscall(cache, guildID,
+    // const uint64_t *owner, callback, data, bool once)` ret 0x14
+    // (0x00560E30) returns the record, else null; on a miss it sends
+    // CMSG_GUILD_QUERY only when given a callback, which it keeps (once: not
+    // again for the same function and data), and calls `__fastcall(guildID,
+    // const uint64_t *owner, status, data)` ret 8 when the answer comes
+    // (OnGuildInfoArrived 0x004C9470). The record: the name at +0x04 (the
+    // decoder bounds it at 0x60), ten rank names of 0x40 bytes from +0x64.
+    // GetGuildInfo returns the name as stored and the rank name copied and
+    // masked by MaskProfanity `__fastcall(char *text, bool)` (0x004A1A60,
+    // with 1), and does not bound the rank.
+    VAR_GUILD_CACHE = 0x00C0E1EC,
+    FUN_GUILD_GET_RECORD = 0x00560E30,
+    OFF_GUILD_RECORD_NAME = 0x04,
+    GUILD_RECORD_NAME_SIZE = 0x60,
+    OFF_GUILD_RECORD_RANK_NAMES = 0x64,
+    GUILD_RECORD_RANK_NAME_SIZE = 0x40,
+    GUILD_RECORD_RANKS = 10,
+    FUN_MASK_PROFANITY = 0x004A1A60,
+    // PLAYER_BYTES (player index 5) and PLAYER_BYTES_2 (index 6) in the same
+    // block: skin, face, hair style and hair color at +0x14..+0x17, facial
+    // hair at +0x18. CGUnit_C::BuildCharacterComponent (0x005FB200) reads the
+    // five bytes there into the character component of a player shown in
+    // its own display.
+    OFF_PLAYER_INFO_BYTES = 0x14,
+    OFF_PLAYER_INFO_BYTES_2 = 0x18,
     PLAYER_FLAG_AFK = 0x02,
     PLAYER_FLAG_DND = 0x04,
     // Chat AFK mirror (4.3.4 CGChat::m_afk), dword, nonzero = AFK. Five
@@ -5590,10 +6154,27 @@ enum Offsets {
     // engine's ghost test `test byte [eax+8],0x10`, OnPlayerFlagsChanged
     // 0x005EEAB4).
     PLAYER_FLAG_GHOST = 0x10,
+    // PLAYER_FLAGS bits 10 and 11 — the player hides its helm / cloak.
+    // CGPlayer_C::ApplyEquipmentDisplay (0x005ED700) leaves equipment slot 0
+    // (head) off the character component when `flags >> 10 & 1` is set
+    // (0x005ED7F9..0x005ED807) and slot 14 (back) when `flags >> 11 & 1`
+    // is (0x005ED811..0x005ED81F).
+    PLAYER_FLAG_HIDE_HELM = 0x400,
+    PLAYER_FLAG_HIDE_CLOAK = 0x800,
     // PLAYER_FLAGS bit 9 — the player asked to stay PvP flagged (TogglePVP /
     // SetPVP). CGPlayer_C::OnPlayerFlagsChanged (0x005EE990) tests it at
     // 0x005EEB0D; tortoise-wow and vmangos PLAYER_FLAGS_PVP_DESIRED = 0x200.
     PLAYER_FLAG_PVP_DESIRED = 0x200,
+    // The player that controls a unit: `CGPlayer_C *__fastcall(CGUnit_C *)`,
+    // plain `ret` — the unit's charmer (UNIT_FIELD_CHARMEDBY), else its
+    // creator (UNIT_FIELD_CREATEDBY), else the unit itself; returned only
+    // when that object is a player, else 0 (disassembled 0x00606170..D6;
+    // benilla-re objectlayer/reaction). UnitIsPVPFreeForAll (0x00516540)
+    // reads PLAYER_FLAGS through it for a UNIT_FLAG_PLAYER_CONTROLLED unit.
+    FUN_UNIT_CONTROLLING_PLAYER = 0x00606170,
+    // PLAYER_FLAGS bit 7 — free-for-all PvP (tortoise-wow / vmangos
+    // PLAYER_FLAGS_FFA_PVP = 0x80).
+    PLAYER_FLAG_FFA_PVP = 0x80,
     // OnPlayerFlagsChanged, active player only, when PLAYER_FLAGS_PVP_DESIRED
     // changed: `push 0x1B5; call FUN_GAMEUI_DISPLAY_ERROR` (ERR_PVP_TOGGLE_ON)
     // when it is now set, `push 0x1B6; call` (ERR_PVP_TOGGLE_OFF) when clear.
@@ -5670,6 +6251,9 @@ enum Offsets {
     // is what consumes it: a non-zero flag is what makes right-clicking
     // a bank item send `CMSG_AUTOSTORE_BANK_ITEM` instead of using it.
     // This is the engine's own definition of "is this a bank slot".
+    //
+    // Mirrored, not called, by `Item::Location::ResolveBagSlotDetail`:
+    // calling it means overwriting the caller's Lua stack[1] / stack[2].
     FUN_PACK_BAG_SLOT = 0x004F9820,
     // Equipped-bag container-GUID getter — `uint64 __fastcall(uint bagIndex0)`
     // where `bagIndex0` is 0-based (Lua bagID 1..4 → 0..3; 4..9 are bank bags,
@@ -5679,17 +6263,12 @@ enum Offsets {
     // via FUN_OBJECT_RESOLVE_BY_GUID(TYPEMASK_CONTAINER, guid), then call the
     // container's vtable[+OFF_CONTAINER_GET_INVENTORY] to get the inventory
     // object GetItemBySlot indexes. Lets us enumerate bag contents in pure C++
-    // without PackBagSlot's Lua-stack coupling. (Reads GUID arrays at
-    // 0x00BDD060 lo / 0x00BDD064 hi, stride 8.)
+    // without PackBagSlot's Lua-stack coupling. (Reads VAR_BAG_GUID_CACHE.)
     FUN_GET_EQUIPPED_BAG_GUID = 0x004F93E0,
     // CGContainer vtable slot (byte offset into the vtable) whose method
     // returns the container's inventory object — `void* __thiscall(container)`.
     // The inventory object's slot count lives at its +0x00 (OFF_INVMGR_SLOT_COUNT).
     OFF_CONTAINER_GET_INVENTORY = 0x10,
-    // Backpack (bagID 0) linear-slot base in the player invMgr GUID/item
-    // arrays: a 1-based backpack slot S maps to linear (S - 1) + 23. Matches
-    // PackBagSlot's `*param_3 += 0x17` for the backpack branch.
-    BACKPACK_LINEAR_BASE = 23,
     // Lua container indices (bagID), as `PackBagSlot` reads them and FrameXML
     // names them (KEYRING_CONTAINER, BANK_CONTAINER, BACKPACK_CONTAINER,
     // NUM_BAG_SLOTS, NUM_BANKBAGSLOTS): keyring -2, bank -1, backpack 0,
@@ -5725,6 +6304,14 @@ enum Offsets {
     // it hides data that's present from boot. Reading the GUID array
     // directly recovers it without ever opening the bank window.
     OFF_INVMGR_GUID_ARRAY = 0x04,
+    // u64 — the GUID of the object that owns the list (the player for its own
+    // list, else the bag). Script_PickupContainerItem (0x004F9B30) passes
+    // `[list+8]` / `[list+0xC]` as the container to SetCursorItem, SwapItems,
+    // SplitItem, StoreLootInSlot and the buy-into-slot send.
+    OFF_INVMGR_OWNER_GUID = 0x08,
+    // A 1-based backpack slot S is linear (S - 1) + INVMGR_BACKPACK_FIRST_SLOT
+    // in the player invMgr GUID/item arrays: PackBagSlot's `*param_3 += 0x17`
+    // for the backpack branch.
     INVMGR_BACKPACK_FIRST_SLOT = 23,
     INVMGR_BACKPACK_LAST_SLOT = 38,
     INVMGR_BANK_MAIN_FIRST_SLOT = 39,
@@ -5869,6 +6456,19 @@ enum Offsets {
     // target is passed, so passing zero (no target) is fine for most
     // items. `flag` is 0 in every Script_UseContainerItem call site.
     FUN_ITEM_USE = 0x005D8D00,
+    // Script_UseContainerItem's plain-use call of it (E8 rel32, benilla-re
+    // tables/signatures.tsv call offset 0x350): `push 0; lea ecx,[ebp-0x20];
+    // push ecx` — the target there is the selection (0xB4E2D8), or the
+    // player for the onSelf argument (benilla-re ui/bags "Using a container
+    // item"). UseAction's item arm (0x004E607B) passes a zeroed GUID instead.
+    CALL_SCRIPT_USE_CONTAINER_ITEM_USE = 0x004FA430,
+    // UseInventorySlot — `int __fastcall(int slot, const uint64_t *target)`,
+    // plain ret (`mov ebx,edx; mov edi,ecx`; ends in FUN_ITEM_USE(target, 0)).
+    // Script_UseInventoryItem (0x004C8DE0) calls it at offset 0x70 with the
+    // selection, or the player for onSelf (benilla-re ui/inventoryverbs
+    // "Using and cursor tests").
+    FUN_USE_INVENTORY_SLOT = 0x004C7970,
+    CALL_SCRIPT_USE_INVENTORY_ITEM_SLOT = 0x004C8E50,
     // The player's self-resurrect item — `CGItem_C *__thiscall(CGPlayer_C *)`,
     // plain `ret`: the first carried item (equipment, bags, backpack,
     // keyring) with an on-use spell of effect 94 (SELF_RESURRECT), or null.
@@ -6079,21 +6679,6 @@ enum Offsets {
     // refresh, idle check) it returns the raw base cost.
     FUN_ITEM_REPAIR_COST = 0x004FAF30,
 
-    // CGItem has TWO descriptor-like pointers and they hold different things:
-    //   +0x114 = m_objectFields (the UpdateField array we read FLAGS from at
-    //            +0x3C). For item instances, OBJECT_FIELD_ENTRY in this array
-    //            is empirically 0 — don't try to read itemID from here.
-    //   +0x08  = a separate identification block. Contains the item's GUID at
-    //            +0x00 (qword) and the itemID at +0x0C (dword).
-    // The canonical "look up the cache record for this item" sequence is:
-    //   item = GetItemBySlot(invMgr, slot)
-    //   id   = *(uint32_t *)(*(void **)(item + 0x08) + 0x0C)
-    //   _GetRecord(cache, id, ...)
-    // Verified at 0x004C8B1F-2D (inventory→cache lookup right after a
-    // GetItemBySlot call). The same shape appears in many other inventory
-    // sites that call _GetRecord.
-    OFF_ITEM_INSTANCE_BLOCK = 0x08,
-    OFF_INSTANCE_BLOCK_ITEM_ID = 0x0C,
 
     // Item stats cache (the client-side cache of ItemSparse-style records that
     // gets populated by SMSG_ITEM_QUERY_SINGLE_RESPONSE). The cache instance
@@ -6446,6 +7031,11 @@ enum Offsets {
     // model (0x00479F40) from name 1 and texture 1 (0x00479F58, 0x00479F64).
     OFF_ITEMDISPLAYINFO_MODEL_NAME = 0x04,
     OFF_ITEMDISPLAYINFO_MODEL_TEXTURE = 0x0C,
+    // The flags (+0x24): bit 0 a tabard that shows its wearer's guild emblem
+    // (ApplyTabard tests it at 0x005E075C, the dressing room's tabard arm
+    // likewise, benilla ui/dressup "Trying on a tabard").
+    OFF_ITEMDISPLAYINFO_FLAGS = 0x24,
+    ITEMDISPLAYINFO_FLAG_EMBLEM = 0x1,
 
     // ItemVisuals.dbc — an ID plus five ItemVisualEffects IDs (6 columns),
     // the glow AttachItemVisuals hangs on a weapon. Instance 0x00C0DB68.
@@ -6472,6 +7062,11 @@ enum Offsets {
     OFF_SPELLVISUALKIT_PROC_VALUE = 0x4C,
     // SpellVisualEffectName.dbc: the model file at +0x08, which the ghost
     // kit's effect step (0x00472780) creates (0x004727AF).
+    // GameObjectDisplayInfo.dbc (docs/DBCs.md): the model file at +0x04,
+    // which CGGameObject_C::GetDisplayModelPath (0x005F8090) returns.
+    VAR_GAMEOBJECTDISPLAYINFO_RECORDS = 0x00C0DCEC,
+    VAR_GAMEOBJECTDISPLAYINFO_COUNT = 0x00C0DCF0,
+    OFF_GAMEOBJECTDISPLAYINFO_MODEL = 0x04,
     VAR_SPELLVISUALEFFECTNAME_RECORDS = 0x00C0D760,
     VAR_SPELLVISUALEFFECTNAME_COUNT = 0x00C0D764,
     OFF_SPELLVISUALEFFECTNAME_FILE = 0x08,
@@ -6598,6 +7193,22 @@ enum Offsets {
     // KitEffectDecayCallback (0x005FF1D0) plays it again until the effect's
     // end time, which a state kit leaves at 0, so it holds until the aura goes.
     ANIM_HOLD = 158,
+    // AnimationData.dbc row 91, "Mount": the seat pose the world's Mount
+    // (0x00607A00) plays on a rider, and what 3.80.2's AttachToMount plays for
+    // an animation of 0 (0x140C521F6 writes 0x5B).
+    ANIM_MOUNT = 91,
+    // A family A game object handler's animation per state (+0x10, 0 to 12):
+    // the u32 table at 0x008607E4 that PlayAnimatedHandlerState (0x005F3930)
+    // indexes, holding 145, 147, 148, 149, 146, 150, 151, 152, 153 to 156 and
+    // 157 (read from the binary). The ones its fallbacks name, by their
+    // AnimationData.dbc names:
+    VAR_GAMEOBJECT_STATE_ANIMS = 0x008607E4,
+    ANIM_GAMEOBJECT_CLOSE = 146,
+    ANIM_GAMEOBJECT_CLOSED = 147,
+    ANIM_GAMEOBJECT_OPEN = 148,
+    ANIM_GAMEOBJECT_OPENED = 149,
+    ANIM_GAMEOBJECT_DESTROY = 150,
+    ANIM_GAMEOBJECT_DESTROYED = 151,
     // Decay (AnimationData.dbc), a held effect's end: when a spell's kits stop
     // with force (an aura's removal), an effect whose model is loaded and has
     // it plays it and stops when it ends (0x006141C0, done callback
@@ -6880,6 +7491,57 @@ enum Offsets {
     // (0x0060C9B0 at 0x005FC9A2).
     FUN_IS_MISSILE_RELEASE_ANIMATION = 0x005FCCB0,
     FUN_IS_THROWN_ANIMATION = 0x005FCF90,
+    // IsReadyAnimation (0x005FDE60, `int __fastcall(int anim)`, plain ret):
+    // 25 to 29, the ready stances. CGUnit_C::PlayWoundAnimation (0x0060EAE4)
+    // plays a wound on the whole body, not the upper body, while the body
+    // track plays one.
+    FUN_IS_READY_ANIMATION = 0x005FDE60,
+    // IsWoundAnimation (0x0060F510, `int __fastcall(int anim)`, plain ret):
+    // 8 to 10, StandWound to CombatCritical. PlayUnitSpellVisualKit
+    // (0x0060F3AD) plays a one-shot kit's wound through
+    // CGUnit_C::PlayWoundAnimation, not as the kit's own animation.
+    FUN_IS_WOUND_ANIMATION = 0x0060F510,
+    // The sets CGUnit_C::PlayAnimation (0x005FE2F0) routes a request by, each
+    // `int __fastcall(int anim)` with a plain ret (disassembled): the
+    // upper-body set (0x005FED90, a byte table from 2, 95 ids; every swing,
+    // parry, block, dodge and wound is in it), the mount's full-body set
+    // (0x005FEC80, 33 ids, 8 to 10 among them, no swing or parry), the swings
+    // with their parries, blocks and dodges (0x005FCC10, 22 ids from 10 to
+    // 118), the jumps (0x005FED70: 37 to 39, 187), the landings (0x005FEC40:
+    // 39, 187) and the special attacks (0x005FEC60: 57, 58, 118).
+    FUN_IS_UPPER_BODY_ANIMATION = 0x005FED90,
+    FUN_IS_FULL_BODY_ANIMATION = 0x005FEC80,
+    FUN_IS_SWING_ANIMATION = 0x005FCC10,
+    FUN_IS_JUMP_ANIMATION = 0x005FED70,
+    FUN_IS_LANDING_ANIMATION = 0x005FEC40,
+    FUN_IS_SPECIAL_ATTACK_ANIMATION = 0x005FEC60,
+    // The swings PlaySwingAnimation (0x006246A0) plays: by the main hand's
+    // weapon subclass (the byte table 0x006247AC) Attack1H, Attack2H,
+    // Attack2HL, Attack1HPierce (daggers) or AttackUnarmed (fist weapons,
+    // ranged weapons, no weapon); an off-hand swing (hit info 0x4)
+    // AttackOffPierce with a dagger, AttackOff with another weapon,
+    // AttackUnarmedOff without one.
+    ANIM_ATTACK_UNARMED = 16,
+    ANIM_ATTACK_1H = 17,
+    ANIM_ATTACK_2H = 18,
+    ANIM_ATTACK_2HL = 19,
+    ANIM_ATTACK_1H_PIERCE = 85,
+    ANIM_ATTACK_OFF = 87,
+    ANIM_ATTACK_OFF_PIERCE = 88,
+    ANIM_ATTACK_UNARMED_OFF = 117,
+    // The reactions (AnimationData.dbc): PlayWoundAnimation's three
+    // (0x0060EA70), PlayParryAnimation's four (0x0060EC00), and the $CPP
+    // poses of OnCombatModelEvent (0x00624A61: victim state 2 or 8 Dodge, 5
+    // ShieldBlock).
+    ANIM_STAND_WOUND = 8,
+    ANIM_COMBAT_WOUND = 9,
+    ANIM_COMBAT_CRITICAL = 10,
+    ANIM_PARRY_UNARMED = 20,
+    ANIM_PARRY_1H = 21,
+    ANIM_PARRY_2H = 22,
+    ANIM_PARRY_2HL = 23,
+    ANIM_SHIELD_BLOCK = 24,
+    ANIM_DODGE = 30,
     ANIM_WALK = 4,
     ANIM_RUN = 5,
     ANIM_SHUFFLE_LEFT = 11,
@@ -6921,9 +7583,8 @@ enum Offsets {
     // record reader at `FUN_0057BBA0`:
     //
     //   +0x00 (4)    ID
-    //   +0x04 (32)   Name[8]   — localized strings, 8 LOCALES (not 9
-    //                            like Spell.dbc / ChrRaces.dbc — clamp
-    //                            VAR_LOCALE_INDEX to 0..7 before reading)
+    //   +0x04 (32)   Name[8]   — localized strings, one per locale;
+    //                            VAR_LOCALE_INDEX is 0..7, always in range
     //   +0x24 (4)    unused / flags
     //   +0x28 (68)   ItemID[17]      — items in the set (zero = empty slot)
     //   +0x6C (32)   SetSpellID[8]   — bonus spells granted by the set
@@ -6941,7 +7602,6 @@ enum Offsets {
     OFF_ITEMSET_REQUIRED_SKILL_RANK = 0xB0,
     ITEMSET_MAX_ITEMS = 17,
     ITEMSET_MAX_BONUSES = 8,
-    ITEMSET_LOCALE_COUNT = 8,
 
     // INVTYPE_* string table — array of char* indexed by m_inventoryType.
     // Index 0 is empty (0=INVTYPE_NON_EQUIP), indices 1..28 are valid
@@ -7064,6 +7724,12 @@ enum Offsets {
     // builder (0x004799A0) reads it at 0x00479A21 for
     // `Item\ObjectComponents\Head\<name>_<prefix><sex letter>.mdx`.
     OFF_CHRRACES_CLIENT_PREFIX = 0x18,
+    // The display a player of the race is shown in, male and female
+    // (columns 4 and 5; ChrRaces.dbc parsed: Human 49 / 50, Orc 51 / 52,
+    // Gnome 1563 / 1564). The server gives a new player these as its
+    // DISPLAYID and NATIVEDISPLAYID.
+    OFF_CHRRACES_MALE_DISPLAY = 0x10,
+    OFF_CHRRACES_FEMALE_DISPLAY = 0x14,
     // The race's splash (SoundEntries id): PostInit (0x005FB880) stores it
     // for the unit's race byte (UNIT_FIELD_BYTES_0) at +0xB18, and the swim
     // decision plays it (CGUnit_C::PlaySplash 0x006237C0).
@@ -7265,6 +7931,8 @@ enum Offsets {
     // Records pointer + count globals from docs/DBCs.md (instance 0x00C0D9C4).
     VAR_QUESTINFO_DBC_RECORDS = 0x00C0D9CC,
     VAR_QUESTINFO_DBC_COUNT = 0x00C0D9D0,
+    // QuestInfo.dbc record `{id@+0, char *name[locale]@+4}` (quest/Cache.h).
+    OFF_QUESTINFO_NAME = 0x04,
     OFF_CHRRACES_FACTION_TEMPLATE = 0x08,
     VAR_FACTIONTEMPLATE_RECORDS = 0x00C0DD3C,
     VAR_FACTIONTEMPLATE_COUNT = 0x00C0DD40,
@@ -7287,6 +7955,10 @@ enum Offsets {
     // → Elwynn Forest). GetFriendInfo resolves it to name the zone, not the
     // sub-area. 0 for a top-level zone.
     OFF_AREATABLE_PARENT_ID = 0x08,
+    // MapID @ +0x04 (column 1): the map the area is on. Verified by parsing
+    // the extracted AreaTable.dbc: 2159 "Onyxia's Lair" is on map 1
+    // (Kalimdor), not the instance map 249, while 3428 "Ahn'Qiraj" is on 531.
+    OFF_AREATABLE_MAP_ID = 0x04,
     // AreaBit @ +0x0C: the bit number FUN_IS_AREA_EXPLORED tests. Gate
     // @ +0x28 (ExplorationLevel): when < 0 the area needs no exploration
     // (always counts explored); when >= 0 the AreaBit test applies. Source:
@@ -7509,14 +8181,6 @@ enum Offsets {
     TYPEMASK_DYNAMICOBJECT = 0x40,
     TYPEMASK_CORPSE        = 0x80,
 
-    // CGUnit_C.m_objectFields slot. Different from CGItem's +0x114 —
-    // sibling classes use class-specific descriptor offsets. Inside the
-    // descriptor at +0x79 lives the class byte (UNIT_FIELD_BYTES_0
-    // field's second byte). Verified at 0x005183FE-0x00518404 in
-    // Script_UnitClass's general-unit-token path:
-    //   mov edx, [eax + 0x110]      ; descriptor
-    //   movzx eax, byte [edx + 0x79] ; class
-    OFF_CGUNIT_OBJECT_FIELDS = 0x110,
     // UNIT_FIELD_BYTES_0 packs race/class/sex/powerType into one dword
     // at descriptor +0x78. Individual bytes:
     OFF_UNIT_DESCRIPTOR_RACE_BYTE = 0x78,
@@ -7623,7 +8287,14 @@ enum Offsets {
     //         spellbook tab/profession icon)
     VAR_SKILL_LINE_RECORDS = 0x00C0D92C,
     VAR_SKILL_LINE_COUNT = 0x00C0D930,
+    // SpellFocusObject.dbc (docs/DBCs.md): records slot and largest id, as
+    // Script_GetTradeSkillTools bounds and indexes them (0x004FFA62).
+    VAR_SPELL_FOCUS_OBJECT_RECORDS = 0x00C0D800,
+    VAR_SPELL_FOCUS_OBJECT_COUNT = 0x00C0D804,
     OFF_SKILL_LINE_NAME = 0x0C,
+    // u32 SpellIcon.dbc ID — the spellbook tab icon (`Script_GetSpellTabInfo`
+    // reads `[record + 0x54]` and looks it up in SpellIcon, 0x004B3D96).
+    OFF_SKILL_LINE_SPELL_ICON = 0x54,
 
     // Player's known-skills table — separate from the DBC. Populated
     // by the engine on login from server data; entries are pointers
@@ -7714,6 +8385,9 @@ enum Offsets {
     // Read by `IsStealthed()`.
     OFF_UNIT_FIELD_BYTES_1 = 0x210,
     UNIT_BYTES_1_STEALTH_FLAG = 0x02000000,
+    // UNIT_FIELD_BYTES_2 (update-field table index 0x9E): byte 0 is the
+    // sheath state the server broadcasts.
+    OFF_UNIT_FIELD_BYTES_2 = 0x278,
 
     // `__fastcall(void)` engine helper that refreshes the bonus
     // action bar from the local player's current shapeshift form
@@ -7845,6 +8519,38 @@ enum Offsets {
     // client gets silent-dropped, so any client-side gating just
     // matches that.
     VAR_SOCIAL_SYSTEM = 0x00C28168,
+    // The client's friend list. The friend entries live inline
+    // in the social singleton (`VAR_SOCIAL_SYSTEM`, shared with the ignore list
+    // and /who): up to 50 entries from offset 0, stride 0x20. The field offsets
+    // are verified from GetNumFriends (FUN_005AD000), GetFriendInfo
+    // (FUN_005AD060), and the count walker FUN_005AE490.
+    //
+    // The ignore list lives in the same singleton: a flat array of u64 GUIDs at
+    // `+0x650`, stride 8, up to 25 entries. Vanilla ignores are GUID-keyed, not
+    // name-keyed — GetIgnoreName (0x005AD460) reads the GUID via FUN_005AE570
+    // (`social + 0x650 + index*8`) and resolves it to a name through the
+    // NameCache. GetNumIgnores (0x005AD400 → FUN_005AE550) stops at the first zero
+    // GUID, but the array is NOT always contiguous: removing an ignore zeroes its
+    // slot and re-sorts only when no ignore name lookup is pending, so membership
+    // checks must scan all 25 slots (as the engine's IsIgnored, 0x005AE5A0, does).
+    FRIEND_ENTRY_STRIDE = 0x20,
+    MAX_FRIENDS = 50,
+
+    OFF_FRIEND_CONNECTED = 0x00, // u8  — 0 = offline
+    OFF_FRIEND_STATUS = 0x01,    // u8  — bit 0x02 AFK, 0x04 DND
+    OFF_FRIEND_NAME = 0x04,      // char*
+    OFF_FRIEND_GUID = 0x08,      // u64
+    OFF_FRIEND_LEVEL = 0x10,     // i32
+    OFF_FRIEND_CLASS_INDEX = 0x14, // i32 → ChrClasses.dbc
+    OFF_FRIEND_AREA_INDEX = 0x18,  // i32 → AreaTable.dbc
+
+    FRIEND_STATUS_AFK = 0x02,
+    FRIEND_STATUS_DND = 0x04,
+
+    OFF_IGNORE_LIST = 0x650,   // u64 GUID array in the social singleton
+    IGNORE_ENTRY_STRIDE = 0x8, // one packed u64 GUID per entry
+    MAX_IGNORES = 25,          // 0x19 — GetNumIgnores' cap
+
     VAR_WHO_TO_UI_FLAG = 0x00C2A12C,
     FUN_WHO_SYSTEM_SEND_QUERY = 0x005AEBB0,
     // Friend count: `__fastcall(socialSingleton) -> uint` — walks the inline
@@ -8154,6 +8860,14 @@ enum Offsets {
     // `Cache::QueryLoad` hooks it to fire CREATURE_DATA_LOAD_RESULT. The
     // item/quest caches have their own parsers, so it's conflict-free.
     FUN_CREATURE_QUERY_RESPONSE = 0x00556E20,
+    // Pet name cache (CMSG_PET_NAME_QUERY 0x52), keyed by UNIT_FIELD_PETNUMBER,
+    // with the same `_GetRecord` shape as FUN_CREATURE_GET_RECORD.
+    // CGUnit_C::GetUnitName names a pet from it (0x006092B2-0x006092C7). The
+    // record holds the name inline at +0 (the namer returns the record
+    // itself) and its UNIT_FIELD_PET_NAME_TIMESTAMP at +0x54 (0x006092D6).
+    VAR_PET_NAME_CACHE = 0x00C0E138,
+    FUN_PET_NAME_GET_RECORD = 0x00566240,
+    OFF_PET_NAME_RECORD_TIMESTAMP = 0x54,
     // Creature-query record field offsets, within the data block returned
     // by FUN_CREATURE_GET_RECORD. Anchored by rank@+0x20 (read by the
     // classification helper FUN_00605620 as `[block+0x20]`) and the
@@ -8164,10 +8878,26 @@ enum Offsets {
     // block holds pointers, not the WDB's inline strings).
     OFF_CREATURE_NAME = 0x00,      // char *Name[4]; [0] is the primary name
     OFF_CREATURE_SUBNAME = 0x10,   // char *SubName (title); "" if none
+    OFF_CREATURE_TYPE_FLAGS = 0x14, // CreatureTypeFlags (SuppressesWoundAnim 0x006125F0 reads it)
+    // Its boss bit: vmangos CREATURE_TYPEFLAGS_BOSS; the 3.80.2 client's
+    // priority targeting reads bit 2 of the same template field as "boss".
+    CREATURE_TYPE_FLAG_BOSS = 0x4,
     OFF_CREATURE_TYPE = 0x18,      // CreatureType (1=Beast, 7=Humanoid, ...)
     OFF_CREATURE_FAMILY = 0x1C,    // CreatureFamily
     OFF_CREATURE_RANK = 0x20,      // 0=normal,1=elite,2=rareelite,3=worldboss,4=rare
+    // UnitClassification's words, a `const char *[5]` indexed by the rank:
+    // "normal", "elite", "rareelite", "worldboss", "rare" (Script_
+    // UnitClassification 0x00516D90 pushes `[0x850424 + rank*4]`; the five
+    // pointers read from WoW.exe resolve to those strings, benilla-re
+    // systems/ui/unitinfo.md). The table is not bounded by the engine; the
+    // next words are the function registrar's name pointers.
+    VAR_UNIT_CLASSIFICATION_NAMES = 0x00850424,
+    UNIT_CLASSIFICATION_COUNT = 5,
     OFF_CREATURE_DISPLAYID = 0x2C, // creature model display ID
+    // CreatureTypeFlags bit 0x8: no wound and no parry animation
+    // (CGUnit_C::SuppressesWoundAnim 0x006125F0, `>> 3 & 1`, which
+    // PlayWoundAnimation 0x0060EA70 and PlayParryAnimation 0x0060EC00 test).
+    CREATURE_TYPE_FLAG_NO_WOUND_ANIM = 0x8,
 
     // GameObject cache (gameobjectcache.wdb, SMSG_GAMEOBJECT_QUERY_RESPONSE).
     // Sibling cache class to creature (constructed by FUN_00554B90 ->
@@ -8268,6 +8998,19 @@ enum Offsets {
     // active (toggle / stance / auto-repeat up); the texture resolver then
     // shows Spell.dbc's `activeIconID` (+0x1D8) instead of `iconID` (+0x1D4).
     FUN_ACTION_SPELL_ICON_ACTIVE = 0x004E55F0,
+    // The weapon icons that stand in for the Attack and ranged auto-repeat
+    // spells' own icons — `const char *__cdecl()`, no arguments (the book
+    // icon getter 0x004B3F50 tail-jumps to the first with nothing pushed).
+    // Attack: the shapeshift form's icon, Spell-Reset when disarmed or
+    // empty-handed, else the main-hand item's icon (static 0xBC6698).
+    // Ranged: the ranged-slot item's icon (static 0xBC6578), or NULL with no
+    // ranged item or a subclass-16 one — the caller then shows the spell's
+    // own icon. The action bar (0x004E6AB2), the spellbook (0x004B3F8A) and
+    // the cursor (0x00494D56) all pick them with the same two tests:
+    // Effect[0] == SPELL_EFFECT_ATTACK, then SPELL_ATTR_RANGED together with
+    // SPELL_ATTR_EX2_AUTOREPEAT_FLAG.
+    FUN_ATTACK_ICON_PATH = 0x004E6870,
+    FUN_RANGED_ICON_PATH = 0x004E6990,
     // Per-slot cooldown — `void __fastcall(uint slot0, int *start, int
     // *duration, uint *enable)`, ms ticks (the triple
     // `Script_GetActionCooldown` scales by 0.001). Item-by-ID slots go through
@@ -8556,6 +9299,11 @@ enum Offsets {
     // update (`FUN_004BD990`).
     FUN_MACRO_REPARSE_ALL = 0x004F0CA0,
     FUN_MACRO_REPARSE_UNRESOLVED = 0x004F0CE0,
+    // Storm's SStrPrintf — `int __cdecl(char *dest, uint maxChars, const char
+    // *format, ...)`; a null dest or format returns 0 (0x0064A7F6..0x0064A80A).
+    FUN_STORM_SSTR_PRINTF = 0x0064A7F0,
+    // Storm's SStrToInt — `int __stdcall(const char *string)`, RET 4.
+    FUN_STORM_SSTR_TO_INT = 0x0064AC60,
     // Storm string tokenizer — `__stdcall(char **cursor, char *out, uint
     // outSize, const char *delims, int *outQuoted)`, RET 0x14. Skips leading
     // delimiters, copies the next token (honoring `"` quoting) NUL-terminated
@@ -8620,16 +9368,18 @@ enum Offsets {
     FUN_MACRO_ICON_CB_DISK_PREFIXED = 0x004F0350,  // pass 2, DISK walk — `__fastcall(FindRecord *r)` (dir bit `r[4] & 0x10`, inline name at `r+8`), prefix + extension filtered
     FUN_MACRO_ICON_CB_DISK_ANY = 0x004F04F0,       // pass 3, DISK walk — same record shape, EXTENSION ONLY (the sole route for a non-`Ability_`/`Spell_` icon)
 
-    // Quest log: 16-byte-stride entry array and active count.
-    // Field +0 of each entry is the questID for real quests (a category index
-    // for headers); field +8 is the header indicator: non-NULL = header,
-    // NULL = real quest. Verified by Script_GetQuestLogTitle's isHeader push
-    // at 0x004DF9A9 and by the helper at 0x004DF150 used by IsUnitOnQuest.
+    // Quest log: 16-byte-stride row array and its row count. Field +0 of each
+    // row is the questID for real quests (a category index for headers);
+    // field +8 is the header indicator: non-NULL = header, NULL = real quest.
+    // Verified by Script_GetQuestLogTitle's isHeader push at 0x004DF9A9 and
+    // by GetQuestIdOfRow below. Read rows only through Quest::Log.
     VAR_QUEST_LOG_ENTRIES = 0x00BB71C0,
+    // GetQuestIdOfRow — `uint32_t __fastcall(int row0)`, plain `ret`: the
+    // questID of an in-range row that is not a header ([+8] == 0), else 0.
+    // IsUnitOnQuest's row reader (disassembled: bounds against
+    // VAR_QUEST_LOG_ENTRY_COUNT, then the +8 gate, then +0).
+    FUN_QUEST_LOG_ROW_QUEST_ID = 0x004DF150,
     VAR_QUEST_LOG_ENTRY_COUNT = 0x00BB7478,
-    OFF_QUEST_LOG_ENTRY_STRIDE = 0x10,
-    OFF_QUEST_LOG_ENTRY_QUEST_ID = 0x0,
-    OFF_QUEST_LOG_ENTRY_HEADER_PTR = 0x8,
     // Script_GetQuestLogTitle — `int __fastcall(lua_State *L)`, the Lua entry
     // itself. Reads L[1] (1-based index into the FULL entry array above) and
     // pushes 6: title, level, questTag, isHeader (1/nil), isCollapsed
@@ -8697,6 +9447,11 @@ enum Offsets {
     // exact "was it added to the book" gate the engine itself uses before
     // firing LEARNED_SPELL_IN_TAB. Read by `Spell::Learn`.
     VAR_PLAYER_SPELLBOOK_COUNT = 0x00B7116C,
+    // Populated-slot count of the pet array. The engine's book walk
+    // (FUN_004B3A10, under the name -> slot resolver) bounds the player
+    // book by the count above and the pet book by this one (0x004B3AAD:
+    // `mov edi, [B71174]`), never by SPELLBOOK_MAX_SLOTS.
+    VAR_PET_SPELLBOOK_COUNT = 0x00B71174,
 
     // The reactive-spell list: 8-byte entries `{spellID, usable}`, one per
     // NAME among the learned spells whose record has AttributesEx4 bit 0x200
@@ -8785,9 +9540,9 @@ enum Offsets {
     FUN_SPELL_TAB_SLOT_OFFSET = 0x004B2580,
     // The engine's own `Script_GetSpellTabInfo(index)` Lua C function
     // (`int __fastcall(void *L)`; reads `L[1]`, pushes `name, texture,
-    // offset, numSpells`). `C_SpellBook.GetSpellBookSkillLineInfo` reshapes
-    // the stack and calls it directly so the GENERAL-tab localization and the
-    // SkillLine → SpellIcon chain stay the engine's.
+    // offset, numSpells`). `C_SpellBook.GetSpellBookSkillLineInfo` mirrors
+    // its reads: FrameScript_GetText("GENERAL") for skill line 0, else the
+    // SkillLine name and SpellIcon path, and FUN_SPELL_TAB_SLOT_OFFSET.
     FUN_SCRIPT_GET_SPELL_TAB_INFO = 0x004B3CE0,
 
     // Active minimap-tracking spell ID (0 = none). Vanilla tracks exactly
@@ -8990,10 +9745,11 @@ enum Offsets {
     // spellID from here.
     VAR_PENDING_CAST_SPELL = 0x00CEAC58,
 
-    // The cast-start state writer — `__fastcall(int spellID, int
-    // targetState)`. Sets `VAR_CURRENT_CAST_SPELL` (pushing any current
-    // spell into `VAR_QUEUED_CAST_SPELL`; `spellID == 0` restores the queued
-    // one). `Spell::Cast` co-hooks it for lag-free, client-side detection of
+    // The cast-start state writer — `__fastcall(int spellID, CGItem *item)`.
+    // Sets `VAR_CURRENT_CAST_SPELL` (pushing any current spell into
+    // `VAR_QUEUED_CAST_SPELL`; `spellID == 0` restores the queued one) and
+    // `VAR_CAST_ITEM_GUID` to the item's GUID `[[item+8]]`, 0 for a null item
+    // (`0x006E4B00`). `Spell::Cast` co-hooks it for lag-free, client-side detection of
     // NORMAL player casts (stamps from the spellID arg before the original).
     // It does NOT fire for a chained same-spell recast: the caller
     // `Spell_C_CastSpell` (`0x006E4B60`) short-circuits at `spellID ==
@@ -9026,8 +9782,8 @@ enum Offsets {
     //   - `0x20` source world location needed
     //   - `0x40` dest world location needed
     // The `0x60` mask therefore identifies "ground-target placement"
-    // (vs. unit-target, trade-target, etc.). See `Spell::Placement`.
-    VAR_SPELL_PLACEMENT_STATE = 0x00CECAC0,
+    // (vs. unit-target, trade-target, etc.). See `Spell::Placement`. The
+    // word itself is VAR_SPELL_TARGETING_FLAGS.
     SPELL_PLACEMENT_GROUND_MASK = 0x60,
 
     // `FUN_006E60F0(float *xyz)` — commits the in-flight ground-target
@@ -9048,8 +9804,8 @@ enum Offsets {
     // `Script_SpellStopTargeting`.
     FUN_STOP_PLACEMENT = 0x006E4900,
 
-    // `*VAR_WORLDFRAME_CLICK_INFO` is a pointer to the engine's
-    // CWorldFrame "click info" struct — the data block where the input
+    // `*VAR_GAME_STATE_PTR` is also the engine's CWorldFrame "click info"
+    // struct — the data block where the input
     // dispatcher stashes "what is the cursor pointed at right now"
     // after every mouse motion. Allocated at world enter, populated
     // continuously by the rendering pipeline (viewport bounds and
@@ -9060,9 +9816,14 @@ enum Offsets {
     //       `1` = world / terrain hit
     //       `2` = unit / object hit
     //   - `+0x360..+0x368` (3 floats) hit world position (when type == 1)
-    VAR_WORLDFRAME_CLICK_INFO = 0x00B4B2BC,
     OFF_CLICK_INFO_TYPE = 0x350,
     OFF_CLICK_INFO_COORDS = 0x360,
+    // The pick ray of the last refresh, world space (3 floats each): the
+    // near and far points `0x481190` stores at its record (`clickInfo +
+    // 0x358`) `+0x18` and `+0x24` (`0x481321`, `0x481335`) from
+    // ScreenPointToRay (`0x4813b0`). Disassembled.
+    OFF_CLICK_INFO_RAY_NEAR = 0x370,
+    OFF_CLICK_INFO_RAY_FAR = 0x37C,
 
     // `FUN_00481F00(void *clickInfo)` — refreshes the cursor's "what
     // am I pointed at?" state on demand. Internally reads cursor
@@ -9076,13 +9837,26 @@ enum Offsets {
     // as long as the player is in-world.
     FUN_REFRESH_CURSOR_RAYCAST = 0x00481F00,
 
+    // The world segment trace body (`TraceWorldSegment` 0x672170 forwards to
+    // it): `uint8_t __fastcall(const float *start, const float *end, float
+    // *hit, float *t, uint32_t mask)`, `ret 0xc`. Map objects under any of
+    // 0xf000ff, terrain under 0xf00f0f; a hit lowers `*t` (pass 1.0), writes
+    // the point and returns 1. Disassembled (0x69bff0..0x69c028) against
+    // benilla-re terrain/trace#segment-trace.
+    FUN_TRACE_WORLD_SEGMENT = 0x0069BFF0,
+    // The mask the corpse ground snap passes (0x5d69eb): terrain and map
+    // objects, the ground a unit stands on.
+    TRACE_MASK_GROUND = 0x100111,
+
     // `Script_CastSpellByName` — engine's Lua wrapper for the
     // `CastSpellByName(name [, onSelf])` global. `int __fastcall(void *L)`
     // — standard Lua C function ABI. Reads `name` from stack[1] (string)
     // and `onSelf` from stack[2] (boolean), resolves the name (with
     // optional `(Rank N)` suffix) through `FUN_004B3950`, then dispatches
-    // to the engine's cast path at `FUN_004B3300`. Returns 0 (no Lua
-    // results). Callable directly from C++ — push args on stack, call.
+    // to the engine's cast path at `FUN_004B3300` with the current
+    // selection (`VAR_CURRENT_SELECTION_GUID`), or the active player when
+    // `onSelf` is set. Returns 0 (no Lua results). C++ callers mirror it
+    // with `Spell::Placement::DispatchSpellCastByName`.
     FUN_SCRIPT_CAST_SPELL_BY_NAME = 0x004B4AB0,
 
     // `Script_CastSpell` — engine's Lua wrapper for the slot-based
@@ -9090,8 +9864,6 @@ enum Offsets {
     // Parses (slot, bookType) from stack[1]/[2] via `FUN_004B3EC0`, then
     // dispatches through `FUN_SPELL_CAST_DISPATCH` with the current target
     // (or self). Raises "Invalid spell slot in CastSpell" for a bad slot.
-    // Callable from C++ by preparing the stack and tail-calling it (the
-    // `Spell::Tracking::SetTracking` "select = cast" path does this).
     FUN_SCRIPT_CAST_SPELL = 0x004B42F0,
 
     // ReadBookSlotArgs — `int __fastcall(void *L, int *slot, int *pet)`,
@@ -9128,6 +9900,32 @@ enum Offsets {
     // for the GUID is the "no implicit target" form — engine falls back
     // to the player's current selected target.
     FUN_SPELL_CAST_DISPATCH = 0x004B3300,
+    // The two engine calls of it (E8 rel32; benilla-re tables/signatures.tsv
+    // call offsets 0x66 / 0x74, its only callers per tables/calls.tsv).
+    // Script_CastSpell and Script_CastSpellByName load the selection
+    // (`mov ebx,[0xB4E2DC]; mov edi,[0xB4E2D8]`), or the player for the
+    // onSelf argument, and push it as the target — the "current target"
+    // stand-in for a cast with no unit given.
+    CALL_SCRIPT_CAST_SPELL_DISPATCH = 0x004B4356,
+    CALL_SCRIPT_CAST_SPELL_BY_NAME_DISPATCH = 0x004B4B24,
+    // The engine's "current target" fallbacks that 3.80.2 resolves through
+    // AnyTarget (FUN_1405dd690) — benilla-re tables/signatures.tsv bytes:
+    //   - PressPetAction (0x004BD1D0, `__fastcall(const uint32_t *word,
+    //     const uint64_t *target)`) takes the selection for a zero target:
+    //     `mov edx,[0xB4E2D8]; mov eax,[0xB4E2DC]` (8B 15 … A1 …, 11 bytes)
+    //     at +0x42, then stores edx/eax as lo/hi (ui/petbar "Pressing a pet
+    //     action"). Pet bar clicks, CastPetAction and the pet book pass zero.
+    //   - Script_PetAttack (0x004BE4A0, 13 bytes: `mov ecx,0xB4E2D8; call;
+    //     xor eax,eax; ret`) hands the selection itself to PressPetAttack
+    //     (0x004BD630, `__fastcall(const uint64_t *target)`) at +0x05.
+    //   - Script_DoEmote (0x0049FD30) loads the selection into esi/edi
+    //     (`mov esi,[0xB4E2D8]; mov edi,[0xB4E2DC]`, 8B 35 … 8B 3D …, 12
+    //     bytes) at +0x84, ecx holding the Lua state across it; a name
+    //     argument replaces it after (ui/chatemote "DoEmote").
+    SITE_PRESS_PET_ACTION_TARGET_LOAD = 0x004BD212,
+    FUN_PRESS_PET_ATTACK = 0x004BD630,
+    CALL_SCRIPT_PET_ATTACK_PRESS = 0x004BE4A5,
+    SITE_DO_EMOTE_TARGET_LOAD = 0x0049FDB4,
 
     // Macro "primary spell" parser — `__fastcall(MacroEntry *entry)`.
     // Walks the macro body (stored at `entry + OFF_MACRO_BODY`) line
@@ -9269,7 +10067,7 @@ enum Offsets {
     // belongs to exactly one school. Mapping:
     //   0 = Physical  1 = Holy  2 = Fire    3 = Nature
     //   4 = Frost     5 = Shadow 6 = Arcane
-    OFF_SPELL_SCHOOL = 0x04,
+    OFF_SPELL_RECORD_SCHOOL = 0x04,
     SPELL_SCHOOL_COUNT = 7,
 
     // Spell.dbc DispelType field — u32 at record +0x10, indexes into
@@ -9343,6 +10141,9 @@ enum Offsets {
     VAR_MAP_RECORDS = 0x00C0DAA8,
     VAR_MAP_COUNT = 0x00C0DAAC,
     OFF_MAP_INSTANCE_TYPE = 0x08,
+    // That column's battleground value (the layout comment above; arenas
+    // carry it too, PvP::Arena).
+    MAP_INSTANCE_TYPE_BATTLEGROUND = 3,
     OFF_MAP_NAME = 0x10,
 
     // Currently-loaded map ID (the Map.dbc ID for the zone/instance the
@@ -9372,6 +10173,11 @@ enum Offsets {
     // realZone, eventID)`; read by `Script_GetRealZoneText` and the
     // outbound party-stats builder `FUN_005f0880`.
     VAR_PLAYER_AREA_ID = 0x00B4E314,
+    // The real zone name, the zone's own name before an indoor override:
+    // `const char *`, null when empty. Script_GetRealZoneText (0x0048A0C0) is
+    // `mov edx, [0xB4B404]`, the empty string for null, then lua_pushstring;
+    // the zone commit FUN_00494780 stores it (benilla-re ui/zonetext).
+    VAR_REAL_ZONE_TEXT = 0x00B4B404,
     // Local player's current SUBZONE AreaTable.dbc ID, 0 when the area
     // under the player is itself a top-level zone. Second arg of the same
     // handler: its sole caller `FUN_0067e510` resolves the area at the
@@ -9396,14 +10202,22 @@ enum Offsets {
     // shape from SMSG_PARTY_MEMBER_STATS_FULL).
     FUN_GROUP_MEMBER_STATS_LOOKUP = 0x00496400,
     OFF_GROUP_MEMBER_AREA_ID = 0x14,
+    // The member's position, i16 x then y, truncated: GROUP_UPDATE_FLAG_POSITION
+    // (0x100) of SMSG_PARTY_MEMBER_STATS, read into the record in field order
+    // (benilla objectlayer/party, `0x418d30`; the server writes X then Y).
+    OFF_GROUP_MEMBER_POS_X = 0x16,
+    OFF_GROUP_MEMBER_POS_Y = 0x18,
     // `+0x08` status-flags byte of the stats block (see field map above);
     // bit 0 is the online flag `Script_UnitIsConnected` tests. Sibling
-    // `FUN_GROUP_MEMBER_SLOT_LOOKUP` (`0x00496420`, `__fastcall(u64 *guid)
-    // → member slot*`) is the presence fallback UnitIsConnected consults
-    // when no stats block exists — a non-null slot means the member is
-    // present (and thus connected). Both take a pointer to the 64-bit GUID.
+    // `FUN_GROUP_PET_RECORD_LOOKUP` is the fallback UnitIsConnected consults
+    // when no member record exists — a pet record means the pet's owner is
+    // online. Both take a pointer to the 64-bit GUID.
     OFF_GROUP_MEMBER_STATUS_FLAGS = 0x08,
     GROUP_MEMBER_STATUS_ONLINE = 0x1,
+    // Dead and ghost bits of the same byte (MEMBER_STATUS_DEAD / _GHOST,
+    // vmangos and tortoise-wow Group.h agree).
+    GROUP_MEMBER_STATUS_DEAD = 0x4,
+    GROUP_MEMBER_STATUS_GHOST = 0x8,
     // The party record's pet: its GUID and power type, whose change bits
     // SignalPartyRecordChanges fires for the pet's GUID (0x005E5720).
     OFF_GROUP_MEMBER_PET_GUID = 0x80,
@@ -9420,6 +10234,13 @@ enum Offsets {
     // DLL references the function or either site.
     FUN_PARTY_RECORD_SIGNAL = 0x005E5720,
     CALL_READ_PARTY_MEMBER_STATS_SIGNAL = 0x005E54FA,
+    // The opcodes ReadPartyMemberStats reads (vmangos Opcodes_1_12_1.h:
+    // 126 / 754), and the group list's (125). The group list's first byte is
+    // the group type: the handler reads it first (0x005E6A67) and rebuilds the
+    // raid roster only when it is nonzero (`test al,al` at 0x005E6E6B).
+    SMSG_GROUP_LIST = 0x7D,
+    SMSG_PARTY_MEMBER_STATS = 0x7E,
+    SMSG_PARTY_MEMBER_STATS_FULL = 0x2F2,
     CALL_COMPARE_PARTY_RECORD_SIGNAL = 0x005F0C42,
     // DiffPartyRecords — the `changes` mask of the fields two party records
     // differ in (bit 1 status, 2 health, 0x10 power, 0x20 max power, …).
@@ -9455,32 +10276,33 @@ enum Offsets {
     // call earlier. Targets checked against the exe; no loaded DLL
     // references the function or a site.
     FUN_UPDATE_RAID_MEMBER_RECORD = 0x004BADC0,
-    CALL_PLAYER_POST_INIT_RAID_RECORD = 0x005DEC43,
-    CALL_PLAYER_POST_UPDATE_RAID_RECORD = 0x005DECAF,
-    CALL_PLAYER_RELEASE_RAID_RECORD = 0x005E9ACF,
-    CALL_PLAYER_DTOR_RAID_RECORD = 0x005DD6AB,
     // Bit 1: flagged for PvP — Script_UnitIsPVP's test (0x00516502) for a
     // token with no unit object.
     GROUP_MEMBER_STATUS_PVP = 0x2,
-    FUN_GROUP_MEMBER_SLOT_LOOKUP = 0x00496420,
-    // Inline member name in the slot record — `Script_UnitName` (0x00517020)
-    // pushes `slot + 8` for a GUID with no live object, as does the unit
-    // tooltip builder's no-object branch (0x00529FE0). This is why
-    // `UnitName("partyN")` answers for an offline member.
-    OFF_GROUP_MEMBER_SLOT_NAME = 0x08,
+    // GetPartyPetRecord — the pet part of a member record: the record's
+    // `+0x80` onward (OFF_GROUP_MEMBER_PET_GUID), for the ONLINE party member
+    // whose pet GUID is `guid` (0x004E8860), else the raid row's pet part
+    // (row + 0x90, 0x004BB130). `const uint8_t *__fastcall(const uint64_t
+    // *guid)`, NULL on a miss. It is how the engine reads partypetN and
+    // raidpetN with no live object (benilla ui/party, ui/raid). A member's
+    // own GUID never matches: that is FUN_GROUP_MEMBER_STATS_LOOKUP's.
+    FUN_GROUP_PET_RECORD_LOOKUP = 0x00496420,
+    // The pet's name in the pet record (0x50 bytes) — `Script_UnitName`
+    // (0x00517020) pushes `pet + 8` for a token with no live object, as does
+    // the unit tooltip builder's no-object branch (0x00529FE0).
+    OFF_GROUP_PET_NAME = 0x08,
 
-    // Health/power fields within the two group-member blocks — the
-    // out-of-range fallback the engine's UnitHealth/UnitMana (and their Max
-    // variants) use when a groupmate has no live CGUnit (different map / out
-    // of range), sourced from SMSG_PARTY_MEMBER_STATS. The two blocks have
-    // DIFFERENT layouts (all u16):
+    // Health/power fields of the two records — the out-of-range fallback the
+    // engine's UnitHealth/UnitMana (and their Max variants) use when a
+    // groupmate or its pet has no live CGUnit (different map / out of range),
+    // sourced from SMSG_PARTY_MEMBER_STATS (all u16):
     //
-    //   Stats block (FUN_GROUP_MEMBER_STATS_LOOKUP): statusFlags@+8,
-    //     powerType@+9, health@+0xa, maxHealth@+0xc, power@+0xe, maxPower@+0x10,
-    //     level@+0x12, areaId@+0x14. The full record.
-    //   Raid slot (FUN_GROUP_MEMBER_SLOT_LOOKUP): powerType@+0x58,
-    //     health@+0x5c, maxHealth@+0x5e, power@+0x60, maxPower@+0x62. Leaner —
-    //     no level/area/flags.
+    //   Member record (FUN_GROUP_MEMBER_STATS_LOOKUP, party or raid):
+    //     statusFlags@+8, powerType@+9, health@+0xa, maxHealth@+0xc,
+    //     power@+0xe, maxPower@+0x10, level@+0x12, areaId@+0x14.
+    //   Pet record (FUN_GROUP_PET_RECORD_LOOKUP, offsets from the pet part):
+    //     powerType@+0x58, health@+0x5c, maxHealth@+0x5e, power@+0x60,
+    //     maxPower@+0x62. No level, area or flags.
     //
     // Power values are raw (divide by the power divisor for display). Verified
     // from Script_UnitHealth (0x005174d0) / Script_UnitHealthMax (0x005175b0)
@@ -9491,22 +10313,20 @@ enum Offsets {
     OFF_GROUP_MEMBER_STATS_POWER = 0xe,
     OFF_GROUP_MEMBER_STATS_MAX_POWER = 0x10,
     OFF_GROUP_MEMBER_STATS_LEVEL = 0x12,
-    OFF_RAID_SLOT_POWER_TYPE = 0x58,
-    OFF_RAID_SLOT_HEALTH = 0x5c,
-    OFF_RAID_SLOT_MAX_HEALTH = 0x5e,
-    OFF_RAID_SLOT_POWER = 0x60,
-    OFF_RAID_SLOT_MAX_POWER = 0x62,
-    // Remaining raid-member-struct fields, mapped from Script_GetRaidRosterInfo
-    // (0x004bb560). Same struct FUN_GROUP_MEMBER_SLOT_LOOKUP returns; all
-    // object-independent (readable for out-of-range raiders). Name + class are
-    // NOT here — GetRaidRosterInfo reads those from the NameCache by GUID.
+    OFF_GROUP_PET_POWER_TYPE = 0x58,
+    OFF_GROUP_PET_HEALTH = 0x5c,
+    OFF_GROUP_PET_MAX_HEALTH = 0x5e,
+    OFF_GROUP_PET_POWER = 0x60,
+    OFF_GROUP_PET_MAX_POWER = 0x62,
+    // The raid roster row (VAR_RAID_MEMBER_PTRS), mapped from
+    // Script_GetRaidRosterInfo (0x004bb560): its header, then the member
+    // record at +0x10, so the record's status byte is the row's +0x18. Name +
+    // class are NOT here — GetRaidRosterInfo reads those from the NameCache by
+    // GUID.
     OFF_RAID_SLOT_SUBGROUP = 0x08,   // u32, 0-based (roster UI shows +1)
     OFF_RAID_SLOT_RANK = 0x0c,       // u32
     OFF_RAID_SLOT_FLAGS = 0x18,      // u32
-    OFF_RAID_SLOT_LEVEL = 0x22,      // u16
-    OFF_RAID_SLOT_AREA_ID = 0x24,    // u16 -> AreaTable.dbc
     RAID_SLOT_FLAG_ONLINE = 0x1,
-    RAID_SLOT_FLAG_DEAD = 0x4,
 
     // Group-member aura spell-ID arrays — the out-of-range fallback the
     // engine's Script_UnitBuff (0x00519500) / Script_UnitDebuff (0x005198f0)
@@ -9518,23 +10338,25 @@ enum Offsets {
     // entries (UNIT_AURA_TOTAL) indexed by the same absolute slot the
     // descriptor uses. Spell IDs are truncated to u16 on the wire, so custom
     // IDs > 65535 come through wrong (same limitation as the built-in
-    // UnitBuff/UnitDebuff). Read the party array only when the member's online
-    // flag (OFF_GROUP_MEMBER_STATUS_FLAGS bit 0) is set — the engine does.
-    OFF_GROUP_MEMBER_STATS_AURAS = 0x1a,  // party stats block (FUN_00496400)
-    OFF_RAID_SLOT_AURAS = 0x64,           // raid slot (FUN_00496420)
+    // UnitBuff/UnitDebuff). Read the member array only when the member's
+    // online flag (OFF_GROUP_MEMBER_STATUS_FLAGS bit 0) is set — the engine
+    // does.
+    OFF_GROUP_MEMBER_STATS_AURAS = 0x1a,  // member record (FUN_GROUP_MEMBER_STATS_LOOKUP)
+    OFF_GROUP_PET_AURAS = 0x64,           // pet record (FUN_GROUP_PET_RECORD_LOOKUP)
 
     // Per-slot GUID tables — used to map party/raid token strings
     // ("party1", "raid17") to GUIDs without going through
     // `FUN_RESOLVE_UNIT_TOKEN`, which only resolves to a local CGUnit
     // and returns NULL for group members in other zones.
     //
-    // Party: 4 entries × 8 bytes (lo + hi). `guids[i]` corresponds to
-    // "partyN" where N = i+1.
+    // Party: VAR_PARTY_GUIDS, 4 entries × 8 bytes (lo + hi). `guids[i]`
+    // corresponds to "partyN" where N = i+1.
     //
     // Raid: 40 entries × 4 bytes — each is a `RaidMember *`. GUID is
     // at `*member + 0` (lo) and `*member + 4` (hi). Verified from
-    // `FUN_004bb0f0`. Slot may be NULL (empty / offline raid member).
-    VAR_PARTY_MEMBER_GUIDS = 0x00BC6F48,
+    // `FUN_004bb0f0`. InitializeGame allocates all 40 records (0x004BA114),
+    // so no slot is null; only slots below VAR_RAID_MEMBER_COUNT are the
+    // roster, and a slot past it keeps its last member (Group::Roster).
     VAR_RAID_MEMBER_PTRS = 0x00B712A8,
 
     // Raid-target-marker GUID table — 8 contiguous `uint64` slots, one
@@ -9547,6 +10369,10 @@ enum Offsets {
     // reads it to resolve the `markN` token and to drive the per-mark
     // unit-event observers. Matches nampower's `CGRaidInfo_m_raidtargets`.
     VAR_RAID_TARGET_GUIDS = 0x00B71368,
+    // FindRaidTargetSlot — `int __stdcall(uint32 guidLo, uint32 guidHi)`,
+    // RET 8: the slot (0..7) of VAR_RAID_TARGET_GUIDS holding the GUID, or 8.
+    // A zero GUID matches the first unassigned slot (disassembly).
+    FUN_RAID_TARGET_FIND_SLOT = 0x004BB190,
 
     // 0..7: start-up stores the Wow.ini Language+Country tag's position in
     // VAR_LOCALE_NAME_TABLE (0x402562), 0 when it matches none (enGB).
@@ -9607,7 +10433,22 @@ enum Offsets {
     // — the canonical freelist-link operation.
     LUA_REF_UNREF = 0x6F5400,
     LUA_PUSH_CCLOSURE = 0x6F3920,
+    // `lua_newtable(L)` — __fastcall, plain RET. Stock 5.0 (disassembled):
+    // `if (G->nblocks >= G->GCthreshold) luaC_collectgarbage(L)`, then write
+    // tt 5 and VAR_FRAMESCRIPT_EXEC_CONTEXT at L->top, `luaH_new(L, 0, 0)` into
+    // its value, top += 0x10. Game::Lua::CreateTable is this body with sizes.
     LUA_NEW_TABLE = 0x6F3C90,
+    // `luaH_new(L, narray, lnhash)` → Table*. __fastcall(L /*ecx*/, narray
+    // /*edx*/, lnhash /*stack*/), RET 4. Allocates 0x20, luaC_link tt 5,
+    // metatable = the default sentinel (G+0x48), flags 0xFF, then the array
+    // part (0x006FA560, narray nil slots) and the node part (setnodevector
+    // 0x006FA5D0): lnhash is a log2 — 0 is the shared dummy node (G+0x58),
+    // above 24 raises "table overflow" (disassembled).
+    FUN_LUAH_NEW = 0x6FA4F0,
+    // `luaC_collectgarbage(L)` — __fastcall(L), the GC step lua_newtable runs
+    // when nblocks reaches GCthreshold (0x006F3CA1). wow_turbo replaces it
+    // with its parallel sweep (symbols.toml `luaC_collectgarbage__6f7340`).
+    FUN_LUA_C_COLLECTGARBAGE = 0x6F7340,
     // `lua_newuserdata(L, size)` — `__fastcall`, plain RET; pushes a full
     // userdata (tt 7, stamped with the exec context like every push) and
     // returns its block, the Udata + 0x10. Verified by disassembly: GC step
@@ -9656,9 +10497,11 @@ enum Offsets {
     // returns 1. Catalogued (★-verified) in docs/LuaCAPI.md. Used by
     // Table::Length to build its weak-keyed mark table from C.
     LUA_SET_METATABLE = 0x6F4020,
-    // `lua_getfenv(L, idx)` — pushes the environment table of the function
-    // (or userdata/thread) at `idx`. The getfenv/setfenv base-lib code calls
-    // it to read a function's environment before the protection check.
+    // `lua_getfenv(L, idx)`, `__fastcall`, plain `ret` — pushes the
+    // environment of the Lua function at `idx` (closure +0x10, `l.g`) and the
+    // state's globals (L +0x40) for any other value, a C function included
+    // (Lua 5.0's body, read from the bytes). The getfenv/setfenv base-lib code
+    // calls it to read a function's environment before the protection check.
     LUA_GET_FENV = 0x6F3D50,
     LUA_SET_TABLE = 0x6F3E20,
     LUA_RAW_SET = 0x6F3EA0,
@@ -9666,6 +10509,12 @@ enum Offsets {
     LUA_REMOVE = 0x6F30D0,        // (was 0x6F32B0, which is lua_replace)
     LUA_REPLACE = 0x6F32B0,
     LUA_TYPE = 0x6F3400,
+    // `lua_equal(L, index1, index2)` — `int __fastcall(L /*ecx*/, index1
+    // /*edx*/, index2 /*stack*/)`, RET 4. Same tt, then luaV_equalval
+    // (0x006F8330, TM_EQ via get_compTM 0x006F8440) — `__eq` honored, as
+    // OP_EQ (0x006F9071) does. 0x006F3550 before it is lua_rawequal
+    // (luaO_rawequalObj 0x006F58B0, no L). Disassembled.
+    LUA_EQUAL = 0x6F3590,
     // `lua_typename(L, type)` — `const char *__fastcall`; indexes the name
     // array at 0x00811CD0, `-1` → "no value" (0x00871624).
     LUA_TYPE_NAME = 0x6F3480,
@@ -9810,13 +10659,31 @@ enum Offsets {
     // null check — 5.0's default-metatable sentinel is never NULL). Every
     // other type hardcodes &nilobject: this is the ONE line where 5.1
     // reads the per-type slot `G(L)->mt[ttype(o)]` instead. Callers (7):
-    // luaD_tryfuncTM 0x006F6370, index/newindex non-table continuations
-    // 0x006F7EE0 / 0x006F7F40, call_binTM 0x006F8670 (x2), call_orderTM
+    // luaD_tryfuncTM 0x006F6370, the index non-table continuation 0x006F7EE0,
+    // luaV_settable's non-table branch 0x006F7FD7, call_binTM 0x006F8670 (x2), call_orderTM
     // 0x006F8210 (x2) — all fallbacks for values with no native
     // operation, so cold. Prologue PUSH EBP / MOV EBP,ESP / MOV ECX,[ECX+
     // 0x10] — MinHook-relocatable. Co-hooked by LuaSyntax::StringMethods
     // to give strings 5.1's shared metatable.
     FUN_LUAT_GETTMBYOBJ = 0x006F7BD0,
+    // `luaV_settable(L, t, key, val)` — stock 5.0, the store behind `t[k] = v`.
+    // __fastcall(L /*ecx*/, const TValue *t /*edx*/, TValue *key /*stack*/,
+    // TValue *val /*stack*/), RET 8. Table: luaH_set (inserts the key FIRST),
+    // then store unless the slot was nil and fasttm(TM_NEWINDEX) exists;
+    // else luaT_gettmbyobj(t, 1); nil → "index" typeerror 0x006FC620;
+    // function → callTM; else t = tm, at most 100 times ("loop in settable").
+    // Callers (3): lua_settable 0x006F3E94, luaV_execute OP_SETGLOBAL /
+    // OP_SETTABLE 0x006F8A62 / 0x006F8B08. Disassembled.
+    FUN_LUAV_SETTABLE = 0x006F7F40,
+    // `callTM(L, f, p1, p2, p3)` — pushes f, p1, p2, p3 and luaD_call's f
+    // with no results. __fastcall(L /*ecx*/, f /*edx*/, p1, p2, p3 /*stack*/),
+    // RET 0xC (luaV_settable's __newindex call at 0x006F802C). Disassembled.
+    FUN_LUA_CALLTM = 0x006F8040,
+    // `luaG_runerror(L, fmt, ...)` — __cdecl, never returns. Prefixes
+    // "chunk:line:" when the running function is Lua, then raises. luaV_settable
+    // calls it for "loop in settable" (0x006F800E), setnodevector for
+    // "table overflow" (0x006FA5EF). Disassembled.
+    FUN_LUAG_RUNERROR = 0x006FC870,
     // `luaH_getstr(Table *t, TString *key)` — raw hash lookup of an
     // interned string key. __fastcall(t /*ecx*/, key /*edx*/), returns
     // const TValue* (eax; &nilobject on a miss). Node stride 0x28, key tt
@@ -9947,6 +10814,14 @@ enum Offsets {
     // Table* / TString* / double). luaH_getnum's node walk reads both
     // (`CMP [ECX],3` / `FLD [ECX+8]` at 0x006FA736 / 0x006FA73B).
     OFF_LUA_TVALUE_TT = 0x00,
+    // The context word — 3.3.5's TValue `taint`, set by its lua_settaint.
+    // A pushed value takes VAR_FRAMESCRIPT_EXEC_CONTEXT (lua_pushcclosure
+    // 0x006F39CC); copying a value moves all 16 bytes and, when this word is
+    // nonzero and the depth is nonzero, makes it the current context
+    // (lua_rawset 0x006F3F34, lua_pushcclosure's upvalue loop 0x006F399C).
+    // lua_gettable alone also stamps a zero word with the current context
+    // (0x006F3AF6), which is 3.3.5's taint propagation on read.
+    OFF_LUA_TVALUE_CONTEXT = 0x04,
     OFF_LUA_TVALUE_VALUE = 0x08,
     // Table: array size (int). luaH_getnum's array-part bound test
     // `CMP EDX,[ECX+0x1C]` at 0x006FA70E (array pointer at +0x0C).
@@ -9971,7 +10846,9 @@ enum Offsets {
     FUN_LUA_S_NEWUDATA = 0x006F9E30,
     // `__fastcall(L, o)`. Switch on tt-4 through the jump table at 0x006F72D0.
     FUN_LUA_C_FREEOBJ = 0x006F7260,
-    // lua_State: the global state (luaC_link reads `[ecx+0x10]`).
+    // lua_State: the stack top (lua_newtable writes its TValue at `[esi+8]`
+    // and adds 0x10) and the global state (luaC_link reads `[ecx+0x10]`).
+    OFF_LUA_STATE_TOP = 0x08,
     OFF_LUA_STATE_G = 0x10,
     // global_State: string table {hash@+4, nuse@+8, size@+0xC} (newlstr's
     // bucket insert), rootgc / rootudata (luaC_link, luaS_newudata,
@@ -9981,6 +10858,7 @@ enum Offsets {
     OFF_LUA_G_STRT_SIZE = 0x0C,
     OFF_LUA_G_ROOTGC = 0x10,
     OFF_LUA_G_ROOTUDATA = 0x14,
+    OFF_LUA_G_GCTHRESHOLD = 0x24,
     OFF_LUA_G_NBLOCKS = 0x28,
     // GCheader: next@+0, tt@+4 (luaC_link writes both; freeobj switches on tt).
     OFF_LUA_GCHEADER_NEXT = 0x00,
@@ -10060,6 +10938,7 @@ enum Offsets {
     LUA_GET_INFO = 0x006FBC70,
     SIZEOF_LUA_DEBUG = 0x60,
     OFF_LUA_DEBUG_NAME = 0x04,
+    OFF_LUA_DEBUG_WHAT = 0x0C, // "Lua", "C", "main" or "tail" (getinfo "S")
     OFF_LUA_DEBUG_SOURCE = 0x10,
     OFF_LUA_DEBUG_CURRENTLINE = 0x14,
     OFF_LUA_DEBUG_LINEDEFINED = 0x1C,
@@ -10452,6 +11331,14 @@ enum Offsets {
     // No `%b` for boolean — pass `%d` with 0/1; the engine has no native
     // bool concept here. No bounds check on eventID; pass valid indices.
     FUN_FIRE_EVENT = 0x00703F50,
+    // The minimap ping's MINIMAP_PING signal in 0x004EE330 (the routine a
+    // clicked ping and a party member's SMSG 0x1D5 both run): `push 0x165;
+    // call FUN_FIRE_EVENT` with "%s%f%f" (0x0084C7A8), the pinger's token
+    // (player, partyN or raidN; player for a GUID that matches none) and two
+    // doubles, x then y. Caller cleans 0x1C. Disassembled; benilla-re
+    // ui/minimap "The ping". Event::MinimapPing redirects it to run the event
+    // callbacks after the frames.
+    CALL_MINIMAP_PING_FIRE = 0x004EE48D,
     // Per-token unit-event broadcast. Fires unit event `eventCode` for every
     // unit token currently mapping to `*guid` (player / pet / target / party /
     // raid / npc / mouseover), via the engine's own GUID->token reverse map
@@ -11017,6 +11904,16 @@ enum Offsets {
     // (FUN_00424F00, 4.3.4's IEvtQueueRegister) — so a handler registered
     // later at an EQUAL priority runs first. Does not dedup.
     FUN_EVENT_REGISTER_EX = 0x0041FCA0,
+    // The frame-time step of a tick — `void __thiscall(EvtContext *ctx)`. It
+    // reads the event clock (0x0042C010), stores it at ctx+0x40, and dispatches
+    // event 5 with the seconds since the previous value. A closing context
+    // (run state ctx+0x2C == 1) returns at once. The tick (0x00420C00) calls it
+    // once at 0x00420D63: after timers, window input, packets and deferred
+    // messages, and before the frame pass 0x00442350 (OnUpdate, the draw,
+    // present). The only other call (0x00422675) is in the loop copy 0x00422540,
+    // and nothing calls that copy (benilla-re core/loop "One tick",
+    // "Frame time", verified against C:\WoW\Octo\WoW.exe).
+    FUN_EVENT_FRAME_TIME = 0x00420F70,
     // Event id of a key press. The console's RegisterHandlers (FUN_0063BC90)
     // registers ids 1, 5, 8, 9, 10, 11, 14, 12 in 4.3.4's order CHAR, IDLE,
     // KEYDOWN, KEYUP, KEYDOWN_REPEATING, MOUSEDOWN, MOUSEUP, MOUSEMOVE; id 8's
@@ -11197,6 +12094,15 @@ enum Offsets {
     FUN_XML_LOAD_FILE = 0x006EDE10,
     // Return address of that <Script file> call into FUN_LUA_LOAD_FILE.
     RET_XML_SCRIPT_FILE_LOAD = 0x006EE0D9,
+    // FUN_XML_LOAD_FILE's E8 calls around a `file` attribute (Xml::FileDirectives):
+    // <Include>'s FUN_XML_NODE_GET_ATTRIBUTE(node, "file") (0x006EDFAF; a null
+    // value logs "Element 'Include' without file attribute" at 0x006EE017), its
+    // recursive FUN_XML_LOAD_FILE on the joined path (0x006EE00D, result
+    // unused), and <Script>'s getter (0x006EE051; null skips the file and still
+    // compiles the inline text at 0x006EE0D9).
+    CALL_XML_INCLUDE_GET_FILE = 0x006EDFAF,
+    CALL_XML_INCLUDE_LOAD = 0x006EE00D,
+    CALL_XML_SCRIPT_GET_FILE = 0x006EE051,
 
     // File-exists probe — `__stdcall(const char *path, int mode)` (RET 8);
     // nonzero when the file exists. `mode = 1` on the addon / SavedVariables
@@ -11209,9 +12115,15 @@ enum Offsets {
     // `realmName` CVar value reader — no-arg, `-> const char *` (last-connected
     // realm's display name; lazily registers the cvar). The realm segment of
     // the per-character SavedVariables path. (The character segment is
-    // FUN_GET_LOGIN_ACCOUNT_NAME, whose label is a misnomer — it returns the
+    // FUN_GET_SELECTED_CHARACTER_NAME, whose label is a misnomer — it returns the
     // 0x00C27D88 buffer, NULL until a character is logged in.)
     FUN_GET_REALM_NAME = 0x005AB7D0,
+
+    // The client's version string, `GetBuildInfo()`'s first return: the
+    // `mov edx, 0x837C04` at 0x004884A1 ahead of its lua_pushstring. Read
+    // from both exes' bytes: "1.12.1" in stock 1.12.1, "1.18.1" in Octo's
+    // Turtle build (patched in place, same address). NUL-terminated.
+    VAR_BUILD_VERSION_STRING = 0x00837C04,
 
     // AddOn scan — `void __cdecl()`, no args, plain RET (benilla-re
     // `ScanAddOns`). Registers the archives' listfile addons, then the
@@ -11222,6 +12134,11 @@ enum Offsets {
     // the list at its tail, and the load pass walks it in that order.
     // `Addons::Embedded` pre-hooks it to register `!!!ClassicAPI` first.
     FUN_ADDON_SCAN_FULL = 0x0051C760,
+    // FUN_TOC_PARSER's generic-metadata key test is a chain of
+    // FUN_SSTR_CMP_I prefix compares (Title 5, Notes 5, Author 6, Version 7,
+    // X- 2; 0x0051CC9E..0x0051CD01), each match jumping to the store at
+    // 0x0051D3C6. This is the last one, `X-` (AddOns::Metadata).
+    CALL_TOC_PARSER_MATCH_X_PREFIX = 0x0051CCFA,
 
     // Addon-registry intrusive-list control. Layout
     // (`__thiscall`-friendly, generic across all intrusive lists in the
@@ -11285,11 +12202,103 @@ enum Offsets {
     // value is at `[entry+0x10]`.
     VAR_TALENT_TAB_COUNT = 0x00BDCD24,
     VAR_TALENT_TAB_INFO_ARRAY = 0x00BDCD28,
+    OFF_TABINFO_POINTS_SPENT = 0x04,
     OFF_TABINFO_NUM_TALENTS = 0x08,
     OFF_TABINFO_TALENT_ARRAY = 0x0C,
     OFF_TALENT_SPELL_RANK = 0x10,
     TALENT_ENTRY_STRIDE = 0x54,
     TALENT_MAX_RANKS = 9,
+    // The rest of the talent row (a TabInfo's talents point straight at the
+    // Talent.dbc rows, BuildTalentTabs 0x004F2C00). Tier and column are
+    // 0-based; the three prerequisite slots pair a talent ID with the 0-based
+    // rank it needs; flag bit 0 is GetTalentInfo's 7th value (the talent
+    // teaches an ability, and SetTalent builds it with the spell builder);
+    // the required spell is GetTalentInfo's 8th. Read by GetTalentInfo
+    // (0x004F3200), GetTalentPrereqs (0x004F34D0) and SetTalent (0x00535170);
+    // benilla-re ui/talents#talent-indexing. The by-ID records
+    // (VAR_TALENT_DBC_RECORDS) are the same rows.
+    OFF_TALENT_TIER = 0x08,
+    OFF_TALENT_COLUMN = 0x0C,
+    OFF_TALENT_PREREQ_TALENT = 0x34,
+    OFF_TALENT_PREREQ_RANK = 0x40,
+    TALENT_MAX_PREREQS = 3,
+    OFF_TALENT_FLAGS = 0x4C,
+    TALENT_FLAG_EXCEPTIONAL = 0x01,
+    OFF_TALENT_REQUIRED_SPELL = 0x50,
+
+    // CGUnit_C::KnowsSpell — `bool __thiscall(CGUnit_C *, uint32_t spellID)`,
+    // RET 4, the answer in AL: the known-spell bitmap for the active player,
+    // else the pet spell list (0x0060C740, disassembled). KnowsHigherRank —
+    // same shape (0x0060C8D0, RET 4): walks the spell's SkillLineAbility
+    // supersede chain (OFF_SLA_SUPERCEDED_BY_SPELL) and asks KnowsSpell of
+    // each later rank. GetTalentInfo counts a talent rank as learned when
+    // either is true of its spell, scanning the rank slots from the last.
+    FUN_UNIT_KNOWS_SPELL = 0x0060C740,
+    FUN_UNIT_KNOWS_HIGHER_RANK = 0x0060C8D0,
+
+    // The player's free talent points (PLAYER_CHARACTER_POINTS1) and
+    // profession points (POINTS2), in `[player + OFF_CGPLAYER_INFO]`: the
+    // words UnitCharacterPoints (0x00519420) returns for the active player.
+    OFF_PLAYER_FIELD_CHARACTER_POINTS1 = 0xE48,
+    // The engine's descriptor watcher for those two words, registered for
+    // the player block at login (0x004C6FB0): `uint32_t __stdcall(a1, a2,
+    // const int32_t *oldPoints, a4)`, RET 0x10, returns 1. It signals
+    // CHARACTER_POINTS_CHANGED (event 0x108) with the change of each word,
+    // the new values read from the player and the old ones from
+    // `oldPoints[0]` / `[1]` (disassembled; benilla-re
+    // ui/talents#character-points).
+    FUN_ON_CHARACTER_POINTS_CHANGED = 0x004C7000,
+
+    // The talent tooltip (benilla-re ui/tooltipspell#talent-tooltips). The
+    // GameTooltip method SetTalent (FUN_SCRIPT_GAMETOOLTIP_SET_TALENT)
+    // scans the rank slots for the learned rank, then builds a talent
+    // without flag bit 0 with BuildPassiveTalent (`void __thiscall(tooltip,
+    // talent row)`, RET 4) and any other with BuildSpell
+    // (FUN_GAMETOOLTIP_BUILD_SPELL_TOOLTIP): the learned rank's spell, then
+    // the next rank's with `rebuild` set. Each reads the learned state at
+    // these sites, all disassembled:
+    //   - the rank scans, KnowsSpell then KnowsHigherRank on each rank
+    //     spell: SetTalent 0x005352E7 / 0x005352F9, BuildSpell 0x0052E782 /
+    //     0x0052E794 (the "Rank x/y" line), BuildPassiveTalent 0x0052B143 /
+    //     0x0052B152 (the name, rank line and both descriptions);
+    //   - AddTalentRequirements (0x0052B390, `uint __thiscall(tooltip, row)`,
+    //     1 when nothing is missing), the red line for each prerequisite
+    //     talent not at its rank: the same pair on the prerequisite's rank
+    //     spells, 0x0052B43F / 0x0052B450; then the tier line, which reads
+    //     the tab's points spent with `mov ecx,[eax+4]; jmp 0x0052B545` at
+    //     0x0052B5A4 (5 bytes, eax = the TabInfo);
+    //   - the green TOOLTIP_TALENT_LEARN line, added through
+    //     FUN_GAMETOOLTIP_ADD_TEXT_LINE at 0x0052F79C (BuildSpell) and
+    //     0x0052B36E (BuildPassiveTalent).
+    // The required-spell test (0x0052B5BE / 0x0052B5CE) is not a talent rank.
+    // Each builder ends with `mov [tooltip+0xD0],1` and the Show vmethod
+    // (VTBL_FRAME_SHOW), which sizes the tooltip and runs OnShow:
+    // `call [edx+0x88]` at 0x0052F7AF (BuildSpell, ebx = its argument frame:
+    // the talent at [ebx+0x1C], `rebuild` at [ebx+0x20]) and
+    // `call [eax+0x88]` at 0x0052B381 (BuildPassiveTalent), 6 bytes each with
+    // ecx = the tooltip. SetTalent (0x00535386) is BuildPassiveTalent's only
+    // caller.
+    FUN_GAMETOOLTIP_BUILD_PASSIVE_TALENT = 0x0052B0A0,
+    CALL_SET_TALENT_KNOWS_SPELL = 0x005352E7,
+    CALL_SET_TALENT_KNOWS_HIGHER_RANK = 0x005352F9,
+    SITE_BUILD_SPELL_SHOW = 0x0052F7AF,
+    SITE_BUILD_PASSIVE_TALENT_SHOW = 0x0052B381,
+    CALL_BUILD_SPELL_TALENT_KNOWS_SPELL = 0x0052E782,
+    CALL_BUILD_SPELL_TALENT_KNOWS_HIGHER_RANK = 0x0052E794,
+    CALL_BUILD_PASSIVE_TALENT_KNOWS_SPELL = 0x0052B143,
+    CALL_BUILD_PASSIVE_TALENT_KNOWS_HIGHER_RANK = 0x0052B152,
+    CALL_TALENT_REQUIREMENTS_KNOWS_SPELL = 0x0052B43F,
+    CALL_TALENT_REQUIREMENTS_KNOWS_HIGHER_RANK = 0x0052B450,
+    SITE_TALENT_REQUIREMENTS_TAB_POINTS = 0x0052B5A4,
+    SITE_TALENT_REQUIREMENTS_TAB_POINTS_RESUME = 0x0052B545,
+    CALL_BUILD_SPELL_TALENT_LEARN_LINE = 0x0052F79C,
+    CALL_BUILD_PASSIVE_TALENT_LEARN_LINE = 0x0052B36E,
+    // The one-cell line add both builders use: `void __thiscall(tooltip,
+    // const char *text, const void *color, int wrap)`, RET 0xC.
+    FUN_GAMETOOLTIP_ADD_TEXT_LINE = 0x005303B0,
+    // The green of the TOOLTIP_TALENT_LEARN line (both builders push it),
+    // packed like VAR_TOOLTIP_TEXT_COLOR.
+    VAR_TOOLTIP_GREEN_COLOR = 0x00C0D3AC,
 
     // Talent.dbc — standard 5-DWORD class shape, records pointer at
     // `+0x08` and count at `+0x0C` of the class instance at
@@ -11337,10 +12346,10 @@ enum Offsets {
     VAR_TALENT_DBC_FLAT_COUNT = 0x00C0D6E4,
     OFF_TALENT_DBC_TAB_ID = 0x04,
 
-    // Engine's `Script_GetTalentInfo` Lua C function. We call it from
-    // `GetTalentSpellID` to derive the player's currentRank without
-    // re-implementing the spell-knowledge checks at `0x0060C740` /
-    // `0x0060C8D0`. Signature: `int __fastcall(void *L)` — reads tab and
+    // Engine's `Script_GetTalentInfo` Lua C function. Its currentRank is
+    // the highest rank whose spell passes the knowledge checks at
+    // `0x0060C740` / `0x0060C8D0`; `Talent::Preview::LearnedRank` mirrors
+    // that with the same two calls. Signature: `int __fastcall(void *L)` — reads tab and
     // talent index from Lua stack[1] and stack[2], pushes 6 returns
     // (name, icon, tier, column, currentRank, maxRank). Errors (calls
     // lua_error) on invalid input or pre-login state, so callers must
@@ -11381,6 +12390,15 @@ enum Offsets {
     OFF_GAMETIME_DAY = 0x0C,
     OFF_GAMETIME_MONTH = 0x10,
     OFF_GAMETIME_YEAR = 0x14,
+    // The clock's scale in game minutes per real second (benilla-re
+    // gametime/overview: 1/60 at construction, SetTimeScale 0x00643820
+    // clamps it to [1/60, 60]), and its day phase `float __thiscall(clock)`
+    // (0x00643A70, disassembled): x = (tick - [+0x38]) x 0.001 x scale +
+    // [+0x3C], less 1440 while above 1440, over 1440: the time of day
+    // StampLightState
+    // (0x00482AD0) gives the light state each world frame.
+    OFF_GAMETIME_SCALE = 0x2C,
+    FUN_GAME_CLOCK_DAY_PHASE = 0x00643A70,
 
     // Server-clock skew, the engine's own `CMSG_QUERY_TIME` sync — and a
     // strictly better server clock than `VAR_GAMETIME_STRUCT` above, which
@@ -11446,6 +12464,11 @@ enum Offsets {
     VAR_ADDON_INDEX_RANGE_ERROR_FMT = 0x00837D70,
     FUN_ADDON_GET_TITLE_BY_NAME = 0x0051DF20,   // (name) → title string or NULL
     FUN_ADDON_GET_NOTES_BY_NAME = 0x0051E050,   // (name) → notes string or NULL
+    // `const char *__fastcall(const char *name, const char *key)` — the
+    // generic metadata lookup behind GetAddOnMetadata (0x0048E5B5): the addon
+    // by name, then `key` in its metadata table (+0xB4 / mask +0xBC), both
+    // through SStrCmpI, so case-insensitive. NULL when either is missing.
+    FUN_ADDON_GET_METADATA = 0x0051E220,
 
     // `__fastcall(const char *name) → AddOnEntry*+0x48 or NULL`.
     // Hash-table lookup by name (a `FUN_ADDON_GET_BY_INDEX` result works
@@ -11475,6 +12498,16 @@ enum Offsets {
     OFF_ADDON_INTERFACE_VERSION = 0x1C,
     OFF_ADDON_OPTIONALDEPS_COUNT = 0x3C,
     OFF_ADDON_OPTIONALDEPS_ARRAY = 0x40,
+    // RequiredDeps / Dependencies list {count, data} (desc +0x48): count @+0x4C,
+    // `char **` @+0x50 (FUN_ADDON_CAN_LOAD's dep loop reads [rec+0x4C] /
+    // [rec+0x50] at 0x0051E8CF..0x0051E8DE).
+    OFF_ADDON_REQDEPS_COUNT = 0x4C,
+    OFF_ADDON_REQDEPS_ARRAY = 0x50,
+    // The `## SavedVariables:` and `## SavedVariablesPerCharacter:` name
+    // counts (descs +0x68 / +0x78), as FUN_ADDON_SAVE_VARIABLES reads them
+    // (`[ebx+0x6C]` at 0x0051F73D, `[ebx+0x7C]` at 0x0051F892).
+    OFF_ADDON_SAVEDVARS_COUNT = 0x6C,
+    OFF_ADDON_SAVEDVARS_PERCHAR_COUNT = 0x7C,
 
     // Per-field accessors `Script_GetAddOnInfo` calls internally for
     // returns 5 (loadable), 6 (reason string), 7 (security category).
@@ -11488,7 +12521,7 @@ enum Offsets {
     //     ⇒ the addon is loaded.
     //
     //   CAN_LOAD `__fastcall(entry, char fullCheck=1, int *outStatus,
-    //                        int *outDepHandle, const char *accountName) → byte`
+    //                        int *outDepHandle, const char *character) → byte`
     //     Recursive load-check that resolves all forward `## Dependencies`.
     //     On `0` return, writes one of 8 status codes into `*outStatus`
     //     (see `VAR_ADDON_LOADABLE_REASON_TABLE` for the index→string
@@ -11544,29 +12577,83 @@ enum Offsets {
     // Standard Lua C ABI, so it re-registers under a namespace table as-is.
     FUN_SCRIPT_LOAD_ADDON = 0x0048E980,
     FUN_ADDON_CAN_LOAD = 0x0051E780,
+    // The load check's E8 calls that mean a real load (AddOns::LoadGate): the
+    // per-addon loader FUN_ADDON_LOAD_ONE's own check (0x0051F2FA), and
+    // Script_LoadAddOn's re-check for the failure reason after the loader
+    // fails (0x0048EAFE). Its required-dependency recursion (0x0051E8D5)
+    // passes the parent's dependency slot as both out pointers. The other
+    // callers are queries: GetAddOnInfo (0x0048E4A5, glue 0x0046D542) and the
+    // load pass's progress sum (0x0051F215, fullCheck 0).
+    CALL_ADDON_LOAD_ONE_CAN_LOAD = 0x0051F2FA,
+    CALL_LOAD_ADDON_CAN_LOAD = 0x0048EAFE,
+    CALL_ADDON_CAN_LOAD_DEPENDENCY = 0x0051E8D5,
+    // `char *__fastcall(int code, int depCode, char *buf, uint cap)`, RET 8:
+    // copies LOADABLE_REASON_TABLE[code] into `buf`, or formats "DEP_%s"
+    // (0x00853900) with the table name of `depCode` when `code` is 0. The
+    // only reader of the table. Called by GetAddOnInfo (0x0048E4E6, glue
+    // 0x0046D583) and Script_LoadAddOn (0x0048EB21).
+    FUN_ADDON_FORMAT_REASON = 0x0051E930,
+    CALL_LOAD_ADDON_FORMAT_REASON = 0x0048EB21,
+    // The login load pass FUN_0051F600's loader call for each entry that is
+    // not LoadOnDemand (`xor dl,dl`, name in ECX, the progress context
+    // pushed), and its progress sum's load check (FUN_0051F1xx, fullCheck 0)
+    // for the same entries. AddOns::LoadManagers redirects both.
+    CALL_ADDON_LOAD_PASS_LOAD_ONE = 0x0051F62B,
+    CALL_ADDON_PROGRESS_CAN_LOAD = 0x0051F215,
+    // The addon list builder, `void __fastcall(packet)`: reads SMSG_ADDON_INFO
+    // for the secure entries, then fills VAR_ADDON_ARRAY from the entry list,
+    // skipping entries with OFF_ADDON_ENTRY_FILTER_OUT set, and sorts it. Its
+    // one call is in the SMSG_ADDON_INFO handler (0x005B4282).
+    FUN_ADDON_BUILD_DISPLAY = 0x0051DA70,
+    CALL_ADDON_INFO_BUILD_DISPLAY = 0x005B4282,
     FUN_ADDON_GET_SECURITY_INDEX = 0x0051E990,
 
-    // Per-character enable-state resolver — the inner check
-    // `FUN_ADDON_CAN_LOAD` (`0x0051E780`) consults to decide whether an
-    // addon is enabled: `__fastcall(const char *name /*ecx*/,
-    // const char *account /*edx*/, char resolveAll /*stack*/) -> uint`.
-    // Returns 0 = disabled (load pass then skips the addon, reason
-    // DISABLED), non-zero = enabled (2 = "enabled for all"). Walks the
-    // per-character override list at `0x00BE1BD8`; with no override it
-    // falls back to the entry's DefaultState byte (`+0x2b`):
-    // `-(uint)(entry[+0x2b] != 0) & 2`. `Addons::Embedded` co-hooks this
-    // to force-enable the embedded `!!!ClassicAPI` unconditionally — so a
-    // stale WTF disable-override (from back when the addon was still
-    // shown in the character-select list) can't leave it hidden AND
-    // unloaded. Cold: runs only during the login/reload load pass, once
-    // per addon.
+    // Per-character enable-state reader: `__fastcall(const char *name /*ecx*/,
+    // const char *character /*edx*/, char fallback /*stack*/) -> uint`,
+    // 2 enabled, 1 mixed, 0 disabled. 1.12 keeps one node of `name: flag`
+    // entries per character on the realm, read from
+    // `WTF\Account\<account>\<realm>\<character>\AddOns.txt` (else the
+    // account-level `AddOns.txt`), in the list at `0x00BE1BD8`. A named
+    // character counts only its own node; NULL counts every node. A node
+    // without an entry counts only with `fallback`, as enabled when the
+    // all-character state is 2, or 1 with DefaultState set. Nothing counted
+    // answers DefaultState (`+0x2b`) as 2 or 0. `FUN_ADDON_CAN_LOAD` calls it
+    // with fallback 1 (DISABLED on 0), and so does Script_GetAddOnInfo
+    // (0x0048E44B). (benilla-re systems/ui/addons.md "Reading the enable
+    // state".) `Addons::Embedded` co-hooks it to force-enable the embedded
+    // `!!!ClassicAPI`, so a stale WTF disable entry (from back when the addon
+    // showed in the character-select list) cannot leave it hidden AND
+    // unloaded.
     FUN_ADDON_ENABLE_RESOLVE = 0x0051E470,
+    // Enable-state setter: `void __fastcall(const char *name /*ecx*/, const
+    // char *character /*edx*/, int state /*stack*/)`, RET 4. Walks the
+    // character nodes; a named character changes only its own node (name
+    // compare 0x0064A4C0, case-insensitive, at 0x0051EA73), NULL changes every
+    // node, a name with no node changes nothing. It inserts a missing entry,
+    // stores `state != 0` and marks the node changed (0x0051EB62, 0x0051EBB9).
+    // The in-game EnableAddOn / DisableAddOn pass 2 / 0 with the selected
+    // character (0x0048E6FC, 0x0048E7CC); EnableAllAddOns loops it over the
+    // index list (0x0048E730..0x0048E751, ECX name, EDX character, push 2).
+    FUN_ADDON_ENABLE_SET = 0x0051EA20,
+    // `void __fastcall(const char *character)`, plain RET: rereads the named
+    // character's node from its AddOns.txt, or every node for NULL. The in-game
+    // ResetDisabledAddOns calls it with the selected character (0x0048E837).
+    FUN_ADDON_ENABLE_LOAD = 0x0051EBE0,
+    // `void ()`, plain RET: writes each changed node to
+    // `WTF\Account\<account>\<realm>\<character>\AddOns.txt`. The world
+    // UI shutdown runs it last, after the SavedVariables (0x00490C88); the
+    // glue's SaveAddOns calls it too (0x0046D990).
+    FUN_ADDON_ENABLE_SAVE = 0x0051EF20,
 
-    // Returns a pointer to the inline-stored login account name buffer
-    // at `0x00C27D88`, or NULL if no character is logged in yet.
-    // `Script_GetAddOnInfo` feeds this into the loadable + enabled
-    // checks; same convention.
-    FUN_GET_LOGIN_ACCOUNT_NAME = 0x005ABDC0,
+    // `() -> const char *`: the selected character's name, the name field
+    // `0x00C27D88` (+0x08 of the selected-character record `0x00C27D80`), or
+    // NULL when it is empty: `neg al; sbb eax,eax; and eax,0xc27d88`. This is
+    // the character the engine's in-game addon functions pass to the
+    // enable-state reader and setter (EnableAddOn 0x0048E6FC, ResetDisabled-
+    // AddOns 0x0048E837) and the per-character SavedVariables path uses.
+    // NOT the account name (that is `VAR_ACCOUNT_NAME_PTR`). (benilla-re
+    // systems/net/connection.md.)
+    FUN_GET_SELECTED_CHARACTER_NAME = 0x005ABDC0,
 
     // Two parallel `const char *[]` tables in `.data` covering every
     // string `Script_GetAddOnInfo`'s returns 6 + 7 can produce.
@@ -11611,6 +12698,13 @@ enum Offsets {
     //           the loader's post-ADDON_LOADED loop.
     OFF_ADDON_ENTRY_NAME_PTR = 0x14,
     OFF_ADDON_ENTRY_FILTER_OUT = 0x29,
+    // LoadOnDemand byte; the load pass FUN_0051F600 skips an entry with it set
+    // (0x0051F61E) and so does its progress sum (0x0051F1F9).
+    OFF_ADDON_ENTRY_LOAD_ON_DEMAND = 0x2C,
+    // `## DefaultState:` byte, 1 by default, 0 for `disabled` (TOC parser
+    // 0x0051D204 / 0x0051D223). The enable-state reader answers it as 2 or 0
+    // when no character node counts (0x0051E623). (benilla-re ui/addons.)
+    OFF_ADDON_ENTRY_DEFAULT_STATE = 0x2B,
     OFF_ADDON_LOADWITH_COUNT = 0x5C,
     OFF_ADDON_LOADWITH_ARRAY = 0x60,
     OFF_ADDON_REVLOADWITH_DESC = 0x88,
@@ -11783,6 +12877,13 @@ enum Offsets {
     // DressUpModel's ready byte is DISPLAYID == NATIVEDISPLAYID (0x00504450,
     // benilla ui/dressup): a shapeshifted unit takes no armor try-on.
     OFF_UNIT_FIELD_NATIVEDISPLAYID = 0x1F8,
+    // UNIT_VIRTUAL_ITEM_SLOT_DISPLAY (update-field table index 0x1F, count 3):
+    // the ItemDisplayInfo of each hand a creature holds (main, off, ranged),
+    // and UNIT_VIRTUAL_ITEM_INFO (index 0x22, count 6): two dwords per hand,
+    // the held lane (Model::Outfit::HeldLane) the unit hangs it with.
+    OFF_UNIT_FIELD_VIRTUAL_ITEM_SLOT_DISPLAY = 0x7C,
+    OFF_UNIT_FIELD_VIRTUAL_ITEM_INFO = 0x88,
+    UNIT_VIRTUAL_ITEM_SLOTS = 3,
 
     // Local player movement-flags u32. Lives directly on the
     // CGPlayer object (not the broadcast descriptor) — this is
@@ -11808,10 +12909,22 @@ enum Offsets {
     // 0x10 / 0x20 are TURN_LEFT / TURN_RIGHT — turn-in-place, not
     // translational movement. Excluded from "moving" semantics
     // because modern `PLAYER_STARTED_MOVING` doesn't fire for them.
+    // Walk mode: CMovement::GetCurrentSpeed (0x007C4C90) moves the unit at the
+    // lower of its walk and run speeds while it is set.
+    MOVEFLAG_WALK_MODE = 0x100,
     MOVEFLAG_JUMPING = 0x1000,
     MOVEFLAG_FALLING = 0x2000,
     MOVEFLAG_FALLING_FAR = 0x4000,
     MOVEFLAG_SWIMMING = 0x200000,
+    // On a transport: a movement status then carries the transport GUID and
+    // the offset on it (the status reader's `test 0x2000000` at 0x0047EBE6;
+    // tortoise-wow MovementInfo::Read). The 0x2000 bit above is the one that
+    // adds the status's four jump floats (0x0047EC5B).
+    MOVEFLAG_ONTRANSPORT = 0x2000000,
+    // Slow fall (Feather Fall, Levitate; vmangos MOVEFLAG_SAFE_FALL): the
+    // fall's speed caps at VAR_MOVER_TERMINAL_SPEED_SLOW instead
+    // (CMovement::GetFallDistance 0x007C5E70, through the cap at 0x007C5D40).
+    MOVEFLAG_SAFE_FALL = 0x20000000,
     // The player-movement bits that drop an in-progress cast — the exact mask
     // the engine's CheckCast (FUN_006094f0) tests (0x200f). Spell::Cast uses it
     // to tell a spurious movement drop of a movement-immune cast (grenades)
@@ -11876,6 +12989,10 @@ enum Offsets {
     // off-hand weapons, and held items via `ItemMgr::GetItemBySlot`.
     INVSLOT_OFFHAND = 17,
     INVSLOT_MAINHAND = 16,
+    INVSLOT_BODY = 4,    // the shirt
+    INVSLOT_TABARD = 19,
+    INVSLOT_HEAD = 1,
+    INVSLOT_BACK = 15,
 
     // Character-pane equipment slot range: 1..19 (head=1, neck=2, …,
     // tabard=19). Used by `C_Item.IsEquippedItem` to walk every slot
@@ -11883,10 +13000,6 @@ enum Offsets {
     EQUIPMENT_SLOT_FIRST = 1,
     EQUIPMENT_SLOT_LAST = 19,
 
-    // CGItem instance block GUID — qword at +0x00 of the instance block
-    // (which sits behind the pointer at CGItem +0x08). Sibling of
-    // OFF_INSTANCE_BLOCK_ITEM_ID at +0x0C in the same block.
-    OFF_INSTANCE_BLOCK_GUID = 0x00,
 
     // `Script_ClearCursor` / `Script_PickupInventoryItem` Lua C
     // functions — both `__fastcall(void *L)`. ClearCursor takes no
@@ -11938,6 +13051,13 @@ enum Offsets {
     FUN_RAISE_BAG_EVENTS = 0x004F91A0,
     FUN_RAISE_BAG_UPDATE = 0x004F9370,
     FUN_ON_BACKPACK_SLOT_CHANGED = 0x004F8DB0,
+    // The cached container GUIDs of bags 1..10 (u64 each, lo/hi): entry n-1
+    // is bag n. RaiseBagEvents compares the bag slots with it and rewrites it
+    // (0x004F91A0, 0x004F92B5); RaiseBagUpdate scans it for its container
+    // (0x004F9392..0x004F93AC); the login setup 0x004F8CC0 zeroes it before
+    // its RaiseBagEvents call. FUN_GET_EQUIPPED_BAG_GUID reads it.
+    VAR_BAG_GUID_CACHE = 0x00BDD060,
+    BAG_GUID_CACHE_COUNT = 10,
     // CWorld::BeginFrame, the world-subsystem per-frame update — runs
     // exactly once per frame from CGWorldFrame::OnRender
     // (`FUN_00482EA0`), its only caller, nowhere near the
@@ -12267,6 +13387,9 @@ enum Offsets {
     OFF_UNIT_FIELD_DYNAMIC_FLAGS = 0x224,
     UNIT_DYNFLAG_LOOTABLE = 0x01,
     UNIT_DYNFLAG_DEAD = 0x20,
+    // Script_UnitIsTapped / Script_UnitIsTappedByPlayer's bits (above).
+    UNIT_DYNFLAG_TAPPED = 0x04,
+    UNIT_DYNFLAG_TAPPED_BY_PLAYER = 0x08,
 
     // UNIT_FIELD_BOUNDINGRADIUS within m_objectFields — single
     // float, the unit's interact-radius in world yards. Both
@@ -12503,22 +13626,19 @@ enum Offsets {
     // modern `duration` arg (1/2/3) indexes this table.
     VAR_AUCTION_DURATION_TABLE = 0x00807028,
     AUCTION_DURATION_TABLE_COUNT = 3,
-    // `__fastcall(ECX = typeCode, EDX = unused, [stack] = guidLo,
-    //             [stack] = guidHi, [stack] = anyInt) → CGObject *`.
-    // Returns NULL when no object matches or the type doesn't match.
-    // The third stack arg (originally a `__FILE__/__LINE__` debug
-    // hint) is read by debug paths only — anything works at runtime.
-    FUN_GET_OBJECT_BY_GUID = 0x00468460,
-    OBJECT_TYPE_ITEM = 2,
 
     // Melee auto-attack primitives (back StartAttack / StopAttack). 1.12
     // exposes only the toggling AttackTarget (0x00489B50 -> FUN_006131A0);
     // these are the non-toggling start/stop it calls internally.
     //   START: __thiscall(player, const uint64_t *targetGuid). Validates
     //     CanAttack on the target, sends CMSG_ATTACKSWING (opcode 0x141), and
-    //     stamps the victim GUID at [player+0xC48]. Idempotent / switch-aware
-    //     on a valid target (never stops an in-progress attack); an
-    //     unattackable target while attacking routes to STOP.
+    //     stamps the victim GUID at [player+0xC48]. Idempotent on a valid
+    //     target (never stops an in-progress attack), but it does NOT switch
+    //     one: the swing is sent only while no victim is stamped (or the word at
+    //     [player+0xC54] is set), so moving a
+    //     running attack takes STOP first (the target setter's ReleaseTarget
+    //     does exactly that). An unattackable target while attacking routes
+    //     to STOP.
     //   STOP: __fastcall(player). Clears the attack state; self-guards on the
     //     attack flag, so it is a no-op (safe) when not attacking.
     //   RESOLVE_TARGET: __thiscall(player, uint64_t *outGuid) -> int. Validates
@@ -12546,6 +13666,10 @@ enum Offsets {
     //     attacking" test (the cast request's auto-attack start and STOP's
     //     guard both call it). CGUnit_C::HasAttackTarget, verified in Ghidra.
     FUN_UNIT_HAS_ATTACK_TARGET = 0x0060ECB0,
+    // That melee-victim GUID (u64) on every unit, which SMSG_ATTACKSTART and
+    // SMSG_ATTACKSTOP set for the units in view. CGUnit_C::PlayWoundAnimation
+    // reads it (0x0060EB81) to pick CombatWound over StandWound.
+    OFF_UNIT_ATTACK_TARGET = 0xC48,
 
     // Inbox — array of mail-entry pointers behind a slot indirection.
     // The address itself holds a heap pointer (`MOV ECX, [imm32]` in
@@ -12602,6 +13726,12 @@ enum Offsets {
     // with craft).
     VAR_TRADESKILL_ENTRIES = 0x00BDDFC0,
     VAR_TRADESKILL_COUNT = 0x00BDE04C,
+    // `int __fastcall(L)`: GetTradeSkillTools(index) and GetCraftSpellFocus(index).
+    // Each pushes (name, flag) pairs: the recipe's spell focus first, its flag
+    // a constant 1 (`push 0x3FF00000` at 0x004FFA8B), then each totem item
+    // with 1 or nil from an inventory search. TradeSkill::Tools hooks both.
+    FUN_SCRIPT_GET_TRADE_SKILL_TOOLS = 0x004FF980,
+    FUN_SCRIPT_GET_CRAFT_SPELL_FOCUS = 0x004F78B0,
     // SkillLine.dbc row ID of the currently-open trade skill window
     // (the profession the player has open). Bounds-checked against
     // `VAR_SKILL_LINE_COUNT` and used as `records[id]` by
@@ -12686,12 +13816,10 @@ enum Offsets {
     // 3 pet. Script_IsTradeskillTrainer (0x004D8EA0) tests `== 2`.
     VAR_TRAINER_TYPE = 0x00B73A08,
     TRAINER_TYPE_TRADESKILLS = 2,
-    // Spell.dbc "produced item" field for crafting recipes — the
-    // itemID this spell creates when cast. Reagent itemIDs and
-    // counts live at `OFF_SPELL_REAGENT_ID` / `OFF_SPELL_REAGENT_COUNT`
-    // above (shared with all spells that consume reagents, not just
-    // recipes).
-    OFF_SPELL_RECORD_CREATED_ITEM = 0x19C,
+    // A crafting recipe's produced item is its first effect's item,
+    // OFF_SPELL_RECORD_EFFECT_ITEM_TYPE[0]. Reagent itemIDs and counts live at
+    // `OFF_SPELL_REAGENT_ID` / `OFF_SPELL_REAGENT_COUNT` above (shared with all
+    // spells that consume reagents, not just recipes).
     SPELL_RECIPE_MAX_REAGENTS = 8,
 
     // Spell.dbc effect arrays — three effects per spell. Derived
@@ -12730,6 +13858,11 @@ enum Offsets {
     SPELL_EFFECT_APPLY_AURA = 6,                       // EffectApplyAuraName[i] then names the aura type
     SPELL_EFFECT_PERSISTENT_AREA_AURA = 27,            // vmangos SpellDefines.h
     SPELL_EFFECT_APPLY_AREA_AURA_PARTY = 35,           // vmangos SpellDefines.h
+    // SUMMON_TOTEM_SLOT1..4 = Fire / Earth / Water / Air, so slot = effect - 86
+    // (verified against Spell.dbc: Searing 87, Stoneskin 88, Healing Stream 89,
+    // Windfury 90). The spell in a totem's UNIT_CREATED_BY_SPELL carries one.
+    SPELL_EFFECT_SUMMON_TOTEM_SLOT1 = 87,
+    SPELL_EFFECT_SUMMON_TOTEM_SLOT4 = 90,
     SPELL_EFFECT_TRIGGER_SPELL = 64,                   // casts EffectTriggerSpell[i] (Feral Charge 16979 → 19675)
     // Kick / Pummel / Shield Bash / Counterspell / Earth Shock — 57 Spell.dbc
     // rows carry it. The server's Spell::EffectInterruptCast is its handler.
@@ -12756,6 +13889,9 @@ enum Offsets {
     // Enchanting, 1 Beast Training). 3.3.5's GetTradeSkillListLink takes
     // only spells whose Effect[0] is this.
     SPELL_EFFECT_TRADE_SKILL = 47,
+    // Melee auto-attack (Attack 6603). The book icon getter tests Effect[0]
+    // for it (`cmp [esi+0xF4], 0x4E` at 0x004B3F8A).
+    SPELL_EFFECT_ATTACK = 78,
 
     // EffectBasePoints[3] — the base magnitude of each effect, stored as
     // (value - 1) for the fixed-die spells that back item stats (the
@@ -12807,6 +13943,18 @@ enum Offsets {
     // disables spell mods — the client reads [record + 0x24] in FUN_006e6b30.
     OFF_SPELL_RECORD_FAMILY_NAME = 0x280,             // u32
     OFF_SPELL_RECORD_FAMILY_FLAGS = 0x284,            // u64
+    // SpellFamilyName values (vmangos SpellDefines.h SpellFamilyNames).
+    SPELLFAMILY_GENERIC = 0,
+    SPELLFAMILY_MAGE = 3,
+    SPELLFAMILY_WARRIOR = 4,
+    SPELLFAMILY_WARLOCK = 5,
+    SPELLFAMILY_PRIEST = 6,
+    SPELLFAMILY_DRUID = 7,
+    SPELLFAMILY_ROGUE = 8,
+    SPELLFAMILY_HUNTER = 9,
+    SPELLFAMILY_PALADIN = 10,
+    SPELLFAMILY_SHAMAN = 11,
+    SPELLFAMILY_POTION = 13,
     OFF_SPELL_RECORD_ICON_ID = 0x1D4,                 // u32 SpellIconID (→ SpellIcon.dbc)
     OFF_SPELL_RECORD_SPEED = 0x94,                    // float missile speed, yards/s (column 37; read by the missile launcher 0x0060A3D0 as m_speed; verified in Spell.dbc). 24.0 for Fireball 133
     OFF_SPELL_RECORD_ACTIVE_ICON_ID = 0x1D8,          // u32 activeIconID (→ SpellIcon.dbc) — shown while the spell's toggle is up (FUN_ACTION_SLOT_TEXTURE)
@@ -12823,6 +13971,11 @@ enum Offsets {
     // SetHyperlink's `enchant:` on this bit, and its UnitCastingInfo reports
     // it as isTradeskill.
     SPELL_ATTR_TRADESPELL = 0x20,
+    // Attributes bit 7: not shown in the spellbook or on the aura bar (the
+    // "hidden clientside" helpers, e.g. Defensive Stance Passive 7376), and
+    // bit 8: written to no combat log (vmangos SpellDefines.h).
+    SPELL_ATTR_DO_NOT_DISPLAY = 0x80,
+    SPELL_ATTR_DO_NOT_LOG = 0x100,
     // Column 3, castUI: the tab a learned spell without SPELL_ATTR_TRADESPELL
     // is filed under. The learn function (0x005E9C20) puts a TRADESPELL
     // spell in its skill line's list (CGPlayer_C::FindSkillLineSpells) and
@@ -12925,7 +14078,6 @@ enum Offsets {
     // MASK is `1 << School` (the server's GetSpellSchoolMask). Verified in
     // Spell.dbc: Kick 0, Fireball 2, Earth Shock 3, Shadow Bolt 5,
     // Counterspell 6. Read by Spell::Interruptible.
-    OFF_SPELL_RECORD_SCHOOL = 0x04,                   // u32 (column 1)
     OFF_SPELL_RECORD_CASTING_TIME_INDEX = 0x48,       // u32 → SpellCastTimes.dbc
     OFF_SPELL_RECORD_MAX_LEVEL = 0x6C,                // u32 (scaling cap level)
     OFF_SPELL_RECORD_SPELL_LEVEL = 0x74,              // u32 (this rank's effective level)
@@ -12939,10 +14091,32 @@ enum Offsets {
     // Targets 0x8000 and no other spell does (extracted Spell.dbc).
     OFF_SPELL_RECORD_TARGETS = 0x34,
     OFF_SPELL_RECORD_TARGET_CREATURE_TYPE = 0x38,
+    // u32 column 15, RequiresSpellFocus: the SpellFocusObject.dbc id the
+    // recipe needs near the caster, 0 for none. Read at +0x3C by
+    // Script_GetTradeSkillTools (0x004FFA51) and Script_GetCraftSpellFocus;
+    // Spell.dbc: 2538 Charred Wolf Meat = 4 (Cooking Fire).
+    OFF_SPELL_RECORD_REQUIRES_SPELL_FOCUS = 0x3C,
+    // CasterAuraState / TargetAuraState (columns 16 / 17): aura state n
+    // (0 = none) the caster / target must hold, as bit n−1 of
+    // OFF_UNIT_FIELD_AURASTATE. FUN_SPELL_IS_USABLE reads `[edi+0x40]` /
+    // `[edi+0x44]` (0x006E3F07 / 0x006E3F2A). Extracted Spell.dbc: Revenge
+    // and Riposte caster 1, Execute and Hammer of Wrath target 2.
+    OFF_SPELL_RECORD_CASTER_AURA_STATE = 0x40,
+    OFF_SPELL_RECORD_TARGET_AURA_STATE = 0x44,
+    // AttributesEx REQ_TARGET_COMBO_POINTS (0x100000) | REQ_COMBO_POINTS
+    // (0x400000): FUN_SPELL_IS_USABLE refuses either while the player's
+    // combo point count is 0 (`test [edi+0x1c],0x500000` at 0x006E3E7A, then
+    // the CGPlayer +0x1029 byte; the combo target is not compared). Overpower
+    // carries 0x100000: the server grants a hidden point on a dodge.
+    SPELL_ATTR_EX_REQ_COMBO_POINTS = 0x500000,
     // Implicit target ids (vmangos SpellDefines.h). A Dispel effect (38) aimed
     // at one of these can remove an aura from an enemy: Purge, Shield Slam,
     // Tranquilizing Shot (6); Dispel Magic, Devour Magic (25, any unit).
+    // FUN_SPELL_IS_USABLE's TargetAuraState check also needs the target
+    // attackable for a first implicit target of 6 and assistable for 21
+    // (`cmp [edi+0x148],6` / `0x15` at 0x006E3F77 / 0x006E3F8F).
     TARGET_UNIT_ENEMY = 6,
+    TARGET_UNIT_FRIEND = 21,
     TARGET_UNIT = 25,
     SPELL_EFFECT_DISPEL = 38,
     OFF_SPELL_RECORD_EFFECT_IMPLICIT_TARGET_B = 0x154,// i32[3] implicit target B
@@ -13061,6 +14235,11 @@ enum Offsets {
     // many pairs. Neither checks for a live gossip session.
     FUN_GOSSIP_NUM_AVAILABLE_QUESTS = 0x004E2430,
     FUN_GOSSIP_NUM_ACTIVE_QUESTS = 0x004E2580,
+    // The gray gap by the player's level / 5, 20 dwords (4, 4, 5, 5, 6, 6, 7,
+    // 7, 8, 9, 10, 11, then 12): Script_GetQuestGreenRange (0x004E17D0) reads
+    // `gap[min(level / 5, 19)]`. Disassembled; bytes read from the exe.
+    VAR_QUEST_GRAY_GAPS = 0x008076C0,
+    QUEST_GRAY_GAPS_COUNT = 20,
 
     // Inline greeting buffer pushed by Script_GetGossipText. Populated
     // by the engine after the NPC_TEXT.dbc query for the gossip giver
@@ -13091,7 +14270,7 @@ enum Offsets {
     // handler, cleared by the gossip-close worker at 0x004E1FA0 (which
     // then fires GOSSIP_CLOSED, event 0x12B). Non-zero = a gossip
     // session is live — the gate that keeps `C_GossipInfo` from serving
-    // the previous NPC's stale arrays/text after close.
+    // the previous NPC's stale arrays after close.
     VAR_GOSSIP_NPC_GUID = 0x00BC3F58,
 
     // u32, 1 while the greeting is unresolved. The greeting builder
@@ -13121,6 +14300,9 @@ enum Offsets {
     // zero it with x/y (0x006D93FB, 0x006D9A3A). 0 = no marker.
     VAR_GOSSIP_POI_EXPIRY = 0x00CEAAA4,
     OFF_STATIC_BLIP_ICON = 0x08,      // u32, POI icon index (the packet's icon)
+    // u32, the packet's flags: the setter 0x006DAC10 stores edx at record
+    // +0x20 (0x006DAC1E, `mov [eax+0xCEA780], edx`). Bit 9 is inBattleMap.
+    OFF_STATIC_BLIP_FLAGS = 0x20,
     OFF_STATIC_BLIP_X = 0x10,         // float, world X (north)
     OFF_STATIC_BLIP_Y = 0x14,         // float, world Y (west)
     OFF_STATIC_BLIP_MAP = 0x1C,       // i32, Map.dbc id: the minimap's map when set
@@ -13222,6 +14404,43 @@ enum Offsets {
     // SMSG_LOGOUT_COMPLETE / CANCEL_ACK / a failed SMSG_LOGOUT_RESPONSE.
     // 4.3.4's CharacterLoggingOut. Disassembled; benilla-re net/connection.
     FUN_CLIENT_CONNECTION_IS_LOGOUT_PENDING = 0x005AB0D0,
+    // Quit-requested byte: SMSG_LOGOUT_COMPLETE's handler (0x005AAEB0) tears
+    // the game down for the character screen (0x005AAECA), then reads this
+    // byte (0x005AAECF) and quits the client when it is set (jmp 0x00401560):
+    // a /quit logs out first. Disassembled.
+    OFF_CLIENT_CONNECTION_QUIT_REQUESTED = 0x1B1C,
+    // ClientDestroyGame — `void __fastcall(int, int toCharacterScreen /*edx*/,
+    // int /*stack*/)`, RET 4: the game teardown, which runs the interface
+    // shutdown (0x00491180 -> CGGameUI::Shutdown 0x00490BD0) when a world was
+    // entered. The stop handler 0x00403640 (window close, ForceQuit, `quit`)
+    // passes EDX 0; SMSG_LOGOUT_COMPLETE (0x005AAEC1), a failed character
+    // login (0x005AAD84) and the glue's disconnect handler (0x0046C5F1) pass 1.
+    // A /reload reaches CGGameUI::Shutdown from CGGameUI::Update (0x00495590)
+    // without it. Disassembled; benilla-re core/close.
+    FUN_CLIENT_DESTROY_GAME = 0x00401EE0,
+    // The stop handler's call (`push 0; xor edx,edx; xor ecx,ecx`), the only
+    // EDX-0 caller: the client is closing.
+    CALL_STOP_HANDLER_DESTROY_GAME = 0x00403646,
+    // CGGameUI::Shutdown's PLAYER_LOGOUT signal: `mov ecx,0x10F; call
+    // FUN_FIRE_EVENT_NO_ARGS` (0x00490C25), after LeaveWorldUI and before the
+    // writes of Config.wtf, the SavedVariables and AddOns.txt (0x00490C7E..
+    // 0x00490C88). Reached on every path through the function. AddOns::
+    // Unloading redirects it to fire ADDONS_UNLOADING after PLAYER_LOGOUT.
+    CALL_UI_SHUTDOWN_PLAYER_LOGOUT = 0x00490C2A,
+    // The account's characters on the connected realm, as the last
+    // SMSG_CHAR_ENUM listed them: count at ClientConnection+0x1AE4, records
+    // at +0x1AE8, 0x110 bytes each, guid +0x00, name +0x08 (C string, cap
+    // 0x30). RealmConnection::HandleCharEnum (0x005B42A0) is the only code
+    // that rebuilds it (empties it on a bad packet), and only
+    // ~RealmConnection frees it, so it outlives the glue roster
+    // (0x00B42144, which CGlueMgr::Suspend frees on entering the world).
+    // The glue's roster records copy these 0x110 bytes as their head.
+    // Disassembled; benilla-re net/connection#character-list-packet.
+    OFF_CLIENT_CONNECTION_CHAR_COUNT = 0x1AE4,
+    OFF_CLIENT_CONNECTION_CHARS = 0x1AE8,
+    CLIENT_CONNECTION_CHAR_STRIDE = 0x110,
+    OFF_CLIENT_CONNECTION_CHAR_GUID = 0x00,
+    OFF_CLIENT_CONNECTION_CHAR_NAME = 0x08,
 
     // Engine millisecond tick (returns `ulonglong` but truncating to
     // `uint32_t` is fine for the time deltas we need — the high
@@ -13312,11 +14531,10 @@ enum Offsets {
     // `FUN_0046B500` — the enter-world worker behind `Script_EnterWorld` (the
     // glue "Enter World" button: `Script_EnterWorld` is just `call this; ret`).
     // Computes the selected character's struct into VAR_GLUE_SELECTED_CHAR and,
-    // on success, sets VAR_GLUE_LOGIN_INPROGRESS = 8. `Unit::Identity` co-hooks
-    // it to capture the selected character's GUID *before* the engine creates
-    // the in-world player object — so `UnitGUID("player")` / `PlayerGuid()`
-    // answer from addon-load time instead of returning nil/0 until the
-    // SMSG_UPDATE_OBJECT that populates the player object (≈PLAYER_LOGIN).
+    // on success, sets VAR_GLUE_LOGIN_INPROGRESS = 8. Co-hooked once, by
+    // `Glue::EnterWorld`, which fans committed entries out to subscribers
+    // (`Unit::Identity` captures the GUID for `UnitGUID("player")` before the
+    // player object exists; `Charlist::Order` stores `lastCharacterGuid`).
     FUN_GLUE_ENTER_WORLD = 0x0046B500,
 
     // Selected-character struct pointer (glue): char-array base +
@@ -13326,6 +14544,25 @@ enum Offsets {
     // `0x004732A0`). Entries are filled from SMSG_CHAR_ENUM.
     VAR_GLUE_SELECTED_CHAR = 0x00B41DF4,
     OFF_GLUE_CHAR_GUID = 0x00,
+    OFF_GLUE_CHAR_NAME = 0x08,
+
+    // The character-select roster: a growable array of 0x120-byte records
+    // whose first 0x110 bytes copy net's records (OFF_CLIENT_CONNECTION_CHARS),
+    // count at VAR_GLUE_ROSTER_COUNT, records at VAR_GLUE_ROSTER_RECORDS. The
+    // glue script functions take a 1-based roster index (`GetCharacterInfo`,
+    // `SelectCharacter`, `DeleteCharacter`). Disassembled 0x004724D0 /
+    // 0x00472740; benilla-re glue/select.
+    VAR_GLUE_ROSTER_COUNT = 0x00B42140,
+    VAR_GLUE_ROSTER_RECORDS = 0x00B42144,
+    GLUE_ROSTER_STRIDE = 0x120,
+
+    // LoadCharSelectRoster — `void __cdecl(void)`, called only from the glue
+    // Idle in state 3 once a character list arrives. Empties the roster,
+    // copies net's records into it IN NET'S ARRAY ORDER (through
+    // ClientConnection::EnumerateCharacters 0x005AABE0, whose only caller this
+    // is), selects the `lastCharacterIndex` cvar's integer and fires
+    // CHARACTER_LIST_UPDATE. Disassembled; benilla-re glue/select#roster-load.
+    FUN_LOAD_CHAR_SELECT_ROSTER = 0x004724D0,
 
     // Cursor state — single global type-tag at VAR_CURSOR_TYPE
     // dispatches reads through one of several payload slots depending
@@ -13416,11 +14653,6 @@ enum Offsets {
     // payload globals, not VAR_CURSOR_TYPE. Disassembled.
     FUN_WORLD_BUTTON_HOOK = 0x00492B50,
 
-    // GUID → CGObject resolver. `__fastcall(type_filter, guid_lo,
-    // guid_hi) → CGObject *` at `0x00468460`. Type filter 0x2 = item,
-    // matching what `FUN_00494B60` and the trade-attached paths pass
-    // when re-resolving the cursor GUID to a `CGItem *`.
-    FUN_OBJECT_FROM_GUID = 0x00468460,
 
     // Virtual XML-template registry (a Storm hash table) — the store that
     // backs `inherits=` and `C_XMLUtil.GetTemplates`. The XML parser
@@ -13430,26 +14662,18 @@ enum Offsets {
     // See src/xml/Templates.cpp.
     //
     // VAR_XML_TEMPLATE_TABLE holds a POINTER to the bucket array (0 / the
-    // array unallocated) and VAR_XML_TEMPLATE_MASK the bucket-count mask;
-    // mask == 0xFFFFFFFF means no template has ever registered (walk = empty).
+    // array unallocated), and the bucket-count mask follows at +0x8
+    // (0x00CEEA24); mask == 0xFFFFFFFF means no template has ever registered.
     VAR_XML_TEMPLATE_TABLE = 0x00CEEA1C,
-    VAR_XML_TEMPLATE_MASK = 0x00CEEA24,
-    // Bucket struct (0xC bytes): { linkOffset@+0x0, ?@+0x4, chainHead@+0x8 }.
-    // A node's next pointer is at `*(node + linkOffset + 4)`; the tail
-    // sentinel has its low bit set (chain ends on `(ptr & 1) != 0`).
-    XML_TEMPLATE_BUCKET_STRIDE = 0xC,
-    OFF_XML_TEMPLATE_BUCKET_LINKOFF = 0x0,
-    OFF_XML_TEMPLATE_BUCKET_HEAD = 0x8,
-    // Registry node payload: name hash @+0x0 (FUN_SSTR_HASH_HT, the lookup's
-    // `cmp [ebx],esi`), template name string @+0x14, parsed definition XML
+    // A Storm TSHashTable (OFF_HASHTABLE_*: the mask is 8 bytes after the
+    // bucket pointer). Node payload past the hash @+0x0 (FUN_SSTR_HASH_HT, the
+    // lookup's `cmp [ebx],esi`) and the name @+0x14: parsed definition XML
     // node @+0x18, and the context word current when it registered @+0x1C —
     // the registrar FUN_006EE500(node, name, context, status) stores its
     // third argument there (0x006EE6BE), and the XML file loader passes
     // VAR_FRAMESCRIPT_EXEC_CONTEXT: the owning addon's name, or 0 for the
     // client's own XML. 3.3.5's FrameXML_AcquireHashNode returns it as the
     // template's taint.
-    OFF_XML_TEMPLATE_NODE_HASH = 0x0,
-    OFF_XML_TEMPLATE_NODE_NAME = 0x14,
     OFF_XML_TEMPLATE_NODE_DEF = 0x18,
     OFF_XML_TEMPLATE_NODE_CONTEXT = 0x1C,
     // The two places the client applies a single `inherits` template — the
@@ -13649,16 +14873,13 @@ enum Offsets {
     // the glue UI's FUN_0046A400.
     FUN_FRAMEXML_REGISTER_FACTORY = 0x006EE880,
     // The table it fills: a Storm hash with the template table's shape
-    // (XML_TEMPLATE_BUCKET_*): a pointer to the bucket array and the bucket
-    // mask, 0xFFFFFFFF before the first registration. A node holds the name
+    // (OFF_HASHTABLE_*): a pointer to the bucket array and the bucket mask,
+    // 0xFFFFFFFF before the first registration. A node holds the name
     // hash @+0x0 (FUN_SSTR_HASH_HT), the name @+0x14, the factory @+0x18 and
     // the unique flag (byte) @+0x1C. FUN_XML_FRAME_BUILD's lookup
     // (0x006EE2DE..0x006EE351) hashes the tag, compares the name with SStrCmpI
     // and calls the factory with the parent in ECX.
-    VAR_FRAME_FACTORY_TABLE = 0x00CEE9D8,
-    VAR_FRAME_FACTORY_MASK = 0x00CEE9E0,
-    OFF_FRAME_FACTORY_NODE_HASH = 0x0,
-    OFF_FRAME_FACTORY_NODE_NAME = 0x14,
+    VAR_FRAME_FACTORY_TABLE = 0x00CEE9D8, // the mask follows at +0x8 (0x00CEE9E0)
     OFF_FRAME_FACTORY_NODE_FN = 0x18,
 
     // ---- Subclassing CSimpleFrame (Frame::Cooldown) -------------------------
@@ -13824,6 +15045,12 @@ enum Offsets {
     // BarTexture (0x00782F5B, set at 0x00782F63) and BarColor, `minValue` /
     // `maxValue` / `defaultValue` and `orientation` (Ghidra).
     FUN_XML_STATUSBAR_LOAD = 0x00782EF0,
+    // The Slider node loader (same sub-object convention, `ret 8` at
+    // 0x007896DF). It calls FUN_XML_FRAME_LOAD first (0x00789596), then reads
+    // `drawLayer` and each ThumbTexture, `minValue` / `maxValue` (into
+    // FUN_SLIDER_SET_MIN_MAX_VALUES), `valueStep`, `defaultValue` (into
+    // FUN_SLIDER_SET_VALUE) and `orientation` (benilla-re ui/xmltypes).
+    FUN_XML_SLIDER_LOAD = 0x00789580,
     // By-name template lookup — the same one `inherits=` resolves through.
     // `__fastcall(const char *name) -> definition node`, 0 if unregistered
     // (case-insensitive, hashed). See FUN_006ee6f0 in Templates.cpp notes.
@@ -13911,6 +15138,24 @@ enum Offsets {
     GXRS_TEXTURE0 = 0x17,  // texture bind, +unit 0..7 (via FUN_GX_RS_SET_PTR)
     GXRS_COMBINER0 = 0x1F, // combiner preset, +unit 0..7 (via FUN_GX_RS_SET)
     GXRS_COMBINE_MODULATE = 1, // preset value: COLOROP=MODULATE, ALPHAOP=MODULATE
+    // The D3D9 combiner apply — `void __thiscall(dev, int stage, int preset)`,
+    // `ret 8`: when the stage is below the device's count (+0x23C) and enabled
+    // (+0x3BFC + stage), writes COLOROP = the preset table 0x0080A25C[preset]
+    // to state stage + 0x42 and ALPHAOP = 0x0080A274[preset] to stage + 0x4A
+    // through FUN_GX_D3D_SET_STAGE_STATE (disassembled 0x005A2DD0-0x005A2E1D).
+    // Texture::Mask hooks it for a preset past the table's six.
+    FUN_GX_D3D_APPLY_COMBINER = 0x005A2DD0,
+    FUN_GX_D3D_SET_STAGE_STATE = 0x005A2570, // __thiscall(dev, int stateId, int value), ret 8
+    OFF_GXDEV_D3D_STAGE_COUNT = 0x23C,
+    OFF_GXDEV_D3D_STAGE_ENABLED = 0x3BFC, // u8 per stage
+    GXD3D_STATE_COLOROP0 = 0x42,           // + stage
+    GXD3D_STATE_ALPHAOP0 = 0x4A,           // + stage
+    D3DTOP_SELECTARG1 = 2,
+    D3DTOP_SELECTARG2 = 3,
+    D3DTOP_MODULATE = 4,
+    // Preset 0 is COLOROP MODULATE, ALPHAOP SELECTARG2: on stage 0 the texture's
+    // colour times the vertex colour, and the vertex alpha alone.
+    GXRS_COMBINE_COLOR_ONLY = 0,
     // GxRs setters — `__fastcall(selector, value)`. The int form (0x00589E60)
     // writes combiner presets and the like; the pointer form (0x00589E80) writes
     // texture binds.
@@ -13978,6 +15223,25 @@ enum Offsets {
     // the per-stage applies clamp against (FUN_005a29d0/FUN_005a2b40).
     VAR_GX_DEVICE = 0x00C0ED38,
     OFF_GXDEV_STAGE_CAP = 0x23C,
+    // The window rectangle, float[4] {y0, x0, y1, x1} (CGxDevice::WindowRect
+    // 0x00592330). CGxDevice::SetWindowRects (0x005922F0) stores it, and the
+    // draw rectangle +0x1EC beside it, on every resize (D3D HandleWindowEvent
+    // 0x0059A20D); SetRenderTarget (0x00592230) puts the draw rectangle back
+    // to it when no target is bound. Base-class field, both backends.
+    OFF_GXDEV_WINDOW_RECT = 0x1DC,
+    // The device's CGxFormat, 0x38 bytes copied in by CGxDevice::DeviceSetFormat
+    // (0x00591FD0, `rep movsd` of 14 dwords to +0x204), which first raises a
+    // size below 320x240 to that minimum. Base-class field, both backends.
+    OFF_GXDEV_FORMAT = 0x204,
+    // u8: windowed. D3D BuildPresentParameters (0x00599790) tests it to pick
+    // the back-buffer size: windowed takes __ftol(draw rect [3]) x
+    // __ftol(draw rect [2]) and sets Windowed = 1; full screen takes the
+    // format's width x height below.
+    OFF_GXFORMAT_WINDOWED = 0x07,
+    // int32 width / height (0x0059982D: BackBufferWidth = [fmt+0x10],
+    // BackBufferHeight = [fmt+0x14]).
+    OFF_GXFORMAT_WIDTH = 0x10,
+    OFF_GXFORMAT_HEIGHT = 0x14,
     // ---- Unit portrait bake (BakePortrait 0x00524F60, benilla ui/portraits)
     // Every entry below is a call the bake makes, read off its disassembly;
     // calling convention from the call site. `Model::Portrait` replays the
@@ -13997,6 +15261,23 @@ enum Offsets {
     FUN_M2SCENE_COPY_MODEL = 0x00707400,
     // M2SceneDraw — `__thiscall(scene, pass)`; the bake draws 0 then 1.
     FUN_M2SCENE_DRAW = 0x00708900,
+    // The draw state M2SceneDraw keeps on its stack (0x335C bytes, set up by
+    // M2DrawStateInitialize 0x0070B0E0) and hands each element draw in ecx:
+    // the model cache, the element and its model instance (M2SceneDrawList
+    // 0x0070B360 stores the element at +0x3300 and its instance at +0x3310).
+    OFF_M2DRAWSTATE_CACHE = 0x44,
+    OFF_M2DRAWSTATE_MODEL = 0x3310,
+    // The cache's 32 Model2 pixel programs (Shaders\Pixel\Model2.bls, loaded
+    // by M2CacheInitialize 0x00706510 when M2UsePixelShaders is granted). The
+    // batch draw binds [+0x1030][element +0x3C] with GxRs 0x3F, else null.
+    OFF_M2CACHE_PIXEL_SHADERS = 0x1030,
+    M2_PIXEL_PROGRAM_COUNT = 32,
+    // M2DrawBatch — `__fastcall(drawState)`, element kind 0: textures,
+    // lighting, material, shaders, then one GxPrimRenderOne. Its only call is
+    // M2SceneDrawList's kind-0 case; the batch's draw is its only GxPrimRenderOne.
+    FUN_M2_DRAW_BATCH = 0x0070CB30,
+    CALL_M2_DRAW_LIST_BATCH = 0x0070B627,
+    CALL_M2_DRAW_BATCH_RENDER = 0x0070CF57,
     // The scene's clock, uint32 milliseconds: M2SceneAdvance (0x007074B0,
     // `__thiscall(scene, ms)`, nothing for 0) passes +0x0C + ms to SetTime
     // (0x00707490), which stores it here. A Model frame's update (slot 14,
@@ -14453,6 +15734,36 @@ enum Offsets {
     OFF_LIGHT_RECORD_FOG_START_SCALE = 0x48,
     OFF_LIGHT_RECORD_FOG_COLOR = 0x1C,
     OFF_LIGHT_RECORD_SKYBOXES = 0x78, // {LightSkybox id, float weight} x 2
+    // The world's sun light (CWorld::UpdateSkyAndFog 0x0066FF60, Ghidra;
+    // benilla-re lighting/fog "World light commit"): s_globalMapLight
+    // (0x00C89EF0) + 0x7C, an M2Light, takes the direction from the light
+    // state's +0x168 and, each byte / 255 with byte 2 as red, its ambient
+    // (+0x30) from colour band 1 (record +0x04), its diffuse (+0x3C) from
+    // band 0 (+0x00) and its specular (+0x48) from band 9 (+0x20, the sun
+    // colour), through the light state's +0x178 / +0x174 / +0xCC. Both
+    // colours are first dimmed by 0.35 x the sun glare's look factor, 0 on
+    // the full recompute path.
+    OFF_LIGHT_RECORD_DIFFUSE = 0x00,
+    OFF_LIGHT_RECORD_AMBIENT = 0x04,
+    // UpdateSunDirection `__cdecl()` (0x006D3A10, Ghidra): the light state's
+    // +0x168..+0x170 = (cos a sin p, sin a sin p, cos p) from the sun's
+    // azimuth and polar tracks at the state's time of day (+0x04); it writes
+    // nothing else (its tracks are built once behind guard bits).
+    FUN_UPDATE_SUN_DIRECTION = 0x006D3A10,
+    OFF_LIGHT_STATE_SUN_DIRECTION = 0x168,
+    // UpdateCelestialBodies `__cdecl()` (0x006D3B80, Ghidra): from the
+    // state's time of day, day count (+0x08) and eye (+0x18), the three
+    // discs' positions and sizes (VAR_SKY_DISCS), the sun and moon glares'
+    // positions and the moon glare's scale ends, and the unread day ramp
+    // (0x00CE9D08). UpdateStars `__fastcall(stars)` (0x006D1B50) puts the
+    // star object (0x00CE96D8) at the eye with the star track's alpha byte.
+    // The sky's bodies lie together: the stars (0x20 bytes), the moon glare
+    // (0x00CE96F8, 0xB0), the sun glare (0x00CE97A8, 0xB0), then the discs
+    // (3 x SKY_DISC_SIZE).
+    FUN_UPDATE_CELESTIAL_BODIES = 0x006D3B80,
+    FUN_UPDATE_STARS = 0x006D1B50,
+    VAR_SKY_STARS = 0x00CE96D8,
+    VAR_SKY_DAY_RAMP = 0x00CE9D08,
     // The portal walk (benilla terrain/portals.md) decides the sky from
     // inside. WalkPortals `__thiscall(obj, group, from, const float
     // rect[4], depth, interiorGroup)` ret 0x14 (0x006B41C0): skips a group
@@ -14539,6 +15850,29 @@ enum Offsets {
     FUN_SFILE_GET_FILE_SIZE = 0x006487F0,
     FUN_SFILE_READ = 0x00648460,
     FUN_SFILE_CLOSE = 0x00648730,
+    // SFileResolveOpen — `int __fastcall(const char *name, char *out, uint32
+    // size, uint32 flags, uint32 *kind, void **archive)`, `ret 0x10`: where an
+    // open of `name` would read from, without opening it (benilla-re
+    // storm/mount). With flag bit 0 or 1 it asks Storm's loose-file index
+    // first (the files on disk below the base folder and Data\, built on first
+    // use), which answers kind 0 (a file), 1 (.bz) or 2 (.MPQ); only on a miss
+    // does it walk the archives, whose hit stores SFILE_KIND_ARCHIVE
+    // (0x00648146). 0 when the name resolves nowhere.
+    FUN_SFILE_RESOLVE_OPEN = 0x00647E60,
+    SFILE_KIND_ARCHIVE = 3,
+    // An open flag: ask the loose-file index first. CSimpleTexture::SetTexture
+    // passes it for every interface texture (TextureCreate's fileFlag).
+    SFILE_OPEN_LOOSE = 1,
+    // TextureCreate's name split — `int __fastcall(const char *name, char
+    // *buffer, char **split)`, `ret 4`: copies the name (0x104 bytes) and,
+    // when the byte four from the end is `.`, lowers and cuts the three bytes
+    // after it. Returns the index into VAR_TEXTURE_NAME_EXTENSIONS to try
+    // first: 0 (.tga) only for a .tga name, else 1 (.blp). TextureCreate
+    // (FUN_TEXTURE_LOAD_BY_PATH) copies that extension at `split`, then the
+    // other one (0x00449E00 to 0x00449E5D; benilla-re gx/textures).
+    FUN_TEXTURE_NAME_SPLIT = 0x00449590,
+    VAR_TEXTURE_NAME_EXTENSIONS = 0x00835248, // const char *[2]: ".tga", ".blp"
+    TEXTURE_NAME_BUFFER = 0x104,
     // A WMO-only map's WDT, as CMap::LoadWdt (0x00694760) reads it: header,
     // version, header, MPHD (0x20), header, MAIN (0x8000), then, when MPHD's
     // first dword has bit 0, header (its size is the name's), the name,
@@ -14548,9 +15882,25 @@ enum Offsets {
     WDT_MAIN_SIZE = 0x8000,
     WDT_MPHD_SIZE = 0x20,
     WDT_FLAG_MAP_OBJECT = 0x1,
+    // MAIN is the tile state table the map update reads (0x00C89F50 + 8 x
+    // (row x 64 + column), benilla terrain/mapupdate): bit 0 the map has the
+    // tile's ADT (the tile load pass 0x006985D0 skips a tile without it).
+    WDT_MAIN_ENTRY_SIZE = 8,
+    WDT_TILE_FLAG_ADT = 0x1,
     MODF_SIZE = 0x40,
+    // An ADT's entry, as CMapChunk::LoadReferences (0x006B00F0) and
+    // PlaceMapObjDef (0x00695650) read it: +0x00 the MWID index, +0x04 the
+    // unique id (one def per id across tiles, the hash 0x00CA7DB4), the
+    // position placed from the map origin (VAR_MAP_ORIGIN - +0x10, origin -
+    // +0x08, +0x0C), and the extents' low and high corners (+0x20, +0x2C),
+    // the def's box until its model loads: min (origin - +0x34, origin -
+    // +0x2C, +0x24), max (origin - +0x28, origin - +0x20, +0x30).
+    OFF_MODF_NAME_INDEX = 0x00,
+    OFF_MODF_UNIQUE_ID = 0x04,
     OFF_MODF_POSITION = 0x08,
     OFF_MODF_ROTATION = 0x14,
+    OFF_MODF_EXTENTS_LOW = 0x20,
+    OFF_MODF_EXTENTS_HIGH = 0x2C,
     OFF_MODF_DOODAD_SET = 0x3A,
     // Map.dbc +0x04: the map's directory name (World\Maps\<dir>\<dir>.wdt;
     // CMap::Load 0x006941F0). Verified: map 249 is "OnyxiaLairInstance".
@@ -14895,6 +16245,18 @@ enum Offsets {
     // BuildAxisRotation4x4 `float *__fastcall(float out[16], const float
     // axis[3], float angle, int unitAxis)` ret 8.
     FUN_M2MODEL_HAS_KEY_BONE = 0x00711D20,
+    // CM2Model::GetKeyBoneAnimSpeed — `float __thiscall(model, keyBone)`, ret
+    // 4, the bone state's +0xB0 in st0; waits for an unloaded model.
+    // SetKeyBoneAnimSpeed — `__thiscall(model, keyBone, float speed)`, ret 8:
+    // keeps the sequence's position and re-derives its window at the new
+    // speed (0 ends the window at once, so the done callback runs at the next
+    // update); queued while the model loads (disassembled; benilla
+    // animation/playback#retiming-a-key-bone).
+    FUN_M2MODEL_GET_KEY_BONE_ANIM_SPEED = 0x00712150,
+    FUN_M2MODEL_SET_KEY_BONE_ANIM_SPEED = 0x00712910,
+    // The key bone AddAnimSpeedEffect (0x006201D0) sets with the body's bone
+    // 0 when the model has it.
+    M2_KEY_BONE_ANIM_SPEED_EFFECT = 4,
     FUN_M2MODEL_SET_KEY_BONE_FLAGS = 0x00711F10,
     FUN_M2MODEL_SET_KEY_BONE_OVERRIDE = 0x00712B00,
     FUN_MATRIX_AXIS_ROTATION = 0x007BDB00,
@@ -15127,6 +16489,7 @@ enum Offsets {
     FUN_UI_GET_PIXEL_SHADER = 0x00770620,      // __fastcall(index): s_uiPixelShaders[index] iff loaded and valid (FUN_0058B360), else 0; 1 = Desaturate (Script_SetDesaturated's gate; 3.3.5 GetImageModePixelShader)
     VAR_UI_SHADER_DESATURATE = 0x00CF4CD4,     // DAT_00CF4CD0[1]: stock Desaturate.bls CGxShader*; released by FUN_0076FDD0 at shutdown
     FUN_SCRIPT_TEXTURE_SET_DESATURATED = 0x0079C1E0, // Texture method batch entry 20; flag via FUN_LUA_TO_BOOLEAN_LOOSE(L, 2, 1)
+    FUN_SCRIPT_TEXTURE_IS_DESATURATED = 0x0079C2C0,  // Texture method batch entry 21 (docs/raw_methods.txt); 1 or nil by the shader slot
     FUN_GX_SHADER_CREATE = 0x0058B2B0,         // __fastcall(type /*ecx*/, CGxShader **out /*edx*/, const char *path)
     FUN_GX_D3D_COMPILE_PIXEL_SHADER = 0x005A0250, // __thiscall(dev, shader): +0x2c = 0, CreatePixelShader iff +0x50 == 2 && +0x58 → +0x20, +0x2c = 1
     FUN_GX_ARRAY_GROW_BYTES = 0x005268B0,      // __thiscall({cap,size,data,quantum}*, newCap): sets cap, SMemReAllocs data; size is the caller's
@@ -15143,7 +16506,7 @@ enum Offsets {
     OFF_GXSHADER_CODE_DATA = 0x5C,
     GXSHADER_TYPE_PIXEL = 1,
     GXSHADER_CODE_D3D = 2,
-    GXRS_PIXEL_SHADER = 0x3F,                  // pointer-form selector (0x40 = vertex shader); doc only — the engine's draw binds it
+    GXRS_PIXEL_SHADER = 0x3F,                  // pointer-form selector (0x40 = vertex shader); GxRsGetInt reads the bound object
     FUN_LUA_TO_BOOLEAN_LOOSE = 0x006F1C10,     // __fastcall(L, idx, default): nil→0, boolean, number→int, "1/t/y…"→1, "0/f/n…"→0, "enabled"→1, "disabled"→0, other→default. Called through Game::Lua::ToFlag (4.3.4 StringToBOOL(L, idx, default))
 
     // --- Texture memory accounting: the zero-dimension hang -------------------
@@ -16392,6 +17755,17 @@ enum Offsets {
     //   IsBoxCulled `uint __thiscall(const float box[6])`: nonzero when the
     //   top of the frustum stack rejects the box (0x00683C3C).
     FUN_FRUSTUM_IS_BOX_CULLED = 0x00682F40,
+    //   IsSphereCulled `uint __thiscall(const float centre[3], float radius)`
+    //   (`ret 4`): 0 when the sphere is inside the six planes of the top
+    //   volume, else 1 (benilla terrain/scene "Sphere and box tests").
+    FUN_FRUSTUM_IS_SPHERE_CULLED = 0x00682EF0,
+    // The walk's cull of an entity (0x00683340) and of a doodad def
+    // (0x00683700): one the frustum rejects is set animated only while its
+    // centre lies within this squared distance of the camera (10.0 at
+    // 0x00810178 and 0x0081017C, read from the image), else it stays off the
+    // animate list and so is neither animated nor drawn that frame.
+    VAR_ENTITY_CULLED_ANIMATE_DISTANCE_SQ = 0x00810178,
+    VAR_DOODAD_CULLED_ANIMATE_DISTANCE_SQ = 0x0081017C,
     // The world flags (benilla terrain/world.md): 2 chunks drawn, 4 lod,
     // 0x40 map shadows, the sign anisotropic: the chunk pass then sets the
     // mip bias of stages 0-3 (states 0x27-0x2A) to the immediate pushed at
@@ -16468,6 +17842,12 @@ enum Offsets {
     OFF_MHDR_MMDX = 0x0C,
     OFF_MHDR_MMID = 0x10,
     OFF_MHDR_MDDF = 0x1C,
+    // ParseAreaFile's map object tables: MWMO names +0x14 (area +0x69C), MWID
+    // name offsets +0x18 (+0x6A4), MODF placements +0x20 (+0x68C, the count
+    // size >> 6).
+    OFF_MHDR_MWMO = 0x14,
+    OFF_MHDR_MWID = 0x18,
+    OFF_MHDR_MODF = 0x20,
     // An MDDF entry as PlaceDoodadDef (0x00694BC0) reads it: +0x00 the MMID
     // index, +0x04 the unique id (one def per id, the hash 0x00CA7DDC), +0x08
     // position (x = origin - +0x10, y = origin - +0x08, z = +0x0C), +0x14 /
@@ -16751,6 +18131,21 @@ enum Offsets {
     // 533.33331 (0x0080654C): the row from x, the column from y; a tile is
     // <dir>\<dir>_<column>_<row>.adt (0x006C274D) of 16 x 16 chunks.
     VAR_MAP_ORIGIN = 0x007FFAB4,
+    // CWorld::PrepareAreaOfInterest's windows (0x00672730, benilla terrain/
+    // world "Area of interest"): the chunk under a point is round(-(p -
+    // origin) x 0.03 - 0.5) per axis (0.03 at 0x0080FE84, 0.5 at
+    // 0x00867914); the inner reach 1 - ftol(farClip x -0.03) (0x006725D0,
+    // -0.03 at 0x0080FECC), the outer the larger of that + 2 and 8
+    // (0x00672966 .. 0x00672971). Values read from the image.
+    VAR_AOI_CHUNKS_PER_YARD = 0x0080FE84,
+    VAR_AOI_HALF_CHUNK = 0x00867914,
+    VAR_AOI_NEGATIVE_CHUNKS_PER_YARD = 0x0080FECC,
+    AOI_OUTER_EXTRA = 2,
+    AOI_MIN_OUTER_REACH = 8,
+    // The tile load pass (0x006985D0) builds an outer-ring chunk only while
+    // fewer than 5 ms (OsGetAsyncTimeMs) have passed since it began
+    // (`cmp eax, 5` at 0x006986C8).
+    TERRAIN_BUILD_BUDGET_MS = 5,
     VAR_TILE_SIZE = 0x0080654C,
     MAP_TILES = 64,
     TILE_CHUNKS = 16,

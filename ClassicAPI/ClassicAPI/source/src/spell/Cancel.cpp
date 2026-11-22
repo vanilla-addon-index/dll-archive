@@ -29,29 +29,16 @@
 #include "Game.h"
 #include "Offsets.h"
 #include "aura/Data.h"
-#include "dbc/Lookup.h"
 #include "unit/Identity.h"
 
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 
 namespace Spell::Cancel {
 
 namespace {
 
-using CancelAuraSend_t = void(__fastcall *)(int spellID);
-
-// Pre-validates `spellID` against Spell.dbc and ships the cancel
-// packet. The engine's sender unconditionally derefs `[record+0x1C]`
-// after a NULL-on-OOR record lookup, so skipping the
-// `RecordForID != nullptr` check would AV on bad input.
-void SendCancel(int spellID) {
-    if (Spell::Lookup::RecordForID(spellID) == nullptr)
-        return;
-    auto fn = reinterpret_cast<CancelAuraSend_t>(
-        static_cast<uintptr_t>(Offsets::FUN_CANCEL_AURA_SEND));
-    fn(spellID);
-}
 
 int __fastcall Script_CancelSpellByID(void *L) {
     if (!Game::Lua::IsNumber(L, 1))
@@ -69,17 +56,22 @@ int __fastcall Script_CancelSpellByName(void *L) {
     const uint8_t *player = Unit::Identity::PlayerObject();
     if (player == nullptr)
         return 0;
-    // Walk the player's buff range only (slots 0..31). Modern
-    // CancelSpellByName matches against helpful auras; debuffs go
-    // through dispel UX, not a Lua-side cancel.
-    for (int slot = 0; slot < Offsets::UNIT_AURA_BUFF_COUNT; ++slot) {
+    // 3.80.2's CancelSpellByName (FUN_1413dca30) name pass: cut the name at
+    // its first '(' — "Name(Rank 3)" names any rank — then cancel the first
+    // aura in slot order, buff or debuff, whose spell name equals it ignoring
+    // case (SStrCmpUTF8I there, SStrCmpI here). Its spellbook pass before that,
+    // which maps a known spell to the aura it applies, finds the same aura for
+    // 1.12 spells and is not ported.
+    char wanted[256];
+    std::snprintf(wanted, sizeof wanted, "%s", targetName);
+    if (char *paren = std::strchr(wanted, '('))
+        *paren = '\0';
+    for (int slot = 0; slot < Offsets::UNIT_AURA_TOTAL; ++slot) {
         if (!Aura::Data::IsSlotPopulated(player, slot))
             continue;
         const uint32_t spellID = Aura::Data::ReadSpellID(player, slot);
-        const char *name = DBC::LocalizedField(
-            Offsets::VAR_SPELL_RECORDS, Offsets::VAR_SPELL_RECORD_COUNT,
-            spellID, Offsets::OFF_SPELL_NAMES);
-        if (name != nullptr && _stricmp(name, targetName) == 0) {
+        const char *name = Lookup::Name(Lookup::RecordForID(static_cast<int>(spellID)));
+        if (name != nullptr && Game::StrCmpI(name, wanted) == 0) {
             SendCancel(static_cast<int>(spellID));
             return 0;
         }
@@ -97,11 +89,11 @@ const Game::Doc::Function kCancelSpellByID{
 
 const Game::Doc::Field kByNameArgs[] = {
     Game::Doc::Req("name", "string",
-                   "The buff's name, matched without regard to case; a \"(Rank N)\" "
-                   "suffix is not read."),
+                   "The aura's name, matched without regard to case. The text from the "
+                   "first \"(\" is not read, so \"Name(Rank 3)\" matches any rank."),
 };
 const Game::Doc::Function kCancelSpellByName{
-    "Cancels the first of your own buffs whose name matches.",
+    "Cancels the first of your own auras whose name matches.",
     kByNameArgs, {}, "SpellGlobals"};
 
 } // namespace
@@ -141,5 +133,12 @@ static void RegisterLuaFunctions() {
 }
 
 static const Game::ModuleAutoRegister _autoreg{&RegisterLuaFunctions};
+
+void SendCancel(int spellID) {
+    using CancelAuraSend_t = void(__fastcall *)(int spellID);
+    if (Spell::Lookup::RecordForID(spellID) == nullptr)
+        return;
+    reinterpret_cast<CancelAuraSend_t>(Offsets::FUN_CANCEL_AURA_SEND)(spellID);
+}
 
 } // namespace Spell::Cancel

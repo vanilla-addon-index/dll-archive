@@ -9,7 +9,7 @@
     "url": "https://github.com/doitsujin/dxvk",
     "api": "https://api.github.com/repos/doitsujin/dxvk"
   },
-  "commit": "71bf4bad427dd6a6a338d6768812110c61bb4503",
+  "commit": "9e57fa0b2c5b495ba1c890017d659935e5f1df65",
   "sourceFiles": {
     ".github/ISSUE_TEMPLATE/bug_report.yml": {
       "sha256": "454c3c31a5a1831fe2035e0873bd60393e097f3cad5843f06379abcf2595ce93",
@@ -28,8 +28,8 @@
       "bytes": 264
     },
     ".github/workflows/artifacts.yml": {
-      "sha256": "d8b2e427b3175ae75a1c99fb5432c43bc09433e243e302a48f722eaa4263ec73",
-      "bytes": 2505
+      "sha256": "265a23695256e5b55edfd601d899cb7f19ecf33a4a175355ed8c1bc64485cecd",
+      "bytes": 2807
     },
     ".github/workflows/test-build-windows.yml": {
       "sha256": "ae51fc9df629df8e3c8210fae4d4f85e1c508e2d9f9ec7e3e7af5e393e602a17",
@@ -38,6 +38,10 @@
     ".gitmodules": {
       "sha256": "3b6b00cd4192bf4b81fb0738d80b1663fe4795b4321fb85b8f24a8212ae9876a",
       "bytes": 614
+    },
+    "build-arm64x.txt": {
+      "sha256": "ebde2d1c2907ef2e5fb38ed763b2607ee9d80bbdbb998af57fffaa2858df103b",
+      "bytes": 508
     },
     "build-win32.txt": {
       "sha256": "d71effabd525acd2a375a74802e243e14541d660bf1bf062bc98c14959d8393c",
@@ -320,8 +324,8 @@
       "bytes": 1363
     },
     "include/native/meson.build": {
-      "sha256": "f78e2bceaeca34e44095eea93f56f6a1462901d8314095c11f48e2b380259671",
-      "bytes": 370
+      "sha256": "aba9c34fb7b2ae8ca64651ada1890daa245f57fffe2075f5da1679f2ef697f75",
+      "bytes": 418
     },
     "include/native/windows/oaidl.h": {
       "sha256": "ef45de3eecebaf0b478215fa7cc79739eace8a46837b6098bf0c43202c0d9958",
@@ -379,9 +383,17 @@
       "sha256": "b4dbad726f6fcc589959211fe9a5fe072181520a9fe9fbc3a04a232fd5c5aa55",
       "bytes": 596
     },
+    "include/native/wsi/native_wayland.h": {
+      "sha256": "390430deae958e9c422948dd8631272dc02b07e4c0eb42f692b6c22656fe3fb3",
+      "bytes": 283
+    },
     "include/native/wsi/native_wsi.h": {
-      "sha256": "a279a610202ab5d8c76d08620ad2696913cd28f31baaa09aeff2d8cb473f78c9",
-      "bytes": 260
+      "sha256": "4d81dac3e0bbd3511896d7fa37ec95ad8f8eae2a3e5832e8af40e2220d489b2e",
+      "bytes": 432
+    },
+    "include/native/wsi/native_xcb.h": {
+      "sha256": "6078ea8115fb2fa94cfe1f7d1160c07d0dd15f4a5b53a28998777bbb27e44dfd",
+      "bytes": 284
     },
     "include/openvr/LICENSE": {
       "sha256": "db64bcf32be090ca9d1ea7e3df5541a07f4cf5729206b44e57a1182f05554f3f",
@@ -1204,20 +1216,20 @@
       "bytes": 1074
     },
     "meson_options.txt": {
-      "sha256": "752919daea0f793a8946d4fcffdb3f53644ee4a83dbe4a3c0cfa2d3cc3f238ed",
-      "bytes": 783
+      "sha256": "ebe4cd686c675c9ecca24a4405171d853b4f49353bd36cbe0ba6ea9da5f5aee1",
+      "bytes": 997
     },
     "meson.build": {
-      "sha256": "2daaac21ab1931f72bb01852677d9a8ce6fc76b441b3e1341bc8fce2d9121baa",
-      "bytes": 6418
+      "sha256": "f9e5ae68dc24d0715ee944a0d9a3cff746e96531499d04191a1cf65f948a1c5f",
+      "bytes": 6449
     },
     "package-native.sh": {
       "sha256": "32051c2dc727f688406a27ad5d6f41159ecd0aa7e6f9619a641ee9a7d6d52bf3",
       "bytes": 1905
     },
     "package-release.sh": {
-      "sha256": "e627336cbb88a93cde743908da985467577e9d42d696cc7c07d8e5b2fb58f958",
-      "bytes": 2159
+      "sha256": "7cddb982b4b32fc9d663bb66129b74a38fe821f5fbc4ca366c6e51bae1004ba4",
+      "bytes": 2447
     },
     "README.md": {
       "sha256": "f128288602502daa82b8d6d567559b5b4a8e19461c7d02213a535c1170a96b27",
@@ -1428,8 +1440,8 @@
       "bytes": 2719
     },
     "src/d3d11/d3d11_context_imm.cpp": {
-      "sha256": "ad625bb294c6a2f37e636aa539c734ea06c12ca813c3958286e3714e225ce1f6",
-      "bytes": 44347
+      "sha256": "656e43f2febd00f59c38ee4437258de73a9fed66310fb740be76fa6222c7b743",
+      "bytes": 44273
     },
     "src/d3d11/d3d11_context_imm.h": {
       "sha256": "199ccd0a21fc9cd9ce41e5cf2f1120aa58beed86cb1e178071e7786cd02d30fa",
@@ -1620,8 +1632,8 @@
       "bytes": 3263
     },
     "src/d3d11/d3d11_swapchain.cpp": {
-      "sha256": "191a6547ae3c25ddbf4baa53de42ad422bb351ec66207ffaaf164922537572ca",
-      "bytes": 41912
+      "sha256": "b9022d35a6ee36590ec539cf5e9bbc3c10de03c6a6b1e960e4cb299a2412ad09",
+      "bytes": 41935
     },
     "src/d3d11/d3d11_swapchain.h": {
       "sha256": "87ea5ba46dbc9db89813417d7a9d58592918ee94dbcc0c149e2b16ad80a5d3e8",
@@ -1856,8 +1868,8 @@
       "bytes": 822
     },
     "src/d3d9/d3d9_adapter.cpp": {
-      "sha256": "df5edb71d037646396c50205b0a0b1de83b208525602c84032b10216d1a406a3",
-      "bytes": 49114
+      "sha256": "6bfad7abd5c1c99da0167f63b9a4d4dd966f9d1b9920fc2d912f3bc6eb083c94",
+      "bytes": 49251
     },
     "src/d3d9/d3d9_adapter.h": {
       "sha256": "0a0fa2d9d407e2874d879d4ba0eff12ec208c2b9f37700b3c50125756ec4c0bc",
@@ -1888,8 +1900,8 @@
       "bytes": 2193
     },
     "src/d3d9/d3d9_caps.h": {
-      "sha256": "de6f57fa0a9f5b2a20e89643488d114480d1b5a4a45f255079c88dd6cab707b4",
-      "bytes": 1526
+      "sha256": "4337833880d1051e16ad0af27b81c81307c0b7a294539eef811440c1aa4dfabe",
+      "bytes": 1803
     },
     "src/d3d9/d3d9_common_buffer.cpp": {
       "sha256": "79ea62280314ca06800dff9529c8229cd8f3a1e6bcb7fe9568a5e81629ff4159",
@@ -1900,8 +1912,8 @@
       "bytes": 6763
     },
     "src/d3d9/d3d9_common_texture.cpp": {
-      "sha256": "c8fe43e972ccf057dc06198333da19cb457ce28290b155bfad25f5f1a02f60d1",
-      "bytes": 33070
+      "sha256": "8f49f2fe5238ee20f785511f7eddd6d696ce0ce8ca7aec05edf0d7322bdab95b",
+      "bytes": 33440
     },
     "src/d3d9/d3d9_common_texture.h": {
       "sha256": "218635023bef9af3f1dc80d1fedb75ec4870afbc28a37c4c1841ea9b1cbbae86",
@@ -1944,12 +1956,12 @@
       "bytes": 1470
     },
     "src/d3d9/d3d9_device.cpp": {
-      "sha256": "c2c8342611d12242ca0495e7ccdc9e81f05343bb1b1d876cd806798e57522d22",
-      "bytes": 336484
+      "sha256": "c185442767d4ece2c7cc9707db5e0f5127a680000791c6cc78fb9259b1c2b340",
+      "bytes": 336186
     },
     "src/d3d9/d3d9_device.h": {
-      "sha256": "0abba337567c17d7011ff193ffa7408fedad4f0595693c1f4fd01ba38f0bec73",
-      "bytes": 57943
+      "sha256": "c567ba9d5fe927903f60231e5b5fb7d63e8dc042e1532ad8b15284bd9b9a8b22",
+      "bytes": 57921
     },
     "src/d3d9/d3d9_fixed_function.cpp": {
       "sha256": "7039b1816fd63b739ced18f7babf26d77a61eb50df2b8cfabaefec87f30a5bc6",
@@ -2116,8 +2128,8 @@
       "bytes": 1894
     },
     "src/d3d9/d3d9_swapchain.cpp": {
-      "sha256": "e029e9745f9942658004e985035fbab1d92e60304ce929c79910bd804f309882",
-      "bytes": 50023
+      "sha256": "90c35791a9735af9653fed03aa0a0d0b0bddf100bd14f91ecfe94bcbdc5267f7",
+      "bytes": 50073
     },
     "src/d3d9/d3d9_swapchain.h": {
       "sha256": "2dba67a8775a919a89e98515b175e5d36d989adc8b7d614a895478585c4353ba",
@@ -2240,8 +2252,8 @@
       "bytes": 822
     },
     "src/dxgi/dxgi_adapter.cpp": {
-      "sha256": "e9cda089b63314e01901bf31ff9455602733e072d0174109eb243086b8e79872",
-      "bytes": 18356
+      "sha256": "80cbab20762f16aba44af67b355f9e8b7b78b86d1e41a7b2eaf3b7d7ee03e05f",
+      "bytes": 18404
     },
     "src/dxgi/dxgi_adapter.h": {
       "sha256": "eec5d633ca2d65d86c40caac6a5f1b9713b20fd90188d57b9611e19c0ebaba45",
@@ -2296,12 +2308,12 @@
       "bytes": 939
     },
     "src/dxgi/dxgi_options.cpp": {
-      "sha256": "5d1c55d84e2e30ad0dc95dc2e03ae4d729224e3a821230f7148fbc6bd8c64ce4",
-      "bytes": 7659
+      "sha256": "c64112fe917980111e465a396c10975f414b921812aa472d0bfa18c4d69ebef7",
+      "bytes": 9345
     },
     "src/dxgi/dxgi_options.h": {
-      "sha256": "90cc7f373cbd8d9eb17dd3d2886fe3186f1fef197a166dc9a5446b475d38ef91",
-      "bytes": 1862
+      "sha256": "4246b6b9a408e97f365d68f2117cc648cf34737705797ef54edf064fc6d0e8a1",
+      "bytes": 1898
     },
     "src/dxgi/dxgi_output.cpp": {
       "sha256": "cd0342f370073ff1f2bf404f25fa8b030e566cf7eefd9dba8a9ea59ba8ec22e8",
@@ -2320,8 +2332,8 @@
       "bytes": 1099
     },
     "src/dxgi/dxgi_swapchain_dispatcher.h": {
-      "sha256": "1f55a427e4e83aa2a729738f33d38b5c35cbc02da6095ba99fbd86eeeab36b79",
-      "bytes": 10046
+      "sha256": "e51d9eb11e1f647004c07e0a604d010fc74158712a1c1a3cbcbce60e6bfaf4b4",
+      "bytes": 11276
     },
     "src/dxgi/dxgi_swapchain.cpp": {
       "sha256": "bef538eeab301b3a2284f9877a52244c0eca1f827048ee6ce346812215d01b49",
@@ -2424,12 +2436,12 @@
       "bytes": 9755
     },
     "src/dxvk/dxvk_context.cpp": {
-      "sha256": "117779a3442b46f9dc86dad5035560492fa5469a0f02ffc626b4b19bb4949ace",
-      "bytes": 434661
+      "sha256": "6c38aafd96fc8d73b7493eb9e7d39bc55a2c78f018f6fedd93679e249927ea37",
+      "bytes": 434686
     },
     "src/dxvk/dxvk_context.h": {
-      "sha256": "c02c538d40f8b78d50be4836960612d5da7e63b775a17c7b23fa6c205d54989d",
-      "bytes": 79141
+      "sha256": "2c17bcd14d75f7effd84f115cc92dd19219fc42814e93320857d12fa1b9eeeb6",
+      "bytes": 79200
     },
     "src/dxvk/dxvk_cs.cpp": {
       "sha256": "a336e033437dd671d211fa97d0d1d6ce6917d0f845a0cd011373dc3f4626a1a0",
@@ -3028,8 +3040,8 @@
       "bytes": 2599
     },
     "src/util/config/config.cpp": {
-      "sha256": "30f88d7c6d24b02ad5952bb46d2aafc8ccfb99ec16621ecbeb285300b25dec4b",
-      "bytes": 68583
+      "sha256": "6bc8d8170c6f446493d6357631c6f102da8dcda1c68449b10d3cdd1cb4de5c0c",
+      "bytes": 68609
     },
     "src/util/config/config.h": {
       "sha256": "5e4136518edd911890a0c22f400cc637ad18098de8935644db1f10e128ea999b",
@@ -3116,8 +3128,8 @@
       "bytes": 8064
     },
     "src/util/util_bit.h": {
-      "sha256": "92521631e0096162846e511003a2b739764582153f7a3aaaf83539c928262589",
-      "bytes": 20238
+      "sha256": "f0430ecfde2da56eb459f27406e7ea3fec8f26ee96f50d475073cd3ea713a017",
+      "bytes": 22312
     },
     "src/util/util_enum.h": {
       "sha256": "606e099a75444d2af62379fd9d7472cba76a95f1d6eb1e2de104fea0b028026c",
@@ -3164,8 +3176,8 @@
       "bytes": 13617
     },
     "src/util/util_hotpatch.h": {
-      "sha256": "55e471246a0005a15b787b9b8f2ff7600e40a13d9ccaa4c01d55b7274246b378",
-      "bytes": 441
+      "sha256": "5e915321160aa83446547e96394df4e81f56d16dcdb0e26052e902f4cabd6109",
+      "bytes": 955
     },
     "src/util/util_lazy.h": {
       "sha256": "41ae7051e87f4834af39959b3abe3857e5a3fce80f147de3769817d013d08d04",
@@ -3308,8 +3320,8 @@
       "bytes": 4315
     },
     "src/wsi/meson.build": {
-      "sha256": "eae2e7fad1edb43494ee17ebc6ce8668df632d62d7405f98bf26b22af8373f88",
-      "bytes": 996
+      "sha256": "59a37c1735a9af11aa2a410e070041459e3edf4311a2bcef7f9db43dacd034e2",
+      "bytes": 1064
     },
     "src/wsi/sdl2/wsi_monitor_sdl2.cpp": {
       "sha256": "31970478c27ca4b54911eb3cb0ab76d7ba18b902a2d96b07f23ba8c459849094",
@@ -3351,6 +3363,14 @@
       "sha256": "ecacbc8a5a94f18f45be4243e3cf517c063ec7b2afa0e1da26576ab2ed246e68",
       "bytes": 4996
     },
+    "src/wsi/wayland/wsi_platform_wayland.cpp": {
+      "sha256": "9a3c8942d6be552b24774ef493c110b07c9e7cc3235054b2ef8412eafe9f996e",
+      "bytes": 6703
+    },
+    "src/wsi/wayland/wsi_platform_wayland.h": {
+      "sha256": "55255b9402f9a53bc0e6bb33cea28e9593ec0a239f6dcce9a0ce1d1a327804dd",
+      "bytes": 2847
+    },
     "src/wsi/win32/wsi_monitor_win32.cpp": {
       "sha256": "43398327032103e028374ff6690304d702f2837a03ef224cfb2d8117fe6d1d9a",
       "bytes": 12660
@@ -3364,8 +3384,8 @@
       "bytes": 2921
     },
     "src/wsi/win32/wsi_window_win32.cpp": {
-      "sha256": "7c77ea51247c6684a2f1672a0ae3256d194d4ae475a9e483affec7f55bcac99e",
-      "bytes": 12220
+      "sha256": "d6f5d89da9706eaf0d9d5ae7e31609550651a9d7d3e038f4fbd4130c58933867",
+      "bytes": 12221
     },
     "src/wsi/wsi_edid.cpp": {
       "sha256": "51149bdacaadd35469cec97dee78079d3dfc14abb225a01a08579b3c2846c805",
@@ -3380,16 +3400,24 @@
       "bytes": 3812
     },
     "src/wsi/wsi_platform.cpp": {
-      "sha256": "488f5554581ab646ab53c9b114ab571012557d5672c7a1197937fbe02abe2bdf",
-      "bytes": 5183
+      "sha256": "cca668e4e21bbe9f0a10df0531434ecce514c4ea65bebe4b031d29528553d355",
+      "bytes": 5283
     },
     "src/wsi/wsi_platform.h": {
-      "sha256": "8c1c622c49fc046e3f7d2418e3de369ca4c50185049d1d821e9abf4efb745964",
-      "bytes": 3414
+      "sha256": "de24a3f301a5cb52d6b2c5a96ce3136569c757af4213196cde7ade8b684f60f0",
+      "bytes": 3548
     },
     "src/wsi/wsi_window.h": {
-      "sha256": "76979280922fab928a0359a30d47c2291b44359c80d4b7e7da2c64cb8bb32595",
-      "bytes": 4987
+      "sha256": "f54048031e786cbc1ae4a39897c3878eab73fce32a2c28b3ff31dcc15eb84ab0",
+      "bytes": 5105
+    },
+    "src/wsi/xcb/wsi_platform_xcb.cpp": {
+      "sha256": "acc91855c8b34079ebb607aaaef739e328e79f70e49832555300b67ddd0e4498",
+      "bytes": 6609
+    },
+    "src/wsi/xcb/wsi_platform_xcb.h": {
+      "sha256": "e50d7fdfcc8c03931af3d27859b60396000de99aed52072d08b0991483a90e7f",
+      "bytes": 2843
     },
     "subprojects/dxbc-spirv/.github/workflows/test-build-linux.yml": {
       "sha256": "2b56446e72e03b86875c453d8cbb5ea8d06b5f77754efeb1d2aae95d798540c7",

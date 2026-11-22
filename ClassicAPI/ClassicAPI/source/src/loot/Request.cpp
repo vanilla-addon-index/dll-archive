@@ -16,6 +16,8 @@
 #include "../Game.h"
 #include "../Offsets.h"
 #include "../unit/Position.h"
+#include "loot/Window.h"
+#include "object/Resolve.h"
 
 namespace Loot::Request {
 
@@ -28,26 +30,16 @@ namespace {
 using LootUnit_t = void(__thiscall *)(void *player, void *target,
                                       char useDistanceCheck);
 using UpdateBaseAnimation_t = void(__thiscall *)(void *unit, uint32_t mask);
-using CloseLootInner_t = void(__fastcall *)(int sendRelease,
-                                             char earlyReturnOnGameObject,
-                                             char showError);
-
-// The per-unit reach `CanLootNow` adds for each side (`[m_objectFields +
-// 0x1F0]`).
-float Reach(const void *unit) {
-    auto *fields = Game::Read<const uint8_t *>(unit, Offsets::OFF_UNIT_DESCRIPTOR);
-    return Game::Read<float>(fields, Offsets::OFF_UNIT_FIELD_BOUNDING_RADIUS);
-}
 
 } // namespace
 
 bool IsMounted(const void *player) {
-    auto *fields = Game::Read<const uint8_t *>(player, Offsets::OFF_UNIT_DESCRIPTOR);
+    auto *fields = Object::Fields(player);
     return Game::Read<uint32_t>(fields, Offsets::OFF_UNIT_FIELD_MOUNTDISPLAYID) != 0;
 }
 
 bool IsLootable(const void *unit) {
-    auto *fields = Game::Read<const uint8_t *>(unit, Offsets::OFF_UNIT_DESCRIPTOR);
+    auto *fields = Object::Fields(unit);
     return (Game::Read<uint32_t>(fields, Offsets::OFF_UNIT_FIELD_DYNAMIC_FLAGS) &
             Offsets::UNIT_DYNFLAG_LOOTABLE) != 0;
 }
@@ -59,16 +51,13 @@ bool InReach(void *player, void *target) {
         return false;
     // `CanLootNow`'s reach for a unit (`0x005EC142`..`0x005EC17E`), with the
     // engine's own constants read live.
-    float reach = Reach(target) + Reach(player) +
+    float reach = Unit::Position::BoundingRadius(target) + Unit::Position::BoundingRadius(player) +
                   Game::Read<float>(static_cast<uintptr_t>(Offsets::VAR_MELEE_REACH_LEEWAY));
     const float minReach =
         Game::Read<float>(static_cast<uintptr_t>(Offsets::VAR_MELEE_REACH_MIN));
     if (reach < minReach)
         reach = minReach;
-    const float dx = p[0] - t[0];
-    const float dy = p[1] - t[1];
-    const float dz = p[2] - t[2];
-    return dx * dx + dy * dy + dz * dz <= reach * reach;
+    return Game::DistanceSq(p, t) <= reach * reach;
 }
 
 uint64_t HeldTarget(const void *player) {
@@ -96,8 +85,7 @@ void ReleaseIfUnanswered(void *player, uint64_t guid) {
     auto UpdateBaseAnimation = reinterpret_cast<UpdateBaseAnimation_t>(
         Offsets::FUN_UNIT_UPDATE_BASE_ANIMATION);
     UpdateBaseAnimation(player, 0xFFFFFFFFu);
-    auto Close = reinterpret_cast<CloseLootInner_t>(Offsets::FUN_CLOSE_LOOT_INNER);
-    Close(0, '\0', '\0');
+    Window::Close(false);
 }
 
 } // namespace Loot::Request

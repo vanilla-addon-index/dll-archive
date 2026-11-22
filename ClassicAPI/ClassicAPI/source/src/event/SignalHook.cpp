@@ -23,7 +23,7 @@ namespace {
 // Chained at static-init time by each `AutoSubscribe` constructor, before
 // `DllMain`. Zero-initialized (namespace static) ahead of any dynamic init,
 // so the head is valid when subscribers link in.
-AutoSubscribe *g_head = nullptr;
+AutoObserve *g_observers = nullptr;
 
 // `FUN_FIRE_EVENT_NO_ARGS` is `__fastcall(int eventID)`; we mirror loot's
 // long-standing shape with a dummy EDX so the trampoline call matches the
@@ -32,7 +32,10 @@ using FireNoArgs_t = void(__fastcall *)(int eventID, int edx);
 FireNoArgs_t g_orig = nullptr;
 
 void __fastcall Hook(int eventID, int /*edx*/) {
-    for (AutoSubscribe *s = g_head; s != nullptr; s = s->next)
+    for (AutoObserve *o = g_observers; o != nullptr; o = o->next)
+        if (o->eventID == eventID)
+            o->fn();
+    for (AutoSubscribe *s = AutoSubscribe::head; s != nullptr; s = s->next)
         if (s->fn(eventID))
             return; // a subscriber handled it — suppress the original fire
     g_orig(eventID, 0);
@@ -44,6 +47,8 @@ const Game::HookAutoRegister _hook{
 
 } // namespace
 
-AutoSubscribe::AutoSubscribe(Interceptor f) : fn(f), next(g_head) { g_head = this; }
+AutoObserve::AutoObserve(int id, void (*f)()) : eventID(id), fn(f), next(g_observers) {
+    g_observers = this;
+}
 
 } // namespace Event::SignalHook

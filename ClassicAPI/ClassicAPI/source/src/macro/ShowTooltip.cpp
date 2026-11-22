@@ -66,6 +66,7 @@
 //     moused over — for the cast and for this icon alike — and a lone
 //     `[@mouseover] Spell` shows `?` instead of a spell the click cannot cast.
 
+#include "baselib/Ascii.h"
 #include "macro/ShowTooltip.h"
 
 #include "Game.h"
@@ -76,8 +77,10 @@
 #include "item/ID.h"
 #include "item/Icon.h"
 #include "item/Location.h"
+#include "spell/Arg.h"
 #include "spell/Lookup.h"
 #include "spell/MacroPrimarySpell.h"
+#include "storm/String.h"
 #include "tick/WorldTick.h"
 #include "time/Clock.h"
 #include "unit/Identity.h"
@@ -204,9 +207,6 @@ bool g_slashNamesLoaded = false;
 
 using MacroIDToEntry_t = uint8_t *(__fastcall *)(uint32_t macroID);
 using MacroParse_t = void(__fastcall *)(int macroEntry);
-using Tokenize_t = void(__stdcall *)(const char **cursor, char *out, unsigned outSize,
-                                     const char *delims, int *outQuoted);
-using ResolveSpellName_t = int(__fastcall *)(const char *name, int *outIsPet);
 using SlotChangedNotify_t = void(__fastcall *)(uint32_t slot0, int sendToServer, int quiet);
 
 uint8_t *EntryForID(uint32_t macroID) {
@@ -216,15 +216,13 @@ uint8_t *EntryForID(uint32_t macroID) {
 }
 
 void NextLine(const char **cursor, char *out, unsigned outSize) {
-    reinterpret_cast<Tokenize_t>(Offsets::FUN_STORM_STR_TOKENIZE)(
+    Storm::Tokenize(
         cursor, out, outSize,
         reinterpret_cast<const char *>(Offsets::VAR_MACRO_LINE_DELIMS), nullptr);
 }
 
-bool IsBlank(char c) { return c == ' ' || c == '\t'; }
-
 const char *SkipBlanks(const char *p) {
-    while (IsBlank(*p))
+    while (Ascii::IsBlank(*p))
         ++p;
     return p;
 }
@@ -232,7 +230,7 @@ const char *SkipBlanks(const char *p) {
 void CopyTrimmed(const char *src, char *dst, size_t dstSize) {
     src = SkipBlanks(src);
     size_t len = std::strlen(src);
-    while (len > 0 && IsBlank(src[len - 1]))
+    while (len > 0 && Ascii::IsBlank(src[len - 1]))
         --len;
     if (len >= dstSize)
         len = dstSize - 1;
@@ -262,7 +260,7 @@ Kind ParseDirective(const char *line, const char **args) {
         if (_strnicmp(line, w.text, w.len) != 0)
             continue;
         const char after = line[w.len];
-        if (after != '\0' && !IsBlank(after))
+        if (after != '\0' && !Ascii::IsBlank(after))
             continue;
         *args = SkipBlanks(line + w.len);
         return w.kind;
@@ -564,7 +562,7 @@ bool ParseUInt(const char *s, const char **end, int *out) {
 // `^(%d+)%s+(%d+)$`
 bool ParseBagSlot(const char *s, int *bag, int *slot) {
     const char *p = nullptr;
-    if (!ParseUInt(s, &p, bag) || !IsBlank(*p))
+    if (!ParseUInt(s, &p, bag) || !Ascii::IsBlank(*p))
         return false;
     p = SkipBlanks(p);
     return ParseUInt(p, &p, slot) && *p == '\0';
@@ -654,7 +652,7 @@ void ResolveValue(const char *value, Resolution *r, bool explicitValue, bool ite
     }
     int bag = 0, slot = 0;
     if (ParseBagSlot(value, &bag, &slot)) {
-        SetItem(Item::Location::ResolveBagSlotNoLua(bag, slot), r);
+        SetItem(Item::Location::ResolveBag(bag, slot), r);
         return;
     }
     int n = 0;
@@ -673,7 +671,7 @@ void ResolveValue(const char *value, Resolution *r, bool explicitValue, bool ite
     if (!numeric) {
         const Item::Arg::Resolved arg = Item::Arg::ResolveString(value);
         Item::Location::ByGUIDResult found;
-        if (Item::Location::FindByArgNoLua(arg, &found)) {
+        if (Item::Location::FindByArg(arg, &found)) {
             SetItem(found.item, r);
             if (r->target == Target::Item)
                 return;
@@ -692,8 +690,7 @@ void ResolveValue(const char *value, Resolution *r, bool explicitValue, bool ite
     if (itemOnly)
         return;
     int isPet = 0;
-    const int spellID = reinterpret_cast<ResolveSpellName_t>(
-        Offsets::FUN_RESOLVE_SPELL_NAME_TO_BOOK_ID)(value, &isPet);
+    const int spellID = Spell::Arg::NameToSpellID(value, &isPet);
     if (spellID > 0) {
         r->target = Target::Spell;
         r->spellID = static_cast<uint32_t>(spellID);
@@ -716,8 +713,7 @@ void ResolveSpell(const char *value, Resolution *r) {
         return;
     }
     int isPet = 0;
-    const int spellID = reinterpret_cast<ResolveSpellName_t>(
-        Offsets::FUN_RESOLVE_SPELL_NAME_TO_BOOK_ID)(value, &isPet);
+    const int spellID = Spell::Arg::NameToSpellID(value, &isPet);
     if (spellID > 0) {
         r->target = Target::Spell;
         r->spellID = static_cast<uint32_t>(spellID);

@@ -48,7 +48,9 @@
 
 #include "Game.h"
 #include "Offsets.h"
+#include "baselib/Ascii.h"
 #include "console/Registry.h"
+#include "input/EventBus.h"
 #include "input/Modifier.h"
 
 #include <algorithm>
@@ -61,9 +63,6 @@ namespace Console::Completion {
 
 namespace {
 
-using Handler_t = int(__fastcall *)(const void *data, void *param);
-using RegisterEx_t = void(__fastcall *)(int eventId, Handler_t handler, void *param,
-                                        float priority);
 using GetInputLine_t = uintptr_t(__fastcall *)();
 using MakeCommandCurrent_t = void(__fastcall *)(uintptr_t line, const char *text);
 using SetInputString_t = void(__fastcall *)(const char *text);
@@ -77,19 +76,9 @@ struct KeyEvent {
 // The commands whose argument is a CVar name (registered in FUN_0063D380).
 const char *const kCvarArgumentCommands[] = {"set", "cvar_reset", "cvar_default"};
 
-char Lower(char c) { return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c; }
-
-bool StartsWithIgnoreCase(const char *text, const char *prefix) {
-    for (size_t i = 0; prefix[i] != '\0'; ++i) {
-        if (text[i] == '\0' || Lower(text[i]) != Lower(prefix[i]))
-            return false;
-    }
-    return true;
-}
-
 bool ContainsIgnoreCase(const char *text, const char *needle) {
     for (; *text != '\0'; ++text) {
-        if (StartsWithIgnoreCase(text, needle))
+        if (Ascii::StartsWithCI(text, needle))
             return true;
     }
     return needle[0] == '\0';
@@ -139,7 +128,7 @@ std::vector<const char *> ArgumentMatches(const Parsed &parsed) {
     if (!TakesCvarArgument(parsed.command))
         return matches;
     Console::Registry::ForEach([&](const Console::Registry::Command &command) {
-        if (command.IsCvar() && StartsWithIgnoreCase(command.name, parsed.arguments.c_str()))
+        if (command.IsCvar() && Ascii::StartsWithCI(command.name, parsed.arguments.c_str()))
             matches.push_back(command.name);
     });
     SortNames(matches);
@@ -247,7 +236,7 @@ void Register() {
     if (registered)
         return;
     registered = true;
-    reinterpret_cast<RegisterEx_t>(Offsets::FUN_EVENT_REGISTER_EX)(
+    Input::EventBus::Register(
         Offsets::EVENT_ID_KEYDOWN, &OnKeyDown, nullptr,
         static_cast<float>(Offsets::CONSOLE_EVENT_PRIORITY));
 }

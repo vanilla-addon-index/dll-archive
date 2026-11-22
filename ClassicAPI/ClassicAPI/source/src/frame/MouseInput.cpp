@@ -47,6 +47,20 @@
 // lists, so a press with no frame below reaches the world. Hover is
 // untouched. A press while another button is held goes to the frame already
 // pressed, as the engine routes it; the walk does not run for it.
+//
+// Each frame a propagated press reached can start its own drag, as 3.80.2
+// drag-tests every frame in a press list on a mouse move (FUN_14058B000):
+// the hover pass probes them as the engine probes its pressed frame
+// (benilla-re ui/mouse.md "Starting a drag"), and each one's release slot
+// ends its drag with OnDragStop and no OnMouseUp, as the base release does.
+//
+// Turning a half off while the mouse bit stays on does what 3.80.2 does when
+// it unregisters that half (FUN_14055F5A0): clicks off takes the frame out of
+// the press, so it gets no release; motion off takes it out of the motion
+// focus at once, with OnLeave(false). The setters' rules are 3.80.2's:
+// EnableMouseMotion and SetMouse*Enabled read a missing argument as false,
+// SetPropagateMouseClicks requires its argument, SetPassThroughButtons
+// raises the usage error for an argument that is not a string.
 
 #include "frame/MouseInput.h"
 
@@ -81,6 +95,10 @@ using HitTest_t = int(__thiscall *)(void *frame, const float *point);
 std::unordered_set<void *> g_clickOff;
 std::unordered_set<void *> g_motionOff;
 std::unordered_set<void *> g_propagatesClicks;
+// `propagateMouseInputMask="Clicks"`: the frame never propagates clicks,
+// whatever SetPropagateMouseClicks says (3.80.2 keeps it at +0x123 bit 0x20
+// and reads the flag as +0x122 && !+0x123).
+std::unordered_set<void *> g_clicksSuppressed;
 std::unordered_map<void *, uint32_t> g_passThrough; // button bits the frame lets through
 
 struct Press {
@@ -103,7 +121,9 @@ bool MouseBit(const void *frame) {
 
 bool ClickEnabled(void *frame) { return MouseBit(frame) && g_clickOff.count(frame) == 0; }
 
-bool PropagatesClicks(void *frame) { return g_propagatesClicks.count(frame) != 0; }
+bool PropagatesClicks(void *frame) {
+    return g_propagatesClicks.count(frame) != 0 && g_clicksSuppressed.count(frame) == 0;
+}
 
 uint32_t PassThroughMask(void *frame) {
     const auto it = g_passThrough.find(frame);
@@ -137,8 +157,21 @@ uint32_t MaskForButtonList(const char *list) {
     return mask;
 }
 
+void Forget(void *frame);
+
+// Takes the frame out of the press in progress: it gets no release.
+void CancelPress(void *frame) {
+    Forget(frame);
+    if (uint8_t *ctx = Context()) {
+        void *&pressed = Game::Ref<void *>(ctx, Offsets::OFF_UI_CONTEXT_PRESSED_FRAME);
+        if (pressed == frame)
+            pressed = nullptr;
+    }
+}
+
 void SetHalves(void *frame, bool click, bool motion) {
     const bool wasMotion = MotionEnabled(frame);
+    const bool wasClick = ClickEnabled(frame);
     const bool bit = click || motion;
     if (bit != MouseBit(frame)) {
         if (bit)
@@ -154,7 +187,12 @@ void SetHalves(void *frame, bool click, bool motion) {
         g_motionOff.insert(frame);
     else
         g_motionOff.erase(frame);
-    if (MotionEnabled(frame) != wasMotion)
+    // With the bit off the engine's own removal has done both.
+    if (bit && wasClick && !ClickEnabled(frame))
+        CancelPress(frame);
+    if (bit && wasMotion && !MotionEnabled(frame))
+        Frame::MotionFocus::Drop(frame);
+    else if (MotionEnabled(frame) != wasMotion)
         Repick();
 }
 
@@ -294,6 +332,7 @@ void OnFrameDestroyed(void *frame) {
     g_clickOff.erase(frame);
     g_motionOff.erase(frame);
     g_propagatesClicks.erase(frame);
+    g_clicksSuppressed.erase(frame);
     g_passThrough.erase(frame);
     Forget(frame);
 }
@@ -302,7 +341,11 @@ const Frame::Destruction::AutoSubscribe _destructionSub{&OnFrameDestroyed};
 
 // `enableMouseClicks="true"` and `enableMouseMotion="true"` add their half;
 // `enableMouse="true"`, which the engine has applied by now, already holds
-// both. `propagateMouseInput="Clicks"` or `"Both"` propagates clicks.
+// both. `propagateMouseInput="Clicks"` or `"Both"` propagates clicks;
+// `propagateMouseInputMask` with the same values keeps them from
+// propagating. `retainClickThroughOverride` is not read: it keeps a frame in
+// the click list while an override frame holds the mouse, and 1.12 has no
+// override frames.
 // `passThroughButtons="LeftButton, RightButton"` lets those buttons through.
 void OnFrameNode(void *object, const void *node, void * /*status*/) {
     const char *clicks = Xml::Attr(node, "enableMouseClicks");
@@ -314,6 +357,9 @@ void OnFrameNode(void *object, const void *node, void * /*status*/) {
     const char *propagate = Xml::Attr(node, "propagateMouseInput");
     if (Ascii::EqualCI(propagate, "Clicks") || Ascii::EqualCI(propagate, "Both"))
         g_propagatesClicks.insert(object);
+    const char *mask = Xml::Attr(node, "propagateMouseInputMask");
+    if (Ascii::EqualCI(mask, "Clicks") || Ascii::EqualCI(mask, "Both"))
+        g_clicksSuppressed.insert(object);
     if (const char *buttons = Xml::Attr(node, "passThroughButtons"))
         SetPassThrough(object, MaskForButtonList(buttons));
 }
@@ -321,7 +367,7 @@ void OnFrameNode(void *object, const void *node, void * /*status*/) {
 const Xml::FrameLoad::AutoSubscribe _xmlSub{&OnFrameNode};
 
 int __fastcall Script_EnableMouse(void *L) {
-    reinterpret_cast<Game::Lua::CFunction>(Offsets::FUN_SCRIPT_FRAME_ENABLEMOUSE)(L);
+    Game::Lua::CallScript(Offsets::FUN_SCRIPT_FRAME_ENABLEMOUSE, L);
     void *frame = Game::Lua::ResolveFrame(L, 1, false);
     if (frame != nullptr && (g_clickOff.erase(frame) | g_motionOff.erase(frame)) != 0)
         Repick();
@@ -334,7 +380,7 @@ int __fastcall Script_IsMouseEnabled(void *L) {
         Game::Lua::PushNil(L);
         return 1;
     }
-    return reinterpret_cast<Game::Lua::CFunction>(Offsets::FUN_SCRIPT_FRAME_ISMOUSEENABLED)(L);
+    return Game::Lua::CallScript(Offsets::FUN_SCRIPT_FRAME_ISMOUSEENABLED, L);
 }
 
 int __fastcall Script_SetMouseClickEnabled(void *L) {
@@ -373,6 +419,10 @@ int __fastcall Script_SetPropagateMouseClicks(void *L) {
     void *frame = Game::Lua::ResolveFrame(L);
     if (frame == nullptr)
         return 0;
+    if (Game::Lua::Type(L, 2) <= Game::Lua::TYPE_NIL) {
+        Game::Lua::Error(L, "Usage: self:SetPropagateMouseClicks(propagate)");
+        return 0;
+    }
     if (Game::Lua::ToFlag(L, 2))
         g_propagatesClicks.insert(frame);
     else
@@ -381,16 +431,21 @@ int __fastcall Script_SetPropagateMouseClicks(void *L) {
 }
 
 // `frame:SetPassThroughButtons(...)`: replaces the list; no names clears it.
-// A name that is not a button adds nothing.
+// A name that is not a button adds nothing; an argument that is not a string
+// raises the usage error (3.80.2's 0x140A9E560).
 int __fastcall Script_SetPassThroughButtons(void *L) {
     void *frame = Game::Lua::ResolveFrame(L);
     if (frame == nullptr)
         return 0;
     uint32_t mask = 0;
     const int top = Game::Lua::GetTop(L);
-    for (int i = 2; i <= top; ++i)
-        if (Game::Lua::IsString(L, i))
-            mask |= Frame::ClickEvents::MaskForButtonName(Game::Lua::ToString(L, i));
+    for (int i = 2; i <= top; ++i) {
+        if (Game::Lua::Type(L, i) != Game::Lua::TYPE_STRING) {
+            Game::Lua::Error(L, "Usage: self:SetPassThroughButtons([button1, ...])");
+            return 0;
+        }
+        mask |= Frame::ClickEvents::MaskForButtonName(Game::Lua::ToString(L, i));
+    }
     SetPassThrough(frame, mask);
     return 0;
 }
@@ -408,6 +463,7 @@ const Game::Lua::FrameMethodEntry g_methods[] = {
     {"IsMouseEnabled", &Script_IsMouseEnabled},
     {"SetMouseClickEnabled", &Script_SetMouseClickEnabled},
     {"SetMouseMotionEnabled", &Script_SetMouseMotionEnabled},
+    {"EnableMouseMotion", &Script_SetMouseMotionEnabled},
     {"IsMouseClickEnabled", &Script_IsMouseClickEnabled},
     {"IsMouseMotionEnabled", &Script_IsMouseMotionEnabled},
     {"SetPropagateMouseClicks", &Script_SetPropagateMouseClicks},
@@ -416,10 +472,13 @@ const Game::Lua::FrameMethodEntry g_methods[] = {
 };
 
 const Game::Doc::Field kClickArgs[] = {
-    Game::Doc::Req("enabled", "bool", "When true, the frame takes mouse clicks."),
+    Game::Doc::Opt("enabled", "bool", "false", "When true, the frame takes mouse clicks."),
 };
 const Game::Doc::Field kMotionArgs[] = {
-    Game::Doc::Req("enabled", "bool", "When true, the frame takes mouse motion: OnEnter and OnLeave."),
+    Game::Doc::Opt("enabled", "bool", "false", "When true, the frame takes mouse motion: OnEnter and OnLeave."),
+};
+const Game::Doc::Field kEnableMotionArgs[] = {
+    Game::Doc::Opt("enable", "bool", "false", "When true, the frame takes mouse motion: OnEnter and OnLeave."),
 };
 const Game::Doc::Field kClickRets[] = {
     Game::Doc::Req("enabled", "bool", "True when the frame takes mouse clicks."),
@@ -436,6 +495,7 @@ const Game::Doc::Field kPropagateRets[] = {
 };
 const Game::Doc::Function kSetClick{"Sets whether the frame takes mouse clicks.", kClickArgs, {}};
 const Game::Doc::Function kSetMotion{"Sets whether the frame takes mouse motion.", kMotionArgs, {}};
+const Game::Doc::Function kEnableMotion{"Sets whether the frame takes mouse motion.", kEnableMotionArgs, {}};
 const Game::Doc::Function kIsClick{"Returns whether the frame takes mouse clicks.", {}, kClickRets};
 const Game::Doc::Function kIsMotion{"Returns whether the frame takes mouse motion.", {}, kMotionRets};
 const Game::Doc::Function kSetPropagate{
@@ -443,7 +503,8 @@ const Game::Doc::Function kSetPropagate{
 const Game::Doc::Function kCanPropagate{"Returns whether the frame passes mouse clicks on.", {}, kPropagateRets};
 const Game::Doc::Field kPassThroughArgs[] = {
     Game::Doc::Vararg("string",
-                      "Any number of button names: LeftButton, RightButton, MiddleButton, Button4, Button5."),
+                      "Any number of button names: LeftButton (Button1), RightButton (Button2), MiddleButton "
+                      "(Button3), Button4 to Button31."),
 };
 const Game::Doc::Function kSetPassThrough{
     "Sets the mouse buttons the frame lets through. A click with one of them goes to the frame under it, or to the "
@@ -467,6 +528,7 @@ const Game::Doc::Method g_methodDocs[] = {
     {"IsMouseEnabled", &kIsMouseEnabled},
     {"SetMouseClickEnabled", &kSetClick},
     {"SetMouseMotionEnabled", &kSetMotion},
+    {"EnableMouseMotion", &kEnableMotion},
     {"IsMouseClickEnabled", &kIsClick},
     {"IsMouseMotionEnabled", &kIsMotion},
     {"SetPropagateMouseClicks", &kSetPropagate},
@@ -490,6 +552,20 @@ const Game::ModuleAutoRegister _autoreg{&RegisterLuaFunctions};
 } // namespace
 
 bool MotionEnabled(void *frame) { return MouseBit(frame) && g_motionOff.count(frame) == 0; }
+
+void ProbePressed(const void *event) {
+    if (g_pressed.extras.empty())
+        return;
+    using Probe_t = int(__thiscall *)(void *frame, const void *event);
+    const std::vector<void *> extras = g_pressed.extras;
+    for (void *f : extras) {
+        // A script may take a frame out, or destroy it, during the probes.
+        if (f == nullptr || std::find(g_pressed.extras.begin(), g_pressed.extras.end(), f) == g_pressed.extras.end())
+            continue;
+        const void *vtable = Game::Read<const void *>(f, 0);
+        Game::Read<Probe_t>(vtable, Offsets::VTBL_FRAME_ON_MOUSE_MOVE)(f, event);
+    }
+}
 
 void OnInputRemoved(void *frame) {
     g_pressed.extras.erase(std::remove(g_pressed.extras.begin(), g_pressed.extras.end(), frame),

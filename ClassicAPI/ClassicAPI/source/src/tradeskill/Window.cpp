@@ -62,6 +62,7 @@
 #include "Offsets.h"
 #include "dbc/Lookup.h"
 #include "spell/Lookup.h"
+#include "spell/SkillLine.h"
 #include "unit/Identity.h"
 
 #include <cstddef>
@@ -75,13 +76,9 @@ namespace {
 
 using Toggle_t = void(__fastcall *)(uint32_t key);
 using Void_t = void(__cdecl *)();
-using AbilityLookup_t = const uint8_t *(__fastcall *)(uint32_t race, uint32_t classId,
-                                                      uint32_t spellID);
 using PlayerList_t = const void *(__thiscall *)(void *player, uint32_t key);
 using UnitAbility_t = const uint8_t *(__thiscall *)(void *unit, uint32_t spellID);
 using SkillTotal_t = int(__thiscall *)(void *player, uint32_t skillLine);
-using SlotForSkill_t = int(__thiscall *)(const void *player, uint32_t skillLine);
-using Script_t = int(__fastcall *)(void *L);
 
 // The only Craft type GetCraftDisplaySkillLine answers for (Enchanting).
 constexpr uint32_t kCraftTypeEnscribe = 3;
@@ -120,13 +117,11 @@ uint32_t TradeSkillOpen() { return Game::Read<uint32_t>(Offsets::VAR_CURRENT_TRA
 uint32_t CraftOpen() { return Game::Read<uint32_t>(Offsets::VAR_CRAFT_WINDOW_STATE); }
 
 const uint8_t *Ability(uint32_t race, uint32_t classId, uint32_t spellID) {
-    return reinterpret_cast<AbilityLookup_t>(Offsets::FUN_SKILL_LINE_ABILITY_LOOKUP)(race, classId,
-                                                                                    spellID);
+    return Spell::SkillLine::AbilityFor(race, classId, spellID);
 }
 
 const char *SpellName(int spellID) {
-    return DBC::LocalizedField(Offsets::VAR_SPELL_RECORDS, Offsets::VAR_SPELL_RECORD_COUNT,
-                               static_cast<uint32_t>(spellID), Offsets::OFF_SPELL_NAMES);
+    return Spell::Lookup::Name(Spell::Lookup::RecordForID(spellID));
 }
 
 // The window open on `open` builds its rows from the link.
@@ -222,13 +217,8 @@ const uint8_t *__fastcall TradeSkillAbility(uint32_t race, uint32_t classId, uin
 int __fastcall TradeSkillRank(const uint8_t *player, void *, uint32_t skillLine) {
     if (ShowsOtherLink(g_tradeSkill, TradeSkillOpen()))
         return g_tradeSkill.rank;
-    const int slot =
-        reinterpret_cast<SlotForSkill_t>(Offsets::FUN_SKILL_LINE_TO_SLOT)(player, skillLine);
-    if (slot < 0)
-        return 0;
-    return Game::Read<uint16_t>(Game::Read<const uint8_t *>(player, Offsets::OFF_CGPLAYER_INFO) +
-                                    Offsets::OFF_SKILL_INFO_TABLE + slot * Offsets::SKILL_INFO_STRIDE,
-                                Offsets::OFF_SKILL_INFO_CUR);
+    Spell::SkillLine::Rank r;
+    return Spell::SkillLine::PlayerRank(player, skillLine, &r) ? r.rank : 0;
 }
 
 // CALL_BUILD_CRAFT_SPELLS: CGPlayer_C::GetTabSpells.
@@ -289,7 +279,7 @@ int __fastcall Script_IsCraftLinked(void *L) { return PushLinked(L, g_craft); }
 
 // `GetTradeSkillLine()`: 3.3.5 answers with the linker's ranks.
 int __fastcall Script_GetTradeSkillLine(void *L) {
-    const int pushed = reinterpret_cast<Script_t>(Offsets::FUN_SCRIPT_GET_TRADE_SKILL_LINE)(L);
+    const int pushed = Game::Lua::CallScript(Offsets::FUN_SCRIPT_GET_TRADE_SKILL_LINE, L);
     if (ShowsOtherLink(g_tradeSkill, TradeSkillOpen())) {
         Game::Lua::SetTop(L, -3); // the player's rank and maximum
         Game::Lua::PushNumber(L, g_tradeSkill.rank);
@@ -309,7 +299,7 @@ int __fastcall Script_GetCraftDisplaySkillLine(void *L) {
                                                  Offsets::OFF_SKILL_LINE_NAME)
                            : nullptr;
     if (name == nullptr)
-        return reinterpret_cast<Script_t>(Offsets::FUN_SCRIPT_GET_CRAFT_DISPLAY_SKILL_LINE)(L);
+        return Game::Lua::CallScript(Offsets::FUN_SCRIPT_GET_CRAFT_DISPLAY_SKILL_LINE, L);
     Game::Lua::PushString(L, name);
     Game::Lua::PushNumber(L, s.rank);
     Game::Lua::PushNumber(L, s.maxRank);
@@ -321,7 +311,7 @@ int __fastcall Script_GetCraftDisplaySkillLine(void *L) {
 int __fastcall Script_GetCraftName(void *L) {
     const char *name = ShowsOtherLink(g_craft, CraftOpen()) ? SpellName(g_craft.spellID) : nullptr;
     if (name == nullptr)
-        return reinterpret_cast<Script_t>(Offsets::FUN_SCRIPT_GET_CRAFT_NAME)(L);
+        return Game::Lua::CallScript(Offsets::FUN_SCRIPT_GET_CRAFT_NAME, L);
     Game::Lua::PushString(L, name);
     return 1;
 }

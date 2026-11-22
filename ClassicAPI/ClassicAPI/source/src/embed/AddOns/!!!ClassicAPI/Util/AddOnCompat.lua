@@ -146,6 +146,53 @@ if C_AddOns.DoesAddOnExist("Turtle_GroupUI") then
     end)
 end
 
+-- RollFor's minimap button calls `RegisterForClicks("anyUp")`
+-- (MinimapButton.lua). Stock 1.12 does not know the AnyUp name, so its click
+-- mask stays empty and a real click never fires OnClick. RollFor works around
+-- that by calling OnClick from its own OnMouseUp. Our DLL accepts AnyUp, so
+-- the engine now fires OnClick too, and the handler runs twice per click.
+-- (RollFor's OnMouseUp skips the call after a drag; a release that ends a
+-- drag runs no engine OnClick either.)
+-- Each of its three actions is a toggle, so the window opens and closes again
+-- in the same frame.
+--
+-- Let the handler run once per release, whichever path gets there first. The
+-- manual call goes through the frame field (`self:OnClick()`) from OnMouseUp,
+-- and the engine's OnClick follows it in the same release, so a manual call
+-- marks that release and the engine's OnClick after it skips. A RollFor
+-- without the manual call never sets the mark, so its engine OnClick always
+-- runs, and Button:Click() runs as usual. A press clears the mark, in case a
+-- release outside the button ran the manual call with no engine OnClick
+-- after it.
+if C_AddOns.DoesAddOnExist("RollFor") then
+    EventUtil.ContinueOnAddOnLoaded("RollFor", function()
+        local minimapButton = RollFor and RollFor.MinimapButton
+        if not (minimapButton and minimapButton.new) then return end
+
+        hooksecurefunc(minimapButton, "new", function()
+            local button = RollForMinimapButton
+            local onClick = button and button:GetScript("OnClick")
+            if not onClick then return end
+
+            local ranByMouseUp = false
+            button.OnClick = function(...)
+                ranByMouseUp = true
+                return onClick(...)
+            end
+            button:SetScript("OnClick", function(...)
+                if ranByMouseUp then
+                    ranByMouseUp = false
+                    return
+                end
+                return onClick(...)
+            end)
+            button:HookScript("OnMouseDown", function()
+                ranByMouseUp = false
+            end)
+        end)
+    end)
+end
+
 if C_AddOns.DoesAddOnExist("Puppeteer") then
     EventUtil.ContinueOnAddOnLoaded("Puppeteer", function()
         CAPI_MouseoverClearedCompat(PTEnemyUpdater)
@@ -266,13 +313,20 @@ EnsureCompostErasesInPlace()
 -- that loads later, which is what breaks pfUI's who list when it calls
 -- `NORMAL_FONT_COLOR:GetRGB()` (brues-code/pfUI#56).
 --
+-- RAID_CLASS_COLORS gets the same treatment: an addon that swaps in its own
+-- plain class colors breaks every `RAID_CLASS_COLORS[class]:GetRGB()`, such as
+-- the damage meter's bars.
+--
 -- Re-apply after each addon loads, so a clobbered color is repaired before the
 -- next addon reads it. This also covers an addon loaded on demand mid-session.
--- The pass mixes the methods back into the table that is there, and costs one
--- lookup per color when nothing is broken.
+-- Login and entering the world cover addons that write their colors from those
+-- events rather than at file scope. The pass mixes the methods back into the
+-- table that is there, and costs one lookup per color when nothing is broken.
 EventRegistry:RegisterFrameEventAndCallback("ADDON_LOADED",
                                             CAPI_ApplyStandardColorGlobals)
 EventRegistry:RegisterFrameEventAndCallback("PLAYER_LOGIN",
+                                            CAPI_ApplyStandardColorGlobals)
+EventRegistry:RegisterFrameEventAndCallback("PLAYER_ENTERING_WORLD",
                                             CAPI_ApplyStandardColorGlobals)
 
 -- Outfitter keeps its minimap button's drag state in a plain field,

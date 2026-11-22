@@ -15,9 +15,9 @@
 
 #include "Game.h"
 #include "Offsets.h"
+#include "baselib/Ascii.h"
 #include "dbc/Lookup.h"
-
-#include <cstring>
+#include "item/Icon.h"
 
 namespace Spell::Lookup {
 
@@ -29,6 +29,21 @@ const uint8_t *RecordForID(int spellID) {
                        static_cast<uint32_t>(spellID));
 }
 
+const char *Name(const uint8_t *spellRecord) {
+    return DBC::LocalizedString(spellRecord, Offsets::OFF_SPELL_NAMES);
+}
+
+const char *Rank(const uint8_t *spellRecord) {
+    return DBC::LocalizedString(spellRecord, Offsets::OFF_SPELL_RECORD_RANK);
+}
+
+int DurationMs(const uint8_t *spellRecord, bool applyMods) {
+    // `pet = 0` selects the player as the caster; the third argument is skipMod.
+    using GetDuration_t = int(__fastcall *)(const uint8_t *spellRecord, int pet, int skipMod);
+    return reinterpret_cast<GetDuration_t>(static_cast<uintptr_t>(
+        Offsets::FUN_GET_SPELL_DURATION))(spellRecord, 0, applyMods ? 0 : 1);
+}
+
 const char *IconPath(const uint8_t *spellRecord, bool active) {
     if (spellRecord == nullptr)
         return nullptr;
@@ -38,6 +53,56 @@ const char *IconPath(const uint8_t *spellRecord, bool active) {
     return DBC::StringField(Offsets::VAR_SPELL_ICON_RECORDS,
                             Offsets::VAR_SPELL_ICON_COUNT, iconID,
                             Offsets::OFF_SPELLICON_PATH);
+}
+
+uint32_t CreatedItemID(const uint8_t *spellRecord) {
+    if (spellRecord == nullptr ||
+        Game::Read<int>(spellRecord, Offsets::OFF_SPELL_RECORD_EFFECT) !=
+            Offsets::SPELL_EFFECT_CREATE_ITEM)
+        return 0;
+    return Game::Read<uint32_t>(spellRecord, Offsets::OFF_SPELL_RECORD_EFFECT_ITEM_TYPE);
+}
+
+// SpellIcon.dbc row 1, `Interface\Icons\Temp`: the placeholder icon of 970 of
+// the 1733 SPELL_ATTR_TRADESPELL spells in Spell.dbc. 969 of those make an
+// item with effect 0 = CREATE_ITEM, as do 438 more Temp spells that are not
+// recipes (Create Fervor Potion, Filling) (parsed from DBFilesClient\Spell.dbc).
+constexpr uint32_t SPELL_ICON_TEMP = 1;
+
+bool HasPlaceholderIcon(const uint8_t *spellRecord) {
+    return spellRecord != nullptr &&
+           Game::Read<uint32_t>(spellRecord, Offsets::OFF_SPELL_RECORD_ICON_ID) ==
+               SPELL_ICON_TEMP;
+}
+
+const char *CreatedItemIconPath(const uint8_t *spellRecord) {
+    if (!HasPlaceholderIcon(spellRecord))
+        return nullptr;
+    static char path[260];
+    return Item::Icon::PathForItemIDOrRequest(CreatedItemID(spellRecord), path, sizeof path)
+               ? path
+               : nullptr;
+}
+
+const char *DisplayIconPath(const uint8_t *spellRecord) {
+    if (spellRecord == nullptr)
+        return nullptr;
+    using WeaponIconPath_t = const char *(__cdecl *)();
+    if (Game::Read<int32_t>(spellRecord, Offsets::OFF_SPELL_RECORD_EFFECT) ==
+        Offsets::SPELL_EFFECT_ATTACK)
+        return reinterpret_cast<WeaponIconPath_t>(
+            static_cast<uintptr_t>(Offsets::FUN_ATTACK_ICON_PATH))();
+    if ((Game::Read<uint32_t>(spellRecord, Offsets::OFF_SPELL_RECORD_ATTRIBUTES) &
+         Offsets::SPELL_ATTR_RANGED) != 0 &&
+        (Game::Read<uint32_t>(spellRecord, Offsets::OFF_SPELL_RECORD_ATTRIBUTES_EX2) &
+         Offsets::SPELL_ATTR_EX2_AUTOREPEAT_FLAG) != 0) {
+        if (const char *ranged = reinterpret_cast<WeaponIconPath_t>(
+                static_cast<uintptr_t>(Offsets::FUN_RANGED_ICON_PATH))())
+            return ranged;
+    }
+    if (const char *created = CreatedItemIconPath(spellRecord))
+        return created;
+    return IconPath(spellRecord, false);
 }
 
 bool IsFitToFamily(const uint8_t *spellRecord, uint32_t family,
@@ -62,6 +127,16 @@ bool HasEffect(const uint8_t *spellRecord, int effect) {
     return false;
 }
 
+int CastTimeMs(int spellID, bool pet, bool allowNegative) {
+    using Fn = int(__fastcall *)(int spellID, int pet, int allowNegative);
+    return reinterpret_cast<Fn>(Offsets::FUN_GET_CAST_TIME)(spellID, pet ? 1 : 0, allowNegative ? 1 : 0);
+}
+
+int32_t PowerCost(int spellID, bool pet) {
+    using Fn = int32_t(__fastcall *)(int spellID, int pet);
+    return reinterpret_cast<Fn>(Offsets::FUN_GET_SPELL_COST)(spellID, pet ? 1 : 0);
+}
+
 int FindAuraEffect(const uint8_t *spellRecord, int aura) {
     if (spellRecord == nullptr)
         return -1;
@@ -81,10 +156,24 @@ int SpellbookSlotToID(int slot1Based, int bookType) {
     const int slot = slot1Based - 1;
     if (slot < 0 || slot >= Offsets::SPELLBOOK_MAX_SLOTS)
         return 0;
-    const auto base = (bookType == 1) ? Offsets::VAR_PET_SPELLBOOK
-                                      : Offsets::VAR_PLAYER_SPELLBOOK;
-    auto *array = reinterpret_cast<const int *>(static_cast<uintptr_t>(base));
-    return array[slot];
+    return BookArray(bookType)[slot];
+}
+
+const int *BookArray(int bookType) {
+    return reinterpret_cast<const int *>(static_cast<uintptr_t>(
+        bookType == 1 ? Offsets::VAR_PET_SPELLBOOK : Offsets::VAR_PLAYER_SPELLBOOK));
+}
+
+int BookCount(int bookType) {
+    const int count = Game::Read<int>(static_cast<uintptr_t>(
+        bookType == 1 ? Offsets::VAR_PET_SPELLBOOK_COUNT : Offsets::VAR_PLAYER_SPELLBOOK_COUNT));
+    return count < 0 ? 0 : (count > Offsets::SPELLBOOK_MAX_SLOTS ? Offsets::SPELLBOOK_MAX_SLOTS : count);
+}
+
+int BookTypeArg(void *L, int idx) {
+    if (!Game::Lua::IsString(L, idx))
+        return 0;
+    return Ascii::EqualCI(Game::Lua::ToString(L, idx), "pet") ? 1 : 0;
 }
 
 int SpellBankArgToBookType(void *L, int idx) {
@@ -100,26 +189,26 @@ int SpellbookItemArgsToID(void *L, int slotIdx, int bankIdx) {
     return SpellbookSlotToID(slot, SpellBankArgToBookType(L, bankIdx));
 }
 
-int RecipeSlotSpellID(uintptr_t entriesVar, uintptr_t countVar, int slotIndex0) {
-    if (slotIndex0 < 0)
-        return 0;
-    const int count = static_cast<int>(
-        *reinterpret_cast<const uint32_t *>(countVar));
-    if (slotIndex0 >= count)
+int RecipeRowSpellID(uintptr_t entriesVar, uintptr_t countVar, double index1) {
+    const uint32_t count = *reinterpret_cast<const uint32_t *>(countVar);
+    if (!(index1 >= 1.0 && index1 < static_cast<double>(count) + 1.0))
         return 0;
     auto **entries = *reinterpret_cast<const uint8_t ***>(entriesVar);
     if (entries == nullptr)
         return 0;
-    auto *entry = entries[slotIndex0];
+    auto *entry = entries[static_cast<int>(index1) - 1];
     if (entry == nullptr)
         return 0;
     return static_cast<int>(*reinterpret_cast<const uint32_t *>(
         entry + Offsets::OFF_CRAFT_ENTRY_SPELL_ID));
 }
 
-int NthRecipeReagentItemID(const uint8_t *spellRecord, int reagentIndex1) {
-    if (spellRecord == nullptr || reagentIndex1 < 1)
+int NthRecipeReagentItemID(const uint8_t *spellRecord, double reagentIndex1) {
+    if (spellRecord == nullptr ||
+        !(reagentIndex1 >= 1.0 &&
+          reagentIndex1 < static_cast<double>(Offsets::SPELL_RECIPE_MAX_REAGENTS) + 1.0))
         return 0;
+    const int n = static_cast<int>(reagentIndex1);
     auto *reagents = reinterpret_cast<const uint32_t *>(
         spellRecord + Offsets::OFF_SPELL_REAGENT_ID);
     int found = 0;
@@ -127,7 +216,7 @@ int NthRecipeReagentItemID(const uint8_t *spellRecord, int reagentIndex1) {
         const int itemID = static_cast<int>(reagents[i]);
         if (itemID == 0)
             return 0;
-        if (++found == reagentIndex1)
+        if (++found == n)
             return itemID;
     }
     return 0;
@@ -136,100 +225,19 @@ int NthRecipeReagentItemID(const uint8_t *spellRecord, int reagentIndex1) {
 int FindSpellbookSlot(int spellID, int *outBookType) {
     if (spellID <= 0)
         return 0;
-    // Walk the full SPELLBOOK_MAX_SLOTS range rather than break-on-zero
-    // — the BSS arrays are zero-padded past the populated count, so any
-    // 0 entry is "empty slot" and won't match a positive spellID. Cost
-    // is 1024 dword reads per book = 8KB of cache-friendly memory.
-    auto *playerArray = reinterpret_cast<const int *>(
-        static_cast<uintptr_t>(Offsets::VAR_PLAYER_SPELLBOOK));
-    for (int i = 0; i < Offsets::SPELLBOOK_MAX_SLOTS; i++) {
-        if (playerArray[i] == spellID) {
+    for (int bookType = 0; bookType <= 1; ++bookType) {
+        int slot = 0;
+        ForEachBookSpell(bookType, [&](int i, int id) {
+            if (id != spellID)
+                return true;
+            slot = i + 1;
+            return false;
+        });
+        if (slot != 0) {
             if (outBookType != nullptr)
-                *outBookType = 0;
-            return i + 1;
+                *outBookType = bookType;
+            return slot;
         }
-    }
-    auto *petArray = reinterpret_cast<const int *>(
-        static_cast<uintptr_t>(Offsets::VAR_PET_SPELLBOOK));
-    for (int i = 0; i < Offsets::SPELLBOOK_MAX_SLOTS; i++) {
-        if (petArray[i] == spellID) {
-            if (outBookType != nullptr)
-                *outBookType = 1;
-            return i + 1;
-        }
-    }
-    return 0;
-}
-
-int SpellNameToID(const char *name) {
-    if (name == nullptr || *name == '\0')
-        return 0;
-    const int locale = *reinterpret_cast<const int *>(
-        static_cast<uintptr_t>(Offsets::VAR_LOCALE_INDEX));
-
-    // A trailing "(subtext)" pins a specific rank — the vanilla
-    // "SpellName(Rank N)" addressing that CastSpellByName and friends use
-    // (a space before the paren is tolerated: "Mind Blast (Rank 8)"). The
-    // subtext is matched against the record's localized Rank field. With no
-    // subtext, we return the highest known rank of the base name.
-    char base[256];
-    char wantRank[64];
-    bool haveRank = false;
-    {
-        const char *open = std::strrchr(name, '(');
-        const char *close = (open != nullptr) ? std::strrchr(name, ')') : nullptr;
-        size_t baseLen;
-        if (open != nullptr && close != nullptr && close > open + 1) {
-            baseLen = static_cast<size_t>(open - name);
-            size_t rankLen = static_cast<size_t>(close - open - 1);
-            if (rankLen >= sizeof(wantRank))
-                rankLen = sizeof(wantRank) - 1;
-            std::memcpy(wantRank, open + 1, rankLen);
-            wantRank[rankLen] = '\0';
-            haveRank = true;
-        } else {
-            baseLen = std::strlen(name);
-        }
-        while (baseLen > 0 &&
-               (name[baseLen - 1] == ' ' || name[baseLen - 1] == '\t'))
-            --baseLen; // trim any space between the name and the paren
-        if (baseLen == 0 || baseLen >= sizeof(base))
-            return 0;
-        std::memcpy(base, name, baseLen);
-        base[baseLen] = '\0';
-    }
-
-    // Player book first, then pet — retail's precedence. For a plain name we
-    // keep the LAST matching slot: a spell's ranks are stored in ascending
-    // order, so the final match is the highest rank the player knows. For a
-    // rank subtext we return the exact name+rank match.
-    const uintptr_t books[2] = {Offsets::VAR_PLAYER_SPELLBOOK,
-                                Offsets::VAR_PET_SPELLBOOK};
-    for (uintptr_t bookBase : books) {
-        auto *array = reinterpret_cast<const int *>(bookBase);
-        int best = 0;
-        for (int i = 0; i < Offsets::SPELLBOOK_MAX_SLOTS; ++i) {
-            const int spellID = array[i];
-            if (spellID <= 0)
-                continue; // BSS-zeroed empty slot
-            const uint8_t *record = RecordForID(spellID);
-            if (record == nullptr)
-                continue;
-            const char *sname = *reinterpret_cast<const char *const *>(
-                record + Offsets::OFF_SPELL_NAMES + locale * 4);
-            if (sname == nullptr || std::strcmp(sname, base) != 0)
-                continue;
-            if (!haveRank) {
-                best = spellID; // highest rank (last match)
-                continue;
-            }
-            const char *srank = *reinterpret_cast<const char *const *>(
-                record + Offsets::OFF_SPELL_RECORD_RANK + locale * 4);
-            if (srank != nullptr && std::strcmp(srank, wantRank) == 0)
-                return spellID; // exact name + rank
-        }
-        if (!haveRank && best != 0)
-            return best;
     }
     return 0;
 }

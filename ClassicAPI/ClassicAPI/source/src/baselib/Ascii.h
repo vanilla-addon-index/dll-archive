@@ -17,7 +17,12 @@
 // any context (hook callbacks, DBC walks). Use these instead of hand-rolling
 // yet another case-insensitive compare.
 
+#include <cstddef>
+
 namespace Ascii {
+
+// A space or a tab: the blank the engine's macro and TOC parsers skip.
+inline bool IsBlank(char c) { return c == ' ' || c == '\t'; }
 
 // Fold a single ASCII char to lower case (non-letters unchanged).
 inline char ToLower(char c) {
@@ -33,6 +38,24 @@ inline bool EqualCI(const char *a, const char *b) {
         if (ToLower(*a) != ToLower(*b))
             return false;
     return *a == *b;
+}
+
+// Case-insensitive equality of the `n` bytes at `s` (not terminated) against
+// the terminated `lit`: true only when `lit` is exactly `n` long.
+inline bool EqualCI(const char *s, size_t n, const char *lit) {
+    for (size_t i = 0; i < n; ++i)
+        if (lit[i] == '\0' || ToLower(s[i]) != ToLower(lit[i]))
+            return false;
+    return lit[n] == '\0';
+}
+
+// Case-insensitive "`s` starts with `prefix`"; stops at `s`'s terminator, so a
+// short `s` is never read past.
+inline bool StartsWithCI(const char *s, const char *prefix) {
+    for (size_t i = 0; prefix[i] != '\0'; ++i)
+        if (s[i] == '\0' || ToLower(s[i]) != ToLower(prefix[i]))
+            return false;
+    return true;
 }
 
 } // namespace Ascii

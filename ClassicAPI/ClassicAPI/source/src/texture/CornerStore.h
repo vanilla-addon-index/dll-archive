@@ -13,6 +13,8 @@
 
 #pragma once
 
+#include "AutoList.h"
+
 // Shared observer for a texture's corner store (FUN_REGION_STORE_CORNERS),
 // which writes the drawn quad from a rect: every layout of the texture
 // (FUN_TEXTURE_ON_FRAME_SIZE_CHANGED), a coordinate change on a texture with
@@ -25,12 +27,21 @@
 //   static const Texture::CornerStore::AutoSubscribe _sub{&OnCornersStored};
 namespace Texture::CornerStore {
 
+// The rect the corner store is given, made from the region's layout rect
+// `rect` ({top, left, bottom, right}) in place: cropped by the texcoords
+// (FUN_REGION_TEXCOORD_CROP) only when SetTexCoordModifiesRect is on, as the
+// texture's layout callback and the layout-resolve store (FUN_00770670) do.
+// With the flag clear, a partial texcoord draws at the region's full size.
+void CropInput(void *region, float (&rect)[4]);
+
+// Writes the texture's quad from its layout rect (OFF_REGION_RECT), cropped
+// by CropInput, through the corner store: what the texture's layout callback
+// writes, for a caller that changed what the quad depends on (the crop flag,
+// the coordinates) without a layout that would rewrite it.
+void StoreFromRect(void *texture);
+
 using Listener = void (*)(void *region);
 
-struct AutoSubscribe {
-    explicit AutoSubscribe(Listener fn);
-    Listener fn;
-    AutoSubscribe *next;
-};
+using AutoSubscribe = AutoList<struct AutoSubscribeTag, Listener>;
 
 } // namespace Texture::CornerStore

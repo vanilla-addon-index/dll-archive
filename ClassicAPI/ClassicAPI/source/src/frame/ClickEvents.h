@@ -13,16 +13,10 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 namespace Frame::ClickEvents {
-
-// Drop every per-button PreClick/PostClick handler cell before a `/reload` (or
-// logout) tears down the button objects and resets the Lua state. The handler
-// refs die with the Lua reset, and a recycled button address must not fire a
-// stale ref. Wired from `FrameScript_Initialize_h` in DllMain.cpp, alongside
-// the other per-reload cleaners.
-void PrepareForReload();
 
 // The button name of the innermost click / mouse dispatch running now (one of
 // the engine's static name literals), or null outside one — what
@@ -34,8 +28,15 @@ const char *CurrentButton();
 // "UNKNOWN" for any other mask.
 const char *ButtonNameForMask(uint32_t mask);
 
-// The inverse: the bit for a button name ("LeftButton" … "Button5"),
-// ignoring case; 0 for any other name.
+// A mouse button's name as the later clients read one (3.80.2's
+// FUN_140597C00): LeftButton or Button1, RightButton or Button2, MiddleButton
+// or Button3, Button4 to Button31, ignoring case; the first `len` characters
+// of `name`. True for a button name, with `mask` its bit, 0 for a button 1.12
+// has no bit for (Button6 and up).
+bool ParseButtonName(const char *name, size_t len, uint32_t &mask);
+
+// The bit for a button name, as ParseButtonName reads it; 0 for any other
+// name.
 uint32_t MaskForButtonName(const char *name);
 
 } // namespace Frame::ClickEvents

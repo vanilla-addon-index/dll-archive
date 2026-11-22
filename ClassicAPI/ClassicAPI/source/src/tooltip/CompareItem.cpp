@@ -41,6 +41,7 @@
 
 #include "Game.h"
 #include "Offsets.h"
+#include "frame/Region.h"
 #include "item/Arg.h"
 #include "item/CGItem.h"
 #include "item/ID.h"
@@ -48,6 +49,7 @@
 #include "item/Record.h"
 #include "item/StatAccum.h"
 #include "item/TooltipItem.h"
+#include "object/Resolve.h"
 #include "tooltip/Lines.h"
 #include "tooltip/SetEvents.h"
 #include "ui/ColorData.h"
@@ -70,7 +72,6 @@ using BuildItemTooltip_t = void(__thiscall *)(void *self, uint32_t itemID, const
                                               const void *guid2, int a4, int a5, int a6,
                                               int headerFlag, int a8, int a9);
 using SetLineText_t = void(__thiscall *)(void *fontString, const char *text, int flag);
-using SetLineColor_t = void(__thiscall *)(void *fontString, const void *colorBGRA);
 
 int InvTypeOf(const uint8_t *rec) {
     return static_cast<int>(Game::Read<uint32_t>(rec, Offsets::OFF_ITEMSTATS_INVENTORY_TYPE));
@@ -420,7 +421,7 @@ void FSSetText(void *fs, const char *text) {
 
 void FSSetColor(void *fs, const uint32_t &color) {
     if (fs != nullptr)
-        reinterpret_cast<SetLineColor_t>(Offsets::FUN_FONTSTRING_SET_COLOR)(fs, &color);
+        Frame::Region::SetColor(fs, color);
 }
 
 using ShowHideFS_t = void(__fastcall *)(void *fs);
@@ -509,13 +510,6 @@ int ItemSuffix(const uint8_t *item) {
         Game::Read<uint32_t>(desc, Offsets::OFF_DESCRIPTOR_RANDOM_PROPERTY));
 }
 
-uint64_t EquippedGUID(const uint8_t *item) {
-    auto *instance = Item::InstanceBlock(item);
-    if (instance == nullptr)
-        return 0;
-    return Game::Read<uint64_t>(instance, Offsets::OFF_INSTANCE_BLOCK_GUID);
-}
-
 int __fastcall Script_SetHyperlinkCompareItem(void *L) {
     if (Game::Lua::Type(L, 1) != Game::Lua::TYPE_TABLE) {
         Game::Lua::Error(
@@ -532,10 +526,7 @@ int __fastcall Script_SetHyperlinkCompareItem(void *L) {
 
     auto result = [&](bool filled) -> int {
         Game::Lua::SetTop(L, argc);
-        if (filled)
-            Game::Lua::PushNumber(L, 1.0);
-        else
-            Game::Lua::PushNil(L);
+        Game::Lua::PushFlag(L, filled);
         return 1;
     };
 
@@ -562,7 +553,7 @@ int __fastcall Script_SetHyperlinkCompareItem(void *L) {
     const int equippedID = Item::ID::FromCGItem(eqItem);
     if (equippedID <= 0)
         return result(false);
-    uint64_t equippedGUID = EquippedGUID(eqItem);
+    uint64_t equippedGUID = ::Object::Guid(eqItem);
 
     // The tooltip's underlying CFrameScriptObject — the `this` for the
     // engine's builder / add-line thiscalls.
@@ -587,7 +578,7 @@ int __fastcall Script_SetHyperlinkCompareItem(void *L) {
                 if (live != nullptr)
                     comparedSuffix = ItemSuffix(live);
                 else if (cmpID == linkID)
-                    comparedSuffix = Item::StatAccum::ParseRandomSuffixFromLink(L, 2);
+                    comparedSuffix = Item::Arg::Resolve(L, 2).suffix;
             }
         }
     }

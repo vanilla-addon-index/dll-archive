@@ -187,8 +187,6 @@ function CharacterSelect_OnEvent()
 		UpdateAddonButton();
 	elseif ( event == "CHARACTER_LIST_UPDATE" ) then
 		CharacterSelect_RebuildTranslationTable();
-		CharacterOrder_Apply();
-		CharacterOrder_Save();
 		if ( this.pendingSelectedCharID ) then
 			this.selectedIndex = GetIndexFromCharID(this.pendingSelectedCharID);
 			this.pendingSelectedCharID = nil;
@@ -530,7 +528,7 @@ function MoveCharacter(originIndex, targetIndex, fromDrag)
 	end
 	UpdateCharacterSelection();
 	UpdateCharacterList();
-	CharacterOrder_Save();
+	CharacterSelect_SaveCharacterOrder();
 end
 
 -- ---------------------------------------------------------------------------
@@ -624,77 +622,14 @@ function CharacterSelect_RenameCharacter()
 end
 
 -- ---------------------------------------------------------------------------
--- Persistence — relies on ClassicAPI's glue bindings
--- (GetSavedCharacterOrder / SetSavedCharacterOrder). Both calls are
--- guarded so the drag feature is functional in-session even before the
--- DLL binding ships; persistence kicks in automatically once it does.
+-- Persistence — ClassicAPI's SaveCharacterOrder. The client loads the list
+-- in the saved order, so the translation table starts as identity on every
+-- CHARACTER_LIST_UPDATE. Guarded so dragging still works for the session
+-- without the DLL; only persistence is lost.
 -- ---------------------------------------------------------------------------
 
-function CharacterOrder_Load()
-	if ( type(GetSavedCharacterOrder) ~= "function" ) then return ""; end
-	local realm = GetServerName() or "";
-	if ( realm == "" ) then return ""; end
-	return GetSavedCharacterOrder(realm) or "";
-end
-
-function CharacterOrder_Apply()
-	local saved = CharacterOrder_Load();
-	if ( not saved or saved == "" ) then return; end
-	local numChars = GetNumCharacters();
-	if ( numChars < 2 ) then return; end
-
-	-- Build name -> charID lookup against the server's natural order.
-	-- The translation table is identity at this point (set by
-	-- RebuildTranslationTable), so charID == display index here.
-	local nameToID = {};
-	for charID = 1, numChars do
-		local name = GetCharacterInfo(charID);
-		if ( name ) then nameToID[name] = charID; end
+function CharacterSelect_SaveCharacterOrder()
+	if ( CharacterSelect.orderChanged and type(SaveCharacterOrder) == "function" ) then
+		SaveCharacterOrder(CharacterSelect.translationTable);
 	end
-
-	local newOrder = {};
-	local claimed = {};
-	for name in string.gfind(saved, "([^|]+)") do
-		local charID = nameToID[name];
-		if ( charID and not claimed[charID] ) then
-			table.insert(newOrder, charID);
-			claimed[charID] = 1;
-		end
-	end
-	-- Append any characters that exist on the server but weren't in the
-	-- saved order (newly created since last save).
-	for charID = 1, numChars do
-		if ( not claimed[charID] ) then
-			table.insert(newOrder, charID);
-		end
-	end
-
-	-- Only adopt the rebuilt order if it actually differs from identity.
-	local differs = false;
-	for i = 1, table.getn(newOrder) do
-		if ( newOrder[i] ~= i ) then differs = true; break; end
-	end
-	if ( differs ) then
-		CharacterSelect.translationTable = newOrder;
-		CharacterSelect.orderChanged = 1;
-	end
-end
-
-function CharacterOrder_Save()
-	if ( type(SetSavedCharacterOrder) ~= "function" ) then return; end
-	local realm = GetServerName() or "";
-	if ( realm == "" ) then return; end
-	local numChars = GetNumCharacters();
-	-- Skip when the list is empty. CHARACTER_LIST_UPDATE can fire in a
-	-- transient state (returning to glue after logout, before the server's
-	-- SMSG_CHAR_ENUM populates the list) where numChars is briefly 0.
-	-- Writing an empty string here would wipe the saved order before the
-	-- real update arrives to Apply it.
-	if ( numChars == 0 ) then return; end
-	local names = {};
-	for i = 1, numChars do
-		local name = GetCharacterInfo(GetCharIDFromIndex(i));
-		if ( name ) then table.insert(names, name); end
-	end
-	SetSavedCharacterOrder(realm, table.concat(names, "|"));
 end

@@ -283,9 +283,20 @@ const Game::ReloadAutoRegister _reloadReg{&PrepareForReload};
 
 // The engine's own early-out: an Extra record with no bake name gets no
 // customization at all (FUN_005fb200 returns before creating the builder).
+const uint8_t *Record(uint32_t displayID) {
+    return DBC::Record(Offsets::VAR_CREATUREDISPLAYINFO_RECORDS,
+                       Offsets::VAR_CREATUREDISPLAYINFO_COUNT, displayID);
+}
+
+const uint8_t *ModelData(const uint8_t *display) {
+    if (display == nullptr)
+        return nullptr;
+    return DBC::Record(Offsets::VAR_CREATUREMODELDATA_RECORDS, Offsets::VAR_CREATUREMODELDATA_COUNT,
+                       Game::Read<uint32_t>(display, Offsets::OFF_CREATUREDISPLAYINFO_MODEL_ID));
+}
+
 const uint8_t *DressRecord(uint32_t displayID) {
-    const uint8_t *displayRec = DBC::Record(Offsets::VAR_CREATUREDISPLAYINFO_RECORDS,
-                                            Offsets::VAR_CREATUREDISPLAYINFO_COUNT, displayID);
+    const uint8_t *displayRec = Record(displayID);
     if (displayRec == nullptr)
         return nullptr;
     const uint32_t extID =
@@ -304,13 +315,8 @@ const uint8_t *DressRecord(uint32_t displayID) {
 void *CreateDisplayModel(void *scene, uint32_t displayID, const char **path) {
     using ApplyDisplay_t = void(__fastcall *)(void *model, const uint8_t *display,
                                               const uint8_t *modelData);
-    const uint8_t *display = DBC::Record(Offsets::VAR_CREATUREDISPLAYINFO_RECORDS,
-                                         Offsets::VAR_CREATUREDISPLAYINFO_COUNT, displayID);
-    if (display == nullptr)
-        return nullptr;
-    const uint8_t *modelData = DBC::Record(
-        Offsets::VAR_CREATUREMODELDATA_RECORDS, Offsets::VAR_CREATUREMODELDATA_COUNT,
-        Game::Read<uint32_t>(display, Offsets::OFF_CREATUREDISPLAYINFO_MODEL_ID));
+    const uint8_t *display = Record(displayID);
+    const uint8_t *modelData = ModelData(display);
     if (modelData == nullptr)
         return nullptr;
     const char *file = Game::Read<const char *>(modelData, Offsets::OFF_CREATUREMODELDATA_MODEL_PATH);
@@ -323,13 +329,30 @@ void *CreateDisplayModel(void *scene, uint32_t displayID, const char **path) {
     return model;
 }
 
-// Configure + feed equipment, the engine's order: SetInfo, then the 10 Extra
-// equipment slots. Field-for-field mirror of FUN_005fb200's NPC branch.
-void *CreateDresser(void *instance, const uint8_t *extraRec) {
+namespace {
+
+// A new builder configured with `info` (whose model it takes a reference
+// on), or null when the pool is empty or the compositor rejects the info.
+void *Configure(CharCompInfo &info, void *instance) {
     void *builder = NewDresser();
     if (builder == nullptr)
         return nullptr;
+    info.model = instance;
+    std::memcpy(info.geosetDefaults, kGeosetGroupDefaults, sizeof(kGeosetGroupDefaults));
+    // The builder owns this ref (releases it on destroy / re-configure).
+    M2::AddRef(instance);
+    if (!reinterpret_cast<CharCompSetInfo_t>(Offsets::FUN_CHARCOMP_SET_INFO)(builder, &info)) {
+        DestroyDresser(builder); // releases the model ref already copied in
+        return nullptr;
+    }
+    return builder;
+}
 
+} // namespace
+
+// Configure + feed equipment, the engine's order: SetInfo, then the 10 Extra
+// equipment slots. Field-for-field mirror of FUN_005fb200's NPC branch.
+void *CreateDresser(void *instance, const uint8_t *extraRec) {
     auto field = [extraRec](int off) {
         return Game::Read<uint32_t>(extraRec, off);
     };
@@ -341,26 +364,43 @@ void *CreateDresser(void *instance, const uint8_t *extraRec) {
     info.face = field(Offsets::OFF_CREATUREDISPLAYINFOEXTRA_FACE);
     info.facialHair = field(Offsets::OFF_CREATUREDISPLAYINFOEXTRA_FACIAL_HAIR);
     info.hairStyle = field(Offsets::OFF_CREATUREDISPLAYINFOEXTRA_HAIR_STYLE);
-    info.model = instance;
     info.useBake = 1;
     const char *bake =
         Game::Read<const char *>(extraRec, Offsets::OFF_CREATUREDISPLAYINFOEXTRA_BAKE_NAME);
     std::snprintf(info.bakePath, sizeof(info.bakePath), "%s%s", "Textures\\BakedNpcTextures\\",
                   bake);
-    std::memcpy(info.geosetDefaults, kGeosetGroupDefaults, sizeof(kGeosetGroupDefaults));
-
-    // The builder owns this ref (releases it on destroy / re-configure).
-    M2::AddRef(instance);
-    if (!reinterpret_cast<CharCompSetInfo_t>(Offsets::FUN_CHARCOMP_SET_INFO)(builder, &info)) {
-        DestroyDresser(builder); // releases the model ref already copied in
+    void *builder = Configure(info, instance);
+    if (builder == nullptr)
         return nullptr;
-    }
     for (uint32_t slot = 0; slot < 10; ++slot) {
         const uint32_t displayID = field(Offsets::OFF_CREATUREDISPLAYINFOEXTRA_EQUIP + slot * 4);
         if (displayID != 0)
             SetDresserItem(builder, slot, displayID);
     }
     return builder;
+}
+
+uint32_t BodyDisplay(const Body &body) {
+    const uint8_t *race =
+        DBC::Record(Offsets::VAR_CHRRACES_RECORDS, Offsets::VAR_CHRRACES_COUNT, body.race);
+    if (race == nullptr || body.sex > 1)
+        return 0;
+    return Game::Read<uint32_t>(race, body.sex == 0 ? Offsets::OFF_CHRRACES_MALE_DISPLAY
+                                                    : Offsets::OFF_CHRRACES_FEMALE_DISPLAY);
+}
+
+// FUN_005fb200's player branch: the bytes, no bake. Its equipment comes from
+// the player's visible items, which a caller puts on afterwards.
+void *CreateDresser(void *instance, const Body &body) {
+    CharCompInfo info = {};
+    info.race = body.race;
+    info.sex = body.sex;
+    info.hairColor = body.hairColor;
+    info.skin = body.skin;
+    info.face = body.face;
+    info.facialHair = body.facialHair;
+    info.hairStyle = body.hairStyle;
+    return Configure(info, instance);
 }
 
 // The frame only lights its OWN instance (the pre-render callback
@@ -421,6 +461,14 @@ void UnequipDresserSlot(void *dresser, uint32_t slot) {
 
 void SetDresserItem(void *dresser, uint32_t slot, uint32_t displayID) {
     reinterpret_cast<CharCompSetItem_t>(Offsets::FUN_CHARCOMP_SET_ITEM)(dresser, slot, displayID);
+}
+
+void SetDresserEmblem(void *dresser, const Emblem &emblem) {
+    using SetEmblem_t = void(__thiscall *)(void *dresser, int32_t style, int32_t color, int32_t border,
+                                           int32_t borderColor, int32_t background);
+    reinterpret_cast<SetEmblem_t>(Offsets::FUN_CHARCOMP_SET_EMBLEM)(dresser, emblem.style, emblem.color,
+                                                                    emblem.border, emblem.borderColor,
+                                                                    emblem.background);
 }
 
 } // namespace Model::DisplayInfo

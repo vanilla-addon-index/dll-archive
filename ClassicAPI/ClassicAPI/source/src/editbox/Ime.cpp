@@ -45,26 +45,17 @@ using Insert_t = void(__fastcall *)(void *editBox, void *edx, const char *text, 
 void __fastcall CompositionInsert(void *editBox, void *edx, const char *text, const char *context, int runScripts,
                                   int highlight) {
     reinterpret_cast<Insert_t>(Offsets::FUN_EDITBOX_INSERT)(editBox, edx, text, context, runScripts, highlight);
-    const uint32_t *slot = g_onCharComposition.Slot(editBox);
-    if (slot == nullptr || slot[0] == 0)
-        return;
-    void *L = Game::Lua::State();
-    if (L == nullptr)
-        return;
-    const int top = Game::Lua::GetTop(L);
-    Game::Lua::PushString(L, text);
-    Frame::ScriptArgs::RunSlotWithValues(L, slot, editBox, top + 1, 1);
-    Game::Lua::SetTop(L, top);
+    Frame::ScriptArgs::RunSlot(g_onCharComposition.Slot(editBox), editBox, [text](void *L) {
+        Game::Lua::PushString(L, text);
+        return 1;
+    });
 }
 
 int __fastcall Script_IsInIMECompositionMode(void *L) {
     void *editBox = Game::Lua::ResolveEditBox(L);
     if (editBox == nullptr)
         return 0;
-    if (Game::Read<int>(editBox, Offsets::OFF_EDITBOX_IME_COMPOSITION) != 0)
-        Game::Lua::PushNumber(L, 1.0);
-    else
-        Game::Lua::PushNil(L);
+    Game::Lua::PushFlag(L, Game::Read<int>(editBox, Offsets::OFF_EDITBOX_IME_COMPOSITION) != 0);
     return 1;
 }
 

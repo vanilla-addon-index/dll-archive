@@ -32,6 +32,7 @@
 // separate auto-ranged-combat spell, which 1.12 folds into the same one.
 // IsConsumableSpell: any reagent with a positive count.
 
+#include "Arg.h"
 #include "Lookup.h"
 
 #include "Game.h"
@@ -45,10 +46,7 @@ namespace Spell::SlotTests {
 
 namespace {
 
-constexpr int kSpellEffectAttack = 78;
-
 using ReadBookSlotArgs_t = int(__fastcall *)(void *L, int *slot, int *pet);
-using NameToSlot_t = int(__fastcall *)(const char *name, int *outBookType);
 
 // The spellID in the slot named by stack[1..2], or 0 for an empty slot.
 // Returns false with nothing pushed when the caller must return 0 results.
@@ -72,8 +70,7 @@ bool ReadSlot(void *L, const char *function, int *spellID, int *bookType) {
             std::snprintf(ranked, sizeof(ranked), "%s(%s)", name, Game::Lua::ToString(L, 2));
             name = ranked;
         }
-        slot = reinterpret_cast<NameToSlot_t>(Offsets::FUN_RESOLVE_SPELL_NAME_TO_SLOT)(name,
-                                                                                   bookType);
+        slot = Spell::Arg::NameToSlot(name, bookType);
         if (slot < 0)
             return false;
         *spellID = Spell::Lookup::SpellbookSlotToID(slot + 1, *bookType);
@@ -90,7 +87,7 @@ int __fastcall Script_IsAttackSpell(void *L) {
     const uint8_t *spell = Spell::Lookup::RecordForID(spellID);
     Game::Lua::PushBool(L, spell != nullptr &&
                                Game::Read<int32_t>(spell, Offsets::OFF_SPELL_RECORD_EFFECT) ==
-                                   kSpellEffectAttack);
+                                   Offsets::SPELL_EFFECT_ATTACK);
     return 1;
 }
 

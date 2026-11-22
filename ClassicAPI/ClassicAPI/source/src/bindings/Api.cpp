@@ -49,6 +49,8 @@
 #include "Offsets.h"
 #include "bindings/Command.h"
 #include "input/Modifier.h"
+#include "storm/HashTable.h"
+#include "storm/String.h"
 
 #include <cstdint>
 #include <cstring>
@@ -64,7 +66,6 @@ namespace {
 using KeyDispatch_t = int(__fastcall *)(void *mgr, void *edx, const char *key, int isDown);
 using CommandExecute_t = int(__fastcall *)(void *mgr, void *edx, const char *cmd, int isDown);
 using GetCommandAction_t = const char *(__thiscall *)(void *mgr, const char *key);
-using ScriptFn_t = int(__fastcall *)(void *L);
 
 KeyDispatch_t g_keyDispatchOriginal = nullptr;
 CommandExecute_t g_commandExecuteOriginal = nullptr;
@@ -131,23 +132,9 @@ const char *SavedCommand(void *mgr, const char *key) {
 // Whether the command table has `command` — the walk the engine inlines in
 // FUN_BINDING_COMMAND_EXECUTE (see OFF_BINDINGS_COMMAND_TABLE).
 bool IsKnownCommand(void *mgr, const char *command) {
-    using HashHT_t = uint32_t(__stdcall *)(const char *);
-    const uintptr_t table = reinterpret_cast<uintptr_t>(mgr) + Offsets::OFF_BINDINGS_COMMAND_TABLE;
-    const uint32_t mask = Game::Read<uint32_t>(table + Offsets::OFF_HASHTABLE_MASK);
-    if (*command == '\0' || mask == 0xFFFFFFFF)
-        return false;
-    const uint32_t hash = reinterpret_cast<HashHT_t>(Offsets::FUN_SSTR_HASH_HT)(command);
-    const uintptr_t bucket =
-        Game::Read<uintptr_t>(table + Offsets::OFF_HASHTABLE_SLOTS) + (hash & mask) * 12;
-    const uint32_t link = Game::Read<uint32_t>(bucket);
-    for (uintptr_t node = Game::Read<uintptr_t>(bucket + 8); node != 0 && (node & 1) == 0;
-         node = Game::Read<uintptr_t>(node + link + 4)) {
-        if (Game::Read<uint32_t>(node) == hash &&
-            Game::StrCmpI(Game::Read<const char *>(node + Offsets::OFF_HASHTABLE_NODE_NAME),
-                          command) == 0)
-            return true;
-    }
-    return false;
+    return Storm::HashTable::FindStri(reinterpret_cast<uintptr_t>(mgr) + Offsets::OFF_BINDINGS_COMMAND_TABLE +
+                                          Offsets::OFF_HASHTABLE_SLOTS,
+                                      command) != nullptr;
 }
 
 // CGUIBindings::GetKeyBinding: the key's active override, else its saved
@@ -276,7 +263,7 @@ int SetBinding(void *L, const std::string &key, const std::string &command) {
     Game::Lua::SetTop(L, 0);
     Game::Lua::PushString(L, key.c_str());
     Game::Lua::PushString(L, command.c_str());
-    return reinterpret_cast<ScriptFn_t>(Offsets::FUN_SCRIPT_SET_BINDING)(L);
+    return Game::Lua::CallScript(Offsets::FUN_SCRIPT_SET_BINDING, L);
 }
 
 int SetBindingCommand(void *L, const char *prefix, const char *usage) {
@@ -384,7 +371,7 @@ int __fastcall Script_GetBindingAction(void *L) {
             return 1;
         }
     }
-    return reinterpret_cast<ScriptFn_t>(Offsets::FUN_SCRIPT_GET_BINDING_ACTION)(L);
+    return Game::Lua::CallScript(Offsets::FUN_SCRIPT_GET_BINDING_ACTION, L);
 }
 
 // GetBindingByKey(key): the command a press of `key` runs — the reduced-key

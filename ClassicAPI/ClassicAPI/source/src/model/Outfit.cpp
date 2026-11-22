@@ -31,14 +31,15 @@
 // engine's worker itself (model/DressUp.cpp). Two differences:
 //   - An evicted lane is zeroed, as Undress zeroes one. The worker leaves its
 //     record, which only makes a later try-on detach it again.
-//   - A tabard keeps no guild emblem. The worker's emblem step reads the
-//     pane's player.
+//   - A tabard's emblem is the holder's (its body's), where the worker's
+//     emblem step reads the pane's player's guild (0x00504879).
 
 #include "model/Outfit.h"
 
 #include "Game.h"
 #include "Offsets.h"
 #include "dbc/Lookup.h"
+#include "item/ID.h"
 #include "model/DisplayInfo.h"
 #include "model/ItemDisplay.h"
 #include "model/M2.h"
@@ -57,7 +58,6 @@ using AttachItemModel_t = int(__fastcall *)(void *model, const void *record, uin
                                             bool ranged);
 using GetHeldItemDisplay_t = const void *(__thiscall *)(void *unit, uint32_t hand);
 using GetHeldItemLane_t = const HeldLane *(__thiscall *)(void *unit, uint32_t hand, int one);
-using GetVisibleItem_t = const void *(__thiscall *)(void *player, uint32_t slot);
 using GetDescVisual_t = int(__thiscall *)(const void *visibleItem);
 using CanHoldBoth_t = bool(__fastcall *)(uint32_t mainType, uint32_t offType, bool dualWield);
 
@@ -176,9 +176,7 @@ void ReadWeapons(uint64_t guid, Weapons &weapons) {
     if (player == nullptr)
         return;
     for (int i = 0; i < 2; ++i) {
-        const void *item =
-            reinterpret_cast<GetVisibleItem_t>(Offsets::FUN_UNIT_GET_VISIBLE_ITEM)(player,
-                                                                                kBodySlots[i]);
+        const uint8_t *item = Item::ID::VisibleEntry(player, static_cast<int>(kBodySlots[i]));
         if (item == nullptr || Game::Read<uint32_t>(item, Offsets::OFF_VISIBLE_ITEM_ITEM_ID) == 0)
             continue;
         const int visual =
@@ -295,7 +293,7 @@ bool CanDualWield(uint64_t guid) {
 }
 
 int TryOn(void *model, void *component, bool armorReady, Lanes &lanes, Weapons &weapons,
-          const uint8_t *record, const HeldTryOn &held) {
+          const uint8_t *record, const HeldTryOn &held, const DisplayInfo::Emblem &emblem) {
     const auto displayID = Game::Read<uint32_t>(record, Offsets::OFF_ITEMSTATS_DISPLAY_INFO_ID);
     if (model == nullptr || displayID == 0)
         return 0;
@@ -307,6 +305,14 @@ int TryOn(void *model, void *component, bool armorReady, Lanes &lanes, Weapons &
             return 0;
         DisplayInfo::UnequipDresserSlot(component, componentSlot);
         DisplayInfo::SetDresserItem(component, componentSlot, displayID);
+        if (type == Offsets::INVTYPE_TABARD && emblem.Known()) {
+            const uint8_t *display = DBC::Record(Offsets::VAR_ITEMDISPLAYINFO_RECORDS,
+                                                 Offsets::VAR_ITEMDISPLAYINFO_COUNT, displayID);
+            if (display != nullptr &&
+                (Game::Read<uint32_t>(display, Offsets::OFF_ITEMDISPLAYINFO_FLAGS) &
+                 Offsets::ITEMDISPLAYINFO_FLAG_EMBLEM) != 0)
+                DisplayInfo::SetDresserEmblem(component, emblem);
+        }
         return kInvSlotOfComponent[componentSlot];
     case Arm::Held:
         break;
@@ -356,6 +362,18 @@ void UndressSlot(void *model, void *component, Lanes &lanes, int invSlot) {
     }
 }
 
+void HoldLane(void *model, Lanes &lanes, Weapons &weapons, int i, const HeldLane &lane, const void *display,
+              bool sheathed, bool hide) {
+    if (model == nullptr)
+        return;
+    ClearLane(model, lanes, i);
+    const bool held = lane.itemClass != 0 && display != nullptr;
+    lanes[i] = held ? lane : HeldLane{};
+    weapons.display[i] = held ? display : nullptr;
+    weapons.visual[i] = 0;
+    HangLane(model, i, lanes[i], weapons, sheathed, hide);
+}
+
 void DressSlot(void *model, void *component, bool armorReady, Lanes &lanes, Weapons &weapons,
                void *unit, uint64_t guid, int invSlot, bool sheathed, bool hide) {
     if (model == nullptr || unit == nullptr)
@@ -392,11 +410,7 @@ void ReadWorn(void *unit, uint64_t guid, const Weapons &weapons, Worn &worn) {
     void *player = Object::ByGuid(Offsets::TYPEMASK_PLAYER, guid);
     if (unit == nullptr || player == nullptr)
         return;
-    const auto visibleItem = reinterpret_cast<GetVisibleItem_t>(Offsets::FUN_UNIT_GET_VISIBLE_ITEM);
-    const auto itemOf = [&](int invSlot) -> const uint8_t * {
-        const void *item = visibleItem(player, static_cast<uint32_t>(invSlot - 1));
-        return static_cast<const uint8_t *>(item);
-    };
+    const auto itemOf = [&](int invSlot) { return Item::ID::VisibleEntry(player, invSlot - 1); };
     void *component = Game::Read<void *>(unit, Offsets::OFF_CGUNIT_CHARACTER_COMPONENT);
     if (component != nullptr) {
         for (uint32_t slot = 0; slot < std::size(kInvSlotOfComponent); ++slot) {
@@ -413,20 +427,23 @@ void ReadWorn(void *unit, uint64_t guid, const Weapons &weapons, Worn &worn) {
             continue;
         Appearance &held = worn[invSlot - 1];
         held.item = Game::Read<uint32_t>(item, Offsets::OFF_VISIBLE_ITEM_ITEM_ID);
-        if (weapons.visual[i] == 0)
-            continue;
-        // GetItemDescVisual's walk: the first enchant with an ItemVisual.
-        for (uint32_t e = 0; e < Offsets::VISIBLE_ITEM_ENCHANT_COUNT; ++e) {
-            const auto id = Game::Read<uint32_t>(item, Offsets::OFF_VISIBLE_ITEM_ENCHANTS + e * 4);
-            const uint8_t *enchant = DBC::Record(Offsets::VAR_SPELLITEMENCHANT_RECORDS,
-                                                 Offsets::VAR_SPELLITEMENCHANT_COUNT, id);
-            if (enchant != nullptr &&
-                Game::Read<uint32_t>(enchant, Offsets::OFF_SPELLITEMENCHANT_ITEM_VISUAL) != 0) {
-                held.enchant = id;
-                break;
-            }
-        }
+        if (weapons.visual[i] != 0)
+            held.enchant = ShownEnchant(item);
     }
+}
+
+uint32_t ShownEnchant(const uint8_t *visibleItem) {
+    // GetItemDescVisual's walk: the first enchant with an ItemVisual.
+    for (uint32_t e = 0; e < Offsets::VISIBLE_ITEM_ENCHANT_COUNT; ++e) {
+        const auto id =
+            Game::Read<uint32_t>(visibleItem, Offsets::OFF_VISIBLE_ITEM_ENCHANTS + e * 4);
+        const uint8_t *enchant = DBC::Record(Offsets::VAR_SPELLITEMENCHANT_RECORDS,
+                                             Offsets::VAR_SPELLITEMENCHANT_COUNT, id);
+        if (enchant != nullptr &&
+            Game::Read<uint32_t>(enchant, Offsets::OFF_SPELLITEMENCHANT_ITEM_VISUAL) != 0)
+            return id;
+    }
+    return 0;
 }
 
 void TrimWorn(void *component, const Lanes &lanes, Worn &worn) {
@@ -467,9 +484,7 @@ void ReadRanged(void *unit, uint64_t guid, HeldLane &lane, const void *&display,
     void *player = Object::ByGuid(Offsets::TYPEMASK_PLAYER, guid);
     if (player == nullptr)
         return;
-    if (const void *item = reinterpret_cast<GetVisibleItem_t>(Offsets::FUN_UNIT_GET_VISIBLE_ITEM)(
-            player, static_cast<uint32_t>(Offsets::INVSLOT_RANGED - 1)))
-        worn.item = Game::Read<uint32_t>(item, Offsets::OFF_VISIBLE_ITEM_ITEM_ID);
+    worn.item = Item::ID::Visible(player, Offsets::INVSLOT_RANGED - 1);
 }
 
 void Undress(void *model, void *component, Lanes &lanes, bool weapons) {

@@ -13,8 +13,10 @@
 
 #include "Game.h"
 #include "Offsets.h"
-#include "dbc/Lookup.h"
+#include "spell/Cancel.h"
 #include "spell/Lookup.h"
+#include "spell/Placement.h"
+#include "target/Reason.h"
 
 #include <cstdint>
 
@@ -52,38 +54,27 @@ static bool IsTrackingSpell(int spellID) {
 }
 
 // Walks the player spellbook in slot order counting tracking spells. If
-// `wantNth >= 1` and an Nth tracking spell exists, writes its spellID and
-// 1-based spellbook slot to `*outSpellID` / `*outSlot`. Returns the total
+// `wantNth >= 1` and an Nth tracking spell exists, writes its spellID to
+// `*outSpellID`. Returns the total
 // number of tracking spells found (so callers detect out-of-range by
 // comparing the return against `wantNth`).
 //
-// The spellbook array is zero-padded past the populated count (see
-// `Spell::Lookup::FindSpellbookSlot`), so a 0 entry is just an empty slot —
-// skip it and keep scanning the full range rather than break, matching the
-// existing spellbook walkers.
-static int EnumerateTracking(int wantNth, int *outSpellID, int *outSlot) {
-    auto *book = reinterpret_cast<const int *>(
-        static_cast<uintptr_t>(Offsets::VAR_PLAYER_SPELLBOOK));
+static int EnumerateTracking(int wantNth, int *outSpellID) {
     int found = 0;
-    for (int i = 0; i < Offsets::SPELLBOOK_MAX_SLOTS; ++i) {
-        const int spellID = book[i];
-        if (spellID <= 0 || !IsTrackingSpell(spellID))
-            continue;
-        ++found;
-        if (found == wantNth) {
-            if (outSpellID != nullptr)
-                *outSpellID = spellID;
-            if (outSlot != nullptr)
-                *outSlot = i + 1;
-        }
-    }
+    Spell::Lookup::ForEachBookSpell(0, [&](int, int spellID) {
+        if (!IsTrackingSpell(spellID))
+            return true;
+        if (++found == wantNth && outSpellID != nullptr)
+            *outSpellID = spellID;
+        return true;
+    });
     return found;
 }
 
 // `GetNumTrackingTypes()` -> number of tracking spells in the player's book.
 static int __fastcall Script_GetNumTrackingTypes(void *L) {
     Game::Lua::PushNumber(L,
-                          static_cast<double>(EnumerateTracking(0, nullptr, nullptr)));
+                          static_cast<double>(EnumerateTracking(0, nullptr)));
     return 1;
 }
 
@@ -110,32 +101,23 @@ static int __fastcall Script_GetTrackingInfo(void *L) {
         return 0;
 
     int spellID = 0;
-    int slot = 0;
-    if (EnumerateTracking(index, &spellID, &slot) < index)
+    if (EnumerateTracking(index, &spellID) < index)
         return 0; // index past the number of tracking types -> nil
 
     const uint8_t *record = Spell::Lookup::RecordForID(spellID);
-    const int locale = Game::Read<int>(static_cast<uintptr_t>(Offsets::VAR_LOCALE_INDEX));
-    const char *name =
-        Game::Read<const char *>(record, Offsets::OFF_SPELL_NAMES + locale * 4);
+    const char *name = Spell::Lookup::Name(record);
 
     const bool active =
         Game::Read<int>(static_cast<uintptr_t>(Offsets::VAR_ACTIVE_TRACKING_SPELL)) ==
         spellID;
 
-    const char *texture = nullptr;
-    const int activeIconID =
-        Game::Read<int>(record, Offsets::OFF_SPELL_RECORD_ACTIVE_ICON_ID);
-    const int iconID = active && activeIconID != 0
-                           ? activeIconID
-                           : Game::Read<int>(record, Offsets::OFF_SPELL_RECORD_ICON_ID);
-    if (auto *iconRec = DBC::Record(Offsets::VAR_SPELL_ICON_RECORDS,
-                                    Offsets::VAR_SPELL_ICON_COUNT,
-                                    static_cast<uint32_t>(iconID))) {
-        texture = Game::Read<const char *>(iconRec, Offsets::OFF_SPELLICON_PATH);
-    }
+    // The active icon while tracking, falling back to the base icon when the
+    // spell has none.
+    const bool useActive =
+        active && Game::Read<int>(record, Offsets::OFF_SPELL_RECORD_ACTIVE_ICON_ID) != 0;
+    const char *texture = Spell::Lookup::IconPath(record, useActive);
 
-    Game::Lua::PushString(L, name);    // 1. name (PushString handles NULL -> nil)
+    Game::Lua::PushString(L, name != nullptr ? name : ""); // 1. name
     Game::Lua::PushString(L, texture); // 2. texture (icon path) or nil
     if (active)                        // 3. active: 1 or nil
         Game::Lua::PushNumber(L, 1.0);
@@ -148,11 +130,11 @@ static int __fastcall Script_GetTrackingInfo(void *L) {
 
 // `SetTracking(index)` — selects (activates) the tracking spell at `index`.
 // Vanilla has no "set tracking" primitive: choosing a tracker IS casting its
-// spell (the tracking dropdown does exactly this). So we resolve the entry's
-// spellbook slot and tail-call the engine's own `Script_CastSpell(slot,
-// "spell")` — reusing its slot bounds-check, target resolution, and error
-// handling rather than reconstructing the cast path. Returns nil for an
-// out-of-range index.
+// spell (the tracking dropdown does exactly this). So we cast the entry's
+// spell the way the engine's `Script_CastSpell(slot, "spell")` (0x004B42F0)
+// does: its book slot through the cast dispatcher (FUN_SPELL_CAST_DISPATCH)
+// with the current selection as the target. Returns nil for an out-of-range
+// index.
 //
 // With no number, 3.3.5 cancels the active tracking aura. That is vanilla's
 // `CancelTrackingBuff()` (`0x004E4A80`): send CMSG_CANCEL_AURA for the
@@ -164,11 +146,8 @@ static int __fastcall Script_SetTracking(void *L) {
     if (!Game::Lua::IsNumber(L, 1)) {
         const int tracking =
             Game::Read<int>(static_cast<uintptr_t>(Offsets::VAR_ACTIVE_TRACKING_SPELL));
-        if (tracking != 0) {
-            using CancelAuraSend_t = void(__fastcall *)(int);
-            reinterpret_cast<CancelAuraSend_t>(
-                static_cast<uintptr_t>(Offsets::FUN_CANCEL_AURA_SEND))(tracking);
-        }
+        if (tracking != 0)
+            Spell::Cancel::SendCancel(tracking);
         return 0;
     }
     const int index = static_cast<int>(Game::Lua::ToNumber(L, 1));
@@ -176,19 +155,11 @@ static int __fastcall Script_SetTracking(void *L) {
         return 0;
 
     int spellID = 0;
-    int slot = 0;
-    if (EnumerateTracking(index, &spellID, &slot) < index)
+    if (EnumerateTracking(index, &spellID) < index)
         return 0;
 
-    // Rebuild the stack as CastSpell(slot, "spell") and hand off to the
-    // engine handler. `slot` is 1-based, matching what a Lua `CastSpell`
-    // caller passes.
-    Game::Lua::SetTop(L, 0);
-    Game::Lua::PushNumber(L, static_cast<double>(slot));
-    Game::Lua::PushString(L, "spell");
-    using CastSpell_t = int(__fastcall *)(void *);
-    auto castSpell = reinterpret_cast<CastSpell_t>(Offsets::FUN_SCRIPT_CAST_SPELL);
-    return castSpell(L);
+    Spell::Placement::DispatchSpellCast(spellID, Target::Reason::Selection());
+    return 0;
 }
 
 // --- Documentation ----------------------------------------------------------

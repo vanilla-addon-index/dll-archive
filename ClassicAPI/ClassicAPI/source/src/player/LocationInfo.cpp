@@ -61,7 +61,6 @@ namespace Player::LocationInfo {
 
 namespace {
 
-using TokenToGuid_t = uint64_t(__fastcall *)(const char *token);
 using GroupLookup_t = void *(__fastcall *)(const uint64_t *guid);
 
 // Reads a string field `t[field]` at table stack index `locIdx` into `out`.
@@ -91,8 +90,7 @@ bool ReadStringField(void *L, int locIdx, const char *field, char *out, int size
 bool LocationGuid(void *L, int locIdx, uint64_t *out) {
     char token[64];
     if (ReadStringField(L, locIdx, "unit", token, sizeof(token))) {
-        auto toGuid = reinterpret_cast<TokenToGuid_t>(Offsets::FUN_TOKEN_TO_GUID);
-        *out = toGuid(token);
+        *out = ::Unit::Identity::GuidForToken(token);
         return *out != 0;
     }
     char guidStr[40];
@@ -110,17 +108,16 @@ const uint8_t *ResolveUnit(uint64_t guid) {
 // Reads a UNIT_FIELD_BYTES_0 byte: the login-time mirror global when `guid` is
 // the local player (works before the descriptor spawns), otherwise the
 // resolved unit's descriptor byte. Returns -1 when the unit isn't resident.
-int UnitByte(uint64_t guid, uintptr_t playerMirror, uint32_t descByteOffset) {
+int UnitByte(uint64_t guid, uintptr_t playerMirror, uint8_t (*fromFields)(const uint8_t *)) {
     if (guid == Unit::Identity::PlayerGuid())
         return *reinterpret_cast<const uint8_t *>(playerMirror);
     const uint8_t *unit = ResolveUnit(guid);
     if (unit == nullptr)
         return -1;
-    auto *desc = *reinterpret_cast<const uint8_t *const *>(
-        unit + Offsets::OFF_CGUNIT_OBJECT_FIELDS);
+    auto *desc = Object::Fields(unit);
     if (desc == nullptr)
         return -1;
-    return *reinterpret_cast<const uint8_t *>(desc + descByteOffset);
+    return fromFields(desc);
 }
 
 int __fastcall Script_GetName(void *L) {
@@ -141,8 +138,7 @@ int __fastcall Script_GetRace(void *L) {
     uint64_t guid = 0;
     if (!LocationGuid(L, 1, &guid))
         return 0;
-    const int raceID = UnitByte(guid, Offsets::VAR_PLAYER_RACE_BYTE,
-                                Offsets::OFF_UNIT_DESCRIPTOR_RACE_BYTE);
+    const int raceID = UnitByte(guid, Offsets::VAR_PLAYER_RACE_BYTE, &Unit::Identity::Race);
     if (raceID <= 0)
         return 0;
     Game::Lua::PushNumber(L, static_cast<double>(raceID));
@@ -153,8 +149,7 @@ int __fastcall Script_GetClass(void *L) {
     uint64_t guid = 0;
     if (!LocationGuid(L, 1, &guid))
         return 0;
-    const int classID = UnitByte(guid, Offsets::VAR_PLAYER_CLASS_BYTE,
-                                 Offsets::OFF_UNIT_DESCRIPTOR_CLASS_BYTE);
+    const int classID = UnitByte(guid, Offsets::VAR_PLAYER_CLASS_BYTE, &Unit::Identity::Class);
     if (classID <= 0)
         return 0;
     // className / classFile from ChrClasses.dbc — same reads as
@@ -174,8 +169,7 @@ int __fastcall Script_GetSex(void *L) {
     uint64_t guid = 0;
     if (!LocationGuid(L, 1, &guid))
         return 0;
-    const int gender = UnitByte(guid, Offsets::VAR_PLAYER_SEX_BYTE,
-                                Offsets::OFF_UNIT_DESCRIPTOR_SEX_BYTE);
+    const int gender = UnitByte(guid, Offsets::VAR_PLAYER_SEX_BYTE, &Unit::Identity::Sex);
     if (gender < 0)
         return 0;
     // UNIT_FIELD_BYTES_0 stores 0 = male / 1 = female; the API (and UnitSex)
@@ -199,9 +193,9 @@ int __fastcall Script_IsConnected(void *L) {
 
     bool connected = ResolveUnit(guid) != nullptr; // a synced object is online
     if (!connected) {
-        // Not resident — consult the group-member roster, mirroring
-        // Script_UnitIsConnected: the stats block's online bit, else slot
-        // presence (a member with no stats block yet still counts as present).
+        // Not resident — consult the group records, mirroring
+        // Script_UnitIsConnected: the member record's online bit, else a pet
+        // record (the lookup finds a pet only through an online owner).
         auto stats = reinterpret_cast<GroupLookup_t>(
             Offsets::FUN_GROUP_MEMBER_STATS_LOOKUP)(&guid);
         if (stats != nullptr) {
@@ -211,7 +205,7 @@ int __fastcall Script_IsConnected(void *L) {
                          Offsets::GROUP_MEMBER_STATUS_ONLINE) != 0;
         } else {
             connected = reinterpret_cast<GroupLookup_t>(
-                            Offsets::FUN_GROUP_MEMBER_SLOT_LOOKUP)(&guid) != nullptr;
+                            Offsets::FUN_GROUP_PET_RECORD_LOOKUP)(&guid) != nullptr;
         }
     }
     Game::Lua::PushBool(L, connected);

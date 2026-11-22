@@ -25,6 +25,8 @@
 // with the shared packet reader and restore the read cursor, so the engine
 // handler sees an untouched packet.
 
+#include "quest/TurnedIn.h"
+
 #include "Game.h"
 #include "Offsets.h"
 #include "event/Custom.h"
@@ -56,8 +58,12 @@ int __fastcall Handler_h(void *thisPlayer, void *edx, Net::CDataStore *packet) {
     Net::Read<uint32_t>(packet); // always 3
     const uint32_t xpReward = Net::Read<uint32_t>(packet);
     const uint32_t moneyReward = Net::Read<uint32_t>(packet);
-    const bool complete = packet->m_read <= packet->m_size;
+    const bool complete = !Net::Overrun(packet);
     packet->m_read = saved;
+
+    if (complete && questID > 0)
+        for (const AutoSubscribe *s = AutoSubscribe::head; s != nullptr; s = s->next)
+            s->fn(questID);
 
     const int result = Handler_o(thisPlayer, edx, packet);
 

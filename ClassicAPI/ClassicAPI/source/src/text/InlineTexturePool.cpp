@@ -16,6 +16,7 @@
 // fontstring itself (Emit_h below), so the texture is resident by
 // construction, moves with its line and shows exactly when its line does.
 
+#include "frame/Layout.h"
 #include "text/InlineTexturePool.h"
 
 #include "Game.h"
@@ -24,7 +25,9 @@
 #include "frame/Region.h"
 #include "frame/RegionDestruction.h"
 #include "text/PtrProbe.h"
+#include "texture/Load.h"
 #include "tick/FrameTick.h"
+#include "object/Resolve.h"
 
 #include <windows.h> // SEH (__try/__except, EXCEPTION_EXECUTE_HANDLER)
 
@@ -36,11 +39,6 @@ namespace Text::InlineTexturePool {
 
 namespace {
 
-using SetTexture_t = uint32_t(__thiscall *)(void *tex, const char *path, int a, uint32_t blend,
-                                            int b);
-using SetColor_t = void(__thiscall *)(void *tex, const void *colorBGRA);
-using SetPoint_t = void(__thiscall *)(void *anchor, int point, void *relAnchor, int relPoint,
-                                      float x, float y, int flag);
 using Realize_t = void(__thiscall *)(void *anchor, int flag);
 using SetTexCoord_t = void(__thiscall *)(void *tex, const float *coords4);
 using DeletingDestructor_t = void(__thiscall *)(void *region, int flags);
@@ -125,8 +123,7 @@ uint32_t FsColorKey(const void *fs) {
 uint32_t FadedColor(const Placement &p, uint32_t fsColor) {
     const uint32_t a = ((p.color >> 24) * (fsColor >> 24)) / 0xFFu;
     uint32_t rgb = p.color & 0x00FFFFFFu;
-    const bool inGlue =
-        *reinterpret_cast<void *volatile *>(Offsets::VAR_LOCAL_PLAYER_PTR) == nullptr;
+    const bool inGlue = !Object::RegistryReady();
     if (inGlue) {
         const uint32_t b = fsColor & 0xFFu, g = (fsColor >> 8) & 0xFFu,
                        r = (fsColor >> 16) & 0xFFu;
@@ -176,9 +173,7 @@ void ApplyPlacement(IconRegion &r, void *fs, const Placement &p, uint32_t fsColo
     // then froze them — the scroll-landing "randomly hidden icon" bug.
 
     if (r.path != p.path) {
-        const uint32_t blend = Game::Read<uint32_t>(Offsets::VAR_TEXTURE_BLEND_DEFAULT);
-        reinterpret_cast<SetTexture_t>(Offsets::FUN_SIMPLETEXTURE_SET_TEXTURE)(r.tex, p.path.c_str(),
-                                                                               0, blend, 0);
+        Texture::SetFile(r.tex, p.path.c_str());
         r.path = p.path;
     }
     // The engine's 4-float texcoord rect is Y-FIRST INTERLEAVED — {v0, u0, v1,
@@ -188,7 +183,7 @@ void ApplyPlacement(IconRegion &r, void *fs, const Placement &p, uint32_t fsColo
     const float coords[4] = {p.v0, p.u0, p.v1, p.u1};
     reinterpret_cast<SetTexCoord_t>(Offsets::FUN_SIMPLETEXTURE_SET_TEXCOORD)(r.tex, coords);
     const uint32_t color = FadedColor(p, fsColor);
-    reinterpret_cast<SetColor_t>(Offsets::FUN_FONTSTRING_SET_COLOR)(r.tex, &color);
+    Frame::Region::SetColor(r.tex, color);
 
     // Placement coords are in resolved-rect (anchor) units. The resolver places
     // a point at the positioned region's own layout scale × the stored offset
@@ -196,14 +191,12 @@ void ApplyPlacement(IconRegion &r, void *fs, const Placement &p, uint32_t fsColo
     // has no frame, so nothing changes the ctor's scale of 1 (CLayoutFrame
     // 0x00767680) and the offsets land exactly as given, as 4.3.4's
     // CSimpleEmbeddedTexture's do.
-    auto setPoint = reinterpret_cast<SetPoint_t>(Offsets::FUN_REGION_SET_POINT);
-    void *texAnchor = reinterpret_cast<uint8_t *>(r.tex) + Offsets::OFF_REGION_ANCHOR;
-    void *fsAnchor = f + Offsets::OFF_REGION_ANCHOR;
-    setPoint(texAnchor, Offsets::FRAMEPOINT_BOTTOMLEFT, fsAnchor, Offsets::FRAMEPOINT_BOTTOMLEFT,
-             p.x0, p.y0, 1);
-    setPoint(texAnchor, Offsets::FRAMEPOINT_TOPRIGHT, fsAnchor, Offsets::FRAMEPOINT_BOTTOMLEFT,
-             p.x1, p.y1, 1);
-    reinterpret_cast<Realize_t>(Offsets::FUN_REGION_LAYOUT_REALIZE)(texAnchor, 0);
+    void *fsAnchor = Frame::Layout::Of(f);
+    Frame::Layout::SetPoint(r.tex, Offsets::FRAMEPOINT_BOTTOMLEFT, fsAnchor,
+                            Offsets::FRAMEPOINT_BOTTOMLEFT, p.x0, p.y0);
+    Frame::Layout::SetPoint(r.tex, Offsets::FRAMEPOINT_TOPRIGHT, fsAnchor,
+                            Offsets::FRAMEPOINT_BOTTOMLEFT, p.x1, p.y1);
+    reinterpret_cast<Realize_t>(Offsets::FUN_REGION_LAYOUT_REALIZE)(Frame::Layout::Of(r.tex), 0);
 }
 
 // Applies `want` to the fontstring's textures: create and configure each. The
@@ -327,8 +320,7 @@ void MirrorFade(void *fs) {
     const uint32_t fsColor = FsColorKey(fs);
     for (int i = 0; i < np.shown; ++i) {
         const uint32_t color = FadedColor(np.want[static_cast<size_t>(i)], fsColor);
-        reinterpret_cast<SetColor_t>(Offsets::FUN_FONTSTRING_SET_COLOR)(
-            np.regions[static_cast<size_t>(i)].tex, &color);
+        Frame::Region::SetColor(np.regions[static_cast<size_t>(i)].tex, color);
     }
 }
 
@@ -379,5 +371,6 @@ void PrepareForReload() {
 }
 
 static const Game::ReloadAutoRegister _reloadReg{&PrepareForReload};
+static const Game::GlueBootAutoRegister _glueBootReg{&PrepareForReload};
 
 } // namespace Text::InlineTexturePool

@@ -51,7 +51,6 @@ namespace Spell::Usable {
 namespace {
 
 using SpellIsUsable_t = int(__fastcall *)(const uint8_t *spellRecord, int *outNoMana);
-using GetSpellCost_t = uint32_t(__fastcall *)(int spellID, int pet);
 using PetActionsUsable_t = int(__cdecl *)();
 
 struct Usability {
@@ -97,7 +96,7 @@ Usability ComputePet(int spellID) {
         Object::ByGuid(Offsets::TYPEMASK_UNIT, petGuid));
     if (pet == nullptr)
         return r;
-    auto *desc = Game::Read<const uint8_t *>(pet, Offsets::OFF_UNIT_DESCRIPTOR);
+    auto *desc = Object::Fields(pet);
     if (desc == nullptr)
         return r;
 
@@ -111,8 +110,7 @@ Usability ComputePet(int spellID) {
         return r; // not a power type Spell.dbc can hold; the engine would index garbage
     }
 
-    auto getCost = reinterpret_cast<GetSpellCost_t>(Offsets::FUN_GET_SPELL_COST);
-    const int cost = static_cast<int>(getCost(spellID, 0));
+    const int cost = Spell::Lookup::PowerCost(spellID, false);
     if (cost <= power) {
         r.usable = true;
         return r;
@@ -144,13 +142,7 @@ int ResolveSpellArg(void *L, int *outBookType) {
         return 0;
     const int arg1 = static_cast<int>(Game::Lua::ToNumber(L, 1));
     if (Game::Lua::Type(L, 2) == Game::Lua::TYPE_STRING) {
-        const char *book = Game::Lua::ToString(L, 2);
-        const int bookType = static_cast<int>(
-            book != nullptr &&
-            (book[0] == 'p' || book[0] == 'P') &&
-            (book[1] == 'e' || book[1] == 'E') &&
-            (book[2] == 't' || book[2] == 'T') &&
-            book[3] == 0);
+        const int bookType = Spell::Lookup::BookTypeArg(L, 2);
         *outBookType = bookType;
         return Spell::Lookup::SpellbookSlotToID(arg1, bookType);
     }

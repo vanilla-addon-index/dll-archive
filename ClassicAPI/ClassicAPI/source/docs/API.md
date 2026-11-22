@@ -16,6 +16,7 @@ build instructions.
   - [`C_ActionBar.ShouldShowKeyring()`](#c_actionbarshouldshowkeyring)
   - [`C_ActionBar.EnableActionRangeCheck(slot, enable)`](#c_actionbarenableactionrangecheckslot-enable)
   - [`C_ActionBar.GetSpell(actionID)`](#c_actionbargetspellactionid)
+  - [`C_ActionBar.GetActionLossOfControlCooldownInfo(actionID)` / `C_ActionBar.GetActionLossOfControlCooldownDuration(actionID)`](#c_actionbargetactionlossofcontrolcooldowninfoactionid--c_actionbargetactionlossofcontrolcooldowndurationactionid)
   - [`C_ActionBar.GetItemActionOnEquipSpellID(actionID)`](#c_actionbargetitemactiononequipspellidactionid)
   - [`IsStackableAction(slot)` / `C_ActionBar.IsStackableAction(actionID)`](#isstackableactionslot--c_actionbarisstackableactionactionid)
   - [`C_ActionBar.IsMacroActionWithShowTooltip(actionID)`](#c_actionbarismacroactionwithshowtooltipactionid)
@@ -25,26 +26,45 @@ build instructions.
   - [`Enum.ActionBarSet`](#enumactionbarset)
 
 - [AddOns](#addons)
-  - [`C_AddOns.GetAddOnName(indexOrName)`](#c_addonsgetaddonnameindexorname)
-  - [`C_AddOns.GetAddOnTitle(indexOrName)`](#c_addonsgetaddontitleindexorname)
-  - [`C_AddOns.GetAddOnNotes(indexOrName)`](#c_addonsgetaddonnotesindexorname)
-  - [`C_AddOns.IsAddOnLoadable(indexOrName)`](#c_addonsisaddonloadableindexorname)
-  - [`C_AddOns.IsAddOnLoaded(indexOrName)`](#c_addonsisaddonloadedindexorname)
-  - [`C_AddOns.LoadAddOn(indexOrName)`](#c_addonsloadaddonindexorname)
-  - [`C_AddOns.GetAddOnSecurity(indexOrName)`](#c_addonsgetaddonsecurityindexorname)
-  - [`C_AddOns.DoesAddOnExist(indexOrName)`](#c_addonsdoesaddonexistindexorname)
-  - [`C_AddOns.GetAddOnOptionalDependencies(indexOrName)`](#c_addonsgetaddonoptionaldependenciesindexorname)
-  - [`C_AddOns.GetAddOnInterfaceVersion(indexOrName)`](#c_addonsgetaddoninterfaceversionindexorname)
+  - [`C_AddOns.GetNumAddOns()`](#c_addonsgetnumaddons)
+  - [`C_AddOns.GetAddOnInfo(name)`](#c_addonsgetaddoninfoname)
+  - [`C_AddOns.GetAddOnName(name)`](#c_addonsgetaddonnamename)
+  - [`C_AddOns.GetAddOnTitle(name)`](#c_addonsgetaddontitlename)
+  - [`C_AddOns.GetAddOnNotes(name)`](#c_addonsgetaddonnotesname)
+  - [`C_AddOns.GetAddOnMetadata(name, variable)`](#c_addonsgetaddonmetadataname-variable)
+  - [`C_AddOns.GetAddOnEnableState(name [, character])`](#c_addonsgetaddonenablestatename--character)
+  - [`C_AddOns.EnableAddOn(name [, character])`](#c_addonsenableaddonname--character)
+  - [`C_AddOns.DisableAddOn(name [, character])`](#c_addonsdisableaddonname--character)
+  - [`C_AddOns.EnableAllAddOns([character])` and `C_AddOns.DisableAllAddOns([character])`](#c_addonsenablealladdonscharacter-and-c_addonsdisablealladdonscharacter)
+  - [`C_AddOns.SaveAddOns()`](#c_addonssaveaddons)
+  - [`C_AddOns.ResetAddOns()` and `C_AddOns.ResetDisabledAddOns()`](#c_addonsresetaddons-and-c_addonsresetdisabledaddons)
+  - [`C_AddOns.IsAddOnDefaultEnabled(name)`](#c_addonsisaddondefaultenabledname)
+  - [`C_AddOns.IsAddOnLoadOnDemand(name)`](#c_addonsisaddonloadondemandname)
+  - [`C_AddOns.IsAddOnLoadable(name [, character, demandLoaded])`](#c_addonsisaddonloadablename--character-demandloaded)
+  - [`C_AddOns.IsAddOnLoaded(name)`](#c_addonsisaddonloadedname)
+  - [`C_AddOns.LoadAddOn(name)`](#c_addonsloadaddonname)
+  - [`C_AddOns.DoesAddOnHaveLoadError(name)`](#c_addonsdoesaddonhaveloaderrorname)
+  - [`C_AddOns.GetAddOnSecurity(name)`](#c_addonsgetaddonsecurityname)
+  - [`C_AddOns.DoesAddOnExist(name)`](#c_addonsdoesaddonexistname)
+  - [`C_AddOns.GetAddOnDependencies(name)` and `C_AddOns.GetAddOnOptionalDependencies(name)`](#c_addonsgetaddondependenciesname-and-c_addonsgetaddonoptionaldependenciesname)
+  - [`C_AddOns.GetAddOnInterfaceVersion(name)`](#c_addonsgetaddoninterfaceversionname)
+  - [`C_AddOns.IsAddonVersionCheckEnabled()` and `C_AddOns.SetAddonVersionCheck(enabled)`](#c_addonsisaddonversioncheckenabled-and-c_addonssetaddonversioncheckenabled)
+  - [`C_AddOns.GetScriptsDisallowedForBeta()`](#c_addonsgetscriptsdisallowedforbeta)
   - [`C_AddOns.GetAddOnLocalTable(name)`](#c_addonsgetaddonlocaltablename)
   - [Conditional and multi-flavor TOC loading](#conditional-and-multi-flavor-toc-loading)
+  - [Other TOC metadata keys](#other-toc-metadata-keys)
   - [SavedVariables loaded first](#savedvariables-loaded-first)
+  - [SavedVariables files and backups](#savedvariables-files-and-backups)
   - [`<Script file>` paths in XML files](#script-file-paths-in-xml-files)
 
 - [Animation](#animation)
   - [`region:CreateAnimationGroup([name [, templateName]])`](#regioncreateanimationgroupname--templatename)
+  - [Arguments and errors](#arguments-and-errors)
   - [AnimationGroup](#animationgroup)
   - [Animation](#animation-1)
   - [Animation types: `Alpha`, `Translation`, `Scale`, `Rotation`](#animation-types-alpha-translation-scale-rotation)
+  - [Animation types: `VertexColor`, `FlipBook`, `TextureCoordTranslation`](#animation-types-vertexcolor-flipbook-texturecoordtranslation)
+  - [Animation types: `LineTranslation`, `LineScale`](#animation-types-linetranslation-linescale)
   - [`Path` and `ControlPoint`](#path-and-controlpoint)
   - [`<Animations>` in XML](#animations-in-xml)
   - [`SetMaxAnimFramerate(framesPerSec)` / `GetMaxAnimFramerate()`](#setmaxanimframerateframespersec--getmaxanimframerate)
@@ -88,7 +108,7 @@ build instructions.
   - [`C_KeyBindings.GetBindingContextForAction(action)` / `C_KeyBindings.GetCustomBindingType(bindingIndex)`](#c_keybindingsgetbindingcontextforactionaction--c_keybindingsgetcustombindingtypebindingindex)
 
 - [CharacterList](#characterlist)
-  - [`GetSavedCharacterOrder(realm)` / `SetSavedCharacterOrder(realm, order)` — GlueXML only](#getsavedcharacterorderrealm--setsavedcharacterorderrealm-order--gluexml-only)
+  - [`SaveCharacterOrder(translationTable)` — GlueXML only](#savecharacterordertranslationtable--gluexml-only)
 
 - [Chat](#chat)
   - [`GetCurrentChatEvent()`](#getcurrentchatevent)
@@ -96,6 +116,7 @@ build instructions.
   - [`SendSystemMessage(message)`](#sendsystemmessagemessage)
   - [`IsChatAFK()`](#ischatafk)
   - [`IsChatDND()`](#ischatdnd)
+  - [`SetChatColorNameByClass(chatType, colorNameByClass)`](#setchatcolornamebyclasschattype-colornamebyclass)
 
 - [ChatBubbles](#chatbubbles)
   - [`C_ChatBubbles.GetAllChatBubbles([includeForbidden])`](#c_chatbubblesgetallchatbubblesincludeforbidden)
@@ -129,6 +150,15 @@ build instructions.
   - [`CombatLogAddFilter([events [, source [, dest [, spell]]]])` / `CombatLogResetFilter()`](#combatlogaddfilterevents--source--dest--spell--combatlogresetfilter)
   - [`CombatLog_Object_IsA(flags, mask)`](#combatlog_object_isaflags-mask)
   - [Kept entries](#kept-entries)
+  - [Combat log file (`advancedCombatLogging`)](#combat-log-file-advancedcombatlogging)
+  - [`COMBATANT_INFO` line](#combatant_info-line)
+  - [Movement file (`advancedCombatLoggingMovement`)](#movement-file-advancedcombatloggingmovement)
+
+- [CombatLogReplay](#combatlogreplay)
+  - [Logs and replays](#logs-and-replays)
+  - [Units at a time](#units-at-a-time)
+  - [`C_CombatLogReplay.GetEvents(startTime, endTime)`](#c_combatlogreplaygeteventsstarttime-endtime)
+  - [`COMBAT_LOG_REPLAY_ENCOUNTERS_READY` / `COMBAT_LOG_REPLAY_LOADED` events](#combat_log_replay_encounters_ready--combat_log_replay_loaded-events)
 
 - [Console](#console)
   - [`ConsoleExec(command)`](#consoleexeccommand)
@@ -174,6 +204,8 @@ build instructions.
   - [`C_Container.GetSortBagsRightToLeft()` / `C_Container.SetSortBagsRightToLeft(enable)`](#c_containergetsortbagsrighttoleft--c_containersetsortbagsrighttoleftenable)
   - [`C_Container.GetBackpackAutosortDisabled()` / `C_Container.SetBackpackAutosortDisabled(disable)`](#c_containergetbackpackautosortdisabled--c_containersetbackpackautosortdisableddisable)
   - [`C_Container.GetBankAutosortDisabled()` / `C_Container.SetBankAutosortDisabled(disable)`](#c_containergetbankautosortdisabled--c_containersetbankautosortdisableddisable)
+  - [`C_Container.GetBagSlotFlag(bagIndex, flag)` / `C_Container.SetBagSlotFlag(bagIndex, flag, isSet)`](#c_containergetbagslotflagbagindex-flag--c_containersetbagslotflagbagindex-flag-isset)
+  - [`C_Container.IsBagSlotFlagEnabledOnOtherBankBags(bagIndex, flagIndex)`](#c_containerisbagslotflagenabledonotherbankbagsbagindex-flagindex)
   - [`SetBagPortraitTexture(texture, bagIndex)` / `C_Container.SetBagPortraitTexture(texture, bagIndex)`](#setbagportraittexturetexture-bagindex--c_containersetbagportraittexturetexture-bagindex)
   - [`C_Container.GetContainerNumSlots(containerIndex)` / `C_Container.PickupContainerItem(containerIndex, slotIndex)`](#c_containergetcontainernumslotscontainerindex--c_containerpickupcontaineritemcontainerindex-slotindex)
   - [`ContainerFrame_GetContainerNumSlots(bagID)` / `NUM_TOTAL_BAG_FRAMES`](#containerframe_getcontainernumslotsbagid--num_total_bag_frames)
@@ -200,6 +232,13 @@ build instructions.
   - [`CursorHasMacro()`](#cursorhasmacro)
   - [Expanded cursors (`expandedCursors`)](#expanded-cursors-expandedcursors)
 
+- [CurveUtil](#curveutil)
+  - [`C_CurveUtil.CreateCurve()`](#c_curveutilcreatecurve)
+  - [`C_CurveUtil.CreateColorCurve()`](#c_curveutilcreatecolorcurve)
+  - [`C_CurveUtil.EvaluateColorFromBoolean(boolean, valueIfTrue, valueIfFalse)`](#c_curveutilevaluatecolorfrombooleanboolean-valueiftrue-valueiffalse)
+  - [`C_CurveUtil.EvaluateColorValueFromBoolean(boolean, valueIfTrue, valueIfFalse)`](#c_curveutilevaluatecolorvaluefrombooleanboolean-valueiftrue-valueiffalse)
+  - [`C_CurveUtil.EvaluateGameCurve(curveID, x)`](#c_curveutilevaluategamecurvecurveid-x)
+
 - [CVar](#cvar)
   - [`GetCVar(name)`](#getcvarname)
   - [`GetCVarDefault(name)`](#getcvardefaultname)
@@ -212,6 +251,19 @@ build instructions.
   - [`C_CVar.SetTempCVar(name, value)` / `C_CVar.RemoveTempCVar(name)`](#c_cvarsettempcvarname-value--c_cvarremovetempcvarname)
   - [`C_CVar.GetCVarBool(cvar)`](#c_cvargetcvarboolcvar)
   - [The interface memory limit](#the-interface-memory-limit)
+
+- [DamageMeter](#damagemeter)
+  - [Damage meter sessions](#damage-meter-sessions)
+  - [Damage meter functions](#damage-meter-functions)
+  - [Damage meter types](#damage-meter-types)
+  - [Damage meter tables](#damage-meter-tables)
+  - [Damage meter cvars (`damageMeterEnabled`, `damageMeterResetOnNewInstance`)](#damage-meter-cvars-damagemeterenabled-damagemeterresetonnewinstance)
+
+- [DeathRecap](#deathrecap)
+  - [`C_DeathRecap.GetRecapEvents([recapID])`](#c_deathrecapgetrecapeventsrecapid)
+  - [`C_DeathRecap.GetRecapLink([recapID])`](#c_deathrecapgetrecaplinkrecapid)
+  - [`C_DeathRecap.GetRecapMaxHealth([recapID])`](#c_deathrecapgetrecapmaxhealthrecapid)
+  - [`C_DeathRecap.HasRecapEvents([recapID])`](#c_deathrecaphasrecapeventsrecapid)
 
 - [DeathInfo](#deathinfo)
   - [`C_DeathInfo.GetSelfResurrectOptions()`](#c_deathinfogetselfresurrectoptions)
@@ -242,10 +294,16 @@ build instructions.
 
 - [Events](#events)
   - [`C_EventUtils.IsEventValid(eventName)`](#c_eventutilsiseventvalideventname)
+  - [`C_EventUtils.IsCallbackEvent(eventName)`](#c_eventutilsiscallbackeventeventname)
+  - [`RegisterEventCallback(eventName, callback)` and `UnregisterEventCallback(eventName, callback)`](#registereventcallbackeventname-callback-and-unregistereventcallbackeventname-callback)
+  - [`RegisterUnitEventCallback(eventName, callback, unit)` and `UnregisterUnitEventCallback(eventName, callback, unit)`](#registeruniteventcallbackeventname-callback-unit-and-unregisteruniteventcallbackeventname-callback-unit)
+  - [`frame:RegisterEventCallback(eventName, cb)` and `frame:RegisterUnitEventCallback(eventName, cb, unit)`](#frameregistereventcallbackeventname-cb-and-frameregisteruniteventcallbackeventname-cb-unit)
+  - [`C_FunctionContainers.CreateCallback(func)`](#c_functioncontainerscreatecallbackfunc)
   - [`GetFramesRegisteredForEvent(event)`](#getframesregisteredforeventevent)
   - [`PLAYER_ENTERING_WORLD` payload (`isInitialLogin`, `isReloadingUi`)](#player_entering_world-payload-isinitiallogin-isreloadingui)
   - [`CHAT_MSG_*` arguments `lineID` (`arg11`) and `guid` (`arg12`)](#chat_msg_-arguments-lineid-arg11-and-guid-arg12)
   - [`PLAYER_TOTEM_UPDATE` event](#player_totem_update-event)
+  - [`ADDONS_UNLOADING` event](#addons_unloading-event)
   - [`BAG_UPDATE_DELAYED` event](#bag_update_delayed-event)
   - [`PLAYER_EQUIPMENT_CHANGED` event](#player_equipment_changed-event)
   - [`UPDATE_INVENTORY_DURABILITY` event](#update_inventory_durability-event)
@@ -260,14 +318,18 @@ build instructions.
   - [`COMBAT_LOG_EVENT_UNFILTERED` / `COMBAT_LOG_EVENT` events](#combat_log_event_unfiltered--combat_log_event-events)
   - [`CURSOR_CHANGED` event](#cursor_changed-event)
   - [`CVAR_UPDATE` event (fires for every change)](#cvar_update-event-fires-for-every-change)
+  - [`DAMAGE_METER_COMBAT_SESSION_UPDATED` / `DAMAGE_METER_CURRENT_SESSION_UPDATED` / `DAMAGE_METER_RESET` events](#damage_meter_combat_session_updated--damage_meter_current_session_updated--damage_meter_reset-events)
   - [`EQUIPMENT_SETS_CHANGED` event](#equipment_sets_changed-event)
   - [`EQUIPMENT_SWAP_PENDING` event](#equipment_swap_pending-event)
   - [`EQUIPMENT_SWAP_FINISHED` event](#equipment_swap_finished-event)
   - [`WEAR_EQUIPMENT_SET` event](#wear_equipment_set-event)
   - [`FACTION_STANDING_CHANGED` event](#faction_standing_changed-event)
+  - [`GROUP_JOINED` / `GROUP_FORMED` / `GROUP_LEFT` events](#group_joined--group_formed--group_left-events)
+  - [`GROUP_ROSTER_UPDATE` event](#group_roster_update-event)
   - [`INCOMING_RESURRECT_CHANGED` event](#incoming_resurrect_changed-event)
+  - [`INSTANCE_ENCOUNTER_ENGAGE_UNIT` event](#instance_encounter_engage_unit-event)
   - [`INVENTORY_SEARCH_UPDATE` event](#inventory_search_update-event)
-  - [`LOOT_HISTORY_ROLL_CHANGED` / `LOOT_HISTORY_ROLL_COMPLETE` / `LOOT_HISTORY_FULL_UPDATE` events](#loot_history_roll_changed--loot_history_roll_complete--loot_history_full_update-events)
+  - [`LOOT_HISTORY_ROLL_CHANGED` / `LOOT_HISTORY_ROLL_COMPLETE` / `LOOT_HISTORY_FULL_UPDATE` / `LOOT_HISTORY_AUTO_SHOW` events](#loot_history_roll_changed--loot_history_roll_complete--loot_history_full_update--loot_history_auto_show-events)
   - [`LEARNED_SPELL_IN_SKILL_LINE` event](#learned_spell_in_skill_line-event)
   - [`LOOT_SCAN_COMPLETED` event](#loot_scan_completed-event)
   - [`LOSS_OF_CONTROL_ADDED` / `LOSS_OF_CONTROL_UPDATE` events](#loss_of_control_added--loss_of_control_update-events)
@@ -275,11 +337,15 @@ build instructions.
   - [`MODIFIER_STATE_CHANGED` event](#modifier_state_changed-event)
   - [`NAME_PLATE_CREATED` / `NAME_PLATE_UNIT_ADDED` / `NAME_PLATE_UNIT_REMOVED` events](#name_plate_created--name_plate_unit_added--name_plate_unit_removed-events)
   - [`PLAYER_FOCUS_CHANGED` event](#player_focus_changed-event)
+  - [`PLAYER_IN_COMBAT_CHANGED` event](#player_in_combat_changed-event)
+  - [`PLAYER_LEVEL_CHANGED` event](#player_level_changed-event)
   - [`PLAYER_MOUNT_DISPLAY_CHANGED` event](#player_mount_display_changed-event)
   - [`PLAYER_SOFT_ENEMY_CHANGED` / `PLAYER_SOFT_FRIEND_CHANGED` events](#player_soft_enemy_changed--player_soft_friend_changed-events)
+  - [`PLAYER_SOFT_TARGET_INTERACTION` event](#player_soft_target_interaction-event)
   - [`PLAYER_SOFT_INTERACT_CHANGED` event](#player_soft_interact_changed-event)
   - [`PLAYER_SWING` event](#player_swing-event)
   - [`PLAYER_SWING_RANGE_UPDATE` event](#player_swing_range_update-event)
+  - [`PREVIEW_TALENT_POINTS_CHANGED` event](#preview_talent_points_changed-event)
   - [`PVP_TIMER_UPDATE` event](#pvp_timer_update-event)
   - [`QUEST_ACCEPTED` event](#quest_accepted-event)
   - [`QUEST_QUERY_COMPLETE` event](#quest_query_complete-event)
@@ -299,9 +365,12 @@ build instructions.
   - [`UNIT_FACTION` event (fire-coverage fix)](#unit_faction-event-fire-coverage-fix)
   - [`UNIT_IN_RANGE_UPDATE` event](#unit_in_range_update-event)
   - [`UNIT_POWER_UPDATE` / `UNIT_POWER_FREQUENT` / `UNIT_MAXPOWER` events](#unit_power_update--unit_power_frequent--unit_maxpower-events)
+  - [`COMBO_TARGET_CHANGED` event](#combo_target_changed-event)
   - [`UNIT_SPELL_HASTE` event](#unit_spell_haste-event)
   - [`UNIT_TARGET` event](#unit_target-event)
   - [`UNIT_TARGETABLE_CHANGED` event](#unit_targetable_changed-event)
+  - [`UNIT_VISIBILITY_CHANGED` event](#unit_visibility_changed-event)
+  - [`UPDATE_CHAT_COLOR_NAME_BY_CLASS` event](#update_chat_color_name_by_class-event)
   - [`UPDATE_MOUSEOVER_UNIT` event (loss-fire fix)](#update_mouseover_unit-event-loss-fire-fix)
   - [`UPDATE_SHAPESHIFT_FORM` event](#update_shapeshift_form-event)
   - [`UNIT_SPELLCAST_*` events](#unit_spellcast_-events)
@@ -354,6 +423,7 @@ build instructions.
   - [`region:AdjustPointsOffset(x, y)` / `region:ClearPointsOffset()`](#regionadjustpointsoffsetx-y--regionclearpointsoffset)
   - [`region:IsDragging()`](#regionisdragging)
   - [`region:GetDebugName([preferParentKey])`](#regiongetdebugnamepreferparentkey)
+  - [`region:GetParentKey()` / `region:SetParentKey(parentKey[, clearOtherKeys])` / `region:ClearParentKey()`](#regiongetparentkey--regionsetparentkeyparentkey-clearotherkeys--regionclearparentkey)
   - [`region:GetSourceLocation()`](#regiongetsourcelocation)
   - [`region:SetToDefaults()`](#regionsettodefaults)
   - [`AddSourceLocationExclude(fileName)`](#addsourcelocationexcludefilename)
@@ -374,6 +444,7 @@ build instructions.
   - [`fontstring:GetFontHeight([calculated])` / `fontstring:SetFontHeight(height)`](#fontstringgetfontheightcalculated--fontstringsetfontheightheight)
   - [`fontstring:IsTruncated()`](#fontstringistruncated)
   - [`fontstring:SetMaxLines(maxLines)` / `fontstring:GetMaxLines()`](#fontstringsetmaxlinesmaxlines--fontstringgetmaxlines)
+  - [`fontstring:SetAlphaGradient(start, length)` / `fontstring:GetAlphaGradient()` / `fontstring:ClearAlphaGradient()`](#fontstringsetalphagradientstart-length--fontstringgetalphagradient--fontstringclearalphagradient)
   - [`fontstring:SetIndentedWordWrap([indent])` / `fontstring:GetIndentedWordWrap()`](#fontstringsetindentedwordwrapindent--fontstringgetindentedwordwrap)
   - [`fontstring:SetWordWrap([wrap])` / `fontstring:CanWordWrap()`](#fontstringsetwordwrapwrap--fontstringcanwordwrap)
   - [`fontstring:GetFieldSize()`](#fontstringgetfieldsize)
@@ -382,18 +453,30 @@ build instructions.
   - [`texture:SetRotation(angle [, cx, cy])`](#texturesetrotationangle--cx-cy)
   - [`texture:SetVertexOffset(vertexIndex, offsetX, offsetY)`](#texturesetvertexoffsetvertexindex-offsetx-offsety)
   - [`texture:SetMask(path)`](#texturesetmaskpath)
-  - [`frame:CreateMaskTexture([name, layer, ...])`](#framecreatemasktexturename-layer-)
+  - [`frame:CreateMaskTexture([name, drawLayer, templateName, subLevel])`](#framecreatemasktexturename-drawlayer-templatename-sublevel)
   - [`texture:AddMaskTexture(mask)`](#textureaddmasktexturemask)
-  - [`texture:RemoveMaskTexture([mask])`](#textureremovemasktexturemask)
+  - [`texture:RemoveMaskTexture(mask)`](#textureremovemasktexturemask)
   - [`texture:GetNumMaskTextures()`](#texturegetnummasktextures)
   - [`texture:GetMaskTexture(index)`](#texturegetmasktextureindex)
+  - [`frame:CreateLine([name, drawLayer, templateName, subLevel])`](#framecreatelinename-drawlayer-templatename-sublevel)
+  - [`line:SetStartPoint(relativePoint [, relativeTo] [, offsetX, offsetY])` / `line:SetEndPoint(...)`](#linesetstartpointrelativepoint--relativeto--offsetx-offsety--linesetendpoint)
+  - [`line:GetStartPoint()` / `line:GetEndPoint()`](#linegetstartpoint--linegetendpoint)
+  - [`line:ClearAllPoints()`](#lineclearallpoints)
+  - [`line:SetThickness(thickness)` / `line:GetThickness()`](#linesetthicknessthickness--linegetthickness)
+  - [`line:SetHitRectThickness(thickness)` / `line:GetHitRectThickness()`](#linesethitrectthicknessthickness--linegethitrectthickness)
+  - [XML `<Line>`](#xml-line)
   - [`texture:SetColorTexture(colorR, colorG, colorB [, a])`](#texturesetcolortexturecolorr-colorg-colorb--a)
-  - [`texture:SetAtlas(atlas [, useAtlasSize])`](#texturesetatlasatlas--useatlassize)
+  - [`texture:SetAtlas(atlas [, useAtlasSize, filterMode, resetTexCoords])`](#texturesetatlasatlas--useatlassize-filtermode-resettexcoords)
   - [`texture:GetAtlas()`](#texturegetatlas)
   - [`texture:ResetTexCoord()`](#textureresettexcoord)
   - [`texture:SetSpriteSheetCell(cell, numRows, numColumns)`](#texturesetspritesheetcellcell-numrows-numcolumns)
   - [`texture:SetTexture(file [, wrapModeHorizontal, wrapModeVertical])`](#texturesettexturefile--wrapmodehorizontal-wrapmodevertical)
   - [`texture:SetHorizTile(tiling)` / `texture:SetVertTile(tiling)`](#texturesethoriztiletiling--texturesetverttiletiling)
+  - [`texture:SetSnapToPixelGrid(snap)` / `texture:SetTexelSnappingBias(bias)`](#texturesetsnaptopixelgridsnap--texturesettexelsnappingbiasbias)
+  - [`texture:SetTextureSliceMargins(left, top, right, bottom)` / `texture:GetTextureSliceMargins()`](#texturesettextureslicemarginsleft-top-right-bottom--texturegettextureslicemargins)
+  - [`texture:SetTextureSliceMode(sliceMode)` / `texture:GetTextureSliceMode()`](#texturesettextureslicemodeslicemode--texturegettextureslicemode)
+  - [`texture:ClearTextureSlice()`](#texturecleartextureslice)
+  - [`Enum.UITextureSliceMode`](#enumuitextureslicemode)
   - [`texture:SetDesaturation(amount)`](#texturesetdesaturationamount)
   - [`texture:GetDesaturation()`](#texturegetdesaturation)
   - [`IsDesaturateSupported()`](#isdesaturatesupported)
@@ -412,6 +495,10 @@ build instructions.
   - [`editBox:ClearHistory()`](#editboxclearhistory)
   - [`editBox:Enable()` / `editBox:Disable()` / `editBox:IsEnabled()`](#editboxenable--editboxdisable--editboxisenabled)
   - [`slider:Enable()` / `slider:Disable()` / `slider:SetEnabled(enabled)` / `slider:IsEnabled()`](#sliderenable--sliderdisable--slidersetenabledenabled--sliderisenabled)
+  - [`slider:SetValue(value [, treatAsMouseEvent])` and `OnValueChanged(self, value, userInput)`](#slidersetvaluevalue--treatasmouseevent-and-onvaluechangedself-value-userinput)
+  - [`slider:SetObeyStepOnDrag(obeyStepOnDrag)` / `slider:GetObeyStepOnDrag()`](#slidersetobeystepondragobeystepondrag--slidergetobeystepondrag)
+  - [`slider:SetStepsPerPage(stepsPerPage)` / `slider:GetStepsPerPage()`](#slidersetstepsperpagestepsperpage--slidergetstepsperpage)
+  - [`slider:IsDraggingThumb()`](#sliderisdraggingthumb)
   - [`OnEnable` and `OnDisable` (scripts)](#onenable-and-ondisable-scripts)
   - [`OnMinMaxChanged(self, min, max)` (script)](#onminmaxchangedself-min-max-script)
   - [`statusBar:SetReverseFill(isReverseFill)` / `statusBar:GetReverseFill()`](#statusbarsetreversefillisreversefill--statusbargetreversefill)
@@ -456,6 +543,9 @@ build instructions.
   - [`smf:AddOnDisplayRefreshedCallback(callback)`](#smfaddondisplayrefreshedcallbackcallback)
   - [`frame:IsEventRegistered(event)`](#frameiseventregisteredevent)
   - [`frame:RegisterUnitEvent(event, ...units)`](#frameregisteruniteventevent-units)
+  - [`frame:RegisterGUIDEvent(event, ...guids)`](#frameregisterguideventevent-guids)
+  - [`frame:UnregisterGUIDEvent(event)`](#frameunregisterguideventevent)
+  - [`frame:IsGUIDEventRegistered(event)`](#frameisguideventregisteredevent)
   - [`frame:GetEffectiveAlpha()`](#framegeteffectivealpha)
   - [Frame alpha multiplies into child frames](#frame-alpha-multiplies-into-child-frames)
   - [`OnSizeChanged` sizes are in frame units](#onsizechanged-sizes-are-in-frame-units)
@@ -542,15 +632,16 @@ build instructions.
 - [Gossip](#gossip)
   - [`C_GossipInfo.GetText()`](#c_gossipinfogettext)
   - [`C_GossipInfo.GetOptions()`](#c_gossipinfogetoptions)
-  - [`C_GossipInfo.GetAvailableQuests()`](#c_gossipinfogetavailablequests)
-  - [`C_GossipInfo.GetActiveQuests()`](#c_gossipinfogetactivequests)
+  - [`C_GossipInfo.GetAvailableQuests()` / `C_GossipInfo.GetActiveQuests()`](#c_gossipinfogetavailablequests--c_gossipinfogetactivequests)
   - [`C_GossipInfo.GetNumOptions()` / `GetNumAvailableQuests()` / `GetNumActiveQuests()`](#c_gossipinfogetnumoptions--getnumavailablequests--getnumactivequests)
-  - [`C_GossipInfo.SelectOption(gossipOptionID)` / `SelectOptionByIndex(orderIndex)`](#c_gossipinfoselectoptiongossipoptionid--selectoptionbyindexorderindex)
-  - [`C_GossipInfo.SelectAvailableQuest(questID)`](#c_gossipinfoselectavailablequestquestid)
-  - [`C_GossipInfo.SelectActiveQuest(questID)`](#c_gossipinfoselectactivequestquestid)
+  - [`C_GossipInfo.SelectOption(gossipOptionID[, text, confirmed])` / `SelectOptionByIndex(orderIndex[, text, confirmed])`](#c_gossipinfoselectoptiongossipoptionid-text-confirmed--selectoptionbyindexorderindex-text-confirmed)
+  - [`C_GossipInfo.SelectAvailableQuest(questID)` / `C_GossipInfo.SelectActiveQuest(questID)`](#c_gossipinfoselectavailablequestquestid--c_gossipinfoselectactivequestquestid)
   - [`C_GossipInfo.CloseGossip()`](#c_gossipinfoclosegossip)
+  - [`C_GossipInfo.ForceGossip()` / `GetCompletedOptionDescriptionString()` / `GetCustomGossipDescriptionString()`](#c_gossipinfoforcegossip--getcompletedoptiondescriptionstring--getcustomgossipdescriptionstring)
+  - [`C_GossipInfo.GetFriendshipReputation(friendshipFactionID)` / `GetFriendshipReputationRanks(friendshipFactionID)`](#c_gossipinfogetfriendshipreputationfriendshipfactionid--getfriendshipreputationranksfriendshipfactionid)
   - [`C_GossipInfo.GetPoiForUiMapID(uiMapID)`](#c_gossipinfogetpoiforuimapiduimapid)
   - [`C_GossipInfo.GetPoiInfo(uiMapID, gossipPoiID)`](#c_gossipinfogetpoiinfouimapid-gossippoiid)
+  - [`Enum.GossipOptionStatus`](#enumgossipoptionstatus)
   - [`GetNumGossipAvailableQuests()` / `GetNumGossipActiveQuests()`](#getnumgossipavailablequests--getnumgossipactivequests)
   - [`GetNumGossipOptions()`](#getnumgossipoptions)
 
@@ -664,6 +755,8 @@ build instructions.
   - [`AbbreviateLargeNumbers(number [, options])`](#abbreviatelargenumbersnumber--options)
   - [`C_StringUtil.GetDefaultAbbreviationBreakpoints([locale])`](#c_stringutilgetdefaultabbreviationbreakpointslocale)
   - [`C_StringUtil.CreateNumericRuleFormatter()`](#c_stringutilcreatenumericruleformatter)
+  - [`C_StringUtil.CreateAbbreviatedNumberFormatter()`](#c_stringutilcreateabbreviatednumberformatter)
+  - [`C_StringUtil.CreateSecondsFormatter()`](#c_stringutilcreatesecondsformatter)
   - [`breakUpLargeNumbers` (CVar)](#breakuplargenumbers-cvar)
 
 - [Loot](#loot)
@@ -677,12 +770,17 @@ build instructions.
 
 - [LootHistory](#loothistory)
   - [`C_LootHistory.GetNumItems()`](#c_loothistorygetnumitems)
-  - [`C_LootHistory.GetItem(itemIndex)`](#c_loothistorygetitemitemindex)
-  - [`C_LootHistory.GetPlayerInfo(itemIndex, playerIndex)`](#c_loothistorygetplayerinfoitemindex-playerindex)
+  - [`C_LootHistory.GetItem(itemIdx)`](#c_loothistorygetitemitemidx)
+  - [`C_LootHistory.GetPlayerInfo(itemIdx, playerIdx)`](#c_loothistorygetplayerinfoitemidx-playeridx)
+  - [`C_LootHistory.SetExpiration(numItemsToSave, secondsToSave)`](#c_loothistorysetexpirationnumitemstosave-secondstosave)
+  - [`C_LootHistory.GetExpiration()`](#c_loothistorygetexpiration)
+  - [`C_LootHistory.CanMasterLoot(itemIdx, playerIdx)` / `C_LootHistory.GiveMasterLoot(itemIdx, playerIdx)`](#c_loothistorycanmasterlootitemidx-playeridx--c_loothistorygivemasterlootitemidx-playeridx)
 
 - [LossOfControl](#lossofcontrol)
-  - [`C_LossOfControl.GetActiveLossOfControlDataCount()`](#c_lossofcontrolgetactivelossofcontroldatacount)
-  - [`C_LossOfControl.GetActiveLossOfControlData(index)`](#c_lossofcontrolgetactivelossofcontroldataindex)
+  - [`C_LossOfControl.GetActiveLossOfControlDataCount()` / `C_LossOfControl.GetActiveLossOfControlDataCountByUnit(unitToken)`](#c_lossofcontrolgetactivelossofcontroldatacount--c_lossofcontrolgetactivelossofcontroldatacountbyunitunittoken)
+  - [`C_LossOfControl.GetActiveLossOfControlData(index)` / `C_LossOfControl.GetActiveLossOfControlDataByUnit(unitToken, index)`](#c_lossofcontrolgetactivelossofcontroldataindex--c_lossofcontrolgetactivelossofcontroldatabyunitunittoken-index)
+  - [`C_LossOfControl.GetActiveLossOfControlDuration(unitToken, index)`](#c_lossofcontrolgetactivelossofcontroldurationunittoken-index)
+  - [`Constants.LossOfControlConsts`](#constantslossofcontrolconsts)
   - [`C_LossOfControl.GetSchoolLockout([filterMask])`](#c_lossofcontrolgetschoollockoutfiltermask)
 
 - [Lua](#lua)
@@ -703,6 +801,10 @@ build instructions.
   - [`collectgarbage(opt [, arg])`](#collectgarbageopt--arg)
   - [`table.wipe(t)` / `wipe(t)`](#tablewipet--wipet)
   - [`table.count(tbl)`](#tablecounttbl)
+  - [`table.create(arraySizeHint [, nodeSizeHint])`](#tablecreatearraysizehint--nodesizehint)
+  - [`C_TableUtil.FindIndexedMismatch(t1, t2)`](#c_tableutilfindindexedmismatcht1-t2)
+  - [`table.freeze(tbl)`](#tablefreezetbl)
+  - [`table.isfrozen(tbl)`](#tableisfrozentbl)
   - [`table.maxn(t)`](#tablemaxnt)
   - [`table.removemulti(t [, pos [, count]])`](#tableremovemultit--pos--count)
   - [Stale table lengths (5.1 healing)](#stale-table-lengths-51-healing)
@@ -832,6 +934,7 @@ build instructions.
   - [`CreateFrame("ModelScene" [, name, parent, template])`](#createframemodelscene--name-parent-template)
   - [`scene:CreateActor([name, template])`](#scenecreateactorname-template)
   - [`scene:GetNumActors()` / `scene:GetActorAtIndex(index)`](#scenegetnumactors--scenegetactoratindexindex)
+  - [`scene:TakeActor(actor)`](#scenetakeactoractor)
   - [`scene:SetCameraPosition(x, y, z)` / `scene:GetCameraPosition()`](#scenesetcamerapositionx-y-z--scenegetcameraposition)
   - [`scene:SetCameraOrientationByYawPitchRoll(yaw, pitch, roll)`](#scenesetcameraorientationbyyawpitchrollyaw-pitch-roll)
   - [`scene:SetCameraOrientationByAxisVectors(forwardX, forwardY, forwardZ, rightX, rightY, rightZ, upX, upY, upZ)`](#scenesetcameraorientationbyaxisvectorsforwardx-forwardy-forwardz-rightx-righty-rightz-upx-upy-upz)
@@ -854,12 +957,14 @@ build instructions.
   - [`scene:GetSceneTime()`](#scenegetscenetime)
   - [`scene:After(seconds, callback)` / `scene:NewTimer(seconds, callback)` / `scene:NewTicker(seconds, callback [, iterations])`](#sceneafterseconds-callback--scenenewtimerseconds-callback--scenenewtickerseconds-callback--iterations)
   - [`scene:SetAllowOverlappedModels(allow)` / `scene:GetAllowOverlappedModels()`](#scenesetallowoverlappedmodelsallow--scenegetallowoverlappedmodels)
+  - [`scene:SetDesaturation(strength)`](#scenesetdesaturationstrength)
   - [`scene:SetGroundTerrain([terrainTypeID])` / `scene:GetGroundTerrain()`](#scenesetgroundterrainterraintypeid--scenegetgroundterrain)
   - [`scene:SetWorldModel(path [, x, y, z [, yaw [, doodadSet [, mapID]]]])`](#scenesetworldmodelpath--x-y-z--yaw--doodadset--mapid)
   - [`scene:SetWorldModelByMapID(mapID)`](#scenesetworldmodelbymapidmapid)
   - [`scene:ClearWorldModel()`](#sceneclearworldmodel)
-  - [`scene:SetWorldTerrain(mapID, x, y [, radius])`](#scenesetworldterrainmapid-x-y--radius)
+  - [`scene:SetWorldTerrain(mapID)`](#scenesetworldterrainmapid)
   - [`scene:ClearWorldTerrain()`](#sceneclearworldterrain)
+  - [`scene:SetWorldTimeOfDay(timeOfDay)` / `scene:GetWorldTimeOfDay()` / `scene:ClearWorldTimeOfDay()`](#scenesetworldtimeofdaytimeofday--scenegetworldtimeofday--sceneclearworldtimeofday)
   - [`scene:SetPlayWorldModelSounds(enabled)` / `scene:GetPlayWorldModelSounds()`](#scenesetplayworldmodelsoundsenabled--scenegetplayworldmodelsounds)
   - [`scene:TraceSegment(startX, startY, startZ, endX, endY, endZ [, camera])`](#scenetracesegmentstartx-starty-startz-endx-endy-endz--camera)
   - [`scene:GetLiquidAtPoint(x, y, z)`](#scenegetliquidatpointx-y-z)
@@ -872,18 +977,31 @@ build instructions.
   - [`scene:SetMoveMarker(x, y, z)` / `scene:ClearMoveMarker()` / `scene:GetMoveMarker()`](#scenesetmovemarkerx-y-z--sceneclearmovemarker--scenegetmovemarker)
   - [`OnActorEnter` / `OnActorLeave`](#onactorenter--onactorleave)
   - [`actor:SetModelByCreatureDisplayID(displayID [, useActivePlayerCustomizations])`](#actorsetmodelbycreaturedisplayiddisplayid--useactiveplayercustomizations)
+  - [`actor:SetModelByCharacterAppearance(appearance)`](#actorsetmodelbycharacterappearanceappearance)
   - [`actor:SetModelByPath(path [, useMips])`](#actorsetmodelbypathpath--usemips)
   - [`actor:SetModelBySpellArea(spellID, radius)`](#actorsetmodelbyspellareaspellid-radius)
+  - [`actor:SetModelByGameObjectDisplayID(gameObjectDisplayID)`](#actorsetmodelbygameobjectdisplayidgameobjectdisplayid)
+  - [`actor:PlaySwing(victim, result [, critical [, offHand]])`](#actorplayswingvictim-result--critical--offhand)
+  - [`actor:SetPortraitTexture(texture)`](#actorsetportraittexturetexture)
+  - [`actor:PlayWoundAnimation([critical])`](#actorplaywoundanimationcritical)
+  - [`actor:PlayParryAnimation()`](#actorplayparryanimation)
+  - [`actor:SetCreatureID(creatureID)` / `actor:SetAttacking(attacking)` / `actor:SetMoving(moving)`](#actorsetcreatureidcreatureid--actorsetattackingattacking--actorsetmovingmoving)
+  - [`actor:SetGameObjectState(state [, previousState])`](#actorsetgameobjectstatestate--previousstate)
   - [`actor:SetModelByUnit(unit [, sheatheWeapons, autoDress, hideWeapons, usePlayerNativeForm, holdBowString, customRaceID])`](#actorsetmodelbyunitunit--sheatheweapons-autodress-hideweapons-useplayernativeform-holdbowstring-customraceid)
   - [`actor:SetModelByUnitCreatureDisplayID(unit)`](#actorsetmodelbyunitcreaturedisplayidunit)
   - [`actor:GetModelUnitGUID()`](#actorgetmodelunitguid)
+  - [`actor:SetPlayerModelFromGlues([characterIndex, sheatheWeapons, autoDress, hideWeapons, usePlayerNativeForm, customRaceID])`](#actorsetplayermodelfromgluescharacterindex-sheatheweapons-autodress-hideweapons-useplayernativeform-customraceid)
   - [`actor:Dress()` / `actor:Undress([includeWeapons])` / `actor:UndressSlot(slot)`](#actordress--actorundressincludeweapons--actorundressslotslot)
   - [`actor:TryOn(item [, handSlotName, spellEnchantID])`](#actortryonitem--handslotname-spellenchantid)
   - [`actor:DressPlayerSlot(slot)`](#actordressplayerslotslot)
   - [`actor:IsSlotAllowed(slot)` / `actor:IsSlotVisible(slot)`](#actorisslotallowedslot--actorisslotvisibleslot)
   - [`actor:GetItemTransmogInfo(slot)` / `actor:GetItemTransmogInfoList()`](#actorgetitemtransmoginfoslot--actorgetitemtransmoginfolist)
   - [`actor:SetItemTransmogInfo(info [, slot, ignoreChildItems])`](#actorsetitemtransmoginfoinfo--slot-ignorechilditems)
+  - [`actor:SetUseTransmogSkin(use)` / `actor:SetUseTransmogChoices(use)` / `actor:SetObeyHideInTransmogFlag(obey)`](#actorsetusetransmogskinuse--actorsetusetransmogchoicesuse--actorsetobeyhideintransmogflagobey)
+  - [`actor:ResetNextHandSlot()`](#actorresetnexthandslot)
   - [`actor:SetSheathed(sheathed [, hidden])` / `actor:GetSheathed()`](#actorsetsheathedsheathed--hidden--actorgetsheathed)
+  - [`actor:SetSheatheState(state)`](#actorsetsheathestatestate)
+  - [`actor:SetHeldItem(inventorySlot [, itemDisplayID, itemClass, itemSubclass, inventoryType, sheatheType])`](#actorsethelditeminventoryslot--itemdisplayid-itemclass-itemsubclass-inventorytype-sheathetype)
   - [`actor:SetSheathedCategory(slot, category)`](#actorsetsheathedcategoryslot-category)
   - [`actor:UseUnitSheatheCategory(useCategory)`](#actoruseunitsheathecategoryusecategory)
   - [`actor:SetAutoDress(autoDress)` / `actor:GetAutoDress()`](#actorsetautodressautodress--actorgetautodress)
@@ -894,9 +1012,11 @@ build instructions.
   - [`actor:SetScale(scale)` / `actor:GetScale()`](#actorsetscalescale--actorgetscale)
   - [`actor:SetUseCenterForOrigin([x, y, z])` / `actor:IsUsingCenterForOrigin()`](#actorsetusecenterfororiginx-y-z--actorisusingcenterfororigin)
   - [`actor:GetActiveBoundingBox()` / `actor:GetMaxBoundingBox()`](#actorgetactiveboundingbox--actorgetmaxboundingbox)
+  - [`actor:SetPreferModelCollisionBounds(prefer)` / `actor:IsPreferringModelCollisionBounds()`](#actorsetprefermodelcollisionboundsprefer--actorispreferringmodelcollisionbounds)
   - [`actor:Show()` / `actor:Hide()` / `actor:SetShown(shown)`](#actorshow--actorhide--actorsetshownshown)
   - [`actor:FadeOut()` / `actor:IsFadingOut()`](#actorfadeout--actorisfadingout)
   - [`actor:SetAlpha(alpha)` / `actor:GetAlpha()`](#actorsetalphaalpha--actorgetalpha)
+  - [`actor:SetDesaturation(strength)` / `actor:GetDesaturation()`](#actorsetdesaturationstrength--actorgetdesaturation)
   - [`actor:SetAnimation(animation [, variation, animSpeed, animOffsetSeconds])`](#actorsetanimationanimation--variation-animspeed-animoffsetseconds)
   - [`actor:SetAnimationBlendOperation(blendOperation)` / `actor:GetAnimationBlendOperation()`](#actorsetanimationblendoperationblendoperation--actorgetanimationblendoperation)
   - [`actor:SetPaused(paused [, affectsGlobalPause])` / `actor:GetPaused()`](#actorsetpausedpaused--affectsglobalpause--actorgetpaused)
@@ -938,6 +1058,12 @@ build instructions.
   - [`C_ModelInfo.GetModelSceneCameraInfoByID(modelSceneCameraID)`](#c_modelinfogetmodelscenecamerainfobyidmodelscenecameraid)
   - [`C_ModelInfo.GetModelSceneActorInfoByID(modelActorID)`](#c_modelinfogetmodelsceneactorinfobyidmodelactorid)
   - [`C_ModelInfo.GetModelSceneActorDisplayInfoByID(modelActorDisplayID)`](#c_modelinfogetmodelsceneactordisplayinfobyidmodelactordisplayid)
+  - [`C_ModelInfo.AddActiveModelScene(modelSceneFrame, modelSceneID)` / `C_ModelInfo.AddActiveModelSceneActor(modelSceneFrameActor, modelSceneActorID)` / `C_ModelInfo.ClearActiveModelScene(modelSceneFrame)` / `C_ModelInfo.ClearActiveModelSceneActor(modelSceneFrameActor)`](#c_modelinfoaddactivemodelscenemodelsceneframe-modelsceneid--c_modelinfoaddactivemodelsceneactormodelsceneframeactor-modelsceneactorid--c_modelinfoclearactivemodelscenemodelsceneframe--c_modelinfoclearactivemodelsceneactormodelsceneframeactor)
+  - [`Enum.ModelSceneType`](#enummodelscenetype)
+  - [`Enum.UIModelSceneFlags`](#enumuimodelsceneflags)
+  - [`Enum.UIModelSceneActorFlag`](#enumuimodelsceneactorflag)
+  - [`Enum.UIModelSceneContext`](#enumuimodelscenecontext)
+  - [`UI_MODEL_SCENE_INFO_UPDATED` event](#ui_model_scene_info_updated-event)
 
 - [Mount](#mount)
   - [`C_MountJournal.GetMountFromSpell(spellID)`](#c_mountjournalgetmountfromspellspellid)
@@ -955,18 +1081,27 @@ build instructions.
 - [NamePlate](#nameplate)
   - [`nameplateNotSelectedAlpha`](#nameplatenotselectedalpha)
   - [`nameplateSelectedAlpha`](#nameplateselectedalpha)
+  - [Nameplates by kind of unit](#nameplates-by-kind-of-unit)
   - [`C_NamePlate.GetNamePlates()`](#c_nameplategetnameplates)
   - [`C_NamePlate.GetNamePlateGUIDs()`](#c_nameplategetnameplateguids)
+  - [`C_NamePlate.SetNamePlateSize(width, height)`](#c_nameplatesetnameplatesizewidth-height)
+  - [`C_NamePlate.GetNamePlateSize()`](#c_nameplategetnameplatesize)
+  - [`C_NamePlateManager.SetNamePlateHitTestInsets(type, left, right, top, bottom)`](#c_nameplatemanagersetnameplatehittestinsetstype-left-right-top-bottom)
+  - [`C_NamePlateManager.GetNamePlateHitTestInsets(type)`](#c_nameplatemanagergetnameplatehittestinsetstype)
   - [`C_NamePlate.GetNamePlateForUnit(unitToken)`](#c_nameplategetnameplateforunitunittoken)
   - [`C_NamePlate.GetNamePlateForGUID(guidString)`](#c_nameplategetnameplateforguidguidstring)
+  - [Unit events and tokens](#unit-events-and-tokens)
   - [Unit tokens (`nameplateN`)](#unit-tokens-nameplaten)
   - [Unit tokens (`markN`)](#unit-tokens-markn)
+  - [Unit tokens (`totemN`)](#unit-tokens-totemn)
+  - [Unit tokens (`bossN`)](#unit-tokens-bossn)
   - [Unit tokens (GUID literals)](#unit-tokens-guid-literals)
+  - [Unit tokens (names)](#unit-tokens-names)
   - [`IsUnitToken(value)`](#isunittokenvalue)
 
 - [NewItems](#newitems)
-  - [`C_NewItems.IsNewItem(bagID, slotIndex)`](#c_newitemsisnewitembagid-slotindex)
-  - [`C_NewItems.RemoveNewItem(bagID, slotIndex)`](#c_newitemsremovenewitembagid-slotindex)
+  - [`C_NewItems.IsNewItem(containerIndex, slotIndex)`](#c_newitemsisnewitemcontainerindex-slotindex)
+  - [`C_NewItems.RemoveNewItem(containerIndex, slotIndex)`](#c_newitemsremovenewitemcontainerindex-slotindex)
   - [`C_NewItems.ClearAll()`](#c_newitemsclearall)
 
 - [PaperDollInfo](#paperdollinfo)
@@ -986,6 +1121,7 @@ build instructions.
   - [`C_PlayerInfo.CanUseItem(itemID)`](#c_playerinfocanuseitemitemid)
   - [`C_PlayerInfo.GUIDIsPlayer(guid)` / `GUIDIsCreature` / `GUIDIsPet` / `GUIDIsGameObject`](#c_playerinfoguidisplayerguid--guidiscreature--guidispet--guidisgameobject)
   - [`C_PlayerInfo.GetName / GetClass / GetRace / GetSex / IsConnected(playerLocation)`](#c_playerinfogetname--getclass--getrace--getsex--isconnectedplayerlocation)
+  - [`C_PlayerInfo.GetDisplayID()` / `GetNativeDisplayID()` / `IsDisplayRaceNative()`](#c_playerinfogetdisplayid--getnativedisplayid--isdisplayracenative)
 
 - [Profiling](#profiling)
   - [`UpdateAddOnMemoryUsage()` / `GetAddOnMemoryUsage(index or "name")`](#updateaddonmemoryusage--getaddonmemoryusageindex-or-name)
@@ -1074,12 +1210,14 @@ build instructions.
   - [`GetCritChance()` / `GetRangedCritChance()`](#getcritchance--getrangedcritchance)
   - [`IsUsableSpell(spell)` / `IsUsableSpell(slot, bookType)`](#isusablespellspell--isusablespellslot-booktype)
   - [`C_Spell.IsSpellUsable(spellID)`](#c_spellisspellusablespellid)
+  - [`C_Spell.IsSpellReactiveReady(spell)`](#c_spellisspellreactivereadyspell)
   - [`C_Spell.GetSpellCooldown(spellIdentifier)`](#c_spellgetspellcooldownspellidentifier)
   - [`GetSpellBaseCooldown(spellID)`](#getspellbasecooldownspellid)
   - [`IsAttackSpell(slot, bookType)`](#isattackspellslot-booktype)
   - [`IsAutoRepeatSpell(slot, bookType)`](#isautorepeatspellslot-booktype)
   - [`IsConsumableSpell(spellID)` / `IsConsumableSpell(slot, bookType)`](#isconsumablespellspellid--isconsumablespellslot-booktype)
   - [`C_Spell.GetSpellLossOfControlCooldown(spellIdentifier)`](#c_spellgetspelllossofcontrolcooldownspellidentifier)
+  - [`C_Spell.GetSpellLossOfControlCooldownInfo(spellIdentifier)` / `C_Spell.GetSpellLossOfControlCooldownDuration(spellIdentifier)` / `GetSpellLossOfControlCooldown(spell)`](#c_spellgetspelllossofcontrolcooldowninfospellidentifier--c_spellgetspelllossofcontrolcooldowndurationspellidentifier--getspelllossofcontrolcooldownspell)
   - [`C_Spell.IsCurrentSpell(spellIdentifier)`](#c_spelliscurrentspellspellidentifier)
   - [`C_Spell.IsSelfBuff(spellID)`](#c_spellisselfbuffspellid)
   - [`C_Spell.SpellHasRange(spellIdentifier)` / `SpellHasRange(slot, bookType)`](#c_spellspellhasrangespellidentifier--spellhasrangeslot-booktype)
@@ -1148,6 +1286,19 @@ build instructions.
   - [`IsLoggingOut()`](#isloggingout)
   - [`IsPlayerInWorld()`](#isplayerinworld)
 
+- [StringUtil](#stringutil)
+  - [`C_StringUtil.EscapeDecimalNonPrintables(text)`](#c_stringutilescapedecimalnonprintablestext)
+  - [`C_StringUtil.EscapeLuaFormatString(text)`](#c_stringutilescapeluaformatstringtext)
+  - [`C_StringUtil.EscapeLuaPatterns(text)`](#c_stringutilescapeluapatternstext)
+  - [`C_StringUtil.EscapeQuotedCodes(text)`](#c_stringutilescapequotedcodestext)
+  - [`C_StringUtil.FloorToNearestString(number)`](#c_stringutilfloortoneareststringnumber)
+  - [`C_StringUtil.RoundToNearestString(number)`](#c_stringutilroundtoneareststringnumber)
+  - [`C_StringUtil.TruncateWhenZero(number)`](#c_stringutiltruncatewhenzeronumber)
+  - [`C_StringUtil.RemoveContiguousSpaces(text, maxAllowedSpaces)`](#c_stringutilremovecontiguousspacestext-maxallowedspaces)
+  - [`C_StringUtil.WrapString(infix [, prefix, suffix])`](#c_stringutilwrapstringinfix--prefix-suffix)
+  - [`C_StringUtil.StripHyperlinks(text [, maintainColor, maintainBrackets, stripNewlines, maintainAtlases, maintainTextures])`](#c_stringutilstriphyperlinkstext--maintaincolor-maintainbrackets-stripnewlines-maintainatlases-maintaintextures)
+  - [`C_StringUtil.StripTextureMarkupForLooseFiles(text)`](#c_stringutilstriptexturemarkupforloosefilestext)
+
 - [SwingTimer](#swingtimer)
   - [`C_SwingTimer.EnableRangeCheck(swingType, enable)`](#c_swingtimerenablerangecheckswingtype-enable)
   - [`C_SwingTimer.IsTargetWithinSwingRange(swingType)`](#c_swingtimeristargetwithinswingrangeswingtype)
@@ -1156,10 +1307,21 @@ build instructions.
   - [`GetPhysicalScreenSize()`](#getphysicalscreensize)
   - [`CopyToClipboard(text [, removeMarkup])`](#copytoclipboardtext--removemarkup)
   - [`FlashClientIcon([briefly])`](#flashclienticonbriefly)
+  - [Frame rate limits (`useMaxFPS`, `maxFPS`, `useMaxFPSBk`, `maxFPSBk`)](#frame-rate-limits-usemaxfps-maxfps-usemaxfpsbk-maxfpsbk)
 
 - [Talent](#talent)
   - [`GetTalentSpellID(tabIndex, talentIndex, [rank[, classID]])`](#gettalentspellidtabindex-talentindex-rank-classid)
   - [`GetTalentIDByIndex(tabIndex, talentIndex[, classID])`](#gettalentidbyindextabindex-talentindex-classid)
+  - [Talent previews](#talent-previews)
+  - [`AddPreviewTalentPoints(tabIndex, talentIndex, points[, isPet[, groupIndex]])`](#addpreviewtalentpointstabindex-talentindex-points-ispet-groupindex)
+  - [`ResetPreviewTalentPoints(tabIndex[, isPet[, groupIndex]])`](#resetpreviewtalentpointstabindex-ispet-groupindex)
+  - [`ResetGroupPreviewTalentPoints([isPet[, groupIndex]])`](#resetgrouppreviewtalentpointsispet-groupindex)
+  - [`GetPreviewTalentPointsSpent(tabIndex[, isPet[, groupIndex]])`](#getpreviewtalentpointsspenttabindex-ispet-groupindex)
+  - [`GetGroupPreviewTalentPointsSpent([isPet[, groupIndex]])`](#getgrouppreviewtalentpointsspentispet-groupindex)
+  - [`LearnPreviewTalents([isPet])`](#learnpreviewtalentsispet)
+  - [`C_SpecializationInfo.GetTalentInfo(query)`](#c_specializationinfogettalentinfoquery)
+  - [`C_SpecializationInfo.GetTalentPrereqs(tabIndex, talentIndex[, isInspect[, isPet[, groupIndex]]])`](#c_specializationinfogettalentprereqstabindex-talentindex-isinspect-ispet-groupindex)
+  - [`GameTooltip:SetTalent(tabIndex, talentIndex[, isInspect[, isPet[, groupIndex[, isPreview]]]])`](#gametooltipsettalenttabindex-talentindex-isinspect-ispet-groupindex-ispreview)
 
 - [Targeting](#targeting)
   - [`GetPlayerFacing()`](#getplayerfacing)
@@ -1169,6 +1331,7 @@ build instructions.
   - [`TargetNearest([reverse])`](#targetnearestreverse)
   - [`TargetNearestEnemyPlayer([reverse])`](#targetnearestenemyplayerreverse)
   - [`TargetNearestFriendPlayer([reverse])`](#targetnearestfriendplayerreverse)
+  - [Scored Tab targeting (`TargetNearestUseNew`)](#scored-tab-targeting-targetnearestusenew)
   - [`InteractUnit(unit [, exactMatch])`](#interactunitunit--exactmatch)
   - [`C_PlayerInteractionManager.InteractUnit(unit [, exactMatch [, looseTargeting]])`](#c_playerinteractionmanagerinteractunitunit--exactmatch--loosetargeting)
   - [Soft interact (`softinteract` / `anyinteract`)](#soft-interact-softinteract--anyinteract)
@@ -1223,6 +1386,8 @@ build instructions.
   - [`GetCraftListLink()`](#getcraftlistlink)
   - [`GetTradeSkillRecipeLink(index)`](#gettradeskillrecipelinkindex)
   - [`GetTradeSkillDescription(index)`](#gettradeskilldescriptionindex)
+  - [`GetTradeSkillTools(index)`](#gettradeskilltoolsindex)
+  - [`GetCraftSpellFocus(index)`](#getcraftspellfocusindex)
   - [`IsTradeSkillLinked()`](#istradeskilllinked)
   - [`IsCraftLinked()`](#iscraftlinked)
 
@@ -1250,6 +1415,7 @@ build instructions.
   - [`UnitIsDND(unit)`](#unitisdndunit)
   - [`UnitIsFeignDeath(unit)`](#unitisfeigndeathunit)
   - [`UnitIsInMyGuild(unitOrName)`](#unitisinmyguildunitorname)
+  - [`IsUnitUntargetable(unit)`](#isunituntargetableunit)
   - [`UnitIsPossessed(unit)`](#unitispossessedunit)
   - [`UnitIsMinion(unit)`](#unitisminionunit)
   - [`UnitIsPet(unit)`](#unitispetunit)
@@ -1266,7 +1432,11 @@ build instructions.
   - [`UnitHealthMissing(unit)`](#unithealthmissingunit)
   - [`UnitPower(unit [, powerType [, unmodified]])` / `UnitPowerMax(unit [, powerType [, unmodified]])`](#unitpowerunit--powertype--unmodified--unitpowermaxunit--powertype--unmodified)
   - [`UnitPowerMissing(unit [, powerType [, unmodified]])`](#unitpowermissingunit--powertype--unmodified)
+  - [`UnitPartialPower(unit [, powerType [, unmodified]])`](#unitpartialpowerunit--powertype--unmodified)
+  - [`UnitHasPowerType(unit, powerType)`](#unithaspowertypeunit-powertype)
+  - [`UnitPowerDisplayMod(powerType)`](#unitpowerdisplaymodpowertype)
   - [`UnitPowerType(unit)`](#unitpowertypeunit)
+  - [`GetComboPoints(unit, target)`](#getcombopointsunit-target)
   - [`UnitSpellHaste(unit)`](#unitspellhasteunit)
   - [`UnitSpellTargetName(unit)`](#unitspelltargetnameunit)
   - [`UnitHasIncomingResurrection(unit)`](#unithasincomingresurrectionunit)
@@ -1274,18 +1444,20 @@ build instructions.
 
 - [UnitAuras](#unitauras)
   - [`C_UnitAuras.GetAuraDataByIndex(unit, index [, filter])`](#c_unitaurasgetauradatabyindexunit-index--filter)
-  - [`C_UnitAuras.GetBuffDataByIndex(unit, index)` / `GetDebuffDataByIndex(unit, index)`](#c_unitaurasgetbuffdatabyindexunit-index--getdebuffdatabyindexunit-index)
+  - [`C_UnitAuras.GetBuffDataByIndex(unit, index [, filter])` / `GetDebuffDataByIndex(unit, index [, filter])`](#c_unitaurasgetbuffdatabyindexunit-index--filter--getdebuffdatabyindexunit-index--filter)
   - [`C_UnitAuras.UnitAura(unit, index [, filter])`](#c_unitaurasunitauraunit-index--filter)
   - [`C_UnitAuras.UnitBuff(unit, index [, filter])` / `UnitDebuff(unit, index [, filter])`](#c_unitaurasunitbuffunit-index--filter--unitdebuffunit-index--filter)
   - [`C_UnitAuras.GetAuraSlots(unit [, filter [, maxSlots [, continuationToken]]])`](#c_unitaurasgetauraslotsunit--filter--maxslots--continuationtoken)
   - [`C_UnitAuras.GetAuraDataBySlot(unit, slot)` / `UnitAuraBySlot(unit, slot)`](#c_unitaurasgetauradatabyslotunit-slot--unitaurabyslotunit-slot)
   - [`C_UnitAuras.GetAuraDataByAuraInstanceID(unit, auraInstanceID [, buf])`](#c_unitaurasgetauradatabyaurainstanceidunit-aurainstanceid--buf)
-  - [`C_UnitAuras.GetUnitAuraBySpellID(unit, spellID [, filter])`](#c_unitaurasgetunitaurabyspellidunit-spellid--filter)
+  - [`C_UnitAuras.GetUnitAuraBySpellID(unit, spellID)`](#c_unitaurasgetunitaurabyspellidunit-spellid)
   - [`C_UnitAuras.GetPlayerAuraBySpellID(spellID)`](#c_unitaurasgetplayeraurabyspellidspellid)
   - [`C_UnitAuras.GetAuraDataBySpellName(unit, spellName [, filter])`](#c_unitaurasgetauradatabyspellnameunit-spellname--filter)
   - [`C_UnitAuras.RegisterComboDuration(spellID, baseSeconds, maxSeconds)`](#c_unitaurasregistercombodurationspellid-baseseconds-maxseconds)
   - [`C_UnitAuras.RegisterAuraDurationModifierByTrigger(triggerFamily, triggerSchool, affectedFamily, affectedFamilyFlags, affectedIcon, op [, valueSeconds])`](#c_unitaurasregisterauradurationmodifierbytriggertriggerfamily-triggerschool-affectedfamily-affectedfamilyflags-affectedicon-op--valueseconds)
-  - [`C_UnitAuras.GetUnitAuras(unit [, filter])`](#c_unitaurasgetunitaurasunit--filter)
+  - [`C_UnitAuras.GetUnitAuras(unit [, filter [, maxCount [, sortRule [, sortDirection]]]])`](#c_unitaurasgetunitaurasunit--filter--maxcount--sortrule--sortdirection)
+  - [`C_UnitAuras.GetUnitAuraInstanceIDs(unit [, filter [, maxCount [, sortRule [, sortDirection]]]])`](#c_unitaurasgetunitaurainstanceidsunit--filter--maxcount--sortrule--sortdirection)
+  - [`C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraInstanceID, filter)`](#c_unitaurasisaurafilteredoutbyinstanceidunit-aurainstanceid-filter)
   - [`C_UnitAuras.GetAuraDispelTypeColor(dispelName)`](#c_unitaurasgetauradispeltypecolordispelname)
 
 - [VoiceChat](#voicechat)
@@ -1306,6 +1478,7 @@ build instructions.
   - [BackdropTemplate](#backdroptemplate)
   - [Menus and dropdowns](#menus-and-dropdowns)
   - [Atlases in XML](#atlases-in-xml)
+  - [Global colors in XML](#global-colors-in-xml)
   - [Masks in XML](#masks-in-xml)
   - [`function` and `method` on XML script handlers](#function-and-method-on-xml-script-handlers)
   - [`style` on button font elements](#style-on-button-font-elements)
@@ -1536,6 +1709,15 @@ if actionType == "item" then
 end
 ```
 
+### `C_ActionBar.GetActionLossOfControlCooldownInfo(actionID)` / `C_ActionBar.GetActionLossOfControlCooldownDuration(actionID)`
+
+The loss-of-control block of the spell in an action slot, in the same forms as
+[`C_Spell.GetSpellLossOfControlCooldownInfo`](#c_spellgetspelllossofcontrolcooldowninfospellidentifier--c_spellgetspelllossofcontrolcooldowndurationspellidentifier--getspelllossofcontrolcooldownspell)
+and `C_Spell.GetSpellLossOfControlCooldownDuration`. The spell of the slot is
+the one that [`C_ActionBar.GetSpell`](#c_actionbargetspellactionid) returns.
+For a slot outside 1 to 120, the functions return nothing. A slot with no
+spell gives a table with no block.
+
 ### `C_ActionBar.GetItemActionOnEquipSpellID(actionID)`
 
 Returns the ID of the spell that the item of a 1-based action-bar slot
@@ -1646,68 +1828,217 @@ set.
 
 ## AddOns
 
-`C_AddOns.*` getters that splat the
-`GetAddOnInfo(arg)` 7-tuple `(name, title, notes, enabled,
-loadable, reason, security)` into single-field accessors, plus a
-getter for the addon's optional dependencies.
+The `C_AddOns` functions read and change the addons of the client.
 
-All accept either a 1-based index (`1..GetNumAddOns()`) or an
-addon directory name string.
+The functions that take `name` accept a 1-based index
+(`1..C_AddOns.GetNumAddOns()`) or an addon folder name. A name is not
+case-sensitive. An unknown name is not an error: each function then
+returns the value that its section gives.
 
-### `C_AddOns.GetAddOnName(indexOrName)`
+These arguments cause an error that contains the usage line of the
+function:
 
-Returns the addon's directory name as the engine sees it (the
-folder name on disk). For numeric input, returns the engine's
-canonical casing; for string input, echoes the input verbatim
-once existence is confirmed. Returns `nil` for missing addons.
+- an index that is less than 1 or more than the number of addons. The
+  message also gives the valid range.
+- `nil`, or a value that is not a number or a string.
+
+### `C_AddOns.GetNumAddOns()`
+
+Returns the number of addons in the addon list. Blizzard addons are not
+in the list.
+
+### `C_AddOns.GetAddOnInfo(name)`
+
+Returns six values: `name, title, notes, loadable, reason, security`.
+
+- `name`: the folder name. For an unknown name, the name as you gave it.
+- `title`, `notes`: the same values as
+  [`GetAddOnTitle`](#c_addonsgetaddontitlename) and
+  [`GetAddOnNotes`](#c_addonsgetaddonnotesname).
+- `loadable`, `reason`: the same values as
+  [`IsAddOnLoadable(name)`](#c_addonsisaddonloadablename--character-demandloaded)
+  with no other arguments.
+- `security`: the string `"SECURE"`, `"INSECURE"` or `"BANNED"`.
+
+For an unknown name, the function returns
+`name, nil, nil, false, "MISSING", "INSECURE"`. Thus the first value is
+never `nil`. To find out if an addon exists, use
+[`DoesAddOnExist`](#c_addonsdoesaddonexistname).
+
+The global `GetAddOnInfo` is a different function and keeps its seven
+values.
+
+### `C_AddOns.GetAddOnName(name)`
+
+Returns the folder name of the addon, with the case that the addon has
+on disk. Returns `nil` for an unknown name.
 
 ```lua
 C_AddOns.GetAddOnName(1)            -- "Atlas-TW"
-C_AddOns.GetAddOnName("myaddon")    -- "myaddon"
+C_AddOns.GetAddOnName("myaddon")    -- "MyAddon"
 C_AddOns.GetAddOnName("garbage")    -- nil
 ```
 
-### `C_AddOns.GetAddOnTitle(indexOrName)`
+### `C_AddOns.GetAddOnTitle(name)`
 
-Returns the `## Title:` from the addon's `.toc` file, with WoW
-color-code escapes applied. `nil` for missing addons or addons
-without a title field.
+Returns the `## Title:` of the addon TOC, with color codes applied. When
+the TOC has no title, the function returns the folder name. Returns
+`nil` for an unknown name.
 
 ```lua
 C_AddOns.GetAddOnTitle("MyAddon") -- "My Addon"
 ```
 
-### `C_AddOns.GetAddOnNotes(indexOrName)`
+### `C_AddOns.GetAddOnNotes(name)`
 
-Returns the `## Notes:` from the `.toc`. `nil` for missing
-addons or addons without notes.
+Returns the `## Notes:` of the addon TOC. Returns `nil` for an unknown
+name, or when the TOC has no notes.
 
 ```lua
 C_AddOns.GetAddOnNotes("MyAddon") -- "Shows a thing on the screen."
 ```
 
-### `C_AddOns.IsAddOnLoadable(indexOrName)`
+### `C_AddOns.GetAddOnMetadata(name, variable)`
 
-Returns `loadable, reason` — a real boolean and a status string
-(or `nil`).
+Returns the value of a `##` key from the `.toc` file of an addon. The
+key is not case-sensitive. The function returns `nil` when the TOC has
+no such key, or when no addon has that name. `variable` must be a
+string.
 
-`reason` comes from a small status table the engine consults when
-populating `GetAddOnInfo`'s 6th return: `"DISABLED"`, `"BANNED"`,
-`"CORRUPT"`, `"INSECURE"`, `"NOT_DEMAND_LOADED"`,
-`"INTERFACE_VERSION"`, `"MISSING"`. `nil` when the addon is
-loadable. The full signature accepts optional `character`
-and `demandLoaded` arguments — those are ignored here, since there is
-no per-character addon enable state.
+The function reads these keys, and every key that starts with them:
+`Title`, `Notes`, `Author`, `Version`, `IconTexture`, `IconAtlas`,
+`AddonCompartmentFunc`, `Category`, `Group` and `X-`. It cannot read
+other keys, for example `SavedVariables` or `Interface`.
+
+A key with a locale suffix, such as `## Title-deDE:`, applies only when
+that locale is your client locale. It then replaces the key without the
+suffix. When the same key occurs on two lines, the last line wins.
+`Title` is the folder name when the TOC has no `## Title:`.
+
+`Group` names the addon that this addon belongs to. When the TOC has no
+`## Group:`, the value comes from the addon names. The value is the name
+of an addon that comes earlier in alphabetical order and that matches
+both of these conditions:
+
+1. Its name is the start of this addon's name.
+2. One of the two addons lists the other in `## Dependencies:` or
+   `## OptionalDeps:`.
+
+When no addon matches, `Group` is the addon's own name.
 
 ```lua
-C_AddOns.IsAddOnLoadable("MyAddon")           -- true, nil
-C_AddOns.IsAddOnLoadable("HardcoreTooltips")  -- false, "DISABLED"
-C_AddOns.IsAddOnLoadable("garbage")           -- false, nil
+-- MyAddon.toc contains: ## IconTexture: Interface\Icons\INV_Misc_QuestionMark
+C_AddOns.GetAddOnMetadata("MyAddon", "IconTexture")  -- "Interface\Icons\INV_Misc_QuestionMark"
+C_AddOns.GetAddOnMetadata("MyAddon", "x-website")    -- the ## X-Website: value
+-- MyAddon_Options.toc contains: ## Dependencies: MyAddon
+C_AddOns.GetAddOnMetadata("MyAddon_Options", "Group")  -- "MyAddon"
 ```
 
-### `C_AddOns.IsAddOnLoaded(indexOrName)`
+### `C_AddOns.GetAddOnEnableState(name [, character])`
 
-Returns `loadedOrLoading, loaded` — two booleans.
+Returns an `Enum.AddOnEnableState` number:
+
+| Value | `Enum.AddOnEnableState.*` | When |
+|------:|---------------------------|------|
+| `0`   | `None`                    | The addon is disabled. |
+| `1`   | `Some`                    | Only with no `character`: the addon is enabled for some characters and disabled for others. |
+| `2`   | `All`                     | The addon is enabled. |
+
+`character` is the name of a character on your realm. The name is not
+case-sensitive. When `character` is `nil`, `"0"` or `""`, the function
+reads all characters on the realm.
+
+A character that has no setting for the addon uses the state over all
+characters. When no character has a setting, the state comes from
+`## DefaultState:` in the TOC. A name that is not one of your characters
+also gets this default. An unknown addon returns `0`.
+
+```lua
+C_AddOns.GetAddOnEnableState("MyAddon", UnitName("player"))  -- 2
+C_AddOns.GetAddOnEnableState("MyAddon")                       -- 1 (enabled on some characters)
+```
+
+### `C_AddOns.EnableAddOn(name [, character])`
+
+Enables the addon for `character`. When `character` is `nil`, `"0"` or
+`""`, the function enables the addon for all characters on the realm.
+The change takes effect at the next reload or login.
+
+A name that is not one of your characters has no effect. The setting is
+also kept for an unknown addon name.
+
+### `C_AddOns.DisableAddOn(name [, character])`
+
+Disables the addon. It takes the same arguments as `EnableAddOn`.
+
+A Blizzard addon cannot be disabled. For a Blizzard addon, the function
+raises the error `DisableAddOn(): Cannot disable a Secure AddOn`.
+
+### `C_AddOns.EnableAllAddOns([character])` and `C_AddOns.DisableAllAddOns([character])`
+
+Enable or disable every addon in the addon list for `character`, or for
+all characters when `character` is `nil`, `"0"` or `""`. Blizzard addons
+are not in the list and do not change.
+
+### `C_AddOns.SaveAddOns()`
+
+Writes the changed enable states to disk now. A logout or a reload also
+writes them.
+
+### `C_AddOns.ResetAddOns()` and `C_AddOns.ResetDisabledAddOns()`
+
+Discard the enable-state changes that are not saved yet.
+`ResetAddOns` reads the states of all characters again from disk.
+`ResetDisabledAddOns` does this only for your current character.
+
+### `C_AddOns.IsAddOnDefaultEnabled(name)`
+
+Returns `true` when the addon is enabled for a character that has no
+setting for it. This is `false` when the TOC has
+`## DefaultState: disabled`. Returns `false` for an unknown name.
+
+### `C_AddOns.IsAddOnLoadOnDemand(name)`
+
+Returns `true` when the TOC has `## LoadOnDemand: 1`. Returns `false`
+for an unknown name.
+
+### `C_AddOns.IsAddOnLoadable(name [, character, demandLoaded])`
+
+Returns `loadable, reason`. `reason` is an empty string when `loadable`
+is `true`. When `loadable` is `false`, `reason` is one of these strings:
+
+| `reason` | Cause |
+|----------|-------|
+| `"MISSING"` | No addon has that name. |
+| `"DISABLED"` | The addon is disabled for `character`. |
+| `"BANNED"` | The addon is banned. |
+| `"CORRUPT"` | The addon is corrupt. |
+| `"INSECURE"` | The addon is not secure. |
+| `"INTERFACE_VERSION"` | The `## Interface:` of the TOC is out of date, and the addon version check is on (see [`SetAddonVersionCheck`](#c_addonsisaddonversioncheckenabled-and-c_addonssetaddonversioncheckenabled)). |
+| `"DEMAND_LOADED"` | The addon has `## LoadOnDemand: 1`, and `demandLoaded` is `false`. |
+| `"DEP_"` + a reason | A required dependency cannot load, for example `"DEP_DISABLED"`. |
+
+`character` selects whose enable state counts, as for
+[`GetAddOnEnableState`](#c_addonsgetaddonenablestatename--character).
+With all characters, an addon that is enabled for some characters counts
+as enabled. Only the state `None` gives `"DISABLED"`.
+
+`demandLoaded` is `false` by default. Set it to `true` to ask about a load
+on demand. The function does not examine if the addon is loaded. Thus a
+load-on-demand addon gives `false, "DEMAND_LOADED"` when `demandLoaded`
+is `false`, also after it has loaded.
+
+```lua
+C_AddOns.IsAddOnLoadable("MyAddon")                    -- true, ""
+C_AddOns.IsAddOnLoadable("HardcoreTooltips")           -- false, "DISABLED"
+C_AddOns.IsAddOnLoadable("Blizzard_AuctionUI")         -- false, "DEMAND_LOADED"
+C_AddOns.IsAddOnLoadable("Blizzard_AuctionUI", nil, true)  -- true, ""
+C_AddOns.IsAddOnLoadable("garbage")                    -- false, "MISSING"
+```
+
+### `C_AddOns.IsAddOnLoaded(name)`
+
+Returns `loadedOrLoading, loaded`, two booleans.
 
 ```lua
 C_AddOns.IsAddOnLoaded("MyAddon")       -- true, true
@@ -1715,15 +2046,36 @@ C_AddOns.IsAddOnLoaded("garbage")       -- false, false
 C_AddOns.IsAddOnLoaded(1)               -- true, true   (first addon by index)
 ```
 
-### `C_AddOns.LoadAddOn(indexOrName)`
+The two values are different while an addon loads. The files of an
+addon run during its load, so code at file scope sees the addon as
+loading, but not loaded:
 
-Loads a `LoadOnDemand` addon. Returns `loaded, value`:
+```lua
+-- at file scope in MyAddon.lua
+C_AddOns.IsAddOnLoaded("MyAddon")       -- true, false
+-- and when the load is complete
+C_AddOns.IsAddOnLoaded("MyAddon")       -- true, true
+```
 
-- `loaded` — `1` when the addon loaded, or was already loaded. `nil`
-  otherwise.
-- `value` — a locale-independent reason the load failed, such as
-  `"DISABLED"`, or `"UNKNOWN_ERROR"` when no specific reason is
-  available. `nil` on success.
+The same is true for all other code that runs during the load, for
+example a dependency that loads first. That code sees the addon that
+loads it as `true, false`.
+
+> An addon that asks about **itself** from its own `ADDON_LOADED`
+> handler gets `true, false`, because that event fires just before its
+> load is complete. A question about any *other* addon there gets the
+> correct answer.
+
+### `C_AddOns.LoadAddOn(name)`
+
+Loads a load-on-demand addon. Returns `loaded, value`:
+
+- `loaded`: `true` when the addon loaded, or was already loaded.
+  `false` when it did not load.
+- `value`: when the load fails, a reason that does not change with the
+  locale, such as `"DISABLED"`. `"MISSING"` for an unknown name, and
+  `"UNKNOWN_ERROR"` when no reason is known. `nil` when the addon
+  loaded.
 
 ```lua
 local loaded, reason = C_AddOns.LoadAddOn("Blizzard_AuctionUI")
@@ -1732,92 +2084,68 @@ if not loaded then
 end
 ```
 
-Test `loaded` for truth rather than comparing it to `true` — it is the
-number `1`.
+The global `LoadAddOn` keeps its `1` or `nil` as the first value.
 
-The two returns distinguish "load-in-progress" from "fully loaded", and
-they really do differ while an addon is loading. An addon's own files
-run part-way through its load, so code at file scope sees itself as
-loading but not yet loaded:
+### `C_AddOns.DoesAddOnHaveLoadError(name)`
 
-```lua
--- at file scope in MyAddon.lua
-C_AddOns.IsAddOnLoaded("MyAddon")       -- true, false
--- and once the load has finished
-C_AddOns.IsAddOnLoaded("MyAddon")       -- true, true
-```
+Returns `true` when the addon had an error while it loaded:
 
-The same holds for anything else running inside that window, such as a
-dependency loaded on the way in: it sees the addon that pulled it in as
-`true, false`.
+- a script error, also in a frame script that ran during the load
+- a file in the TOC that is missing
+- a SavedVariables file that has an error
 
-Unknown addons (numeric index past `GetNumAddOns()`, or
-string name not in the registry) return `false, false`.
+The value stays `true` until the next reload or login. An error while a
+dependency loads counts for the dependency. The name is case-sensitive:
+give the folder name with its exact case. Returns `false` for an unknown
+name.
 
-> An addon asking about **itself** from its own `ADDON_LOADED` handler
-> gets `true, false`, because that event fires just before its load call
-> returns. Asking about any *other* addon there is accurate.
+### `C_AddOns.GetAddOnSecurity(name)`
 
-### `C_AddOns.GetAddOnSecurity(indexOrName)`
-
-Returns an `Enum.AddOnSecurityStatus` integer (not a string):
+Returns an `Enum.AddOnSecurityStatus` number:
 
 | Value | `Enum.AddOnSecurityStatus.*` | When |
 |------:|------------------------------|------|
-| `0`   | `Secure`                     | Blizzard-signed addons (`Blizzard_*`). |
-| `1`   | `Insecure`                   | Every user addon loaded from `Interface/AddOns/`. The default for any registered addon not in the secure or banned override sets. |
-| `2`   | `Banned`                     | Entries the engine has explicitly disqualified — set by server addon-banlist responses, rare in practice. |
-| `3`   | `NotAvailable`               | No addon by that name / index exists. |
+| `0`   | `Secure`                     | Blizzard addons (`Blizzard_*`). |
+| `1`   | `Insecure`                   | All other addons, and an unknown name. |
+| `2`   | `Banned`                     | An addon that the server banned. |
+| `3`   | `NotAvailable`               | Not used by this client. |
 
 ```lua
 C_AddOns.GetAddOnSecurity("Blizzard_TalentUI") -- 0 (Secure)
 C_AddOns.GetAddOnSecurity("MyAddon")           -- 1 (Insecure)
-C_AddOns.GetAddOnSecurity("Nonexistent")       -- 3 (NotAvailable)
-
-if status == Enum.AddOnSecurityStatus.Secure then ...
 ```
 
-### `C_AddOns.DoesAddOnExist(indexOrName)`
+### `C_AddOns.DoesAddOnExist(name)`
 
-Returns `true` iff the engine's addon registry has a matching
-entry, `false` otherwise. Cheap existence probe used by addons
-doing soft-dependency checks.
-
-Use this function, not `GetAddOnInfo`, to test if an addon exists.
-`GetAddOnInfo` always returns its input name as the first value, so
-`GetAddOnInfo("garbage") ~= nil` is true for any string.
+Returns `true` when an addon has that name, Blizzard addons included.
+Returns `false` for an unknown name.
 
 ```lua
 C_AddOns.DoesAddOnExist("MyAddon")     -- true
 C_AddOns.DoesAddOnExist("garbage")     -- false
 ```
 
-### `C_AddOns.GetAddOnOptionalDependencies(indexOrName)`
+### `C_AddOns.GetAddOnDependencies(name)` and `C_AddOns.GetAddOnOptionalDependencies(name)`
 
-Returns the addon's `## OptionalDeps:` names as multiple return
-values, in declared order — the counterpart to the stock
-`GetAddOnDependencies` (required deps). An addon with no
-`## OptionalDeps:` field returns nothing.
-
-Arg and error handling match stock `GetAddOnDependencies`: a
-numeric index out of range (or a non-string/non-number argument)
-raises the usage error; an unknown *name* string returns nothing
-without erroring.
+Return the names in `## Dependencies:` (or `## RequiredDeps:`), or in
+`## OptionalDeps:`, as multiple values in TOC order. An addon without the
+key returns no values. An unknown name also returns no values.
 
 ```lua
 -- ## OptionalDeps: Atlas, pfQuest
 C_AddOns.GetAddOnOptionalDependencies("MyAddon")  -- "Atlas", "pfQuest"
-C_AddOns.GetAddOnOptionalDependencies("Atlas")    -- (nothing — no OptionalDeps)
+C_AddOns.GetAddOnOptionalDependencies("Atlas")    -- (no values)
 ```
 
-### `C_AddOns.GetAddOnInterfaceVersion(indexOrName)`
+### `C_AddOns.GetAddOnInterfaceVersion(name)`
 
 Returns the `## Interface:` value of the addon TOC as a number.
 
-If the TOC lists more than one value, separated by commas, the
-function returns the largest value that is not more than the client
-interface version. Errors for bad arguments are the same as for
-`GetAddOnOptionalDependencies`. An unknown name returns nil.
+The line can list more than one value, separated by commas or spaces.
+The function returns the client interface version when the line contains
+it. If not, it returns the largest value that is less than the client
+interface version. If there is no such value, it returns 0. An unknown
+name also returns 0.
 
 ```lua
 -- ## Interface: 11200
@@ -1826,130 +2154,203 @@ C_AddOns.GetAddOnInterfaceVersion("MyAddon")  -- 11200
 C_AddOns.GetAddOnInterfaceVersion("Multi")    -- 11200
 -- ## Interface: 20504, 11100, 11000
 C_AddOns.GetAddOnInterfaceVersion("Old")      -- 11100
+-- ## Interface: 11300
+C_AddOns.GetAddOnInterfaceVersion("Future")   -- 0
 ```
+
+### `C_AddOns.IsAddonVersionCheckEnabled()` and `C_AddOns.SetAddonVersionCheck(enabled)`
+
+The addon version check stops an addon from loading when its
+`## Interface:` is out of date. The cvar `checkAddonVersion` holds the
+setting.
+
+`IsAddonVersionCheckEnabled` returns `true` when the check is on.
+`SetAddonVersionCheck(enabled)` turns the check on or off. `enabled` is
+necessary: `nil` causes an error.
+
+### `C_AddOns.GetScriptsDisallowedForBeta()`
+
+Always returns `false`.
 
 ### `C_AddOns.GetAddOnLocalTable(name)`
 
-Returns the private table of the addon named `name`. This is the same
-table the addon's own files receive as the second value of `...`:
+Returns the private table of the addon. This is the same table that the
+files of the addon receive as the second value of `...`:
 
 ```lua
 -- inside MyAddon's files
 local addonName, addonTable = ...
 ```
 
-Another addon reads that table only when both conditions are true:
+Another addon gets that table only when both of these conditions are
+true:
 
-1. `MyAddon` is loaded, and
-2. `MyAddon`'s `.toc` file declares `## AllowAddOnTableAccess: 1`.
+1. `MyAddon` is loaded.
+2. The `.toc` file of `MyAddon` has `## AllowAddOnTableAccess: 1`.
 
-If either condition is false, the function returns `nil`. An addon
-that does not opt in keeps its table private. The check protects each
-addon's table from access it did not permit.
+If one condition is false, the function returns no value. An addon
+without this key keeps its table private.
 
 ```lua
 -- MyAddon.toc contains: ## AllowAddOnTableAccess: 1
 local t = C_AddOns.GetAddOnLocalTable("MyAddon")   -- MyAddon's table
 t.sharedValue = 5                                  -- MyAddon sees this too
 
-C_AddOns.GetAddOnLocalTable("OtherAddon")   -- nil (no opt-in directive)
-C_AddOns.GetAddOnLocalTable("DoesNotExist") -- nil (not loaded)
+C_AddOns.GetAddOnLocalTable("OtherAddon")   -- (no value: no AllowAddOnTableAccess)
+C_AddOns.GetAddOnLocalTable("DoesNotExist") -- (no value)
 ```
-
-Pass the addon name as a string. A numeric index returns `nil` — one
-addon refers to another by name, not by load order.
 
 ### Conditional and multi-flavor TOC loading
 
 Some addons support several game versions from one folder. ClassicAPI
-reads the TOC conventions those addons use, so they load here.
+reads the TOC conventions that those addons use, so they load here.
 
 **Flavor TOC files.** An addon that supports several clients can name its
-TOC after the client it targets. The plain `<Name>.toc` is then optional.
-ClassicAPI reads two of these names:
+TOC after the client that it targets. The plain `<Name>.toc` is then
+optional. ClassicAPI looks for these names, in this order:
 
-- `<Name>_Turtle.toc` — on a Turtle client only.
-- `<Name>_ClassicAPI.toc` — on any client.
+1. `<Name>-Turtle.toc`, on a Turtle client only.
+2. `<Name>_Turtle.toc`, on a Turtle client only.
+3. `<Name>-ClassicAPI.toc`, on all clients.
+4. `<Name>_ClassicAPI.toc`, on all clients.
 
-ClassicAPI looks for `_Turtle` first, so it wins when both exist. Either
-one also wins over a plain `<Name>.toc`. An addon can therefore keep its
-plain TOC for other clients and put its ClassicAPI build in a suffixed
-file.
+The first file that exists wins, also over a plain `<Name>.toc`. Thus an
+addon can keep its plain TOC for other clients and put its ClassicAPI
+build in a flavor file.
 
-ClassicAPI does not read `_Vanilla` or `_Classic`. Those names belong to
-the Classic Era client, which is a separate program with its own engine
-and its own API. An addon's `_Vanilla` files are written for that client.
-Such a file can start the addon and then fail inside it, on a function or
-a template this client does not provide. So an addon that ships only
-`_Vanilla` and `_Mainline` TOCs does not load at all. Add a
+ClassicAPI does not read `_Vanilla`, `_Classic` or the other flavor names
+of Blizzard clients. Those files are for clients with a different engine
+and a different API. Such a file can start the addon and then fail inside
+it, on a function or a template that this client does not have. Thus an
+addon that ships only `_Vanilla` and `_Mainline` TOCs does not load. Add a
 `_ClassicAPI.toc` to support this client.
 
-**Note the word `vanilla`.** The two TOC conventions reuse it for
-different things. As a file suffix, `_Vanilla` names the Classic Era
-client, so ClassicAPI ignores it. As a directive value, `vanilla` names
-this client's game type, so `[AllowLoadGameType vanilla]` loads the line.
+**Note the word `vanilla`.** The two TOC conventions use it for different
+things. As a file suffix, `_Vanilla` names the Classic Era client, so
+ClassicAPI ignores it. As a game type, `vanilla` names this client, so
+`[AllowLoadGameType vanilla]` loads the line.
 
-**Flavor Bindings files.** The same selection applies to an addon's
-keybinding file:
+**Flavor Bindings files.** The same names apply to the keybinding file of
+an addon: `Bindings-Turtle.xml`, `Bindings_Turtle.xml`,
+`Bindings-ClassicAPI.xml`, then `Bindings_ClassicAPI.xml`. The first file
+that exists wins over a plain `Bindings.xml`. An addon that has no plain
+`Bindings.xml` loads its bindings from a flavor file.
 
-- `Bindings_Turtle.xml` — on a Turtle client only.
-- `Bindings_ClassicAPI.xml` — on any client.
-
-The order matches the TOC files: `_Turtle` first, and either one wins
-over a plain `Bindings.xml`. An addon that ships no plain `Bindings.xml`
-still loads its bindings from a flavor file. ClassicAPI does not read
-`_Vanilla` or `_Classic` here either.
-
-**Multi-flavor `## Interface:` version.** A TOC can list several
-interface versions on one line:
+**Multi-flavor `## Interface:` version.** A TOC can list several interface
+versions on one line. Commas, spaces, or both separate the versions:
 
 ```
 ## Interface: 120100, 50504, 38002, 20506, 11200
 ```
 
-The addon loads when the list contains this client's interface version,
-`11200`. The position of that entry in the list does not matter. A list
-without it stays out of date, and the addon does not load.
+The addon loads when the list contains the interface version of this
+client, `11200`. The position of that entry in the list is not important.
+If the list does not contain `11200`, the addon is out of date and does
+not load.
 
-**Per-line directives.** Inside a TOC, gate individual file lines with a
-condition, or expand a path variable:
+**Directives.** A TOC line can have conditions and path variables:
 
 ```
-# Loads on this client (game type is vanilla):
+# Loads on this client (its game types are classic and vanilla):
 Vanilla.lua              [AllowLoadGameType vanilla]
 
-# Dropped on this client:
+# Does not load on this client:
 Mainline.lua             [AllowLoadGameType mainline]
 
-# Loads only under a matching client locale:
+# Loads only when the client locale is deDE:
 Localization\deDE.lua    [AllowLoadTextLocale deDE]
 
-# Path variables expand before the file loads:
+# Path variables change before the file loads:
 [Family]\Init.lua                # -> Classic\Init.lua
 [Game]\Init.lua                  # -> Vanilla\Init.lua
 Localization\[TextLocale].lua    # -> Localization\enUS.lua  (your locale)
+
+# Metadata lines take directives too:
+## SavedVariables: MyAddonDB_[Game]       # -> MyAddonDB_Vanilla
+## Title: My Addon (Mainline) [AllowLoadGameType mainline]
 ```
 
-How each token resolves on this client:
+Directives also apply to the `file` value of `<Include>` and `<Script>`
+in an XML file:
+
+```xml
+<Script file="Classic.lua [AllowLoadGameType classic]"/>
+<Include file="[Family]\Frames.xml"/>
+```
+
+The result of each directive on this client:
 
 | Directive | Result |
 |---|---|
-| `[AllowLoadGameType ...]` | Loads the line when the list contains `vanilla`. |
+| `[AllowLoadGameType ...]` | Loads the line when the list contains `classic` or `vanilla`. |
+| `[ExcludeLoadGameType ...]` | Loads the line when the list contains neither `classic` nor `vanilla`. |
 | `[AllowLoadTextLocale ...]` | Loads the line when the list contains your client locale (the `GetLocale()` code). |
-| `[AllowLoad ...]` | Loads on `game`, drops on `glue`. |
+| `[AllowLoad ...]` | One word. `game` and `both` load the line. `glue` and all other values drop it. |
+| `[AllowLoadEnvironment ...]` | Loads the line when the list contains `Global` and the line is a file line of an addon. Drops a metadata line. |
+| `[LoadIntoEnvironment ...]` | Loads the line. |
 | `[Family]` | `Classic` |
 | `[Game]` | `Vanilla` |
 | `[TextLocale]` | Your client locale code, for example `enUS`. |
 
-A line loads only when every condition on it passes. An unknown condition
-drops the line. A file gated by a rule this client does not know stays
-unloaded.
+These rules apply to directives:
 
-**Limits.**
+- Commas, spaces, or both separate the items of a list. The names in a
+  list are not case-sensitive.
+- The game-type names are `mainline`, `standard`, `plunderstorm`,
+  `classic`, `vanilla`, `tbc`, `wrath`, `cata`, `mists` and `wowhack`.
+  A game-type list ignores other names. A list that contains no known name
+  loads the line, for both `AllowLoadGameType` and `ExcludeLoadGameType`.
+- A line loads only when all of its conditions pass. A line that does not
+  load sets no metadata value and loads no file.
+- Directive names are case-sensitive. An unknown directive stays in the
+  line as text. In a file line, the path then has no match, so that file
+  does not load.
 
-- Conditions on `## metadata` lines are not supported. Only file-reference
-  lines are gated.
-- `[AllowLoad glue]` never loads. Addon files load in-game only.
+**The `turtle` game type.** ClassicAPI also knows the game type `turtle`,
+which matches a Turtle client only. `[ExcludeLoadGameType turtle]` loads a
+line on all clients except Turtle.
+
+> **Caution:** Do not use `[AllowLoadGameType turtle]` for files that must
+> load only on Turtle. Blizzard clients do not know the name `turtle`, so
+> they load that line. Put Turtle-only files in `<Name>_Turtle.toc`.
+
+**Whole-addon conditions.** Two metadata keys gate the full addon:
+
+- `## AllowLoadGameType: <list>` - the addon loads only when the list
+  contains `classic` or `vanilla`. Several lines add their names
+  together. A list with no known name has no effect.
+- `## AllowLoad: <word>` - `game` (the default) and `both` let the addon
+  load. `glue` and all other values stop it.
+
+An addon that these keys stop does not load. `LoadAddOn` returns the
+reason `WRONG_GAME_TYPE` or `WRONG_ACTIVE_INTERFACE`, and an addon that
+depends on it gets `DEP_WRONG_GAME_TYPE` or `DEP_WRONG_ACTIVE_INTERFACE`.
+`GetAddOnInfo` and `IsAddOnLoadable` do not report these reasons.
+
+### Other TOC metadata keys
+
+ClassicAPI reads these `##` keys in addition to the keys above:
+
+| Key | Result |
+|---|---|
+| `## AlwaysUpToDate: 1` | The addon is never out of date. Its interface version is the client interface version. A `## Interface:` line after this line replaces the value. |
+| `## OnlyBetaAndPTR: 1` | The addon is not available. It is not in the addon list, and no function finds it. The last line of this key wins. |
+| `## LoadManagers: A, B` | Before the addon loads at login, its managers load, in the listed order. When a manager loads, the addon becomes load-on-demand and does not load at login. When no manager loads, the addon loads as usual. Several lines add their names together. |
+
+A key with a true or false value, such as `## AllowAddOnTableAccess:`,
+`## LoadSavedVariablesFirst:` or `## AlwaysUpToDate:`, reads the value
+this way:
+
+- True: a value that starts with `1` to `9`, `T`, `t`, `Y` or `y`, and
+  the values `on` and `enabled`, in any case.
+- False: all other values.
+
+For `## AllowAddOnTableAccess:` and `## LoadSavedVariablesFirst:`, one
+true line is sufficient.
+
+An addon that `## AllowLoadGameType:` stops is also not in the addon
+list (`GetNumAddOns` and `GetAddOnInfo(index)`). Functions that take its
+name still find it.
 
 ### SavedVariables loaded first
 
@@ -1974,6 +2375,27 @@ This covers both `## SavedVariables` and `## SavedVariablesPerCharacter`.
 File-scope reads and writes both work. A SavedVariables file exists only
 after the first save, so the first-ever login still sees `nil` — there is
 nothing on disk to load yet.
+
+### SavedVariables files and backups
+
+The client writes each SavedVariables file in a safe sequence:
+
+1. It writes the new data to `<Name>.lua.tmp`.
+2. It renames the old `<Name>.lua` to `<Name>.lua.bak`. This replaces the
+   older backup.
+3. It renames `<Name>.lua.tmp` to `<Name>.lua`.
+
+Thus a crash or a full disk during the write cannot destroy the old
+file. The client does not write a variable whose name has a character
+other than `A`-`Z`, `a`-`z`, `0`-`9` or `_`.
+
+When `<Name>.lua` is missing, the client loads `<Name>.lua.bak` in its
+place. This applies only when the TOC declares that scope:
+`## SavedVariables:` for the account file, and
+`## SavedVariablesPerCharacter:` for the character file.
+
+> **Note:** To reset the saved variables of an addon, delete both
+> `<Name>.lua` and `<Name>.lua.bak`.
 
 ### `/reload` picks up new addons and new files
 
@@ -2035,59 +2457,112 @@ region and, for a frame, of every frame, texture and font string inside it.
 ```lua
 local group = frame:CreateAnimationGroup()
 local fade = group:CreateAnimation("Alpha")
-fade:SetChange(-1)            -- down to alpha 0
+fade:SetFromAlpha(1)
+fade:SetToAlpha(0)
 fade:SetDuration(0.5)
 fade:SetSmoothing("OUT")
 group:SetScript("OnFinished", function(self) frame:Hide() end)
 group:Play()
 ```
 
+### Arguments and errors
+
+The methods of groups, animations and control points check their
+arguments. A wrong argument raises `bad argument #n to 'Method' (usage)`,
+where `usage` is the method's usage text, for example
+`Usage: self:SetLooping(loopType)`. A number that is not finite raises
+`must be a finite number - usage`. A number out of range raises
+`outside of expected range a to b - usage`. Methods that take a whole
+number drop the fraction.
+
 ### AnimationGroup
 
-`Play([reverse])`, `Pause`, `Stop`, `Finish`, `IsPlaying`, `IsPaused`,
-`IsDone`, `IsPendingFinish`, `GetProgress`, `GetDuration`,
-`SetLooping("NONE" | "REPEAT" | "BOUNCE")`, `GetLooping`, `GetLoopState`,
-`GetMaxOrder`, `SetInitialOffset(x, y)` / `GetInitialOffset`,
-`SetIgnoreFramerateThrottle` / `GetIgnoreFramerateThrottle`,
-`SetToFinalAlpha(setToFinalAlpha)` / `IsSetToFinalAlpha`,
-`CreateAnimation([type [, name [, templateName]]])`, `GetAnimations`, and
-`SetScript` / `GetScript` / `HookScript` / `HasScript` for `OnLoad`,
-`OnPlay`, `OnPause`, `OnStop(self, requested)`,
+| Method | Description |
+|---|---|
+| `Play([reverse, offset])` | Starts the group. `offset` runs that many seconds of the group at once, right after `OnPlay`. |
+| `Restart([reverse, offset])` | Stops the group, then plays it. |
+| `SetPlaying(play)` | `true` plays the group from the start. `false` stops it. |
+| `Pause()`, `Stop()`, `Finish()` | `Finish` lets the current loop end, then the group stops. |
+| `IsPlaying()`, `IsPaused()`, `IsDone()`, `IsPendingFinish()`, `IsReverse()` | `IsReverse` returns the direction that the group started in. |
+| `GetProgress()`, `GetElapsed()`, `GetDuration()` | |
+| `SetAnimationSpeedMultiplier(multiplier)` / `GetAnimationSpeedMultiplier()` | 1 by default. |
+| `SetLooping(loopType)` / `GetLooping()`, `GetLoopState()` | `"NONE"`, `"REPEAT"` or `"BOUNCE"`. |
+| `SetToFinalAlpha(setToFinalAlpha)` / `IsSetToFinalAlpha()` | |
+| `SetIgnoreFramerateThrottle(ignore)` / `GetIgnoreFramerateThrottle()` | `true` makes the progress step on every frame. Refer to `SetMaxAnimFramerate`. |
+| `CreateAnimation([animationType, name, templateName])`, `GetAnimations()`, `RemoveAnimations()` | |
+
+The scripts are `OnLoad`, `OnPlay`, `OnPause`, `OnStop(self, requested)`,
 `OnFinished(self, requested)`, `OnLoop(self, loopState)` and
-`OnUpdate(self, elapsed)`.
+`OnUpdate(self, elapsed)`. Use `SetScript`, `GetScript`, `HookScript` and
+`HasScript`.
+
+`Play` has these results:
+
+- A paused group continues from where it is. `reverse` has no effect.
+- A group that plays in the same direction does not change.
+- A group that plays in the other direction turns around where it is. It
+  does not start again, and `OnPlay` does not run. A group that loops does
+  not turn around.
 
 When a group ends, its progress goes back to 0. After the end, `IsDone`
 returns false. To find out when a group ends, use `OnFinished`.
-
-After `SetToFinalAlpha(true)`, each `Alpha` animation of the group keeps
-the alpha that it ends on when the group finishes. This includes a group
-that ends after `Finish`. `Stop` puts the stored alpha back.
 
 Animations with the same order play together, and the orders play one
 after another. An order lasts as long as its longest
 `startDelay + duration + endDelay`. `BOUNCE` plays every other loop
 backwards.
 
+`SetAnimationSpeedMultiplier` changes how fast the animations move. 2 is
+twice as fast, and 0 stops them. A negative value moves them backwards.
+`GetElapsed` is in the changed time. `OnUpdate` gets the time of the frame.
+
+`RemoveAnimations` stops the group, with `requested` false. Then it removes
+every animation from the group and destroys it.
+
+After `SetToFinalAlpha(true)`, each `Alpha` animation of the group keeps
+the alpha that it ends on when the group finishes. This includes a group
+that ends after `Finish`. `Stop` puts the stored alpha back.
+
 ### Animation
 
-`group:CreateAnimation(type)` takes `"Animation"` (timing and scripts
-only), `"Alpha"`, `"Translation"`, `"Scale"`, `"Rotation"` or `"Path"`. Any other
-type makes an `"Animation"`. An animation made in Lua joins the highest
-order the group already has.
+`group:CreateAnimation(animationType)` takes one of the type names in the
+next table. Letter case has no effect. Any other name makes an
+`"Animation"`, which has only timing and scripts. A new animation has
+order 0.
 
-Every animation has `Play`, `Pause`, `Stop`, `IsPlaying`, `IsPaused`,
-`IsStopped`, `IsDelaying`, `IsDone`, `GetElapsed`, `GetProgress`,
-`GetProgressWithDelay`, `GetSmoothProgress` / `SetSmoothProgress`,
-`SetDuration` / `GetDuration`, `SetStartDelay` / `GetStartDelay`,
-`SetEndDelay` / `GetEndDelay`, `SetOrder` / `GetOrder` (1 to 100),
-`SetSmoothing("NONE" | "IN" | "OUT" | "IN_OUT")` / `GetSmoothing`,
-`SetParent(group [, order])`, `GetRegionParent`, and the group's scripts
-except `OnLoop`.
+| `animationType` | `GetObjectType()` |
+|---|---|
+| `"Animation"`, `"Alpha"`, `"Translation"`, `"Scale"`, `"Rotation"`, `"Path"` | The same name. |
+| `"VertexColor"`, `"FlipBook"` | The same name. |
+| `"TextureCoord"` | `"TextureCoordTranslation"` |
+| `"LineTranslation"`, `"LineScale"` | The same name. `IsObjectType("Translation")` or `IsObjectType("Scale")` is also true. |
 
+CAUTION: `CreateAnimation("TextureCoordTranslation")` makes an
+`"Animation"`, not a texture coordinate animation. Use `"TextureCoord"`.
+
+| Method | Description |
+|---|---|
+| `Play()`, `Pause()`, `Stop()`, `Restart()`, `SetPlaying(play)` | These change only the animation, not its group. `Pause` pauses the group too. |
+| `IsPlaying()`, `IsPaused()`, `IsStopped()`, `IsDelaying()`, `IsDone()` | |
+| `GetElapsed()`, `GetProgress()`, `GetSmoothProgress()` / `SetSmoothProgress(progress)` | |
+| `SetDuration(durationSec [, recomputeGroupDuration])` / `GetDuration()` | |
+| `SetStartDelay(delaySec [, recomputeGroupDuration])` / `GetStartDelay()` | |
+| `SetEndDelay(delaySec [, recomputeGroupDuration])` / `GetEndDelay()` | |
+| `SetOrder(newOrder)` / `GetOrder()` | 0 to 99. |
+| `SetSmoothing(weights)` / `GetSmoothing()` | `"NONE"`, `"IN"`, `"OUT"`, `"IN_OUT"` or `"OUT_IN"`. |
+| `SetParent(parent [, order])`, `GetRegionParent()` | `parent` is a group or the name of a group. |
+
+- A negative duration or delay becomes 0. The group's duration changes
+  too, unless `recomputeGroupDuration` is `false`.
+- `SetOrder` has no effect on an animation that has no group. A value out
+  of range becomes 0 or 99.
 - Smoothing follows a cosine curve: `IN` starts slow, `OUT` ends slow and
-  `IN_OUT` does both.
+  `IN_OUT` does both. `GetSmoothing` returns `"IN_OUT"` for `"OUT_IN"`.
+  `SetSmoothing("NONE")` does not remove a smoothing that you set before.
 - Progress steps at most 30 times a second, unless the group ignores the
   framerate throttle.
+- The scripts are those of the group, except `OnLoop`. An animation's
+  `OnFinished` gets no `requested` argument.
 
 An animation changes the region of its group, or the target that you set.
 The target must be that region, or a frame, texture or font string inside
@@ -2095,13 +2570,13 @@ it:
 
 | Method | Target |
 |---|---|
-| `SetTarget(region)` | The region. |
+| `SetTarget(region)` | The region. Another object raises `Error setting target <name>`. |
 | `SetTargetName(name)` | The region with that global name. `name` can start with `$parent`. |
 | `SetChildKey(childKey)` | The region at `region[childKey]`, where `region` is the region of the group. |
 | `SetTargetKey(key)` | The region at the key path. `$parent` steps from the animation to its group, then to the region of the group, then to the parent of that region. The other parts are keys. |
 | `SetTargetParent()` | The region of the group. |
 
-- Each method returns `true` if it finds a region now.
+- Each method returns `true`.
 - A name or a key is looked up again each time that the animation plays.
 - `GetTarget()` returns the target, or the region of the group if there
   is no target.
@@ -2115,34 +2590,31 @@ glow:SetChildKey("Glow")                    -- same as SetTargetKey("$parent.$pa
 
 | Type | Methods |
 |---|---|
-| `Alpha` | `SetChange(change)` / `GetChange()`, `change` from -1 to 1; `SetFromAlpha(alpha)` / `GetFromAlpha()`, `SetToAlpha(alpha)` / `GetToAlpha()`, from 0 to 1 |
-| `Translation` | `SetOffset(x, y)` / `GetOffset()` |
+| `Alpha` | `SetFromAlpha(normalizedAlpha)` / `GetFromAlpha()`, `SetToAlpha(normalizedAlpha)` / `GetToAlpha()`, from 0 to 1; `SetChange(change)` / `GetChange()`, from -1 to 1 |
+| `Translation` | `SetOffset(offsetX, offsetY)` / `GetOffset()` |
 | `Scale` | `SetScale(x, y)` / `GetScale()`, `SetScaleFrom(x, y)` / `GetScaleFrom()`, `SetScaleTo(x, y)` / `GetScaleTo()`, `SetOrigin(point, x, y)` / `GetOrigin()` |
-| `Rotation` | `SetDegrees` / `GetDegrees`, `SetRadians` / `GetRadians`, `SetOrigin(point, x, y)` / `GetOrigin()` |
+| `Rotation` | `SetDegrees(angle)` / `GetDegrees()`, `SetRadians(angle)` / `GetRadians()`, `SetOrigin(point, x, y)` / `GetOrigin()` |
 
 `Alpha` changes the region's alpha while its group plays:
 
 - When a group with an `Alpha` animation starts, the region's alpha is
   stored. On a frame, the alpha of every frame, texture and font string
   inside it is stored too.
-- On each update the alpha goes back to the stored value, and then each
-  `Alpha` animation adds `change × progress`. While the group plays,
-  `GetAlpha` returns the animated value.
+- On each update, the alpha becomes `from + (to - from) × progress`. A
+  value that you do not set is 0. While the group plays, `GetAlpha`
+  returns the animated value.
+- The alpha values are kept in 256 steps, so `SetFromAlpha(0.5)` reads
+  back as about 0.498. A value out of range becomes 0 or 1.
 - When the last group with an `Alpha` animation on the region, or on a
   frame around it, stops or finishes, the stored alpha comes back.
 - A value you set with `SetAlpha` while the group plays is replaced on the
   next update.
-
-`SetFromAlpha` and `SetToAlpha` give an alpha that does not depend on the
-stored value:
-
-- On each update, the alpha becomes `from + (to - from) × progress`.
-- When you set one of the two values, the animation uses them. The value
-  that you do not set is 0. `SetChange` makes the animation add a change
-  again.
-- When more than one such animation applies to one region, the last one
+- When more than one `Alpha` animation applies to one region, the last one
   wins. An earlier order keeps its end value until the current order
   replaces it.
+- `SetChange(change)` makes the animation add `change × progress` to the
+  stored alpha. `SetFromAlpha` or `SetToAlpha` sets the animation back to
+  `from` and `to`.
 
 ```lua
 local fadeIn = group:CreateAnimation("Alpha")
@@ -2164,16 +2636,20 @@ fadeIn:SetToAlpha(1)
 - When the last group with a `Translation`, `Scale` or `Rotation` animation
   stops or finishes, the drawing goes back to its place.
 
-`SetScaleFrom` sets the scale at the start of a `Scale` animation, and
-`SetScaleTo` sets the scale at the end. Both are 1 by default. `SetScale`
-sets the end, the same as `SetScaleTo`, but it keeps `x` and `y` at 0.001
-or more.
+`Scale` has two modes:
+
+- `SetScale(x, y)` scales from 1 to `x, y`. In this mode, `GetScaleFrom`
+  returns `0, 0`.
+- `SetScaleFrom(x, y)` and `SetScaleTo(x, y)` set the scale at the start
+  and at the end. Each is 1 by default. In this mode, `GetScale` returns
+  `0, 0`.
+- Each value is 0.001 or more.
 
 `Scale` and `Rotation` change the drawing in the same way:
 
 - On a texture, they scale or turn it around the origin from `SetOrigin`. The
-  default origin is the center. The origin offset follows the direction of
-  the texture's bottom edge.
+  default origin is the center. The origin offset is in UI pixels, and it
+  follows the direction of the texture's bottom edge.
 - A positive angle turns counter-clockwise.
 - More than one animation adds up in the order they apply. For example, a
   `Rotation` after a `Translation` turns around the moved texture.
@@ -2183,6 +2659,67 @@ or more.
   or `Rotation` animation applies to one font string, the last one wins.
 - Scaled text is stretched. It is not drawn again at the larger font size.
 
+### Animation types: `VertexColor`, `FlipBook`, `TextureCoordTranslation`
+
+| Type | Methods |
+|---|---|
+| `VertexColor` | `SetStartColor(color)` / `GetStartColor()`, `SetEndColor(color)` / `GetEndColor()` |
+| `FlipBook` | `SetFlipBookRows(rows)`, `SetFlipBookColumns(columns)`, `SetFlipBookFrames(frames)`, `SetFlipBookFrameWidth(width)`, `SetFlipBookFrameHeight(height)`, and a `Get` method for each |
+| `TextureCoordTranslation` | `SetOffset(offsetU, offsetV)` / `GetOffset()` |
+
+`VertexColor` changes the vertex color of a texture, a line or a font
+string from the start color to the end color:
+
+- `color` is a table with all four of `r`, `g`, `b` and `a`, for example
+  from `CreateColor`. A missing field raises the usage error. Each value
+  becomes a value from 0 to 1.
+- Both colors are opaque white by default. The getters return a new
+  `ColorMixin` color.
+- The animation replaces the color and the alpha of the region. It shows
+  the start color during the start delay.
+- The color stays after the animation ends. A gradient on the region is
+  removed.
+- On a frame, the animation has no effect.
+
+`FlipBook` shows one cell of a sprite sheet at a time on a texture or a
+line:
+
+- The sheet is `rows` × `columns` cells. The cells go from left to right,
+  then from top to bottom.
+- `frames` is the number of cells to show. When it is 0, it is
+  `rows × columns`.
+- `frameWidth` and `frameHeight` give the size of a cell in pixels of the
+  image. When one of them is 0, a cell is the image divided by the grid.
+- On a texture that shows an atlas, the cells divide the atlas piece.
+- With 0 rows or 0 columns, the animation shows nothing. It shows nothing
+  during the start delay either.
+- The last cell stays after the animation ends.
+
+`TextureCoordTranslation` moves the texture coordinates of a texture or a
+line by `offset × progress`. On a frame, it moves the texture coordinates
+of every texture inside it. The coordinates go back when the group ends.
+A pair of offsets that is almost 0 becomes 0.
+
+```lua
+local sheet = group:CreateAnimation("FlipBook")
+sheet:SetFlipBookRows(4)
+sheet:SetFlipBookColumns(4)
+sheet:SetDuration(1)
+group:SetLooping("REPEAT")
+```
+
+### Animation types: `LineTranslation`, `LineScale`
+
+These types change a Line (refer to `frame:CreateLine`). They have the
+methods of `Translation` and of `Scale`.
+
+- `LineTranslation` moves the line in its own frame. `offsetX` goes along
+  the line, toward its start. `offsetY` goes across it.
+- `LineScale` scales the line in its own frame. `x` is along the line and
+  `y` is across it.
+- On a frame, the animations change every line inside it. Other regions
+  have no change.
+
 ### `Path` and `ControlPoint`
 
 A `Path` moves the region through its control points. Each point is an
@@ -2191,7 +2728,7 @@ offset from where the region is, in the same units as a `Translation`.
 ```lua
 local path = group:CreateAnimation("Path")
 path:SetDuration(2)
-path:SetCurve("SMOOTH")
+path:SetCurveType("SMOOTH")
 path:CreateControlPoint():SetOffset(50, 20)
 path:CreateControlPoint():SetOffset(100, 0)
 ```
@@ -2200,18 +2737,19 @@ path:CreateControlPoint():SetOffset(100, 0)
 - The points are spread evenly over the animation: with 4 points, the
   region is at point 1 at a quarter of the progress, at point 2 at half,
   and so on.
-- `SetCurve("NONE")` (the default) moves in straight lines between the
-  points. `SetCurve("SMOOTH")` moves along a smooth curve through them.
+- `SetCurveType("NONE")` (the default) moves in straight lines between the
+  points. `SetCurveType("SMOOTH")` moves along a smooth curve through them.
 - The drawing moves as with a `Translation`: the rect of the region does
   not move, and the drawing goes back to its place when the group ends.
 
 | Object | Methods |
 |---|---|
-| `Path` | `SetCurve("NONE" \| "SMOOTH")` / `GetCurve()`, `CreateControlPoint([name [, templateName [, order]]])`, `GetControlPoints()`, `GetMaxOrder()` |
-| `ControlPoint` | `SetOffset(x, y)` / `GetOffset()`, `SetOrder(order)` / `GetOrder()`, `SetParent(path [, order])`, `GetParent()`, `GetName()`, `GetObjectType()`, `IsObjectType(type)` |
+| `Path` | `SetCurveType(curveType)` / `GetCurveType()`, also as `SetCurve` / `GetCurve`; `CreateControlPoint([name, templateName, order])`, `GetControlPoints()`, `GetMaxControlPointOrder()` |
+| `ControlPoint` | `SetOffset(offsetX, offsetY)` / `GetOffset()`, `SetOrder(order)` / `GetOrder()`, `SetParent(path [, order])`, `GetParent()`, `GetName()`, `GetObjectType()`, `IsObjectType(type)` |
 
-- The points go in the order of their `order`, from 1 to 100. A point
+- The points go in the order of their `order`, from 0 to 99. A point
   without an order goes after the last one.
+- `GetMaxControlPointOrder` returns -1 when the path has no points.
 - If you give a point an order that another point already has, the new
   point takes it, and the other points move up by one.
 - `SetParent` moves a point to another path. The point keeps its order.
@@ -2222,7 +2760,7 @@ path:CreateControlPoint():SetOffset(100, 0)
 <Frame name="MyFrame">
     <Animations>
         <AnimationGroup parentKey="Pulse" looping="BOUNCE">
-            <Alpha change="-0.5" duration="0.4" smoothing="IN_OUT"/>
+            <Alpha fromAlpha="1" toAlpha="0.5" duration="0.4" smoothing="IN_OUT"/>
             <Scripts>
                 <OnFinished>MyFrame_OnPulseDone(self)</OnFinished>
             </Scripts>
@@ -2234,19 +2772,26 @@ path:CreateControlPoint():SetOffset(100, 0)
 An `<Animations>` block on a frame, texture or font string builds its
 groups before the frame's `OnLoad`, and each group's `OnLoad` runs when it
 is built. Groups read `name`, `inherits`, `parentKey`, `parentArray`,
-`looping`, `initialOffsetX` / `initialOffsetY` and `setToFinalAlpha`.
-`parentArray` adds the group to a list on its region, as it does for a
-frame or a texture. Animations read
-`name`, `inherits`, `parentKey`, `target`, `targetKey`, `childKey`,
-`duration`, `startDelay`, `endDelay`, `order`, `smoothing`, and their type's
-own attributes:
+`looping` and `setToFinalAlpha`. `parentArray` adds the group to a list on
+its region, as it does for a frame or a texture. Animations read `name`,
+`inherits`, `parentKey`, `target`, `targetKey`, `childKey`, `duration`,
+`startDelay`, `endDelay`, `order`, `smoothing`, and their type's own
+attributes:
 
-| Type | Attributes |
+| Element | Attributes and children |
 |---|---|
-| `Alpha` | `change`, or `fromAlpha` / `toAlpha` |
-| `Translation` | `offsetX` / `offsetY` |
-| `Scale` | `scaleX` / `scaleY`, `fromScaleX` / `fromScaleY` / `toScaleX` / `toScaleY`, `<Origin>` |
-| `Rotation` | `degrees` / `radians`, `<Origin>` |
+| `<Alpha>` | `fromAlpha` / `toAlpha` |
+| `<Translation>`, `<LineTranslation>` | `offsetX` / `offsetY` |
+| `<Scale>`, `<LineScale>` | `scaleX` / `scaleY`, `fromScaleX` / `fromScaleY` / `toScaleX` / `toScaleY`, `<Origin>` |
+| `<Rotation>` | `degrees` / `radians`, `<Origin>` |
+| `<VertexColor>` | `<StartColor>` / `<EndColor>`, color elements |
+| `<FlipBook>` | `flipBookRows`, `flipBookColumns`, `flipBookFrames`, `flipBookFrameWidth`, `flipBookFrameHeight` |
+| `<TextureCoordTranslation>` | `offsetU` / `offsetV` |
+
+- `order` is 0 to 99. A value out of range is reported and becomes 0 or
+  99.
+- `flipBookRows="0"` or `flipBookColumns="0"` is reported, and the value
+  does not change.
 
 ```xml
 <Frame name="MyButtonGlow">
@@ -2279,7 +2824,7 @@ and `offsetX` / `offsetY`.
 - A virtual `<AnimationGroup>`, animation element or `<ControlPoint>` at
   the top level of a file is a template for `inherits` and for the
   `templateName` arguments.
-- Animations without an `order` play one after another.
+- Animations without an `order` have order 0, and they play together.
 - `<Scripts>` bodies see `self` and their script's arguments (`elapsed`,
   `requested`, `loopState`). A script element can name a global function
   with `function=`.
@@ -2535,13 +3080,19 @@ A player is a known name when one or more of these is true:
 - The player is in your party or raid. The entry has the `InGroup` bit.
 - The player is in your guild roster. The entry has the `InGuild` bit.
 - The player is on your friends list. The entry has the `Friend` bit.
+- The player is one of your other characters on this realm. The entry has
+  the `AccountCharacter` bit.
 - You whispered the player, or the player whispered you, after you logged
   in. The entry has the `InteractedWith` bit.
+- The player is near you, and the race of the player is in your faction.
+  The entry has the `InAOI` bit. When the player goes out of view, the
+  bit goes away.
 
 A player on two or more of these lists is one entry, with the bit of each
 list. You are never an entry. The `Online` bit comes from your group, your
 guild roster and your friends list. A player that you know only from a
-whisper also has the `Online` bit.
+whisper also has the `Online` bit, and so does a player near you. Your
+other characters never have the `Online` bit.
 
 Guild members are known names only after the client has the guild roster.
 `GuildRoster()` requests it.
@@ -2560,11 +3111,12 @@ table:
 The arguments:
 
 - `name`: the text in the edit box.
-- `numResults`: the maximum number of entries. At `0` or less, you get all
-  of them.
+- `numResults`: the maximum number of entries. At `0`, you get no entries.
+  At less than `0`, you get all of them.
 - `cursorPosition`: the position of the cursor in `name`, in characters, as
-  `editBox:GetUTF8CursorPosition()` gives it. A value less than `1` or more
-  than the length of `name` is the end of the text.
+  `editBox:GetUTF8CursorPosition()` gives it. `0` is before the first
+  character. A value less than `0` or more than the length of `name` is
+  the end of the text.
 - `allowFullMatch`: if this is `false`, a name equal to `name` is not an
   entry.
 - `includeFlags`: [`Enum.AutoCompleteEntryFlag`](#enumautocompleteentryflag)
@@ -2578,14 +3130,16 @@ start the name. The text after the cursor must come later in the name. For
 example, if you type `Jhn`, put the cursor after the `J` and type `o`, then
 `Jo|hn` matches `Johnson`.
 
+The `priority` of an entry is the first tie on this list that the player
+has: `AccountCharacterSameRealm`, `Friend`, `Guild`, `InGroup`,
+`Interacted`. A player with none of them is `Other`.
+
 The order of the entries:
 
-1. The players that you whispered, the most recent first.
-2. All other names, in alphabetical order.
-
-The `priority` of an entry is the first tie on this list that the player
-has: `Friend`, `Guild`, `InGroup`, `Interacted`. A player with none of them
-is `Other`.
+1. A name that is equal to `name`.
+2. The players that you whispered, the most recent first.
+3. All other names, the highest `priority` first. Names with the same
+   priority are in alphabetical order.
 
 ```lua
 local function ShowNames(editBox)
@@ -2604,7 +3158,8 @@ Three settings change the results. See
 
 Returns `true` if a known name is equal to `name`, and `false` if not.
 Upper case and lower case are the same. `includeFlags` and `excludeFlags`
-have the same function as in `GetAutoCompleteResults`.
+have the same function as in `GetAutoCompleteResults`. They also apply
+when `autoCompleteUseContext` is `0`.
 
 ```lua
 if C_AutoComplete.IsRecognizedName("Johnson", Enum.AutoCompleteEntryFlag.InGuild, 0) then
@@ -2630,7 +3185,7 @@ The bits of a known name, for `includeFlags` and `excludeFlags`.
 | `Bnet` | 8 | `RecentPlayer` | 256 |
 | `InteractedWith` | 16 | | |
 
-No entry has the `Bnet`, `InAOI`, `AccountCharacter` or `RecentPlayer` bit.
+No entry has the `Bnet` or `RecentPlayer` bit.
 
 ### `Enum.AutoCompletePriority`
 
@@ -2643,19 +3198,20 @@ The values of an entry's `priority`.
 | `InGroup` | 2 | `AccountCharacterSameRealm` | 6 |
 | `Guild` | 3 | | |
 
-No entry has the priority `AccountCharacter` or `AccountCharacterSameRealm`.
+No entry has the priority `AccountCharacter`. All of your other characters
+are on this realm, so their priority is `AccountCharacterSameRealm`.
 
 ### Name completion settings
 
-Three cvars change the results of `GetAutoCompleteResults` and
-`IsRecognizedName`. Each one is `1` by default. You can also set them on the
+Three cvars change the results of `GetAutoCompleteResults`. Each one is
+`1` by default. You can also set them on the
 Social page of the ClassicAPI options.
 
 | CVar | At `1` | At `0` |
 |---|---|---|
-| `autoCompleteResortNamesOnRecency` | The players that you whispered come first, the most recent first. | All names are in alphabetical order. |
+| `autoCompleteResortNamesOnRecency` | The players that you whispered come first, the most recent first. | All names are in the order of their priority. |
 | `autoCompleteWhenEditingFromCenter` | With the cursor inside the text, the text after the cursor must come later in the name. | The name must start with all of the text. |
-| `autoCompleteUseContext` | `includeFlags` and `excludeFlags` select the entries. | Every known name is an entry. |
+| `autoCompleteUseContext` | `includeFlags` and `excludeFlags` select the entries. | Every known name is an entry of `GetAutoCompleteResults`. |
 
 ```
 /console autoCompleteUseContext 0
@@ -2811,6 +3367,7 @@ The actions and their defaults:
 |--------|---------|
 | `SELFCAST` | `ALT` |
 | `FOCUSCAST` | `NONE` |
+| `MOUSEOVERCAST` | `NONE` |
 | `AUTOLOOTTOGGLE` | `SHIFT` |
 | `MAILAUTOLOOTTOGGLE` | `SHIFT` |
 | `STICKYCAMERA` | `CTRL` |
@@ -2891,66 +3448,53 @@ actions, so no action has a binding context of its own. The client has no
 custom binding types.
 ## CharacterList
 
-### `GetSavedCharacterOrder(realm)` / `SetSavedCharacterOrder(realm, order)` — GlueXML only
+### `SaveCharacterOrder(translationTable)` — GlueXML only
 
-Persists a user-chosen ordering for the character-select list, per realm,
-per account. Designed for GlueXML mods that add drag-to-reorder to the
-character-select screen — but since the storage is a plain text file
-you can also pre-populate it by hand.
+Saves the order of the character list on the character-select screen. The
+order is kept for each realm on the account. From the next time the
+character list arrives, the client gives the characters in this order:
+`GetCharacterInfo(1)` is the first character in the saved order, and
+`SelectCharacter` and `DeleteCharacter` use the same indices.
 
 > **Only callable from the login / character-select screens** (the
-> "glue" Lua state). Calling them from an in-world addon errors with
-> "attempt to call nil" — they aren't registered there.
+> "glue" Lua state). In-world Lua does not have this function.
 
-- `GetSavedCharacterOrder(realm)` — returns the saved order for
-  `realm` as a string, or `""` if none has been saved. Never `nil`.
-- `SetSavedCharacterOrder(realm, order)` — writes the order string.
-  Pass `""` to clear the saved entry for that realm.
+- `translationTable` — a table with one entry for each character. Entry
+  `i` is the character index (as `GetCharacterInfo` takes it) of the
+  character that shows at position `i`.
 
-The `order` value is a pipe-delimited list of character names, e.g.
-`"Thrall|Jaina|Sylvanas"`. Names are matched case-sensitively against
-what `GetCharacterInfo` returns.
+The function saves nothing when the table does not have a valid index for
+each character. It does not change the list that is on the screen now.
+The order applies when the client gets the character list again, for
+example after you log out of the world.
+
+The client remembers the last character that entered the world by its GUID
+(the `lastCharacterGuid` console variable). When the list loads, that
+character is selected, also after the order changes.
+
+Characters that are not in the saved order, for example a new character,
+show after the saved characters.
 
 #### Storage file
 
-Saved to `WTF\Account\<ACCOUNT>\ClassicAPI.txt`, one line per realm:
+The order is saved in `WTF\Account\<ACCOUNT>\character-list-order.txt`:
 
-```ini
-CharacterOrder.MyRealm=Thrall|Jaina|Sylvanas
-CharacterOrder.AnotherRealm=Foo|Bar
+```text
+Version: 1
+MyRealm 0x0000000000012A4F 1
+MyRealm 0x0000000000009C10 2
+Another Realm 0x0000000000031B77 1
 ```
 
-`<ACCOUNT>` is the account name the launcher logged in with
-(uppercase, the same folder name WoW uses for SavedVariables). The
-realm key on each line is whatever string was passed as `realm` —
-typically the result of `GetServerName()`. This file is shared with
-other ClassicAPI account-scoped settings, so don't be surprised to
-see unrelated `Key=Value` lines in it; leave them alone.
-
-You can pre-populate the file by hand if you don't have a GlueXML mod
-that calls `SetSavedCharacterOrder`. Just create or edit
-`ClassicAPI.txt` in the correct account folder before launching the
-game — any GlueXML code that reads `GetSavedCharacterOrder(realm)`
-will see your saved order.
+Each line has the realm name, the character GUID (in the format that
+`UnitGUID` uses) and the position of the character (1 is the first).
 
 #### Addon example
 
 ```lua
--- GlueXML, e.g. CharacterSelect.lua: persist the user's drag-reordered list
-local realm = GetServerName() or ""
-local names = {}
-for i = 1, GetNumCharacters() do
-    table.insert(names, (GetCharacterInfo(translationTable[i])))
-end
-SetSavedCharacterOrder(realm, table.concat(names, "|"))
-
--- On the next CHARACTER_LIST_UPDATE: read the saved order back
-local saved = GetSavedCharacterOrder(realm)
-if saved ~= "" then
-    for name in string.gfind(saved, "([^|]+)") do
-        -- reconcile against the current GetCharacterInfo names
-    end
-end
+-- GlueXML, e.g. CharacterSelect.lua. translationTable[i] is the
+-- character index shown at position i after a drag-to-reorder.
+SaveCharacterOrder(translationTable)
 ```
 
 ## Chat
@@ -3070,6 +3614,53 @@ end
 ```
 
 To get the DND status of another player, use `UnitIsDND(unit)`.
+
+### `SetChatColorNameByClass(chatType, colorNameByClass)`
+
+Sets the option that shows sender names in their class color for one chat
+type. When the option is on, the chat frame shows the `[Name]` link of each
+message of that type in the class color of the sender.
+
+```lua
+SetChatColorNameByClass("GUILD", true)
+SetChatColorNameByClass("CHANNEL1", true)
+```
+
+| Argument | Type | Description |
+|---|---|---|
+| `chatType` | string | A chat type, for example `"SAY"`, `"GUILD"` or `"WHISPER"`, or a channel from `"CHANNEL1"` to `"CHANNEL10"`. The case of the letters is not important. |
+| `colorNameByClass` | boolean | `true` shows the names in class color. `false` shows them in the color of the chat type. |
+
+The option is off for all chat types by default. The client saves the option
+with the chat colors of the character. `ResetChatColors()` does not change
+the option.
+
+If `chatType` is not a string, the function raises the error
+`Usage: SetChatColorNameByClass(chatType, colorNameByClass)`. An unknown
+chat type changes nothing.
+
+The chat frame keeps the option in `ChatTypeInfo[chatType].colorNameByClass`.
+A name gets a class color only when the client knows the class of the
+sender. The function returns no value.
+
+#### `UPDATE_CHAT_COLOR_NAME_BY_CLASS` event
+
+Fires when `SetChatColorNameByClass` changes the option of a chat type. It
+also fires one time for each chat type when the chat settings load after
+login.
+
+| Argument | Type | Description |
+|---|---|---|
+| `arg1` | string | The chat type. |
+| `arg2` | boolean | `true` when names of this chat type show in class color. |
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterEvent("UPDATE_CHAT_COLOR_NAME_BY_CLASS")
+f:SetScript("OnEvent", function(self, event, chatType, colorNameByClass)
+    print(chatType, colorNameByClass)
+end)
+```
 
 ## ChatBubbles
 
@@ -3332,7 +3923,8 @@ client).
 
 A setting for your attacks when you change target. At `0` (the default),
 melee auto-attack continues on the new target if you can attack it. At `1`,
-a target change stops melee auto-attack, Auto Shot and wand shots.
+a target change stops melee auto-attack, Auto Shot and wand shots. Each
+character has its own value.
 
 ```
 /console stopAutoAttackOnTargetChange 1
@@ -3448,6 +4040,265 @@ if CombatLogSetCurrentEntry(-4) then
     until not CombatLogAdvanceEntry(1)
 end
 ```
+
+### Combat log file (`advancedCombatLogging`)
+
+When combat logging is on (`/combatlog` or `LoggingCombat(true)`), the
+client writes two files in the `Logs` folder:
+
+- `WoWCombatLog.txt` keeps the chat-text lines of the client, for the log
+  readers that parse them.
+- `WoWCombatLog-MMDDYY_HHMMSS.txt` is a new file each time that logging
+  starts. The name has the local time of the start.
+
+The second file has the layout of the Classic Era combat log
+(`COMBAT_LOG_VERSION` 9), so tools that read Era logs can read it. Each line
+has a time stamp and one event, with GUIDs, names, flags and the values of
+the event. The file also has these lines:
+
+| Line | When |
+|---|---|
+| `COMBAT_LOG_VERSION` | At the start, after each loading screen, and each time that you set `advancedCombatLogging`. |
+| `ZONE_CHANGE` | After each `COMBAT_LOG_VERSION` line, and when you go into a new zone. |
+| `MAP_CHANGE` | After each `ZONE_CHANGE` that follows a `COMBAT_LOG_VERSION` line, and when the world map that you are on changes. The line has the Classic Era map ID, the name and the world bounds of the map. In an instance with no map of its own, there is no line. |
+| `ENCOUNTER_START`, `ENCOUNTER_END` | When the group starts and ends a fight with a world boss. The encounter ID is the creature ID of the boss. |
+| `COMBATANT_INFO` | For each group member, after an `ENCOUNTER_START`. Stats and talents are known only for you. |
+| `EMOTE` | When a boss sends a raid boss emote: the boss, its target, and the text as the chat frame shows it. The boss GUID is `0000000000000000` when no unit in view has its name, or more than one does. Monster emotes and yells are not logged. |
+
+The `advancedCombatLogging` setting adds more data to most damage, heal,
+power and cast lines: the health, the power, the position, the facing and the
+level of a unit. The map ID in this data is the ID of the map that you are
+on, as in the last `MAP_CHANGE` line. It is `0` in an instance with no map of
+its own. It also adds a `SWING_DAMAGE_LANDED` line after each
+`SWING_DAMAGE` line. The setting is `0` by default. In the Settings window, it
+is in the Network category.
+
+The health of a player is a percent of 100, and the health of a creature is
+in hit points. The level of a player is the average item level of the
+player.
+
+### `COMBATANT_INFO` line
+
+After each `ENCOUNTER_START`, the file has one `COMBATANT_INFO` line for you
+and one for each group member in view. A group member that is out of view
+gets no line. The line has the layout of the Classic Era line:
+
+```
+COMBATANT_INFO,playerGUID,faction,strength,agility,stamina,intellect,spirit,
+  (15 zeros),armor,0,(talents),(),[gear],[auras],0,0,()
+```
+
+The values, in their order:
+
+| Value | Contents |
+|---|---|
+| `playerGUID` | The player, for example `Player-0-0000ABCD`. |
+| `faction` | `0` Horde, `1` Alliance. |
+| `strength`, `agility`, `stamina`, `intellect`, `spirit` | The stats of the player. Known only for you. Other players get `0`. |
+| 15 values | Always `0`. |
+| `armor` | The armor of the player. Known only for you. Other players get `0`. |
+| next value | Always `0`. |
+| `(talents)` | The talent points in each of the three trees, for example `(31,20,0)`. Known only for you. Other players get `(0,0,0)`. |
+| `()` | Always empty. |
+| `[gear]` | 19 items, one for each equipment slot, from slot 1 (head) to slot 19 (tabard). |
+| `[auras]` | The helpful auras on the player. |
+| `0,0,()` | Always these values. |
+
+Each gear item has this layout:
+
+```
+(itemID,itemLevel,(permanentEnchant,temporaryEnchant,0),(),())
+```
+
+- When the item has no enchant, the enchant group is `()`.
+- An empty slot is `(0,0,(),(),())`.
+- `itemLevel` is `0` when your client does not have the data of the item
+  yet. The client then gets the data from the server, and the next
+  `COMBATANT_INFO` line has the item level.
+- The gear of other players is known, with both enchants.
+
+The auras are a flat list of three values for each aura:
+`casterGUID,spellID,1`. The caster is `0000000000000000` when it is not
+known. The list has all the helpful auras on the player. A Classic Era log
+lists only some auras, for example world buffs.
+
+```
+[(19019,80,(1900,0,0),(),()),(0,0,(),(),()), ...]
+[Player-0-0000ABCD,10938,1,0000000000000000,25661,1]
+```
+
+### Movement file (`advancedCombatLoggingMovement`)
+
+The `advancedCombatLoggingMovement` setting writes a second file,
+`WoWMovementLog-MMDDYY_HHMMSS.txt`, next to the combat log file. The two
+files have the same name time. The setting has an effect only while
+`advancedCombatLogging` is on. It is `0` by default. In the Settings window,
+it is under the advanced combat logging box. This is a ClassicAPI
+extension.
+
+The file has each movement that the client gets from the server, and each
+movement of your character:
+
+| Line | Data |
+|---|---|
+| `GAME_TIME` | The time of day of the game, which lights the world, and how fast it goes. A line comes after each loading screen, and when the server changes the time. |
+| `UNIT_MOVE` | A move of a player: start, stop, turn, jump, heartbeat and more, with the position and the movement flags. |
+| `UNIT_SPEED` | A new speed of a unit. |
+| `MONSTER_MOVE`, `MONSTER_STOP` | A path that the server moves a creature on, with its points and its time. |
+| `UNIT_INFO` | What a unit looks like when it comes into view, and each time that this changes: its display, mount, scale, stand state, sheath state and held items. |
+| `PLAYER_INFO` | The body of a player and what it wears: race, sex, appearance, the 19 visible items with their enchants, and the tabard emblem of its guild. It also has the guild of the player (the guild name, the rank name and the rank number) and the name of the player with its PvP rank title. Your client asks the server for a guild that it does not know, and the next line has the names. |
+| `UNIT_CAST` | Each time that a unit starts or stops a cast or a channel: the spell that it casts and its cast time, and the spell that it channels. |
+| `UNIT_STATE` | Each time that the target, the owner, the unit flags, the level, the faction, the melee victim, the dynamic flags or the reaction of a unit changes. The owner is the master of a pet, a guardian or a totem, or the controller of a charmed unit. The reaction and the selection color are as you saw them when you recorded the log. |
+| `UNIT_POWER` | Each time that the health or the power of a unit changes. |
+| `UNIT_AURAS` | The auras of a unit when it comes into view: the spell, harmful or helpful, and the stacks of each aura. After that, a new line comes only for a change that the combat log does not show, for example a mount aura or the auras that a unit loses when it dies. |
+| `UNIT_NAME` | The name that your client has for a player, a pet, or a creature. With it, a log that is read on a different computer still has the names. |
+| `UNIT_GONE` | A unit that went out of view. |
+| `GAMEOBJECT_INFO` | A game object, such as a door, a chest, a trap or a portal, when it comes into view and each time that it changes: its owner, display, type, state, flags, position, rotation, scale and name. |
+| `DYNAMICOBJECT_INFO` | The area that a spell such as Blizzard leaves on the ground, when it comes into view: its caster, spell, radius and position. |
+| `OBJECT_GONE` | A game object or a ground area that went out of view. |
+
+The replay functions read this file. A movement file from an earlier
+ClassicAPI version does not load, because its lines have a different
+layout.
+
+## CombatLogReplay
+
+These functions read a combat log file and its movement file, and give the
+position, the look and the combat events of each unit at any time. The
+replay window (`/replay`) uses them. To record a log for replay, turn on
+`advancedCombatLogging` and `advancedCombatLoggingMovement`, then turn on
+combat logging. These functions are a ClassicAPI extension.
+
+The functions read the files on a separate thread, so the game does not
+stop. Two events tell when a read is complete:
+
+1. Call `C_CombatLogReplay.GetLogs()` to get the list of logs.
+2. Call `C_CombatLogReplay.GetEncounters(logName)`. The first call starts
+   the read and returns nil.
+3. When `COMBAT_LOG_REPLAY_ENCOUNTERS_READY` fires, call `GetEncounters`
+   again for the encounters and the length of the log.
+4. Call `C_CombatLogReplay.LoadReplay(logName, startTime, endTime)` for one
+   part of the log.
+5. When `COMBAT_LOG_REPLAY_LOADED` fires with `success`, read the replay
+   with the functions below.
+
+Times are in seconds. For `GetEncounters` and `LoadReplay`, a time is from
+the start of the log. For all other functions, a time is from the start of
+the replay. A unit is a number, `unitIndex`, its index in the list of
+`GetUnits`.
+
+### Logs and replays
+
+| Function | Returns |
+|---|---|
+| `GetLogs()` | An array of logs in the `Logs` folder, newest first. Each has `name` (the file name without `.txt`), `size` in bytes, `modified`, and `hasMovement`, which is `true` when the log has a movement file. |
+| `GetEncounters(logName)` | `encounters, duration`. Each encounter has `encounterID`, `encounterName`, `difficultyID`, `groupSize`, `mapID`, `success` (nil when the log has no end for it), `startTime` and `endTime`. Nil while the log is read. |
+| `LoadReplay(logName, startTime, endTime)` | `true` when the load started. `false` when `GetEncounters` did not read the log yet, or when `endTime` is before `startTime`. |
+| `GetReplayInfo()` | A table with `logName`, `startTime`, `duration`, `mapID` (`-1` when the log does not give it), `hasMovement`, `firstUnitTime` and `numUnits`. `firstUnitTime` is when the first unit is in view: `0`, or a moment later for a replay that starts at the beginning of the log, because the movement file starts one frame after the log. Nil when no replay is loaded. |
+| `GetUnits()` | An array of units. Each has `guid`, `name`, `isPlayer`, `creatureID` and `petOwnerIndex`. `petOwnerIndex` is the player that owned the unit when it came into view, for a pet, a guardian or a totem. It is nil for a unit that came into view without an owner, for example a creature that a player charms later, and for a log without a movement file. |
+| `GetTimeOfDay(time)` | The time of day of the game at `time`, which lit the world: `0` is midnight and `0.5` is noon. [`scene:SetWorldTimeOfDay`](#scenesetworldtimeofdaytimeofday--scenegetworldtimeofday--sceneclearworldtimeofday) takes it. Nil when the movement file does not have the time. |
+
+A `name` comes from the log. If the log does not name the unit, the name
+comes from the `UNIT_NAME` lines of the movement file, then from the name
+cache or the creature cache of your client. If none has it, `name` is nil. `C_CreatureInfo.RequestLoadCreatureByID` gets the
+name of a creature from the server.
+
+### Units at a time
+
+| Function | Returns |
+|---|---|
+| `GetUnitPosition(unitIndex, time)` | `x, y, z, facing, speed, isFalling, isJumping`. Nil while the unit is not in view. The position is on the map of the replay. `speed` is in yards per second, and `0` while the unit stands. |
+| `GetUnitLook(unitIndex, time)` | `displayID, nativeDisplayID, mountDisplayID, scale, standState, form, stealthed, sheathState, isDead, mainHandDisplayID, offHandDisplayID, rangedDisplayID`. The last three are the held items of a creature, `0` for none. |
+| `GetUnitHeldItem(unitIndex, time, inventorySlot)` | `itemDisplayID, itemClass, itemSubclass, inventoryType, sheatheType` for slot `16`, `17` or `18` of a creature. These are the values that [`actor:SetHeldItem`](#actorsethelditeminventoryslot--itemdisplayid-itemclass-itemsubclass-inventorytype-sheathetype) takes. |
+| `GetUnitAppearances(unitIndex)` | An array of the bodies of a player, in time order. Each has `time`, `raceID`, `classID`, `sex`, `skin`, `face`, `hairStyle`, `hairColor`, `facialHair`, the five tabard emblem values when the log has them, and `items`, a list of `ItemTransmogInfo` for slots 1 to 19. The table fits [`actor:SetModelByCharacterAppearance`](#actorsetmodelbycharacterappearanceappearance). |
+| `GetUnitHealth(unitIndex, time)` | `health, maxHealth`. They come from the `UNIT_POWER` lines of the movement file, or else from the data of `advancedCombatLogging`. Nil before the log gives them. `0` after the unit dies. |
+| `GetUnitPower(unitIndex, time)` | `powerType, power, maxPower` from the movement file. Rage is in tenths. Nil when the file has no power for the unit. |
+| `GetUnitState(unitIndex, time)` | `targetIndex, ownerIndex, flags, level, factionTemplate, attackTargetIndex, reaction, isTapDenied, ownerTitle` from the movement file. `ownerTitle` is the owner line of the unit tooltip, as the client that recorded the log wrote it, for example "Name's Pet" or "Name's Guardian". It is nil when the unit had no owner in sight. `attackTargetIndex` is the unit that it attacks with melee swings. `flags` is `UNIT_FIELD_FLAGS`: `0x40000` stunned, `0x80000` in combat, `0x400000` confused, `0x800000` fleeing. `reaction` is the reaction of the unit to the player who recorded the log, as `UnitReaction` gives it: 1 hated to 8 exalted. `isTapDenied` is true when another player tapped the unit, as `UnitIsTapDenied`. Nil when the file has no state for the unit. |
+| `GetUnitSelectionColor(unitIndex, time)` | `red, green, blue, alpha`: the color that `UnitSelectionColor(unit)` gave the unit for the player who recorded the log. Nil when the movement file has no state for the unit. |
+| `GetUnitAuras(unitIndex, time)` | An array of auras. Each has `spellID`, `auraType` (`BUFF` or `DEBUFF`), `sourceIndex`, `applied` and `applications`. With the `UNIT_AURAS` lines of the movement file, all the auras of the unit are known. Without them, only the auras that the log saw applied are known. `sourceIndex` is known only for an aura that the log saw applied. `applications` comes from the movement file or from the dose events of the log. `expirationTime` is when the aura ended in the log, because it expired or because something removed it. It is nil when the aura did not end in the loaded part of the log while the unit was in view. `duration` is the time in seconds from the last application, refresh or added stack of the aura to `expirationTime`. It is nil when one of the two is not known, for example for an aura that the unit had when it came into view. `isHidden` is true for an aura that `UnitBuff` and `UnitDebuff` do not list. |
+| `GetUnitWeapons(unitIndex, time)` | The item class and subclass of the main hand and the off hand. |
+| `GetUnitDeaths(unitIndex)` | An array of the times when the unit died. |
+| `GetUnitCast(unitIndex, time)` | `spellID, startTime, endTime, stopTime, isChannel, interrupted, interrupterIndex` of the last cast or channel that the unit started by `time`. Nil when it started none. `endTime` is when the cast was due to end. `stopTime` is when it stopped, and is nil when the log does not say. `interrupted` is `true` for a cast that stopped before its end. `interrupterIndex` is the unit whose interrupt stopped it. |
+| `GetUnitGuild(unitIndex, time)` | `guildName, guildRankName, guildRankIndex` of a player, as `GetGuildInfo(unit)` gave them on the client that recorded the log. `guildRankIndex` is `0` for the guild master. Nil when the player had no guild, or before that client knew the guild. |
+| `GetUnitPVPName(unitIndex, time)` | The name of a player with its PvP rank title, as the client that recorded the log showed it in its tooltip and over the head of the player. A medal is on a second line. Nil before the movement file gives it. |
+| `GetUnitRaidTargetIndex(unitIndex, time)` | The raid target mark of the unit, `1` (star) to `8` (skull), as `GetRaidTargetIndex` gives it. Nil when it has none. The log has marks only while its recorder was in a group, and a new mark shows from the next line of the unit. |
+
+A unit is dead from its death until it next casts, attacks or is
+resurrected, or until it goes out of view. A hidden helm or a hidden cloak
+has no item in `items`.
+
+A cast ends at its `SPELL_CAST_SUCCESS` or `SPELL_CAST_FAILED`, at a
+`SPELL_INTERRUPT` of it, or at the death of its caster. The combat log does
+not show other stops, for example when the caster moves or is stunned, and
+it does not show when a channel ends. `GetUnitCast` gets these times from the
+`UNIT_CAST` lines of the movement file. Without these lines, a cast with no
+end in the combat log has no bar, and there are no channels.
+
+The combat log does not show some casts, for example Opening on a door or a
+chest. `GetUnitCast` also gives these casts from the `UNIT_CAST` lines.
+
+### Game objects and ground areas
+
+These come from the movement file. Without it, the lists are empty. A game
+object is a number, `objectIndex`, its index in the list of `GetGameObjects`.
+
+| Function | Returns |
+|---|---|
+| `GetGameObjects()` | An array of the game objects that were in view during the replay. Each has `guid`, `name` and `gameObjectID`. `name` is nil when neither the recorder nor your client has a name for it. |
+| `GetGameObjectInfo(objectIndex, time)` | `x, y, z, yaw, pitch, roll, scale, displayID, gameObjectType, state, flags, ownerIndex`. Nil while the object is not in view. `yaw`, `pitch` and `roll` turn the model as `actor:SetYaw`, `actor:SetPitch` and `actor:SetRoll` take them. `displayID` is a `GameObjectDisplayInfo.dbc` id. `state` is `0` for an open door and `1` for a closed door. `ownerIndex` is the unit that made the object, for example the hunter of a trap. |
+| `GetGroundAreas()` | An array of the ground areas of spells, in the order that they came into view. Each has `spellID`, `sourceIndex`, `x`, `y`, `z`, `facing`, `radius` in yards, `startTime`, and `endTime`, which is nil when the area stayed past the end of the replay. `startTime` is negative for an area that was there before the replay started. [`actor:SetModelBySpellArea`](#actorsetmodelbyspellareaspellid-radius) shows an area. |
+| `GetDamageMeterSession(type, time)` | The damage meter of the replay up to `time`, as a `DamageMeterCombatSession` from [`C_DamageMeter`](#damage-meter-functions). `type` is an `Enum.DamageMeterType`. |
+| `GetDamageMeterSessionSource(type, time, sourceGUID, sourceCreatureID)` | One source of the replay's damage meter up to `time`, as a `DamageMeterCombatSessionSource`. Give the `sourceGUID` or the `sourceCreatureID` from the session's source. |
+
+The replay's damage meter is one session. It starts at the first hit
+between the recorder's group and an enemy, and it does not stop
+before the end of the replay. Before that first hit, the session is empty.
+The meter counts as [`C_DamageMeter`](#damage-meter-types) does. The group
+and the enemies are as the recorder's client saw them. `isLocalPlayer`
+is `true` for the recorder. Without a movement file, the class of a player
+is empty, and a pet is a source of its own.
+
+### `C_CombatLogReplay.GetEvents(startTime, endTime)`
+
+Returns an array of the combat log events from `startTime` up to, but not
+including, `endTime`, in time order. Each event has:
+
+| Field | Value |
+|---|---|
+| `time` | The time of the event. |
+| `event` | The subevent, as the log names it, for example `SPELL_CAST_START` or `SWING_DAMAGE`. |
+| `sourceIndex`, `destIndex` | The units. Nil when the source or the target is not a unit. |
+| `spellID`, `spellName` | For spell events. `spellName` is the name in the log, also for a spell that your client does not have. |
+| `auraType` | `BUFF` or `DEBUFF`, for aura events. |
+| `castTime` | For a `SPELL_CAST_START`: the seconds until the cast succeeded, failed, was interrupted or stopped, or the caster died. |
+| `castFailed` | For a `SPELL_CAST_START` with a `castTime`: `true` when the cast failed or was interrupted. |
+| `extraSpellID`, `extraSpellName` | For a `SPELL_INTERRUPT`: the spell that it interrupted, and its name in the log. |
+| `castTargetIndex` | For a `SPELL_CAST_START`: the target of the `SPELL_CAST_SUCCESS` that ended the cast. Nil when the cast did not go off or had no unit as its target. |
+| `text` | For an `EMOTE`: the text of the raid boss emote. |
+| `endsCast` | `true` for a `SPELL_CAST_SUCCESS` or `SPELL_CAST_FAILED` that ends a `SPELL_CAST_START`. |
+| `amount`, `critical` | For damage and heal events. |
+| `missType` | For miss events: `MISS`, `DODGE`, `PARRY`, `BLOCK`, `RESIST`, `ABSORB`, `IMMUNE` and more. |
+| `offHand` | `true` for a miss event that the off hand made. The log does not record this for a hit. |
+
+```lua
+-- Print the deaths in the first minute of the replay.
+for _, e in ipairs(C_CombatLogReplay.GetEvents(0, 60)) do
+    if e.event == "UNIT_DIED" then
+        print(e.time, C_CombatLogReplay.GetUnits()[e.destIndex].name)
+    end
+end
+```
+
+### `COMBAT_LOG_REPLAY_ENCOUNTERS_READY` / `COMBAT_LOG_REPLAY_LOADED` events
+
+```
+COMBAT_LOG_REPLAY_ENCOUNTERS_READY: logName
+COMBAT_LOG_REPLAY_LOADED: logName, success
+```
+
+`COMBAT_LOG_REPLAY_ENCOUNTERS_READY` fires when `GetEncounters` has read a
+log. `COMBAT_LOG_REPLAY_LOADED` fires when a `LoadReplay` is complete. When
+`success` is `false`, the read failed, and there is no replay.
 
 ## Console
 
@@ -4535,7 +5386,7 @@ C_Container.SetBackpackAutosortDisabled(true)
 C_Container.SortBags() -- bags 1..4 only
 ```
 
-The setting is saved, so it survives logging out. It is stored as the
+The setting is saved for each character. It is stored as the
 `backpackAutosortDisabled` console variable, which `GetCVar` also reads.
 
 ### `C_Container.GetBankAutosortDisabled()` / `C_Container.SetBankAutosortDisabled(disable)`
@@ -4548,7 +5399,74 @@ C_Container.SetBankAutosortDisabled(true)
 C_Container.SortBankBags() -- bank bags only
 ```
 
-Stored as the `bankAutosortDisabled` console variable.
+The setting is saved for each character, as the `bankAutosortDisabled`
+console variable.
+
+### `C_Container.GetBagSlotFlag(bagIndex, flag)` / `C_Container.SetBagSlotFlag(bagIndex, flag, isSet)`
+
+Reads and sets the flags of a bag slot. `flag` is a value of
+`Enum.BagSlotFlags`, or the sum of two or more values.
+
+- `Get` returns `isSet`. It is true when one or more of the flags in
+  `flag` is set on the slot.
+- `Set` sets all the flags in `flag` when `isSet` is true, and clears
+  them when `isSet` is false. It returns nothing.
+
+| `bagIndex` | Result |
+|------------|--------|
+| `1` to `4` | The slot of the equipped bag. |
+| `5` to `10` | The slot of the bank bag. The bank can be closed. |
+| Other numbers | `Get` returns false. `Set` does nothing. |
+
+The flags belong to the slot, not to the bag in it. When you put a
+different bag in the slot, the flags stay. The flags are saved for each
+character.
+
+`Enum.BagSlotFlags.DisableAutoSort` keeps the bag out of
+`C_Container.SortBags()` and `C_Container.SortBankBags()`. The other
+flags are saved and returned, but nothing in the game acts on them. For
+the backpack and the main bank container, use
+`C_Container.SetBackpackAutosortDisabled` and
+`C_Container.SetBankAutosortDisabled`.
+
+```lua
+C_Container.SetBagSlotFlag(2, Enum.BagSlotFlags.DisableAutoSort, true)
+C_Container.SortBags() -- bag 2 stays as it is
+```
+
+When a `Set` changes the flags of a slot, an event fires with
+`bagIndex` as its argument: `BAG_SLOT_FLAGS_UPDATED` for an equipped
+bag, `BANK_BAG_SLOT_FLAGS_UPDATED` for a bank bag. A `Set` that changes
+nothing fires no event.
+
+These calls give an error:
+
+- `bagIndex` is not a number.
+- `flag` is not `0`, a value of `Enum.BagSlotFlags`, or a sum of these
+  values.
+- `isSet` is missing or nil.
+
+The `LE_BAG_FILTER_FLAG_*` globals (`IGNORE_CLEANUP`, `EQUIPMENT`,
+`CONSUMABLES`, `TRADE_GOODS`, `JUNK`) and `NUM_LE_BAG_FILTER_FLAGS` are
+an older numbering of the flags, from `1` to `5`. They are not
+`Enum.BagSlotFlags` values. For example, `LE_BAG_FILTER_FLAG_JUNK` is
+`5`, but `Enum.BagSlotFlags.ClassJunk` is `16`.
+
+### `C_Container.IsBagSlotFlagEnabledOnOtherBankBags(bagIndex, flagIndex)`
+
+Returns `isSet`: true when a bank bag slot has a flag. `flagIndex` is
+the position of the flag in `Enum.BagSlotFlags`, counted from `1`. For
+example, `1` is `DisableAutoSort` and `2` is `ClassEquipment`.
+
+The function skips one bank bag: the bank bag at position `bagIndex`,
+where `1` is the first bank bag. Thus a bank container index does not
+skip its own bag. For example, `bagIndex` `5` skips the fifth bank bag
+(bank container `9`), not bank container `5`.
+
+```lua
+-- Is DisableAutoSort set on one or more bank bags?
+local isSet = C_Container.IsBagSlotFlagEnabledOnOtherBankBags(0, 1)
+```
 
 ### `SetBagPortraitTexture(texture, bagIndex)` / `C_Container.SetBagPortraitTexture(texture, bagIndex)`
 
@@ -5017,6 +5935,128 @@ show the same images as the cursor. For a quest, they show no image.
 
 *ClassicAPI extension.*
 
+## CurveUtil
+
+`C_CurveUtil` makes curves. A curve has a list of points and gives a value
+for each `x`. A `LuaCurveObject` gives numbers, and a `LuaColorCurveObject`
+gives colors. The
+[`SecondsFormatter`](#c_stringutilcreatesecondsformatter) setters that end
+in `Curve` take a `LuaCurveObject`.
+
+### `C_CurveUtil.CreateCurve()`
+
+Returns a new curve of numbers. The curve has no points, and its type is
+`Enum.LuaCurveType.Linear`.
+
+```lua
+local curve = C_CurveUtil.CreateCurve()
+curve:AddPoint(0, 0)
+curve:AddPoint(10, 100)
+curve:Evaluate(5)    -- 50
+curve:Evaluate(-1)   -- 0
+curve:Evaluate(20)   -- 100
+```
+
+| Method | Notes |
+| --- | --- |
+| `curve:AddPoint(x, y)` | Adds a point. If points with the same `x` exist, the new point goes before them. |
+| `curve:SetPoints(points)` | Replaces all points with a list of `{ x = number, y = number }` tables. The curve sorts the points by `x`. If one table is not correct, the points do not change. |
+| `curve:GetPoint(index)` | Returns point `index` as a `Vector2DMixin` table. Point `1` has the smallest `x`. If there is no point `index`, the result is `nil`. |
+| `curve:GetPoints()` | Returns a new list of all points, sorted by `x`. |
+| `curve:GetPointCount()` | Returns the number of points. |
+| `curve:RemovePoint(index)` | Removes point `index`. If there is no point `index`, the function gives an error. |
+| `curve:ClearPoints()` | Removes all points. |
+| `curve:Evaluate(x)` | Returns the value of the curve at `x`. |
+| `curve:SetType(type)` / `curve:GetType()` | Sets and returns the `Enum.LuaCurveType` of the curve. |
+| `curve:Copy()` | Returns a new curve with the same points and type. |
+| `curve:SetToDefaults()` | Removes all points and sets the type to `Linear`. |
+| `curve:HasSecretValues()` | Always returns `false`. |
+
+How `Evaluate` works:
+
+- A curve with no points gives `0`. A curve with one point gives the value
+  of that point.
+- Before the first point, the value is the value of the first point. After
+  the last point, the value is the value of the last point.
+- At an `x` that two or more points have, the value is the value of the
+  point that you added first.
+- The values are floats, so `0.1` comes back as `0.10000000149011612`.
+
+A curve holds 256 points or fewer. One more point gives an error, and
+`SetPoints` with more points does not change the curve.
+
+`Enum.LuaCurveType`:
+
+| Name | Value | Description |
+|------|-------|-------------|
+| `Linear` | `0` | A straight line between two points. |
+| `Step` | `1` | The value of the last point at or before `x`. |
+| `Cosine` | `2` | A smooth line between two points. |
+| `Cubic` | `3` | A Catmull-Rom spline. The first and the last point only shape the spline, so the curve is flat before the second point and from the second-last point. With less than four points, `Cubic` is the same as `Cosine`. |
+
+`SetType` cuts a fraction from its argument, so `2.7` gives `Cosine`.
+
+You can store other values in a curve, for example `curve.name = "fade"`.
+All objects of the same curve share these values, and `Copy` does not copy
+them. Two objects of the same curve are equal (`==`).
+
+### `C_CurveUtil.CreateColorCurve()`
+
+Returns a new curve of colors. It has the same methods as a curve of
+numbers, but each point has a color as its `y`.
+
+```lua
+local curve = C_CurveUtil.CreateColorCurve()
+curve:AddPoint(0, CreateColor(1, 0, 0, 1))
+curve:AddPoint(10, CreateColor(0, 0, 1, 1))
+local color = curve:Evaluate(5)           -- a ColorMixin, r and b 0.502
+local r, g, b, a = curve:EvaluateUnpacked(5)
+```
+
+| Method | Notes |
+| --- | --- |
+| `curve:AddPoint(x, color)` | Adds a point. `color` is a table with `r`, `g`, `b` and `a`, for example from `CreateColor`. All four fields are necessary. |
+| `curve:SetPoints(points)` | Replaces all points with a list of `{ x = number, y = color }` tables. |
+| `curve:GetPoint(index)` / `curve:GetPoints()` | Give each point as a `{ x = number, y = ColorMixin }` table. |
+| `curve:Evaluate(x)` | Returns a new `ColorMixin` table. |
+| `curve:EvaluateUnpacked(x)` | Returns the four numbers `r`, `g`, `b` and `a`. |
+
+The curve keeps each channel as a whole number from `0` to `255`. As a
+result, a color comes back in steps of 1/255: `0.3` comes back as
+`0.3019607961177826`. A channel less than `0` changes to `0`, and a channel
+more than `1` changes to `1`.
+
+The curve calculates each channel separately. A `Cubic` curve can go past
+`0` or `1` between points, and then the channel wraps around: a value a
+little less than `0` comes back near `1`.
+
+### `C_CurveUtil.EvaluateColorFromBoolean(boolean, valueIfTrue, valueIfFalse)`
+
+Returns a new `ColorMixin` table with the color of `valueIfTrue` when
+`boolean` is `true`, and of `valueIfFalse` when it is not. Both colors need
+`r`, `g`, `b` and `a`. The result is in steps of 1/255, as in a color curve.
+
+```lua
+local red, green = CreateColor(1, 0, 0, 1), CreateColor(0, 1, 0, 1)
+C_CurveUtil.EvaluateColorFromBoolean(true, red, green)  -- a new red ColorMixin
+```
+
+### `C_CurveUtil.EvaluateColorValueFromBoolean(boolean, valueIfTrue, valueIfFalse)`
+
+Returns `valueIfTrue` when `boolean` is `true`, and `valueIfFalse` when it
+is not, as one color channel: limited to the range `0` to `1` and in steps
+of 1/255. The two values must be numbers, not strings.
+
+```lua
+C_CurveUtil.EvaluateColorValueFromBoolean(true, 0.3, 0.7)  -- 0.3019607961177826
+C_CurveUtil.EvaluateColorValueFromBoolean(false, 0.3, 2)   -- 1
+```
+
+### `C_CurveUtil.EvaluateGameCurve(curveID, x)`
+
+Always returns `0`. `curveID` must be a whole number from `-2147483648` to
+`2147483647`, and `x` must be a finite number.
+
 ## CVar
 
 ### `GetCVar(name)`
@@ -5081,7 +6121,7 @@ isLockedFromUser, isSecure, isReadOnly = C_CVar.GetCVarInfo(name)
 | `value` | string | the current value |
 | `defaultValue` | string | the value it was registered with |
 | `isStoredServerAccount` | boolean | always `false` |
-| `isStoredServerCharacter` | boolean | always `false` |
+| `isStoredServerCharacter` | boolean | `true` when each character has its own value (see [character cvars](#character-cvars)) |
 | `isLockedFromUser` | boolean | always `false` |
 | `isSecure` | boolean | always `false` |
 | `isReadOnly` | boolean | `true` when `SetCVar` will refuse to change it |
@@ -5096,8 +6136,21 @@ local _, _, _, _, _, _, readOnly = C_CVar.GetCVarInfo("realmList")
 
 `isReadOnly` is the useful one: it tells you in advance whether `SetCVar`
 will work, and `realmList`, `realmName` and `scriptMemory` are read-only.
-Cvars are stored on your own machine, so the two `isStoredServer` returns
-are always `false`, and no cvar is locked or secure.
+`isStoredServerAccount` is always `false`, and no cvar is locked or secure.
+
+#### Character cvars
+
+These cvars have a value for each character:
+
+- `damageMeterEnabled`
+- `damageMeterResetOnNewInstance`
+- `nameplateSelectedAlpha`
+- `stopAutoAttackOnTargetChange`
+
+The game saves them in
+`WTF\Account\<account>\<realm>\<character>\config-cache.wtf`, not in
+`WTF\Config.wtf`. When you log in, each one gets the value from that file. If
+the file does not have the cvar, it gets its default.
 
 Returns `nil` for a name that is not a cvar, so you can tell "no such cvar"
 from "set to an empty string". Console commands are not cvars, so a command
@@ -5269,6 +6322,223 @@ SET scriptMemory "65536"
 
 That asks for a 64 MB limit, and any value above 0 turns the check back on.
 
+## DamageMeter
+
+`C_DamageMeter` gives the damage, the healing and the other totals of you
+and your group, one set for each fight. The functions take and give the
+enumerations `Enum.DamageMeterType`, `Enum.DamageMeterSessionType` and
+`Enum.DamageMeterSourceDisplayType`. A damage meter window also has
+`Enum.DamageMeterStyle`, `Enum.DamageMeterVisibility` and
+`Enum.DamageMeterNumbers`.
+
+The meter counts nothing while the cvar `damageMeterEnabled` is off. When you
+turn it off, the meter clears all sessions.
+
+### Damage meter sessions
+
+A session is one fight. Each session has a `sessionID`. The IDs count up and
+do not start again after a reset. The meter keeps the last 30 sessions. When
+a 31st session starts, the oldest session goes out of the list.
+
+- During a boss encounter, the session is the encounter. The session has the
+  name of the boss. A boss encounter always starts a new session, also in the
+  middle of another fight. The encounter is the one that `ENCOUNTER_START`
+  and `ENCOUNTER_END` show in the [combat log file](#combat-log-file-advancedcombatlogging).
+  Your own death does not end it.
+- At other times, a session starts when you or a group member in view goes
+  into combat. The first hit between your group and an enemy also
+  starts it. The session ends when nobody in your group in view is in
+  combat. The session has the name of the first enemy that your
+  group fights.
+- After a boss encounter ends, a new session starts only after your group
+  leaves combat.
+
+Until your group fights an enemy, the session has no name, and `name`
+is an empty string.
+
+There are three session types:
+
+| `Enum.DamageMeterSessionType` | What it holds |
+|---|---|
+| `Overall` | All the sessions since the last reset. |
+| `Current` | The last session. It stays after the fight ends. |
+| `Expired` | The sessions that went out of the list of 30 since the last reset. |
+
+For `Overall` and `Expired`, the duration is the sum of the durations of
+their sessions. The time between fights is not part of it.
+
+`C_DamageMeter.ResetAllCombatSessions()` clears the sessions. The cvar
+`damageMeterResetOnNewInstance` also clears them: when it is on, entering
+an instance clears the sessions. Entering the same instance again does not
+clear them. A logout clears them too, with no `DAMAGE_METER_RESET`, so each
+login starts with no sessions. The sessions are not saved.
+
+### Damage meter functions
+
+| Function | Returns |
+|---|---|
+| `GetAvailableCombatSessions()` | An array of the kept sessions, oldest first. Each has `sessionID`, `name` and `durationSeconds`. |
+| `GetCombatSessionFromID(sessionID, type)` | A `DamageMeterCombatSession` for the session with that ID. |
+| `GetCombatSessionFromType(sessionType, type)` | A `DamageMeterCombatSession` for the session type. |
+| `GetCombatSessionSourceFromID(sessionID, type, sourceGUID, sourceCreatureID)` | A `DamageMeterCombatSessionSource`: the spells of one source in the session with that ID. |
+| `GetCombatSessionSourceFromType(sessionType, type, sourceGUID, sourceCreatureID)` | A `DamageMeterCombatSessionSource` for the session type. |
+| `GetSessionDurationSeconds(sessionType)` | The duration of the session in seconds. Nil when the session type has no session. |
+| `IsDamageMeterAvailable()` | `true, ""`. |
+| `ResetAllCombatSessions()` | Nothing. It clears all sessions and sends `DAMAGE_METER_RESET`. |
+
+`type` is an `Enum.DamageMeterType`. For a session ID that the meter does not
+keep, or a `type` that is not a value of the enumeration, you get an empty
+session: no sources, and `0` for the amounts.
+
+To find a source, give its `sourceGUID`. For a creature, give its
+`sourceCreatureID` and `nil` for `sourceGUID`. Use the values from the
+`DamageMeterCombatSource`.
+
+```lua
+local session = C_DamageMeter.GetCombatSessionFromType(
+    Enum.DamageMeterSessionType.Current, Enum.DamageMeterType.DamageDone)
+for i, source in ipairs(session.combatSources) do
+    print(i, source.name, source.totalAmount, source.amountPerSecond)
+end
+```
+
+### Damage meter types
+
+| `Enum.DamageMeterType` | What it counts |
+|---|---|
+| `DamageDone`, `Dps` | The damage that your group did. Damage to a member of your group is not part of it. |
+| `HealingDone`, `Hps` | The healing that your group did, without overhealing. |
+| `Absorbs` | Always empty. |
+| `Interrupts` | One for each interrupt. The spells are the spells that were interrupted. |
+| `Dispels` | One for each dispel. The spells are the auras that were removed. |
+| `DamageTaken` | The damage that each member of your group took. |
+| `AvoidableDamageTaken` | Always empty. |
+| `Deaths` | The deaths of your group. The spell of a death is the last hit that the unit took before it died. |
+| `EnemyDamageTaken` | The damage that each enemy took from your group. |
+
+Your group is you, your party or raid, and the units that one of you
+controls. The damage or the healing of a pet, a guardian or a totem counts
+for its owner. Its spells show the name of the pet in `creatureName`. A pet
+that takes damage or dies is a source of its own.
+
+An enemy is a hostile or a neutral unit. A neutral creature that your group
+fights is an enemy.
+
+`amountPerSecond` is `totalAmount` divided by the duration of the session.
+A melee swing has the spell ID of Attack (`6603`).
+
+### Damage meter tables
+
+A `DamageMeterCombatSession` has `combatSources`, an array of
+`DamageMeterCombatSource`, and `maxAmount`, `totalAmount` and
+`durationSeconds`. The sources are in order of `totalAmount`, the highest
+first. For `Deaths`, the order is the time of the death, the earliest first.
+
+A `DamageMeterCombatSource` has these fields:
+
+| Field | Value |
+|---|---|
+| `sourceGUID` | The GUID of a player or a pet, as `UnitGUID` gives it. Nil for a creature. |
+| `sourceCreatureID` | The creature ID of a creature. Nil for a player or a pet. All creatures with one creature ID are one source. |
+| `name`, `classFilename` | `classFilename` is the class of a player, for example `MAGE`, and empty for other units. |
+| `classification` | As `UnitClassification` gives it. |
+| `totalAmount`, `amountPerSecond` | For `Deaths`, `totalAmount` is the number of deaths. |
+| `isLocalPlayer` | `true` for you. |
+| `deathTimeSeconds` | For `Deaths`: the seconds from the start of the session to the last death of the source. `-1` for `Overall` and `Expired`. `0` for the other types. |
+| `sourceDisplayType` | `Enum.DamageMeterSourceDisplayType`: `Ally` for your group, `Enemy` for an enemy, and `None` for other units. |
+| `factionGroup` | `Alliance` or `Horde` for a player. Nil for other units. |
+| `deathRecapID` | For `Deaths`: the [death recap](#deathrecap) of your last death. `0` for other units, and when your death has no recap. |
+| `specIconID` | Always `0`. |
+
+A `DamageMeterCombatSessionSource` has `combatSpells`, an array of
+`DamageMeterCombatSpell` with the highest amount first, and `maxAmount` and
+`totalAmount`. `totalAmount` is the sum of its spells. For `Deaths`, this
+is the damage of the hits that killed the source.
+
+A `DamageMeterCombatSpell` has `spellID`, `totalAmount`, `amountPerSecond`,
+`creatureName`, `overkillAmount`, `isAvoidable` (always `false`), `isDeadly`
+and `combatSpellDetails`. For `DamageTaken`, `EnemyDamageTaken` and
+`Deaths`, there is one entry for each spell and each unit that used it, and
+`combatSpellDetails` names that unit. For the other types, there is one
+entry for each spell, and `combatSpellDetails.unitName` is empty.
+`combatSpellDetails` has `unitName`, `unitClassFilename`, `classification`,
+`isPet`, `isMob`, `amount` and `specIconID` (always `0`).
+
+The meter's events are under [Events](#damage_meter_combat_session_updated--damage_meter_current_session_updated--damage_meter_reset-events).
+
+### Damage meter cvars (`damageMeterEnabled`, `damageMeterResetOnNewInstance`)
+
+| Cvar | Default | Value |
+|---|---|---|
+| `damageMeterEnabled` | `0` | `1` turns on the damage meter. `0` turns it off and clears all sessions. |
+| `damageMeterResetOnNewInstance` | `0` | `1` clears all sessions each time you enter an instance other than the last one. |
+
+Each character has its own values for the two cvars. The game saves them in
+`WTF\Account\<account>\<realm>\<character>\config-cache.wtf`.
+
+## DeathRecap
+
+When you die, the client keeps a death recap: the last hits that you took
+before the death. The recap comes from the [combat log](#combatlog) that the
+client keeps. Thus it holds only the hits that the log still has, and the
+`combatLogRetentionTime` cvar limits that time.
+
+A recap holds up to 5 hits, newest first. The hit that killed you comes
+first. A hit counts when it did damage past any overkill, and every
+`SPELL_INSTAKILL` counts. The hits start after your previous death. A death
+with no such hit has no recap.
+
+Each death gets the next recap ID, also a death with no recap. The client
+keeps the last 15 recaps. The IDs and the recaps are cleared when you log
+out.
+
+Your death's `UNIT_DIED` combat log event gives the recap ID as `recapID`.
+The `Deaths` mode of the [damage meter](#damagemeter) gives it as
+`deathRecapID`.
+
+There is no recap window. A click on a death link does nothing, and
+`OpenDeathRecapUI(recapID)` does nothing.
+
+### `C_DeathRecap.GetRecapEvents([recapID])`
+
+Returns an array of the hits in the recap, newest first. Without `recapID`,
+the function uses your last death. Returns nothing when no recap has the ID.
+
+Each hit is a table of the combat log event. Its keys are the names of the
+event's values: `timestamp`, `event`, `hideCaster`, `sourceGUID`,
+`sourceName`, `sourceFlags`, `sourceRaidFlags`, `destGUID`, `destName`,
+`destFlags`, `destRaidFlags`, and `spellId`, `spellName`, `spellSchool` when
+the event has a spell. The damage values are `amount`, `overkill`, `school`,
+`critical`, `glancing`, `crushing`, `isOffHand`, and `resisted`, `blocked`,
+`absorbed` when they are not `0`. An `ENVIRONMENTAL_DAMAGE` hit also has
+`environmentalType`.
+
+`currentHP` is your health just before the hit. `0` means that the client
+did not know it.
+
+```lua
+local maxHealth = C_DeathRecap.GetRecapMaxHealth()
+for _, hit in ipairs(C_DeathRecap.GetRecapEvents() or {}) do
+    print(hit.spellName or hit.event, hit.amount, floor(hit.currentHP / maxHealth * 100) .. "%")
+end
+```
+
+### `C_DeathRecap.GetRecapLink([recapID])`
+
+Returns a chat link to the recap: `DEATH_RECAP_LINK` with the ID, for
+example `[You died.]`. Without `recapID`, the function uses your last death.
+When no recap has the ID, it returns the plain text `DEATH_RECAP_TEXT`.
+
+### `C_DeathRecap.GetRecapMaxHealth([recapID])`
+
+Returns your maximum health when the death happened. Returns `0` when no
+recap has the ID.
+
+### `C_DeathRecap.HasRecapEvents([recapID])`
+
+Returns `true` when a recap with the ID exists. Without `recapID`, the
+function uses your last death.
+
 ## DeathInfo
 
 ### `C_DeathInfo.GetSelfResurrectOptions()`
@@ -5325,8 +6595,8 @@ end
 ### `C_DurationUtil.CreateDuration()`
 
 Returns a new duration object. A duration object holds a time span: a start
-time and a total duration. All times are `GetTime()` seconds. A new duration
-object holds a zero time span that starts at 0.
+time and a total duration. All times are `GetTime()` seconds, kept in whole
+milliseconds. A new duration object holds a zero time span that starts at 0.
 
 ```lua
 local duration = C_DurationUtil.CreateDuration()
@@ -5350,7 +6620,7 @@ argument (see below):
 | Method | Returns |
 |---|---|
 | `GetStartTime()` | The start time. |
-| `GetEndTime()` | The start time plus the total duration. |
+| `GetEndTime()` | The end time. |
 | `GetTotalDuration()` | The total duration, in seconds. |
 | `GetElapsedDuration()` | The seconds from the start time to now, from 0 to the total duration. Before the start time, it is 0. |
 | `GetRemainingDuration()` | The total duration minus the elapsed duration. Before the start time, it is the total duration. |
@@ -5371,13 +6641,18 @@ These methods take no arguments:
 | `HasSecretValues()` | Always `false`. |
 
 - A new or reset duration object has started and has expired.
-- `modRate` must be more than 0. It changes only the results for
-  `Enum.DurationTimeModifier.BaseTime`.
+- `modRate` changes only the results for
+  `Enum.DurationTimeModifier.BaseTime`. A mod rate of 0 works as 1.
 - `modifier` is a value of `Enum.DurationTimeModifier`. `RealTime` (0) is
-  the default. With `BaseTime` (1), the total duration is the total duration
-  divided by the mod rate, from the same start time. For example, 1 second
-  into a 4-second time span with a mod rate of 2, the remaining duration is
-  1 second of a 2-second total.
+  the default. With `BaseTime` (1), the total duration is the duration
+  divided by the mod rate. A time span from `SetTimeFromStart` keeps its
+  start time, and a time span from `SetTimeFromEnd` keeps its end time. For
+  example, 1 second into a 4-second time span from `SetTimeFromStart` with a
+  mod rate of 2, the remaining duration is 1 second of a 2-second total.
+  `SetTimeSpan` has no mod rate.
+- Use a start time and a duration that are not negative. A negative value is
+  not an error, but it gives a very large time span.
+- Two Lua objects for the same time span are equal (`==`).
 - A function that returns a duration object returns a new Lua object on each
   call. Two of these Lua objects can hold the same time span. For example,
   `statusBar:GetTimerDuration` returns a new Lua object for the time span
@@ -5409,18 +6684,20 @@ binding:SetFormatter(formatter)
 binding:SetEnabled(true)
 ```
 
-A new text binding is disabled. It writes text only when it is enabled and
-it has a font string and a format. These methods configure it:
+A new text binding is disabled. It writes text only when it has a font
+string, a duration object and a format. Each `Set...` method writes the text
+at once, also when the binding is disabled. When the binding is enabled, it
+also writes the text on each frame. These methods configure it:
 
 | Method | Result |
 |---|---|
 | `SetFontString(fontString)` / `GetFontString()` | The font string that gets the text. |
 | `SetDuration(duration)` / `GetDuration()` | The duration object. The binding keeps the object, not a copy. |
 | `SetFormatter(formatter)` | The text is the text of `formatter` for the remaining seconds. |
-| `SetTextFormat(formatString, components)` | The text is `formatString`, with each `{}` replaced by the text of one component, in order. |
+| `SetTextFormat(formatString, components)` | The text is `formatString`, with each `{}` replaced by the text of one component, in order. The number of `{}` must be the same as the number of components. If it is not, the call is an error and the binding keeps its old format. |
 | `SetExpiredText([text])` / `GetExpiredText()` | The text after the end time. `nil` removes it. |
 | `SetZeroDurationText([text])` / `GetZeroDurationText()` | The text for a zero time span, or when the binding has no duration object. `nil` removes it. |
-| `SetUpdateInterval(seconds)` / `GetUpdateInterval()` | The minimum time between two updates. 0, the default, updates on each frame. |
+| `SetUpdateInterval(seconds)` / `GetUpdateInterval()` | The time between two updates, counted in frame time. 0, the default, updates on each frame. A negative value is 0. |
 | `SetTimeModifier(modifier)` / `GetTimeModifier()` | The `Enum.DurationTimeModifier` that the binding reads the time span with. The default is `RealTime`. |
 | `SetEnabled(enabled)`, `Enable()`, `Disable()` / `IsEnabled()` | Starts or stops the updates. |
 
@@ -5429,7 +6706,8 @@ Each component of `SetTextFormat` is a table
 `Enum.DurationTextBindingProperty`: `RemainingDuration` (0),
 `RemainingPercent` (1), `ElapsedDuration` (2), `ElapsedPercent` (3),
 `TotalDuration` (4), `StartTime` (5) or `EndTime` (6). `formatter` is a
-`NumericRuleFormatter`.
+`NumericRuleFormatter`. The durations and times are in seconds.
+`RemainingPercent` and `ElapsedPercent` go from 0 to 100.
 
 ```lua
 binding:SetTextFormat("{} / {}", {
@@ -5442,25 +6720,25 @@ Other methods:
 
 | Method | Result |
 |---|---|
-| `GetFormattedText()` | The text that the binding writes now, or `""` when it has no format. |
+| `GetFormattedText()` | The text that the binding writes now. |
 | `UpdateFontString()` | Writes the text now. |
-| `CanFormatText()` | `true` when the binding has a format. |
-| `CanUpdateFontString()` | `true` when the binding has a format and a font string. |
+| `CanFormatText()` | `true` when the binding has a duration object and a format that is not empty. |
+| `CanUpdateFontString()` | `true` when `CanFormatText()` is `true` and the binding has a font string. |
 | `Copy()` | A new binding with the same configuration. The copy is disabled. |
 | `Assign(other)` | Copies the configuration of the binding `other`. The enabled state does not change. |
 | `SetToDefaults()` | Removes the configuration and disables the binding. |
 | `HasSecretValues()` | Always `false`. |
 
-- An enabled binding continues to update when your code has no reference
-  to it. To stop it, disable it.
+- Keep a reference to an enabled binding. When Lua collects a binding that
+  your code has no reference to, the binding stops.
 - When you enable a binding, it writes the text immediately.
 - The binding writes the text only when the text changes.
-- After the end time, the binding shows the expired text, if it has one.
-  The binding stays enabled.
-- A zero time span shows the zero duration text before the expired text.
+- A zero time span, or no duration object, shows the zero duration text. If
+  the binding has no zero duration text, it shows no text.
+- After the end time, the binding shows the expired text. If the binding has
+  no expired text, it shows no text. The binding stays enabled.
 - When the font string goes away with its frame, the binding has no font
   string. It then writes nothing.
-- A `{}` with no component writes nothing.
 - The color curve methods are not available.
 
 ## EquipmentSet
@@ -5751,13 +7029,131 @@ code behind feature detection (e.g. registering for events that exist in
 some client builds but not others).
 
 ```lua
-if C_EventUtils.IsEventValid("PLAYER_LOGIN") then ... end       -- true
-if C_EventUtils.IsEventValid("COMBAT_LOG_EVENT") then ... end   -- false (not a registered event)
+if C_EventUtils.IsEventValid("PLAYER_LOGIN") then ... end   -- true
+if C_EventUtils.IsEventValid("NOT_AN_EVENT") then ... end   -- false
 ```
 
 The result matches what `frame:RegisterEvent` accepts. This includes
 events that other loaded DLLs add. For example, on a Turtle WoW client
-with SuperWoWhook, `IsEventValid("UNIT_CASTEVENT")` returns `true`.
+with SuperWoWhook, `IsEventValid("UNIT_CASTEVENT")` returns `true`. A
+callback event that frames cannot register, such as
+`TOOLTIP_SHOW_ITEM_COMPARISON`, returns `false`. A value that is not a
+string causes an error.
+
+### `C_EventUtils.IsCallbackEvent(eventName)`
+
+Returns `true` when `eventName` is a callback event. The name is not
+case-sensitive. A value that is not a string causes an error.
+
+The callback events are `COMBAT_LOG_EVENT`, `COMBAT_LOG_EVENT_UNFILTERED`,
+`COMBAT_LOG_EVENT_INTERNAL_UNFILTERED`, `COMBAT_LOG_APPLY_FILTER_SETTINGS`,
+`COMBAT_LOG_REFILTER_ENTRIES`, `ENCOUNTER_STATE_CHANGED`, `MINIMAP_PING` and
+`TOOLTIP_SHOW_ITEM_COMPARISON`. Only these events accept the event-callback
+functions in this section. This client fires the callbacks of
+`COMBAT_LOG_EVENT`, `COMBAT_LOG_EVENT_UNFILTERED` and `MINIMAP_PING`. The
+other callback events accept callbacks, but they do not fire.
+
+```lua
+C_EventUtils.IsCallbackEvent("MINIMAP_PING")   -- true
+C_EventUtils.IsCallbackEvent("PLAYER_LOGIN")   -- false
+```
+
+### `RegisterEventCallback(eventName, callback)` and `UnregisterEventCallback(eventName, callback)`
+
+`RegisterEventCallback` calls `callback` each time the callback event
+fires. It returns `true`. Callbacks run after the `OnEvent` scripts of the
+frames that registered the same event.
+
+`callback` is a Lua function, or a container from
+[`C_FunctionContainers.CreateCallback`](#c_functioncontainerscreatecallbackfunc).
+The callback gets `nil` as its first argument, then the values of the
+event. It does not get the event name. An error in a callback goes to the
+error handler, as for a frame script.
+
+| Event | Values after the first argument |
+|-------|---------------------------------|
+| `COMBAT_LOG_EVENT`, `COMBAT_LOG_EVENT_UNFILTERED` | None. Call `CombatLogGetCurrentEventInfo()` in the callback. |
+| `MINIMAP_PING` | `unitToken, x, y` |
+
+These causes give an error:
+
+- an event that is not a callback event. The message is
+  `RegisterEventCallback Attempt to register unknown event "<name>"`.
+- a `callback` that is not a Lua function or a container
+  (`invalid callback`).
+
+`UnregisterEventCallback` removes a callback that `RegisterEventCallback`
+added. It always returns `true`.
+
+CAUTION: Each call with a plain function makes a new registration. Thus
+the same function, registered two times, runs two times. Also,
+`UnregisterEventCallback` with a plain function removes nothing. To remove
+a callback, register a container and unregister the same container.
+
+```lua
+local cb = C_FunctionContainers.CreateCallback(function(_, unit, x, y)
+    print(unit, "pinged at", x, y)
+end)
+RegisterEventCallback("MINIMAP_PING", cb)
+UnregisterEventCallback("MINIMAP_PING", cb)
+```
+
+A registration or removal that a callback makes takes effect after the
+current fire of the event. A reload removes all callbacks.
+
+### `RegisterUnitEventCallback(eventName, callback, unit)` and `UnregisterUnitEventCallback(eventName, callback, unit)`
+
+Register and remove a callback that runs only when the event fires for
+`unit`. They work as `RegisterEventCallback` and `UnregisterEventCallback`.
+Only `MINIMAP_PING` accepts a unit. `unit` is one unit token. Another event,
+or a value that is not a unit token, causes the unknown-event error.
+
+When `MINIMAP_PING` fires, the callbacks without a unit run first. Then the
+callbacks for the unit that sent the ping run. The unit is `player`, a
+`partyN` token or a `raidN` token.
+
+### `frame:RegisterEventCallback(eventName, cb)` and `frame:RegisterUnitEventCallback(eventName, cb, unit)`
+
+Register a callback that gets the frame as its first argument, then the
+values of the event. Both return `true`. The rules for `cb` and for the
+event are the same as for the global functions. The error message starts
+with the frame name, for example
+`MyFrame:RegisterEventCallback(): Attempt to register unknown event "<name>"`.
+
+Frames have no `UnregisterEventCallback` method. `frame:UnregisterEvent(eventName)`
+removes the frame callbacks for that event, and `frame:UnregisterAllEvents()`
+removes all of them. `frame:IsEventRegistered` does not include callbacks.
+A frame that is hidden also gets its callbacks.
+
+```lua
+local f = CreateFrame("Frame", "MyFrame")
+f:RegisterEventCallback("MINIMAP_PING", function(self, unit, x, y)
+    print(self:GetName(), unit, x, y)
+end)
+f:UnregisterEvent("MINIMAP_PING")   -- removes the callback
+```
+
+### `C_FunctionContainers.CreateCallback(func)`
+
+Returns a container for the Lua function `func`. You can register a
+container with the event-callback functions, and remove it later. `func`
+must be a Lua function. Another value causes the error
+`Usage: C_FunctionContainers.CreateCallback(func)`.
+
+A container has these methods:
+
+- `callback:Invoke(...)` calls `func` with the arguments. It returns no
+  value. An error in `func` goes to the error handler. After `Cancel`, it
+  does nothing.
+- `callback:Cancel()` releases `func`. A cancelled container stays
+  registered, but it does not run.
+- `callback:IsCancelled()` returns `true` after `Cancel`, and after a
+  reload.
+
+You can set your own fields on a container. You cannot replace a method:
+`callback.Cancel = nil` causes the error
+`Attempted to assign to read-only key Cancel`. Two values are equal only
+when they are the same container. You cannot call a container directly.
 
 ### `GetFramesRegisteredForEvent(event)`
 
@@ -5861,11 +7257,27 @@ The event fires in these cases:
 A drop fires on the next frame. Other changes can come up to 250 ms
 later.
 
+### `ADDONS_UNLOADING` event
+
+Fires when the interface unloads, after `PLAYER_LOGOUT` and before the
+SavedVariables are written. Thus a handler can still change its
+SavedVariables. The payload is `closingClient`: `true` when the client
+quits, `false` for a reload or a logout to the character screen.
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterEvent("ADDONS_UNLOADING")
+f:SetScript("OnEvent", function(self, event, closingClient)
+    MyAddonDB.lastExit = closingClient and "quit" or "logout"
+end)
+```
+
 ### `BAG_UPDATE_DELAYED` event
 
-Fires (with no payload) once per frame in which any `BAG_UPDATE`
-fired. Register for `BAG_UPDATE_DELAYED` instead of `BAG_UPDATE` and
-rescan once per frame regardless of how many updates fired.
+Fires once in each frame in which one or more `BAG_UPDATE` events
+fired, after all of them. The event has no payload. Register for
+`BAG_UPDATE_DELAYED` instead of `BAG_UPDATE` to scan the bags one time
+in each frame.
 
 ```lua
 local f = CreateFrame("Frame")
@@ -5873,16 +7285,17 @@ f:RegisterEvent("BAG_UPDATE_DELAYED")
 f:SetScript("OnEvent", function() RescanMyInventory() end)
 ```
 
-A trade with 6 stacks (12 `BAG_UPDATE`s, all processed in one
-frame) produces exactly 1 `BAG_UPDATE_DELAYED` at the end of the
-frame.
+A trade of 6 stacks fires 12 `BAG_UPDATE` events in one frame. That
+frame then fires 1 `BAG_UPDATE_DELAYED`.
 
-The event fires after all other per-frame world updates. Addon
-callbacks see `BAG_UPDATE_DELAYED` after their normal event handlers.
-
-> **Coverage limitation.** Keyring updates (`BAG_UPDATE(-2)`) do not
-> fire `BAG_UPDATE_DELAYED`. Player bag (0..4) and bank (5..10)
-> updates work normally — the 95% case.
+- If a `BAG_UPDATE_DELAYED` handler causes a `BAG_UPDATE`, the next
+  frame fires `BAG_UPDATE_DELAYED` again.
+- A bag that you remove from a bag slot fires only `BAG_CLOSED`. If no
+  other bag goes into the slot, `BAG_UPDATE_DELAYED` does not fire.
+- A change in the main slots of the bank fires `BAG_UPDATE` with bag
+  `0`. As a result, `BAG_UPDATE_DELAYED` also fires.
+- While a loading screen shows, the event waits. It fires one time when
+  the player is in the world.
 
 ### `PLAYER_EQUIPMENT_CHANGED` event
 
@@ -5895,9 +7308,8 @@ PLAYER_EQUIPMENT_CHANGED: equipmentSlot, hasCurrent
 - **`equipmentSlot`** (number) — the 1-based inventory slot that
   changed (`1` = head … `19` = tabard; same numbering as
   `GetInventoryItemLink("player", slot)`).
-- **`hasCurrent`** — `1` when the slot now holds an item, `nil` when
-  it's now empty (write `if hasCurrent then` — the event dispatcher
-  can't push real booleans).
+- **`hasCurrent`** — `true` when the slot now holds an item, `false`
+  when the slot is now empty.
 
 The stock `UNIT_INVENTORY_CHANGED("player")` doesn't say *which* slot
 changed; this event lets gear trackers, stat sheets, and tooltip
@@ -6146,7 +7558,7 @@ The values after these depend on the subevent. First comes the prefix:
 | Subevent starts with | Prefix values |
 |----------------------|---------------|
 | `SWING_`, `UNIT_`, `PARTY_KILL` | *(none)* |
-| `ENVIRONMENTAL_` | `environmentalType`: `"FATIGUE"`, `"DROWNING"`, `"FALLING"`, `"LAVA"`, `"SLIME"` or `"FIRE"` |
+| `ENVIRONMENTAL_` | `environmentalType`: `"Fatigue"`, `"Drowning"`, `"Falling"`, `"Lava"`, `"Slime"` or `"Fire"` |
 | `SPELL_`, `SPELL_PERIODIC_`, `RANGE_`, `DAMAGE_SHIELD`, `DAMAGE_SPLIT` | `spellId`, `spellName`, `spellSchool` |
 
 Then comes the suffix:
@@ -6165,7 +7577,8 @@ Then comes the suffix:
 | `_DURABILITY_DAMAGE` | `itemId`, `itemName` |
 | `_AURA_APPLIED`, `_AURA_REMOVED`, `_AURA_REFRESH` | `auraType`: `"BUFF"` or `"DEBUFF"` |
 | `_AURA_APPLIED_DOSE`, `_AURA_REMOVED_DOSE` | `auraType`, `amount` |
-| `_CAST_START`, `_CAST_SUCCESS`, `_INSTAKILL`, `_RESURRECT`, `_SUMMON`, `_CREATE`, `_DURABILITY_DAMAGE_ALL`, `UNIT_DIED`, `UNIT_DESTROYED`, `PARTY_KILL` | *(none)* |
+| `UNIT_DIED`, `UNIT_DESTROYED` | `recapID`, `unconsciousOnDeath`. `recapID` is the [death recap](#deathrecap) of your own death, and `-1` for every other death. `unconsciousOnDeath` is always `0`. |
+| `_CAST_START`, `_CAST_SUCCESS`, `_INSTAKILL`, `_RESURRECT`, `_SUMMON`, `_CREATE`, `_DURABILITY_DAMAGE_ALL`, `PARTY_KILL` | *(none)* |
 
 The subevents that fire:
 
@@ -6187,6 +7600,10 @@ The subevents that fire:
 - `SPELL_DISPEL`, `SPELL_DISPEL_FAILED`
 - `UNIT_DIED`, `UNIT_DESTROYED` (a totem or another summoned unit),
   `PARTY_KILL`
+
+A unit's `UNIT_DIED` or `UNIT_DESTROYED` comes after the hit that killed it.
+The server sends the death first. Thus the event waits for the next hit on
+the unit, or for the end of the frame when no hit comes in that frame.
 
 Some values have fixed contents:
 
@@ -6211,7 +7628,7 @@ Some values have fixed contents:
 - The `COMBATLOG_OBJECT_MAINTANK` and `COMBATLOG_OBJECT_MAINASSIST` bits are
   never set.
 - `SPELL_CAST_START` fires for a spell with a cast time, and has no target.
-  `SPELL_CAST_SUCCESS` fires for an instant spell. A spell with a cast time
+  `SPELL_CAST_SUCCESS` fires when any cast finishes. An interrupted cast
   gets no `SPELL_CAST_SUCCESS`.
 - `SPELL_CAST_FAILED` fires only for your own casts.
 - A spell that the game hides from the combat log fires no event, except
@@ -6334,6 +7751,22 @@ and `value` is its new value as a string. The Settings window and
 - `SetCVar(name, value, eventName)` fires a second `CVAR_UPDATE`, with
   `eventName` in place of the cvar name.
 
+### `DAMAGE_METER_COMBAT_SESSION_UPDATED` / `DAMAGE_METER_CURRENT_SESSION_UPDATED` / `DAMAGE_METER_RESET` events
+
+```
+DAMAGE_METER_COMBAT_SESSION_UPDATED: type, sessionID
+DAMAGE_METER_CURRENT_SESSION_UPDATED
+DAMAGE_METER_RESET
+```
+
+Each event fires one time in a frame at most.
+
+- `DAMAGE_METER_COMBAT_SESSION_UPDATED` fires when the data of a type
+  changes. It fires two times: one time with `sessionID` `0` for `Overall`,
+  and one time with the ID of the session that changed.
+- `DAMAGE_METER_CURRENT_SESSION_UPDATED` fires when a new session starts.
+- `DAMAGE_METER_RESET` fires when the sessions are cleared.
+
 ### `EQUIPMENT_SETS_CHANGED` event
 
 Fires (with no payload) after any mutation: `Create`, `Save`,
@@ -6413,6 +7846,44 @@ event, [`C_Reputation.GetLastStandingChange`](#c_reputationgetlaststandingchange
 gives `(factionID, newStanding, repGained)`, so addons do not have to
 parse the localized string.
 
+### `GROUP_JOINED` / `GROUP_FORMED` / `GROUP_LEFT` events
+
+```
+GROUP_JOINED: category, partyGUID
+GROUP_FORMED: category, partyGUID
+GROUP_LEFT: category, partyGUID
+```
+
+`GROUP_JOINED` fires when you join a party or a raid. `GROUP_FORMED` fires
+one time for each group, when the group has two players. A group always has
+you and one more player, so `GROUP_FORMED` fires immediately after each
+`GROUP_JOINED`. `GROUP_LEFT` fires when you leave the group, or when the
+group is disbanded.
+
+These events fire immediately before the `PARTY_MEMBERS_CHANGED` or
+`RAID_ROSTER_UPDATE` that shows the change.
+
+- `category` is always `1`, `LE_PARTY_CATEGORY_HOME`. A battleground group
+  is an ordinary raid on this client.
+- `partyGUID` is always `nil`. This client does not get an ID for the group.
+- When you log in inside a group, `GROUP_JOINED` and `GROUP_FORMED` fire
+  when the group information arrives.
+- When you reload the UI or go through a loading screen, these events do
+  not fire. Use `IsInGroup()` to read the group state at that time.
+- When you log out, `GROUP_LEFT` does not fire.
+
+### `GROUP_ROSTER_UPDATE` event
+
+Fires one time in each frame in which the members of your group changed.
+The event has no payload. It also fires when you join or leave a group,
+after `GROUP_JOINED` or `GROUP_LEFT`.
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterEvent("GROUP_ROSTER_UPDATE")
+f:SetScript("OnEvent", function() print(GetNumRaidMembers(), GetNumPartyMembers()) end)
+```
+
 ### `INCOMING_RESURRECT_CHANGED` event
 
 Fires when a resurrection cast at a unit starts or stops. `arg1` is the unit
@@ -6432,6 +7903,26 @@ f:SetScript("OnEvent", function()
 end)
 ```
 
+### `INSTANCE_ENCOUNTER_ENGAGE_UNIT` event
+
+Fires when a boss gets a [`bossN`](#unit-tokens-bossn) token, and when a
+boss loses its token at the end of the encounter. The event gives no
+value. Read the `bossN` tokens again in the handler.
+
+The event fires one time for each boss. At the end of an encounter with two
+bosses, it fires two times.
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterEvent("INSTANCE_ENCOUNTER_ENGAGE_UNIT")
+f:SetScript("OnEvent", function()
+    for i = 1, 5 do
+        local unit = "boss" .. i
+        print(unit, UnitGUID(unit))
+    end
+end)
+```
+
 ### `INVENTORY_SEARCH_UPDATE` event
 
 Fires with no payload when
@@ -6441,19 +7932,20 @@ changes the bag search. When it fires, read `isFiltered` from
 `C_Container.IsContainerFiltered` again. A logout clears the search, but
 it does not fire this event.
 
-### `LOOT_HISTORY_ROLL_CHANGED` / `LOOT_HISTORY_ROLL_COMPLETE` / `LOOT_HISTORY_FULL_UPDATE` events
+### `LOOT_HISTORY_ROLL_CHANGED` / `LOOT_HISTORY_ROLL_COMPLETE` / `LOOT_HISTORY_FULL_UPDATE` / `LOOT_HISTORY_AUTO_SHOW` events
 
-Fire as group-loot rolls progress, so a loot-history UI can update without
-polling. Register like any engine event
-(`frame:RegisterEvent("LOOT_HISTORY_ROLL_COMPLETE")`), then read the item via
-[`C_LootHistory.GetItem`](#c_loothistorygetitemitemindex) /
-[`C_LootHistory.GetPlayerInfo`](#c_loothistorygetplayerinfoitemindex-playerindex).
+These events fire while group-loot rolls change, so a loot-history UI can
+update without polling. Register them like any engine event
+(`frame:RegisterEvent("LOOT_HISTORY_ROLL_COMPLETE")`). Then read the item with
+[`C_LootHistory.GetItem`](#c_loothistorygetitemitemidx) and
+[`C_LootHistory.GetPlayerInfo`](#c_loothistorygetplayerinfoitemidx-playeridx).
 
 | Event | Args | When |
 |---|---|---|
-| `LOOT_HISTORY_ROLL_CHANGED` | `itemIndex`, `playerIndex` (numbers) | A player selected need, greed, or pass, or rolled the dice. `playerIndex` is `0` when the roll names no player or when the player list of the item is full. |
-| `LOOT_HISTORY_ROLL_COMPLETE` | `itemIndex` (number) | The item was decided — won or all-passed. |
-| `LOOT_HISTORY_FULL_UPDATE` | — | The item set changed structurally — a new item appeared (roll opened) or the 128-item ring evicted the oldest (every index shifted). Re-read the whole list. Also fired by `C_LootHistory.Clear()`. |
+| `LOOT_HISTORY_ROLL_CHANGED` | `itemIdx`, `playerIdx` (numbers) | A player in the list of the item selected need, greed, or pass, or rolled the dice. |
+| `LOOT_HISTORY_ROLL_COMPLETE` | `itemIdx` (number) | The item has a winner, or all players passed. The player list of the item is now in its final order. ClassicAPI extension: the `itemIdx` argument. |
+| `LOOT_HISTORY_FULL_UPDATE` | — | A roll started and its item was added, old items were removed, or the data of an item arrived. Every index can be different. Read the whole list again. `C_LootHistory.Clear()` also fires it. |
+| `LOOT_HISTORY_AUTO_SHOW` | `rollID` (number), `isMasterLoot` (always `nil`) | A roll started on an item that binds when picked up. A loot-history UI can open itself for this roll. |
 
 See the [LootHistory](#loothistory) section for the read API.
 
@@ -6507,19 +7999,20 @@ from `ScanNearbyLoot`). See the Loot section for the full scan flow.
 
 ### `LOSS_OF_CONTROL_ADDED` / `LOSS_OF_CONTROL_UPDATE` events
 
-Fire as loss-of-control effects change, so a UI can react without polling.
-Register like any engine event
+These events fire when the loss-of-control effects on the player change.
+Register them like any engine event
 (`frame:RegisterEvent("LOSS_OF_CONTROL_ADDED")`).
 
 | Event | Args | When |
 |---|---|---|
-| `LOSS_OF_CONTROL_ADDED` | `unitToken` (string), `eventIndex` (number) | A new effect was applied — `unitToken` is always `"player"`, and `eventIndex` is the 1-based index of the effect for [`C_LossOfControl.GetActiveLossOfControlData`](#c_lossofcontrolgetactivelossofcontroldataindex). |
-| `LOSS_OF_CONTROL_UPDATE` | `unitToken` (string) | The active set changed — an effect was added, fell off, or expired. Re-scan with `GetActiveLossOfControlData`. Always `"player"` (only the local player is tracked), but passed so the event carries a unit token and leaves room for per-unit tracking. |
+| `LOSS_OF_CONTROL_ADDED` | `unitToken` (string), `effectIndex` (number) | An effect lands on the player, or a running effect gets a later end time. `unitToken` is always `"player"`. `effectIndex` is the 1-based position of the effect for [`C_LossOfControl.GetActiveLossOfControlData`](#c_lossofcontrolgetactivelossofcontroldataindex--c_lossofcontrolgetactivelossofcontroldatabyunitunittoken-index), at the time the event fires. |
+| `LOSS_OF_CONTROL_UPDATE` | `unitToken` (string) | The effects changed: an effect was added, changed, fell off or expired. `unitToken` is always `"player"`. |
 
-Events fire within one frame of the change. Several changes in the same
-frame fire one `LOSS_OF_CONTROL_UPDATE`. A
-counterspelled cast, for instance, fires two `ADDED` (the school lockout and,
-with Improved Counterspell, the silence) then an `UPDATE` as each expires.
+The events fire in the frame after the change. When an effect lands, its
+`ADDED` fires first, then one `UPDATE` for all the changes of that frame. A
+second `ADDED` in the same frame can move the effects after it, so read the
+list again on `UPDATE`.
+
 See the [LossOfControl](#lossofcontrol) section for the effect data.
 
 ### `MAP_EXPLORATION_UPDATED` event
@@ -6587,7 +8080,7 @@ Fire when nameplate state actually changes. Payloads:
 |-------|--------|-------|
 | `NAME_PLATE_CREATED` | nameplate **Frame** | Fires once per nameplate frame — a frame that the game uses again for another unit does NOT refire. |
 | `NAME_PLATE_UNIT_ADDED` | `"nameplateN"` **unit token** | Pass straight to `UnitName` / `UnitGUID` / `UnitClass` / etc., or to [`GetNamePlateForUnit`](#c_nameplategetnameplateforunitunittoken) for the frame. The token is positional — see [Unit tokens](#unit-tokens-nameplaten) for ordering semantics. |
-| `NAME_PLATE_UNIT_REMOVED` | `"nameplateN"` **unit token** | Same as above. Computed from the plate's slot *before* it shifts out of the ordered list, so the token still resolves to the leaving unit during the event handler. |
+| `NAME_PLATE_UNIT_REMOVED` | `"nameplateN"` **unit token** | Same as above. The token still names the leaving unit while the event handlers run. It stops naming the unit after the handlers return. |
 
 ```lua
 local f = CreateFrame("Frame")
@@ -6627,10 +8120,10 @@ end)
 The events fire at most one frame after the change. The cost is
 ~20-50µs/frame even in busy raids — well below noise.
 
-The game sometimes hides a plate and shows it again on the next frame.
-This occurs, for example, when the plate order or anchor changes. These
-short hides do not fire `NAME_PLATE_UNIT_REMOVED` or
-`NAME_PLATE_UNIT_ADDED`.
+The game sometimes rebuilds a unit's plate, for example when the unit's
+name arrives. A rebuild fires `NAME_PLATE_UNIT_REMOVED` and then
+`NAME_PLATE_UNIT_ADDED`, also when the unit gets the same frame back.
+The unit can get a different token number.
 
 ### `PLAYER_FOCUS_CHANGED` event
 
@@ -6656,6 +8149,34 @@ end)
 **Identity-checked**: assigning the same GUID twice is a no-op
 (no event refires). Fired whenever the player's focus target is
 changed, including when the focus target is lost or cleared.
+
+### `PLAYER_IN_COMBAT_CHANGED` event
+
+Fires when the player enters or leaves combat. The payload is `inCombat`, a
+boolean: `true` when the player enters combat, `false` when the player
+leaves it. The value is the same as `UnitAffectingCombat("player")` at that
+time.
+
+It fires at the same time as `PLAYER_REGEN_DISABLED` (enter) and
+`PLAYER_REGEN_ENABLED` (leave), immediately before them.
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterEvent("PLAYER_IN_COMBAT_CHANGED")
+f:SetScript("OnEvent", function(self, event, inCombat)
+    print(inCombat and "In combat" or "Out of combat")
+end)
+```
+
+### `PLAYER_LEVEL_CHANGED` event
+
+```
+PLAYER_LEVEL_CHANGED: oldLevel, newLevel, real
+```
+
+Fires when your level changes, after `UnitLevel("player")` has the new
+level. `PLAYER_LEVEL_UP` fires before it. `real` is always `true`: this
+client has no level scaling.
 
 ### `PLAYER_MOUNT_DISPLAY_CHANGED` event
 
@@ -6685,10 +8206,20 @@ f:SetScript("OnEvent", function()
 end)
 ```
 
+### `PLAYER_SOFT_TARGET_INTERACTION` event
+
+Fires when
+[`C_PlayerInteractionManager.InteractUnit`](#c_playerinteractionmanagerinteractunitunit--exactmatch--loosetargeting)
+uses a `"soft…"` or `"any…"` token, for example when you press the
+Interact Key. It has no arguments.
+
 ### `PLAYER_SOFT_INTERACT_CHANGED` event
 
 Fires when the `"softinteract"` object changes to a different object, or
-to nothing. See [Soft interact](#soft-interact-softinteract--anyinteract).
+to nothing, and when you become able or unable to interact with it from
+where you stand. It fires before `PLAYER_SOFT_ENEMY_CHANGED` and
+`PLAYER_SOFT_FRIEND_CHANGED`. See
+[Soft interact](#soft-interact-softinteract--anyinteract).
 
 - `arg1` is the GUID of the previous object, or `nil`.
 - `arg2` is the GUID of the new object, or `nil`.
@@ -6989,6 +8520,10 @@ rank in the spellbook. When the event fires,
 [`IsSpellOverlayed`](#c_spellactivationoverlayisspelloverlayedspellid--isspelloverlayedspellid)
 already gives the new answer.
 
+When you learn or unlearn a spell while a glow is active, the events fire
+for the spells that start or stop glowing. For example, a new rank of a
+glowing spell starts to glow at once.
+
 ### `UI_SCALE_CHANGED` event
 
 Fires (with no payload) each time the game applies the interface scale to
@@ -6998,8 +8533,12 @@ Fires (with no payload) each time the game applies the interface scale to
 - the `useUiScale` setting changes, or
 - the size of the game window changes.
 
-When the event fires, `UIParent` already has the new scale. After a change of
-the window size, the event fires before `DISPLAY_SIZE_CHANGED`.
+The event also fires one time when you log in and after each reload of the
+UI, before `PLAYER_LOGIN`.
+
+`DISPLAY_SIZE_CHANGED` always fires immediately before `UI_SCALE_CHANGED`.
+This is also true for a change of the `uiScale` or `useUiScale` setting.
+When the events fire, `UIParent` already has the new scale.
 
 The event also fires when the new scale is the same as the old scale. A call
 to `UIParent:SetScale()` from Lua does not fire it.
@@ -7154,6 +8693,11 @@ a member in another zone. When the event fires,
 [`UnitIsConnected(unitTarget)`](https://warcraft.wiki.gg/wiki/API_UnitIsConnected)
 already gives the new state.
 
+The event does not fire for a member that joins the group offline, or for a
+member that leaves. In a party, it fires before `PARTY_MEMBERS_CHANGED`. In
+a raid, it fires after `RAID_ROSTER_UPDATE`, so the `raidN` tokens are the
+new ones.
+
 ```lua
 local f = CreateFrame("Frame")
 f:RegisterEvent("UNIT_CONNECTION")
@@ -7164,31 +8708,40 @@ end)
 
 ### `UNIT_DISTANCE_CHECK_UPDATE` event
 
-Fires when a group member comes into view or leaves it.
+Fires when a unit comes within 250 yards of you or goes farther away.
 
 ```
 UNIT_DISTANCE_CHECK_UPDATE: unitTarget, isInDistance
 ```
 
-- **`unitTarget`** (string) — the unit token of the member, for example
-  `party1` or `raid12`. A member that has more than one token (for
-  example `party1` and `raid3`) gets one event for each token.
-- **`isInDistance`** (boolean) — `true` when the client can see the
-  member, `false` when the client cannot see the member.
+- **`unitTarget`** (string) — the unit token.
+- **`isInDistance`** (boolean) — `true` when the unit is less than 250
+  yards from you.
 
-The client can see a member that is near enough for the server to send
-it. The server sets this distance. When the event fires,
-[`UnitIsVisible(unitTarget)`](https://warcraft.wiki.gg/wiki/API_UnitIsVisible)
-already gives the new state.
+The distance is measured on the map, without height. It is measured
+from the unit that you move. Usually this is you. The event measures
+these units:
 
-The event fires for party and raid members. It does not fire for
-`player` or for pets.
+- you, and the members of your party or raid, and the pets of these
+  units;
+- a member who is not in view, from the last position that the server
+  sent for that member. A member on a different map is not in distance.
+
+All other units are always in distance. A unit with no known position
+is also in distance.
+
+The units, the first event and the tokens follow the same rules as
+[`UNIT_IN_RANGE_UPDATE`](#unit_in_range_update-event):
+
+- Only the units that you give to `RegisterUnitEvent` are measured.
+- The first measurement of a unit fires the event.
+- The event fires one time for each token of the unit.
 
 ```lua
 local f = CreateFrame("Frame")
-f:RegisterEvent("UNIT_DISTANCE_CHECK_UPDATE")
+f:RegisterUnitEvent("UNIT_DISTANCE_CHECK_UPDATE", "party1", "party2")
 f:SetScript("OnEvent", function()
-    print(UnitName(arg1), arg2 and "came into view" or "left view")
+    print(UnitName(arg1), arg2 and "is near" or "is far away")
 end)
 ```
 
@@ -7246,21 +8799,23 @@ UNIT_IN_RANGE_UPDATE: unitTarget, isInRange
 - **`isInRange`** (boolean) — the new first return value of
   `UnitInRange(unitTarget)`.
 
-The frames that are registered for the event select the units that the
-client checks:
+The client checks only the units that frames give to
+`RegisterUnitEvent` for this event. A frame that uses `RegisterEvent`
+adds no units. It gets the events for the units that other frames give.
+The client checks the units on each frame, while a frame is registered
+for the event.
 
-- A frame that uses `RegisterUnitEvent` adds its units. You can use any
-  unit token, for example `target` or `focus`.
-- A frame that uses `RegisterEvent` adds `pet`, each party and raid
-  member, and the pets of these members.
+The client keeps one value for each unit:
 
-The client checks these units on each frame, but only while a frame is
-registered for the event. To check fewer units, use `RegisterUnitEvent`
-with only the units that you show.
+- The first check of a unit fires the event, also when the value is
+  `false`.
+- After that, the event fires only when the value changes.
+- When you go through a loading screen, the client forgets the values.
+  Thus, the next check of each unit fires the event again.
 
-The event fires only when the value changes. The first check of a unit
-does not fire the event. Thus, read `UnitInRange` when you start to
-show a unit.
+The event fires one time for each token of the unit, for example
+`party1`, `raid3` and `target`. A frame that uses `RegisterUnitEvent`
+gets only the events for its own tokens.
 
 ```lua
 local f = CreateFrame("Frame")
@@ -7286,7 +8841,12 @@ UNIT_MAXPOWER: unitTarget, powerType
   one token (for example `target` and `focus`) gets one event for each
   token.
 - **`powerType`** (string) — the power that changed: `"MANA"`, `"RAGE"`,
-  `"FOCUS"`, `"ENERGY"`, or `"HAPPINESS"`.
+  `"FOCUS"`, `"ENERGY"`, `"COMBO_POINTS"`, or `"HAPPINESS"`.
+
+A change of the player's combo points fires `UNIT_POWER_UPDATE` and
+`UNIT_POWER_FREQUENT` with `"COMBO_POINTS"` for each token of the player.
+`PLAYER_COMBO_POINTS` also fires, as before. The maximum of combo points does
+not change, so `UNIT_MAXPOWER` does not fire for them.
 
 The client gets each power change from the server, so
 `UNIT_POWER_FREQUENT` fires at the same times as `UNIT_POWER_UPDATE`. The
@@ -7294,7 +8854,9 @@ events fire for each unit token that gets unit events. For a unit that the
 client can see, they fire for every power of the unit, not only for its
 primary power. For a group member that the client cannot see, for example
 a member in another zone, they fire for the primary power of the member
-only. The new values are
+only. For such a member, a change of status (for example online or offline)
+fires them only when the member dies, becomes a ghost, or comes back to life.
+The new values are
 [`UnitPower(unitTarget, type)` and `UnitPowerMax(unitTarget, type)`](#unitpowerunit--powertype--unmodified--unitpowermaxunit--powertype--unmodified).
 
 ```lua
@@ -7304,6 +8866,24 @@ f:SetScript("OnEvent", function()
     if arg2 == "ENERGY" then
         print("Energy:", UnitPower("player", Enum.PowerType.Energy))
     end
+end)
+```
+
+### `COMBO_TARGET_CHANGED` event
+
+Fires when the player's combo points move to another unit, that is, when
+the first combo point lands on a new unit. The event has no arguments.
+
+When a rogue or druid targets a different unit, the server sets the combo
+points to `0` (`PLAYER_COMBO_POINTS` and `UNIT_POWER_UPDATE` fire). The combo
+target stays the old unit until a combo point lands on another unit, so this
+event fires then, not when you change targets.
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterEvent("COMBO_TARGET_CHANGED")
+f:SetScript("OnEvent", function()
+    print("Combo points on target:", GetComboPoints("player", "target"))
 end)
 ```
 
@@ -7362,7 +8942,48 @@ UNIT_TARGETABLE_CHANGED: unitTarget
   token.
 
 The event fires for each unit token that gets unit events, and only for
-units that the client can see.
+units that the client can see. It fires one time per unit at the end of
+the frame. If the unit changes more than one time in a frame, one event
+fires.
+
+When a unit stops being selectable, the game first removes it as your
+target, your focus, and your last target. If it is a soft target, the soft
+targets are selected again. These changes occur before the event fires.
+
+### `UNIT_VISIBILITY_CHANGED` event
+
+Fires when a unit comes into the view of the client, or leaves it. This is
+a ClassicAPI extension.
+
+```
+UNIT_VISIBILITY_CHANGED: unitTarget, isVisible
+```
+
+- **`unitTarget`** (string) — the unit token, or the GUID for a frame that
+  used [`RegisterGUIDEvent`](#frameregisterguideventevent-guids). A unit that
+  has more than one token gets one event for each token.
+- **`isVisible`** (boolean) — `true` when the unit came into view, `false`
+  when it left. This is the value that `UnitIsVisible` returns when the event
+  fires.
+
+The event fires at the end of the frame, one time per unit. If a unit leaves
+and comes back in the same frame, no event fires.
+
+When a unit leaves, the event fires only for the tokens that still name it.
+For example, `partyN` names a group member out of view, but `target` stops
+naming a unit that is not in your group. To follow such a unit, register
+its GUID.
+
+A loading screen fires no event. After a loading screen, read
+`UnitIsVisible` in your `PLAYER_ENTERING_WORLD` handler.
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterGUIDEvent("UNIT_VISIBILITY_CHANGED", UnitGUID("party1target"))
+f:SetScript("OnEvent", function(self, event, guid, isVisible)
+    print(guid, isVisible and "came into view" or "left view")
+end)
+```
 
 ### `UPDATE_MOUSEOVER_UNIT` event (loss-fire fix)
 
@@ -8138,9 +9759,9 @@ time with `"target"` and one time with `"focus"`. (`OnEvent` handlers read
 the `arg1` global, not a function parameter.)
 
 **Unit events for `"focustarget"`.** The unit that your focus targets also
-fires its unit events, with `arg1 == "focustarget"`. This is a ClassicAPI
-extension. When the focus changes its target, the events follow the new
-target within one frame.
+fires its unit events, with `arg1 == "focustarget"`. When the focus changes
+its target, the events follow the new target within one frame. Refer to
+[Unit events and tokens](#unit-events-and-tokens).
 
 [`UnitTokenFromGUID`](#unittokenfromguidguid) scans `"focus"` right
 after `"target"`, so a focused unit's GUID
@@ -8348,17 +9969,57 @@ f.Icon = f:CreateTexture()
 print(f:GetDebugName())                 -- "SomeFrame"
 print(f.Icon:GetDebugName())            -- "SomeFrame.Icon"
 print(f:CreateTexture():GetDebugName()) -- "SomeFrame.1a2b3c4d"
-print(CreateFrame("Frame"):GetDebugName() == "") -- true
+print(CreateFrame("Frame"):GetDebugName()) -- "5e6f7a8b"
 ```
 
 - A region with a global name returns that name.
 - A region with no name returns the debug name of its parent, a dot, and
   the key that holds the region in the parent's table.
+- If more than one key holds the region, a key that starts with a capital
+  letter (A to Z) is used before the other keys.
 - If no key in the parent holds the region, the address of the region (in
   hex) replaces the key.
-- A region with no name and no parent returns an empty string.
+- A region with no name and no parent returns its address.
 - If `preferParentKey` is `true`, the parent-key form comes before the
-  global name, at each level of the chain.
+  global name, at each level of the chain. If no key holds a named region,
+  the result is the debug name of its parent, a comma, and the global name
+  (`"SomeFrame, OtherName"`).
+- Animation groups, animations, control points and model scene actors also
+  have this method. Their parent is the object that `:GetParent()` returns.
+
+### `region:GetParentKey()` / `region:SetParentKey(parentKey[, clearOtherKeys])` / `region:ClearParentKey()`
+
+Gets, sets or removes the key under which the parent of a region holds the
+region in its table.
+
+```lua
+local f = CreateFrame("Frame", "SomeFrame", UIParent)
+local t = f:CreateTexture()
+t:SetParentKey("Icon")
+print(f.Icon == t, t:GetParentKey()) -- true  Icon
+t:SetParentKey("Glow", true)
+print(f.Icon, t:GetParentKey())      -- nil  Glow
+t:ClearParentKey()
+print(f.Glow, t:GetParentKey())      -- nil  nil
+```
+
+- `GetParentKey` returns the key in the table of the parent that holds the
+  region. If no key holds the region, or the region has no parent, it
+  returns `nil`.
+- If more than one key holds the region, `GetParentKey` returns a key that
+  starts with a capital letter (A to Z) before the other keys.
+- `SetParentKey` sets `parent[parentKey] = region`. A `__newindex`
+  metamethod on the parent runs. A number for `parentKey` becomes a string.
+- Old keys stay in the table of the parent. If `clearOtherKeys` is `true`,
+  `SetParentKey` first removes all the keys that hold the region.
+- If `parentKey` is an empty string, or the region has no parent,
+  `SetParentKey` does not set a key.
+- `ClearParentKey` removes all the string keys that hold the region. The
+  entries that `parentArray` adds stay.
+- `SetParent` does not move the key. After a region gets a new parent, the
+  old parent still holds it, and `GetParentKey` looks only in the new parent.
+- Animation groups, animations, control points and model scene actors also
+  have these methods. Their parent is the object that `:GetParent()` returns.
 
 ### `region:SetToDefaults()`
 
@@ -8368,18 +10029,29 @@ is first made with no template. Use it to reuse a frame from a pool.
 The state that the template, `CreateFontString` or the frame type gave the
 object is also removed:
 
-- A frame loses its anchors, size, scripts, attributes and mouse input. Its
-  alpha and scale become 1, its frame strata becomes `MEDIUM` and its frame
-  level becomes one more than the level of its parent. The frame is shown.
+- A frame loses its anchors, size, scripts, attributes, mouse input and
+  pass-through buttons. Its alpha and scale become 1, its frame strata
+  becomes `MEDIUM` and its frame level becomes one more than the level of its
+  parent. The draw layers `BACKGROUND` to `OVERLAY` are on and `HIGHLIGHT` is
+  off. A movable or resizable frame is no longer user-placed. The frame is
+  shown.
 - A button also loses its text, its font objects and its highlight lock. It
-  is enabled and in the `NORMAL` state. It has no mouse input, but a new
-  button has mouse input.
-- A texture loses its file, texture coordinates and vertex color. Its blend
-  mode becomes `BLEND` and its draw layer becomes `BACKGROUND`.
-- A font string loses its text and its font. `GetFont()` returns `nil`, so
-  set a font or a font object before you set text again. The text color
-  becomes white, the shadow becomes black with no offset, and the justify
-  becomes `CENTER` and `MIDDLE`.
+  is enabled and in the `NORMAL` state. It is registered for `LeftButtonUp`
+  clicks and for `AnyUp` and `AnyDown` with `RegisterForMouse`. Its normal,
+  pushed, disabled and highlight textures stay, but they show no image. It
+  has no mouse input, but a new button has mouse input. A check button is
+  not checked.
+- A status bar becomes horizontal with the `STANDARD` fill style, a range of
+  0 to 1, a value of 0 and a white bar. A scroll frame scrolls back to 0, 0.
+  An edit box loses its text and its limits, takes the focus automatically
+  again, and has no focus.
+- A texture loses its file, texture coordinates, vertex color, rotation and
+  tiling. Its blend mode becomes `BLEND` and its draw layer becomes
+  `BACKGROUND`. It keeps its mask textures.
+- A font string loses its text, its font and its rotation. `GetFont()`
+  returns `nil`, so set a font or a font object before you set text again.
+  The text color becomes white, the shadow becomes black with no offset, and
+  the justify becomes `CENTER` and `MIDDLE`.
 
 These do not change: the parent, keyboard and mouse wheel input, the
 registered events, the child regions of a frame (for example, the textures
@@ -8477,7 +10149,7 @@ cd:GetDrawEdge()                -- true
 
 | Method | Notes |
 | --- | --- |
-| `cooldown:SetCooldown(start, duration [, modRate])` | Starts the sweep and shows the frame. `start` and `duration` are numbers in seconds. `start` is a time value, for example the value that `GetTime()` returns. When `duration` is over, the frame shows the flash for one second and then hides. `modRate` is `1` by default. It does not change when the sweep ends. The flash lasts `modRate` seconds, and `GetCooldownDisplayDuration` divides by `modRate`. |
+| `cooldown:SetCooldown(start, duration [, modRate])` | Starts the sweep and shows the frame. `start` and `duration` are numbers in seconds. `start` is a time value, for example the value that `GetTime()` returns. When `duration` is over, the frame shows the flash for one second and then hides. If `start` is `0`, the call does nothing. If `duration` is `0` while a sweep runs, the sweep stops and the flash plays, but `OnCooldownDone` does not run. `modRate` is `1` by default, and a value that is not more than `0` is `1`. It does not change when the sweep ends. The countdown numbers and `GetCooldownDisplayDuration` divide by `modRate`, and the flash lasts `modRate` seconds. For example, a 4-second cooldown with `modRate` `0.5` counts down from `8` and ends after 4 seconds. |
 | `cooldown:SetCooldownDuration(duration [, modRate])` | Starts a cooldown of `duration` seconds at the current time. |
 | `cooldown:SetCooldownFromExpirationTime(expirationTime, duration [, modRate])` | Starts a cooldown of `duration` seconds that ends at `expirationTime`. |
 | `cooldown:Clear()` | Stops the cooldown and hides the frame. There is no flash, and `OnCooldownDone` does not run. |
@@ -8496,12 +10168,14 @@ cd:GetDrawEdge()                -- true
 | `cooldown:SetEdgeTexture(texture [, r, g, b, a])` | Sets the texture and the color of the edge line. The texture turns about its center with the sweep. Draw the line from the center to the top edge, as in `Interface\Cooldown\edge`, the default texture. |
 | `cooldown:SetBlingTexture(texture [, r, g, b, a])` | Sets the texture and the color of the flash at the end. The default flash is `Interface\Cooldown\star4` in light blue. |
 | `cooldown:SetRotation(radians)` / `cooldown:GetRotation()` | Sets and returns the angle where the sweep starts, in radians, clockwise from the top. For example, `math.pi / 2` starts the sweep at the right side. The angle is `0` when the frame is created. |
+| `cooldown:SetEdgeScale(scale)` / `cooldown:GetEdgeScale()` | Sets and returns the size of the edge texture, relative to the frame. A larger value zooms the texture in. A value less than `0.001` is `0.001`. Until you set it, the size follows the effective scale of the frame. |
+| `cooldown:SetUseCircularEdge([useCircularEdge])` | Sets the edge scale. `true` sets it to `1`. `false` or `nil` sets it to the square root of 2. There is no getter; use `GetEdgeScale()`. |
 | `cooldown:SetHideCountdownNumbers(hide)` / `cooldown:GetHideCountdownNumbers()` | Sets and returns whether the countdown numbers are hidden. The flag is `false` when the frame is created. |
 | `cooldown:GetCountdownFontString()` | Returns the font string that shows the countdown numbers. It uses `Fonts\FRIZQT__.TTF`, size 16, with an outline, at the center of the frame. You can change its font, color, and position. |
 | `cooldown:SetCountdownAbbrevThreshold(seconds)` / `cooldown:GetCountdownAbbrevThreshold()` | Sets and returns the time left in seconds below which the numbers show as `m:ss`, for example `1:56`. Above it, they show whole minutes, for example `3m`. The threshold applies from one minute to one hour. The default is `120`. |
 | `cooldown:SetCountdownMillisecondsThreshold(seconds)` / `cooldown:GetCountdownMillisecondsThreshold()` | Sets and returns the time left in seconds below which the numbers show tenths of a second, for example `3.3`. The default is `0`, so the numbers show whole seconds. |
-| `cooldown:SetMinimumCountdownDuration(milliseconds)` / `cooldown:GetMinimumCountdownDuration()` | Sets and returns the duration that a cooldown must be longer than to show numbers. The value applies to the full duration, not to the time left. The default is `2000`. |
-| `cooldown:SetCountdownFormatter([formatter])` / `cooldown:GetCountdownFormatter()` | Sets and returns the formatter that makes the countdown text. Give a formatter from [`C_StringUtil.CreateNumericRuleFormatter`](#c_stringutilcreatenumericruleformatter), or `nil` to use the default numbers again. `GetCountdownFormatter` returns `nil` if there is no formatter. |
+| `cooldown:SetMinimumCountdownDuration(milliseconds)` / `cooldown:GetMinimumCountdownDuration()` | Sets and returns the duration that a cooldown must be longer than to show numbers. The value applies to the full duration divided by `modRate`, not to the time left. The default is `2000`. |
+| `cooldown:SetCountdownFormatter([formatter])` / `cooldown:GetCountdownFormatter()` | Sets and returns the formatter that makes the countdown text. Give a formatter from [`C_StringUtil.CreateNumericRuleFormatter`](#c_stringutilcreatenumericruleformatter), or `nil` to use the default numbers again. `GetCountdownFormatter` returns `nil` if there is no formatter. It returns a `NumericFormatter` object for the formatter, which has only `FormatNumber`. |
 
 For the three texture methods, `texture` is a file path. An empty string
 gives a solid color. If you do not give `r`, `g`, and `b`, the color does
@@ -8821,6 +10495,42 @@ f:SetText("a really long guild or player name that will not fit")
 -- draws "a really long gu..."   ; f:IsTruncated() -> true
 ```
 
+### `fontstring:SetAlphaGradient(start, length)` / `fontstring:GetAlphaGradient()` / `fontstring:ClearAlphaGradient()`
+
+Fades the text out from one glyph on. The quest frame uses this to show
+quest text a few letters at a time.
+
+- `start` is the first glyph that fades, counted from `0`. Only the glyphs
+  that draw count: color codes, link markers, inline textures and line breaks
+  do not. The count continues across lines.
+- `length` sets the length of the fade. Each glyph after `start` is less
+  opaque than the one before it, and the text is fully transparent about
+  `length / 2` glyphs after `start`. A `length` larger than the text's alpha
+  (0 to 255) gives no fade.
+
+`SetAlphaGradient` returns `true` while `start` is inside the text and `false`
+when `start` is past the last glyph. Both arguments are required and must be
+whole numbers in the 32-bit range (a fraction rounds toward `0`). A `length`
+below `1` raises `<name>:SetAlphaGradient(): length must be greater than 0`.
+
+`GetAlphaGradient` returns `start, length`. `start` is `-1` when no gradient is
+set. `ClearAlphaGradient` removes the gradient, and `GetAlphaGradient` then
+returns `-1, 0`.
+
+The gradient stays when the text changes.
+
+```lua
+local reveal = 0
+text:SetAlphaGradient(0, 30)
+f:SetScript("OnUpdate", function()
+    reveal = reveal + arg1 * 40          -- 40 glyphs a second
+    if not text:SetAlphaGradient(reveal, 30) then
+        text:ClearAlphaGradient()        -- all of the text shows
+        f:SetScript("OnUpdate", nil)
+    end
+end)
+```
+
 ### `fontstring:SetIndentedWordWrap([indent])` / `fontstring:GetIndentedWordWrap()`
 
 When `indent` is true, every line of the text after the first starts 15
@@ -8991,10 +10701,13 @@ buttons, and other shaped art.
 
 `path` is a mask texture. The mask's ALPHA channel is the shape: where the mask
 is opaque the texture shows, where the mask is transparent the texture is
-hidden. The mask stretches across the texture's full display area, so it always
-lines up with the texture. Pass `nil` or `""` to remove the mask; the texture
-returns to its full rectangle. If the file does not load, the texture keeps the
-mask it had.
+hidden. The mask's alpha replaces the alpha of the texture, and the mask's
+color is not used. The mask stretches across the texture's full display area,
+so it always lines up with the texture. A number is read as a path.
+
+Pass `""` to remove the mask; the texture returns to its full rectangle. A file
+that does not load also removes the mask. `nil` raises
+`Usage: self:SetMask(file)`.
 
 A mask file must be one the client can load and must hold its shape in the alpha
 channel:
@@ -9015,17 +10728,18 @@ local t = frame:CreateTexture(nil, "ARTWORK")
 t:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
 t:SetMask("Textures\\MinimapMask")               -- clip the icon to a circle
 t:SetMask("Interface\\AddOns\\MyAddon\\round")   -- or your own mask texture
-t:SetMask(nil)                                    -- remove the mask
+t:SetMask("")                                     -- remove the mask
 ```
 
 > The mask ignores `SetTexCoord`. If you crop the
 > texture to one sprite of a sprite sheet, the full mask shape still clips that
 > sprite. The mask follows
-> [`texture:SetRotation`](#texturesetrotationangle--cx-cy). It also combines
+> [`texture:SetRotation`](#texturesetrotationangle--cx-cy) and
+> `texture:SetVertexOffset`. It also combines
 > with masks from [`texture:AddMaskTexture`](#textureaddmasktexturemask): the
 > texture shows only where every mask is opaque.
 
-### `frame:CreateMaskTexture([name, layer, ...])`
+### `frame:CreateMaskTexture([name, drawLayer, templateName, subLevel])`
 
 Creates a MaskTexture and returns it. A MaskTexture is a texture that never draws
 itself. Instead it clips other textures to its shape.
@@ -9035,9 +10749,11 @@ Give the mask a shape with `SetTexture`, place and size it like any texture
 `texture:AddMaskTexture`. Because the mask has its own position and size, it can
 cover only part of the target, sit to one side, or move each frame.
 
-The arguments match `frame:CreateTexture`. The mask shape lives in the texture's
-alpha channel and must load from a BLP or an uncompressed 32-bit TGA — the same
-rule as [`texture:SetMask`](#texturesetmaskpath).
+The first three arguments match `frame:CreateTexture`. `subLevel` must be from
+`-8` to `7`, or the call raises `Sublevel must be between -8 and 7`. The mask
+shape lives in the texture's alpha channel and must load from a BLP or an
+uncompressed 32-bit TGA — the same rule as
+[`texture:SetMask`](#texturesetmaskpath).
 
 ```lua
 local mask = frame:CreateMaskTexture()
@@ -9046,21 +10762,36 @@ mask:SetAllPoints(icon)      -- cover the whole icon → a round icon
 icon:AddMaskTexture(mask)
 ```
 
+Behavior notes:
+
+- `mask:GetObjectType()` returns `"MaskTexture"`. `mask:IsObjectType("MaskTexture")`
+  and `mask:IsObjectType("Texture")` both return `true`.
+- A mask is shown when it is created, and it never draws. A hidden mask still
+  clips.
+- A MaskTexture has no `AddMaskTexture`, `RemoveMaskTexture`,
+  `GetNumMaskTextures` or `GetMaskTexture` methods.
+
 ### `texture:AddMaskTexture(mask)`
 
 Clips this texture to `mask`'s shape and position. Where the mask is opaque the
-texture shows; where the mask is transparent the texture is hidden.
+texture shows; where the mask is transparent the texture is hidden. `mask` must
+be a MaskTexture, or the call raises `Usage: self:AddMaskTexture(mask)`.
 
 Call it again with a different mask to add another. A texture with several masks
 shows only where ALL of them are opaque — the masks intersect. So two circles
 show their overlapping lens, and a square plus a circle show a square with
-rounded corners. Up to 7 masks apply at once. A mask set with
-[`texture:SetMask`](#texturesetmaskpath) uses one of the 7 slots. Masks cannot
-subtract, so you cannot cut a hole with this.
+rounded corners. Masks cannot subtract, so you cannot cut a hole with this.
 
-A mask honors [`texture:SetRotation`](#texturesetrotationangle--cx-cy): rotate
-the mask and its clip shape turns with it. The mask can also move or resize each
-frame (drive it from an `OnUpdate`), so the clip animates.
+A texture takes up to 3 masks. A fourth call raises
+`<name>:AddMaskTexture(): Texture already has the maximum number of mask textures (3)`,
+also when the mask is already attached. Adding the same mask again below the
+limit does nothing. A mask set with [`texture:SetMask`](#texturesetmaskpath)
+does not count.
+
+A mask follows its own [`texture:SetRotation`](#texturesetrotationangle--cx-cy)
+and `texture:SetVertexOffset`: the clip shape turns and warps with it. The
+mask can also move or resize each frame (drive it from an `OnUpdate`), so the
+clip animates.
 
 > Outside its own rectangle, a mask repeats the alpha of its nearest edge
 > pixel. A mask whose outer edge is transparent, like a circle, hides the
@@ -9068,10 +10799,11 @@ frame (drive it from an `OnUpdate`), so the clip animates.
 > texture past its rectangle. To clip only part of a texture, use a mask with
 > a transparent border.
 
-### `texture:RemoveMaskTexture([mask])`
+### `texture:RemoveMaskTexture(mask)`
 
-Removes `mask` from this texture. With no argument, removes every mask, so the
-texture returns to its full rectangle.
+Removes `mask` from this texture. `mask` must be a MaskTexture, or the call
+raises `Usage: self:RemoveMaskTexture(mask)`. A mask that is not attached is
+not an error.
 
 ### `texture:GetNumMaskTextures()`
 
@@ -9080,23 +10812,189 @@ Returns the number of masks attached to this texture.
 ### `texture:GetMaskTexture(index)`
 
 Returns the mask at `index` (1 is the first one added), or `nil` when there is
-no mask at that index.
+no mask at that index. `index` is required. A value that is not a number from
+`0` to `4294967295` raises an error. A fraction rounds down, and `0` returns
+`nil`.
 
-### `texture:SetAtlas(atlas [, useAtlasSize])`
+### `frame:CreateLine([name, drawLayer, templateName, subLevel])`
+
+Creates a Line and returns it. A Line is a texture that draws a straight band
+from one point to another. Each end follows the region that it is anchored to,
+so the line moves when that region moves.
+
+The first three arguments match `frame:CreateTexture`. `drawLayer` must be a
+layer name, and the default is `"ARTWORK"`. `subLevel` must be from `-8` to
+`7`, or the call raises `Sublevel must be between -8 and 7`. An argument of the
+wrong type raises
+`Usage: local line = self:CreateLine([name, drawLayer, templateName, subLevel])`.
+
+A new line has no ends, so it draws nothing. Set both ends with
+`line:SetStartPoint` and `line:SetEndPoint`. With `templateName`, each end that
+the template does not set goes to a corner of the frame. The start goes to
+`TOPLEFT` and the end goes to `BOTTOMRIGHT`.
+
+```lua
+local line = frame:CreateLine(nil, "ARTWORK")
+line:SetColorTexture(1, 0.8, 0, 1)
+line:SetThickness(2)
+line:SetStartPoint("RIGHT", iconA)
+line:SetEndPoint("LEFT", iconB)
+```
+
+Behavior notes:
+
+- `line:GetObjectType()` returns `"Line"`. `line:IsObjectType("Line")` and
+  `line:IsObjectType("Texture")` both return `true`.
+- A Line has the methods of a texture: color, file, atlas, texture
+  coordinates, tiling, vertex color and blend mode. It has no
+  `AddMaskTexture`, `RemoveMaskTexture`, `GetNumMaskTextures` or
+  `GetMaskTexture` methods.
+- The image runs along the line. Its left edge is at the start and its right
+  edge is at the end.
+- `SetHorizTile` repeats the image along the length of the line.
+  `SetVertTile` repeats it across the width.
+- `SetRotation` has no effect on a line.
+- `SetVertexOffset` moves a corner along the line and across it. `offsetX`
+  moves it along the line. A positive `offsetY` moves it to the right of the
+  direction from the start to the end.
+- `GetLeft`, `GetTop`, `GetRect` and the other edge methods give the
+  rectangle from the start to the end. This rectangle does not include the
+  width of the line.
+- On a line, `IsMouseOver` ignores its offset arguments. Refer to
+  `line:SetHitRectThickness`.
+
+CAUTION: Do not use `SetPoint`, `SetAllPoints` or `ClearPoint` on a line. Use
+`SetStartPoint` and `SetEndPoint`. These methods disconnect the line from its
+ends, and the line then stops following them.
+
+### `line:SetStartPoint(relativePoint [, relativeTo] [, offsetX, offsetY])` / `line:SetEndPoint(...)`
+
+Anchors one end of the line to a point of a region. `relativePoint` is a point
+name, for example `"TOPLEFT"` or `"CENTER"`. `relativeTo` is one of these:
+
+- a region, or the name of a region. A name can start with `$parent`.
+- `nil`. The end is then anchored to the screen.
+- left out. The end is then anchored to the parent of the line, and `offsetX`
+  and `offsetY` can be the second and third arguments.
+
+The offsets apply only when both are numbers. Otherwise, both are 0.
+
+```lua
+line:SetStartPoint("TOPLEFT", 10, -10)  -- 10, -10 from the top-left of the parent
+line:SetEndPoint("CENTER", UIParent)
+```
+
+These causes give an error with the form
+`<name>:SetStartPoint()(): <message>`:
+
+- `relativePoint` is not a string:
+  `Arguments: ("relativePoint" [, region or nil] [, offsetX, offsetY])`.
+- `relativePoint` is not a point name: `Unknown region point`.
+- No region has the name: `Couldn't find region named '<name>'`.
+- `relativeTo` is the line: `Trying to anchor to itself`.
+- `relativeTo` is anchored to the line: `<name> is dependent on this`.
+
+### `line:GetStartPoint()` / `line:GetEndPoint()`
+
+Returns the anchor of one end: `relativePoint, relativeTo, offsetX, offsetY`.
+`relativeTo` is `nil` when the end is anchored to the screen. When the end has
+no anchor, the method returns nothing.
+
+### `line:ClearAllPoints()`
+
+Removes the anchors of both ends. The line then draws nothing until you set
+both ends again.
+
+### `line:SetThickness(thickness)` / `line:GetThickness()`
+
+Sets or returns the width of the line. The default is 4. The width follows
+the scale of the frame, the same as a width from `SetWidth`. The method
+accepts 0 and negative values. `SetThickness` without a number raises
+`Usage: self:SetThickness(thickness)`.
+
+### `line:SetHitRectThickness(thickness)` / `line:GetHitRectThickness()`
+
+Sets or returns how far the mouse area extends past the width of the line. The
+default is 0.
+
+`line:IsMouseOver()` is `true` when the cursor is in a rectangle around the
+line. The width of this rectangle is the width of the line plus this value. The
+rectangle also extends past each end by half of its width. This value does not
+follow the scale of the frame.
+
+`SetHitRectThickness` without a number raises
+`Usage: self:SetHitRectThickness(thickness)`.
+
+### XML `<Line>`
+
+A `<Line>` goes in a `<Layer>`, the same as a `<Texture>`. It takes the
+attributes and children of `<Texture>`, and also these:
+
+- `thickness`: the width of the line.
+- `<StartAnchor>` and `<EndAnchor>`: the two ends.
+
+`<StartAnchor>` and `<EndAnchor>` take the attributes and children of
+`<Anchor>`: `point`, `relativePoint`, `relativeTo`, `relativeKey`, `x`, `y` and
+`<Offset>`. The end goes on `relativePoint` of the region. When `relativePoint`
+is not there, `point` gives it. With no `relativeTo` and no `relativeKey`, the
+end is anchored to the parent. Only the first `<StartAnchor>` and the first
+`<EndAnchor>` apply.
+
+```xml
+<Layer level="ARTWORK">
+  <Line name="$parentLink" thickness="2">
+    <Color r="1" g="0.8" b="0"/>
+    <StartAnchor relativePoint="RIGHT" relativeTo="$parentIconA"/>
+    <EndAnchor relativePoint="LEFT" relativeTo="$parentIconB" x="-4" y="0"/>
+  </Line>
+</Layer>
+```
+
+An end that the element and its templates do not set goes to a corner of the
+parent. The start goes to `TOPLEFT` and the end goes to `BOTTOMRIGHT`. A
+`<Line virtual="true">` is a template for `<Line inherits="...">` and for
+`frame:CreateLine`.
+
+A `relativeKey` must name an object that exists when the line loads. A frame
+loads its layers before its child frames, so a key cannot name a child frame.
+
+### `texture:SetAtlas(atlas [, useAtlasSize, filterMode, resetTexCoords])`
 
 Points the texture at a named piece of art. This sets the texture file and the
 coordinates of the rectangle inside it, so one call replaces a `SetTexture` and a
 `SetTexCoord`. See [Texture](#texture) for the atlas names and for
 `C_Texture.RegisterAtlas`.
 
-Pass `true` for `useAtlasSize` to also resize the texture to the art's own pixel
-size. Any further arguments are accepted and ignored.
+- `useAtlasSize` — `true` also resizes the texture to the art's own pixel size.
+- `filterMode` — accepted and ignored.
+- `resetTexCoords` — `true` shows the whole of the art. When it is `false` or
+  `nil`, the texture keeps its texture coordinates, and they select part of
+  the new art.
+
+Further arguments are accepted and ignored.
 
 After `SetAtlas`, texture coordinates address the art and not the file it sits
 in, so `0` to `1` covers the whole of the art. `SetTexCoord(0, 0.5, 0, 0.5)`
 shows the top-left quarter of the art, and `GetTexCoord` reads back what you
 asked for. `SetTexture` points the texture at a file again and clears the atlas.
-`SetAtlas` turns tiling off and sets both wrap modes to `"CLAMP"`.
+
+Because the coordinates stay, you can set a mirror before the art. A frame
+border uses this to draw four corners from one corner piece:
+
+```lua
+corner:SetTexCoord(1, 0, 0, 1)   -- mirror left to right
+corner:SetAtlas("MinimapArrow", true)
+```
+
+`SetAtlas` sets both wrap modes to `"CLAMP"`, and sets tiling to the
+atlas's own `tilesHorizontally` and `tilesVertically`. An atlas tiles only
+when its art fills its file in the direction it tiles. Otherwise tiling stays
+off for that direction.
+
+Some atlases draw as a nine-slice: the corners keep their size when the
+texture is larger than the art. For these atlases, `SetAtlas` sets the slice
+margins and the slice mode of the atlas. Any other atlas clears the margins. See
+[`texture:SetTextureSliceMargins`](#texturesettextureslicemarginsleft-top-right-bottom--texturegettextureslicemargins).
 
 When the name is not known, the texture keeps whatever it was showing. Call
 `_classicapi_DumpAtlasMisses()` to list the names that were asked for and not
@@ -9189,8 +11087,12 @@ more than three times across. The count changes when the texture changes size.
 Tiling sets each coordinate on that axis that is not `0` to the repeat count,
 so `GetTexCoord` returns the count. The count needs the size of the image, so
 for a new image it is set when the texture is first drawn. Tiling stays on when
-`SetTexture` sets a new file. A texture that shows an atlas does not tile, and
-neither does a texture with `SetTexCoordModifiesRect` on.
+`SetTexture` sets a new file. A texture with `SetTexCoordModifiesRect` on does
+not tile.
+
+A texture that shows an atlas repeats the art at the atlas's own size, not
+the size of the file. It tiles only in a direction where the art fills its
+file. In any other direction it shows the art once.
 
 A tiled status bar texture keeps the image at its own size as the bar fills.
 The bar shows more or fewer copies and does not squeeze the image.
@@ -9216,16 +11118,110 @@ so one strip of a file can tile:
 </Texture>
 ```
 
+### `texture:SetSnapToPixelGrid(snap)` / `texture:SetTexelSnappingBias(bias)`
+
+Both are accepted and ignored. This client does not move texture edges or
+texels onto whole screen pixels, so there is no snapping to turn off. There
+are no matching getters.
+
+### `texture:SetTextureSliceMargins(left, top, right, bottom)` / `texture:GetTextureSliceMargins()`
+
+Draws the texture as a nine-slice. The margins cut the image into nine pieces:
+four corners, four edges and the center. The corners keep their size. The top
+and bottom edges stretch across, and the left and right edges stretch down. The
+center stretches in both directions. Thus a panel background keeps its corners
+and its border at the same size when the panel changes size.
+
+The margins are whole numbers of image pixels, from `0` to `4294967295`. A
+fraction is cut to a whole number. A negative value is an error. One pixel of
+a corner covers one unit of the width or the height of the texture.
+
+- In a direction where the texture is not larger than the image, the image is
+  not sliced. It shrinks as a whole in that direction.
+- When one direction has no margins, the corners and edges of the other
+  direction scale with it. For example, a bar with only left and right margins
+  that is drawn twice as tall as its image gets caps twice as wide.
+- If the texture is smaller than the two margins of one direction, the two
+  margins shrink by the same ratio. Each corner and edge still shows its full
+  margin of the image. When the two margins of one direction are wider than
+  the image, both pieces show their full margin, and the rows or columns where
+  they overlap show in both pieces.
+
+`GetTextureSliceMargins()` returns the four margins. It returns nothing when
+the texture has no margins and no mode. After only `SetTextureSliceMode`, it
+returns `0, 0, 0, 0`. Margins of `0` draw the image whole.
+
+`SetTexture` keeps the margins. `SetAtlas` replaces them with the slice data of
+the atlas, and an atlas without slice data clears them. `SetToDefaults` clears
+them.
+
+```lua
+local bg = frame:CreateTexture(nil, "BACKGROUND")
+bg:SetAllPoints()
+bg:SetTexture("Interface\\AddOns\\MyAddon\\panel")   -- a 64x64 image
+bg:SetTextureSliceMargins(16, 16, 16, 16)
+```
+
+Notes on a sliced texture:
+
+- `SetTexCoord` selects the part of the image that is sliced. The margins
+  start at the edges of this part. Thus a status bar with a sliced fill shows
+  its end cap at the end of the fill.
+- Coordinates that turn the image by a quarter turn draw the image whole.
+- A texture with `SetHorizTile` or `SetVertTile` on draws the image whole.
+- `SetRotation`, `SetVertexOffset` and animations move all the pieces together.
+  The corners keep their size.
+- A gradient from `SetGradient` or `SetGradientAlpha` goes once across the
+  whole texture.
+
+### `texture:SetTextureSliceMode(sliceMode)` / `texture:GetTextureSliceMode()`
+
+Sets whether the edges and the center of a sliced texture stretch or tile.
+`sliceMode` is a value of [`Enum.UITextureSliceMode`](#enumuitextureslicemode).
+A value that is not in this enum is an error. A fraction is cut to a whole
+number.
+
+In the `Tiled` mode, the edges and the center repeat the part of the image
+between the margins at its own size. One pixel of the image covers one unit of
+the texture, the same as in the corners. The top and bottom edges repeat
+across, the left and right edges repeat down, and the center repeats in both
+directions. The repeats start next to the top-left corner. The last repeat in
+each direction is cut off at the far margin, so no repeat is squeezed. A
+direction without margins does not repeat. A very large texture with a very
+small repeat draws stretched instead.
+
+`GetTextureSliceMode()` returns the mode. It returns nothing when the texture
+has no margins and no mode. The default mode is `Stretched`.
+
+### `texture:ClearTextureSlice()`
+
+Clears the slice margins and the slice mode. The texture then draws the image
+whole. To draw a sliced atlas without slices, call `ClearTextureSlice()` after
+`SetAtlas`.
+
+### `Enum.UITextureSliceMode`
+
+How the edges and the center of a sliced texture fill their space.
+
+| Field | Value |
+|---|---|
+| `Stretched` | 0 |
+| `Tiled` | 1 |
+
 ### `texture:SetDesaturation(amount)`
 
 Removes some or all of the color from a texture. `amount` is a number from `0`
 (full color) to `1` (grayscale). The method clamps values outside this range.
 At every amount, the texture keeps the tint that `SetVertexColor` gives it.
 
+`amount` must be a number; a string such as `"0.5"` raises
+`Usage: self:SetDesaturation(desaturation)`.
+
 `SetDesaturated(true)` is the same as `SetDesaturation(1)`, and
-`SetDesaturated(false)` is the same as `SetDesaturation(0)`. All three methods
+`SetDesaturated(false)` is the same as `SetDesaturation(0)`. `SetDesaturated()`
+with no argument is the same as `SetDesaturated(false)`. All these methods
 change the same setting, so `SetDesaturated(false)` also clears a partial
-amount.
+amount. `texture:IsDesaturated()` returns `true` for any amount above `0`.
 
 ```lua
 icon:SetDesaturation(0.5)          -- half of the color is gone
@@ -9247,7 +11243,8 @@ that `SetDesaturated(true)` made gray returns `1`.
 
 The texture stores the amount in 255 steps, so the value that you read back can
 differ a little from the value that you set. For example, `0.5` reads back as
-`0.50196`.
+`0.50196`. An amount above `0` stores at least the first step, so it never reads
+back as `0`.
 
 ### `IsDesaturateSupported()`
 
@@ -9436,6 +11433,53 @@ its `OnEnable` script. `slider:SetEnabled(enabled)` calls `Enable()` when
   and `slider:SetValue()` still changes its value.
 - Each call runs the script, also when the slider is already in that state.
 
+### `slider:SetValue(value [, treatAsMouseEvent])` and `OnValueChanged(self, value, userInput)`
+
+`slider:SetValue(value)` rounds `value` to the nearest value step above the
+minimum, then clamps it to the range. A value at or above the maximum is
+not rounded, so the slider can always reach its maximum.
+
+`OnValueChanged` gets a second argument, `userInput`. It is `true` when the
+mouse moved the slider, and `false` when code set the value.
+
+- If the new value is within `0.0000002` of the current value, nothing
+  changes and `OnValueChanged` does not run.
+- A value from the mouse always runs `OnValueChanged`, also when the value
+  does not change. The slider rounds it only when
+  `slider:GetObeyStepOnDrag()` is `true`.
+- If `treatAsMouseEvent` is `true`, `SetValue` handles `value` as a value
+  from the mouse, and `userInput` is `true`.
+
+```lua
+slider:SetScript("OnValueChanged", function(self, value, userInput)
+    if userInput then SetCVar("myVolume", value) end
+end)
+```
+
+### `slider:SetObeyStepOnDrag(obeyStepOnDrag)` / `slider:GetObeyStepOnDrag()`
+
+Sets and returns whether the slider rounds a dragged value to the value
+step. The value is `true` when the slider is created. Set it to `false` to
+let the thumb move freely between steps. In XML, use the `obeyStepOnDrag`
+attribute of `<Slider>`. If `obeyStepOnDrag` is `nil` or missing, the method
+gives a usage error.
+
+### `slider:SetStepsPerPage(stepsPerPage)` / `slider:GetStepsPerPage()`
+
+Sets and returns how many value steps a click outside the thumb moves the
+value. The value moves toward the click, and no drag starts. A click on the
+thumb starts a drag. The value is `0` when the slider is created: then a
+click anywhere moves the thumb to the cursor and starts a drag. In XML, use
+the `stepsPerPage` attribute of `<Slider>`.
+
+- The slider keeps the value as a whole number from `-128` to `127`. A
+  larger value wraps around: for example, `200` becomes `-56`. A value less
+  than `1` does not move the value.
+
+### `slider:IsDraggingThumb()`
+
+Returns `true` while the mouse drags the slider, and `false` at other times.
+
 ### `OnEnable` and `OnDisable` (scripts)
 
 Every frame can have an `OnEnable` and an `OnDisable` script. Set them with
@@ -9546,9 +11590,14 @@ end
   span of the object later, the bar shows the change on the next frame.
 - After the end time, the bar stays full (`ElapsedTime`) or empty
   (`RemainingTime`). The timer stays on the bar.
+- A zero time span shows an empty bar. With the `StandardNoRangeFill` fill
+  style, it shows a full bar.
 - While the bar has a timer, `GetValue()` returns 0 and `GetMinMaxValues()`
   returns 0, 0. The timer does not run the `OnValueChanged` script.
-- `SetValue` does not remove the timer. `SetMinMaxValues` removes it.
+- `SetValue` does nothing on a bar with a timer. `SetMinMaxValues` removes
+  the timer and runs `OnMinMaxChanged`. The bar then has no value:
+  `GetValue()` returns the minimum, and the fill does not change until the
+  next `SetValue`.
 - A hidden bar does not move. When it shows again, its fill is correct on
   its first frame.
 - The bar keeps its fill style, from `SetFillStyle`, `SetReverseFill` and
@@ -9581,14 +11630,16 @@ healthBar:SetValue(UnitHealth("target"), Enum.StatusBarInterpolation.Exponential
   with `elapsed` in seconds. The speed does not change with the frame rate.
 - The ease works on the fill as a part of the bar. Thus, a full-bar jump
   takes the same time on each range: approximately 0.4 seconds.
-- When the gap is less than 0.1% of the bar, the next frame shows the new
-  value and the ease stops.
+- When the gap is less than 0.1% of the bar at the start of a frame, that
+  frame shows the new value and the ease stops.
 - `GetValue()` returns the new value at once. `OnValueChanged` runs one
   time, at the call, with the new value.
 - A new eased value continues from the fill that the bar shows. An
-  `Immediate` value stops the ease.
-- With `SetMinMaxValues`, the fill keeps its part of the bar and eases to
-  the part that the value has in the new range.
+  `Immediate` value stops the ease. This is also true when the value does
+  not change.
+- `SetMinMaxValues` uses `interpolation` only when the range changes and the
+  bar has a value. Then the fill keeps its part of the bar and eases to the
+  part that the value has in the new range.
 - A hidden bar does not ease. It continues when it shows again.
 - Any `interpolation` value other than `ExponentialEaseOut` works as
   `Immediate`. It does not cause an error.
@@ -9599,7 +11650,7 @@ healthBar:SetValue(UnitHealth("target"), Enum.StatusBarInterpolation.Exponential
 now. While the bar eases, it is between the old value and the new value.
 Else it is the same as `GetValue()`. `statusBar:IsInterpolating()` returns
 `true` while the bar eases. `statusBar:SetToTargetValue()` stops the ease
-and shows the value at once.
+and shows the value at once. When the bar does not ease, it does nothing.
 
 ### `statusBar:SetColorFill(colorR, colorG, colorB [, a])`
 
@@ -9793,10 +11844,13 @@ frame onto a child that passes motion on, the frame does not get `OnLeave`.
 
 - `CanPropagateMouseMotion` returns `true` or `false`. The default is
   `false`.
+- `propagate` is necessary. A change takes effect when the cursor moves.
 - Clicks do not pass on with motion. For clicks, use
   [`frame:SetPropagateMouseClicks`](#framesetpropagatemouseclickspropagate--framecanpropagatemouseclicks).
 - In XML, `propagateMouseInput="Motion"` or `propagateMouseInput="Both"` on
-  a frame sets the value to `true`.
+  a frame sets the value to `true`. `propagateMouseInputMask="Motion"` or
+  `"Both"` keeps the frame from passing motion on, also after a call to
+  `SetPropagateMouseMotion(true)`.
 
 ```lua
 local row = CreateFrame("Button", nil, UIParent)
@@ -9823,8 +11877,10 @@ when it does not. It returns `true` for each frame in
 ### `frame:SetMouseClickEnabled(enabled)` / `frame:SetMouseMotionEnabled(enabled)`
 
 Sets whether the frame takes mouse clicks and whether it takes mouse
-motion. `frame:IsMouseClickEnabled()` and `frame:IsMouseMotionEnabled()`
-return `true` or `false`.
+motion. `frame:EnableMouseMotion(enable)` is the same as
+`frame:SetMouseMotionEnabled(enable)`. With no argument, these methods turn
+the input off. `frame:IsMouseClickEnabled()` and
+`frame:IsMouseMotionEnabled()` return `true` or `false`.
 
 Mouse motion is `OnEnter` and `OnLeave`. Mouse clicks are `OnMouseDown`,
 `OnMouseUp` and the clicks of a button. The two are separate:
@@ -9834,6 +11890,11 @@ Mouse motion is `OnEnter` and `OnLeave`. Mouse clicks are `OnMouseDown`,
 - A frame that takes only clicks never gets `OnEnter` or `OnLeave`. The
   frame under it keeps the mouse motion. A click on the frame goes to the
   frame.
+
+When you turn off the clicks of a frame while you hold a mouse button on
+it, the frame does not get the `OnMouseUp` of that press. When you turn off
+the motion of a frame that is under the cursor, the frame gets `OnLeave`
+immediately.
 
 `frame:EnableMouse(enable)` sets both values. `frame:IsMouseEnabled()`
 returns `1` when the frame takes both clicks and motion, and `nil` when it
@@ -9860,8 +11921,15 @@ next frame can pass the click on too.
 
 - `CanPropagateMouseClicks` returns `true` or `false`. The default is
   `false`.
+- `propagate` is necessary.
+- `OnMouseUp` gets a second argument, `upInside`: `true` when the cursor is
+  on the frame when you release the button.
 - In XML, `propagateMouseInput="Clicks"` or `propagateMouseInput="Both"` on
-  a frame sets the value to `true`.
+  a frame sets the value to `true`. `propagateMouseInputMask="Clicks"` or
+  `"Both"` keeps the frame from passing clicks on, also after a call to
+  `SetPropagateMouseClicks(true)`.
+- Each frame that a click goes to can start its own drag, if it is
+  registered for drags with that button.
 
 ### `frame:SetPassThroughButtons(...)`
 
@@ -9873,9 +11941,10 @@ next frame under the cursor that takes clicks. If there is no such frame,
 the click goes to the game world. The frame still gets clicks with all
 other buttons, and it still gets `OnEnter` and `OnLeave`.
 
-- The arguments are button names: `LeftButton`, `RightButton`,
-  `MiddleButton`, `Button4` and `Button5`. Case is not important. The
-  function ignores other names.
+- The arguments are button names: `LeftButton` (or `Button1`),
+  `RightButton` (or `Button2`), `MiddleButton` (or `Button3`), and `Button4`
+  to `Button31`. Case is not important. The function ignores other names.
+  An argument that is not a string is an error.
 - Each call replaces the list. Call it with no arguments to clear the
   list.
 - If you press a button while you hold a different button, the click goes
@@ -9936,14 +12005,17 @@ You can also set the value in XML with the `useParentLevel` attribute:
 
 Sets or gets whether the frame clips its child frames.
 
-When `clipsChildren` is true, each frame under the frame draws only inside
-the rectangle of the frame. The parts outside the rectangle are not shown,
-and the mouse does not touch them there. The textures and font strings of
-the frame itself are not clipped.
+When `clipsChildren` is true, the textures and font strings of the frame, and
+each frame under the frame, draw only inside the rectangle of the frame. The
+parts outside the rectangle are not shown, and the mouse does not touch the
+frames under it there. A point on the edge of the rectangle is inside.
 
 The clipped frames keep their frame strata and frame levels. A frame under
 two clipping frames draws only where both rectangles overlap.
 
+- `clipsChildren` is required: no argument or `nil` raises
+  `Usage: self:SetClipsChildren(clipsChildren)`. Any other value is true
+  except `false`, so `0` turns clipping on.
 - `DoesClipChildren` returns `true` or `false`. The default is `false`.
 - The rectangle is the area of the frame less its hit rect insets.
 
@@ -9960,19 +12032,25 @@ You can also set the value in XML with the `clipChildren` attribute:
 Fades what the frame draws near its edges.
 
 - `index` is `0` or `1`. Index `0` is the left and top edges. Index `1` is
-  the right and bottom edges.
+  the right and bottom edges. Any other whole number is accepted and does
+  nothing, and a fraction rounds toward `0`. A value outside the 32-bit
+  integer range raises an error.
 - `gradient` is a vector from `CreateVector2D(x, y)`. `x` is the length of
   the fade in from the left or right edge. `y` is the length of the fade in
   from the top or bottom edge. The lengths use the scale of the frame. A
-  length of `0` gives no fade at that edge.
+  length of `0` gives no fade at that edge. `x` and `y` must be finite
+  numbers, or the call raises `Usage: self:SetAlphaGradient(index, gradient)`.
 
 At the edge, the alpha is `0`. The alpha increases in a straight line to full
 alpha at the end of the length. The fade applies to the textures and font
 strings of the frame and to all frames under it.
 
 The fade shows only when the frame clips its children
-(`frame:SetClipsChildren(true)`). `HasAlphaGradient` returns `true` after you
-set a gradient, also when the frame does not clip. `ClearAlphaGradient`
+(`frame:SetClipsChildren(true)`), or when the frame is the scroll child of a
+ScrollFrame. A frame inside it that also clips, or that is a scroll child,
+uses only its own gradient: the outer fade does not reach the content of that
+frame. `HasAlphaGradient` returns `true` after you set a gradient, also when
+the frame does not clip and when the index did nothing. `ClearAlphaGradient`
 removes the gradient of both indexes.
 
 ```lua
@@ -9993,8 +12071,9 @@ Limits:
 
 Sets the desaturation of each texture of the frame and of all frames under it.
 `desaturation` is a number from `0` (full color) to `1` (grayscale), as for
-`texture:SetDesaturation(amount)`. When `excludeRoot` is `true`, the textures
-of the frame itself do not change.
+`texture:SetDesaturation(amount)`. When `excludeRoot` is true, the textures
+of the frame itself do not change; any value except `false` and `nil` is true.
+A value of `desaturation` that is not a finite number raises an error.
 
 The method sets the value on each texture, so `texture:GetDesaturation()`
 returns the new value after the call. A texture that you add later keeps its
@@ -10238,17 +12317,18 @@ end)
 ### `frame:IsEventRegistered(event)`
 
 Returns `true` if the frame is registered for `event`, else `false` (also
-`false` for an unknown event name). If the registration came from
-`frame:RegisterUnitEvent`, the unit tokens follow as extra returns, in the
-order they were given. Works on any frame.
+`false` for an unknown event name). The second return is `nil` if the
+registration has no units. If the registration came from
+`frame:RegisterUnitEvent`, the unit tokens follow the boolean, in the order
+they were given. Tokens come back in lowercase. Works on any frame.
 
 ```lua
 local f = CreateFrame("Frame")
 f:RegisterEvent("PLAYER_LOGIN")
-f:IsEventRegistered("PLAYER_LOGIN")   -- true
-f:IsEventRegistered("PLAYER_LOGOUT")  -- false
+f:IsEventRegistered("PLAYER_LOGIN")   -- true, nil
+f:IsEventRegistered("PLAYER_LOGOUT")  -- false, nil
 
-f:RegisterUnitEvent("UNIT_HEALTH", "player", "target")
+f:RegisterUnitEvent("UNIT_HEALTH", "Player", "target")
 f:IsEventRegistered("UNIT_HEALTH")    -- true, "player", "target"
 ```
 
@@ -10257,7 +12337,10 @@ f:IsEventRegistered("UNIT_HEALTH")    -- true, "player", "target"
 Registers the frame for `event`, but the frame's `OnEvent` runs only when the
 event's first argument (the unit token) is one of `units`. Use it in place of
 `RegisterEvent` for `UNIT_*` events, so a handler for one unit does not receive
-every other unit's events. Returns whether the frame is now registered.
+every other unit's events.
+
+Returns `true` if the call registered the frame or changed its units. Returns
+`false` if the frame was already registered with the same units.
 
 ```lua
 local f = CreateFrame("Frame")
@@ -10267,13 +12350,21 @@ f:SetScript("OnEvent", function(self, event, unit)
 end)
 ```
 
-Unit tokens compare without regard to case. Every token that names a unit
-works, including `focus`, `nameplateN`, and `markN`. A unit that is several
-tokens at once (your target who is also `party1`) fires the event once for
-each token that matches.
+Unit tokens compare without regard to case. The units are these tokens:
+
+- `player`, `pet`, `target`, `targettarget`, `focus`, `focustarget`,
+  `mouseover`, `npc`, `softenemy`, `softfriend`, `softinteract`, and the
+  other tokens of the same client table.
+- `partyN`, `partypetN`, `raidN`, `raidpetN`, `nameplateN` (1 to 150),
+  `bossN`, `arenaN`, and `arenapetN`.
+- `pettarget`, `markN`, and `totemN` (ClassicAPI extension).
+
+The call ignores a token that is not in this list, for example
+`party1target`. A unit that is several tokens at once (your target who is
+also `party1`) fires the event once for each token that matches.
 
 Pass as many units as you need. Other clients take at most four, so keep to
-four for code you also run elsewhere — accepting more is a ClassicAPI
+four for code you also run elsewhere. Accepting more is a ClassicAPI
 extension.
 
 ```lua
@@ -10282,22 +12373,83 @@ f:RegisterUnitEvent("UNIT_HEALTH", "player", "party1", "party2", "party3")
 
 Behavior notes:
 
-- A registration keeps its kind until you unregister it. `RegisterEvent` on a
-  unit-filtered registration keeps the filter. `RegisterUnitEvent` on a plain
-  registration keeps it plain. `RegisterUnitEvent` on a unit-filtered
-  registration replaces the units. To switch kinds, call `UnregisterEvent`
-  first.
-- If you give no unit, or no unit argument is a string, the call acts as
-  `RegisterEvent`.
+- Each register replaces the units of the registration. `RegisterEvent` on a
+  unit-filtered registration removes the filter. `RegisterUnitEvent` on a
+  plain registration adds the filter.
+- The call reads units up to the first argument that is not a string or a
+  number.
+- If no unit is valid, the call is the same as `RegisterEvent`.
+- You can give units only for unit events (for example `UNIT_HEALTH`,
+  `UNIT_AURA`, `PLAYER_FLAGS_CHANGED`). With units, other events raise
+  `Attempt to register unknown event "<event>"`. An unknown event name raises
+  the same error.
 - The filter applies only when the event's first argument is a string. For an
   event whose first argument is a number, or that has no arguments, the frame
   receives the event as with `RegisterEvent`.
 - `UnregisterEvent` and `UnregisterAllEvents` remove the filter with the
   registration.
-- `frame:IsEventRegistered(event)` returns the unit tokens after the boolean.
 
 `FrameUtil.RegisterFrameForUnitEvents(frame, events, ...units)` calls
 `RegisterUnitEvent` for each event in the `events` table.
+
+### `frame:RegisterGUIDEvent(event, ...guids)`
+
+Registers the frame for a unit event of the units with these GUIDs. A token
+does not have to name the unit. Use it for a unit that has no token, for
+example the target of `party1`. This is a ClassicAPI extension.
+
+The frame's `OnEvent` runs one time for each event of such a unit. The first
+argument is the GUID as `UnitGUID` returns it, also when a token names the
+unit. `UnitHealth(guid)` and the other unit functions accept this GUID.
+
+Returns `true` if the call registered the frame or changed its GUIDs. Returns
+`false` if the frame was already registered with the same GUIDs.
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterGUIDEvent("UNIT_HEALTH", UnitGUID("party1target"))
+f:SetScript("OnEvent", function(self, event, guid)
+    print(UnitName(guid), UnitHealth(guid))
+end)
+```
+
+Behavior notes:
+
+- Each call replaces the GUIDs of the frame for the event.
+- The call reads GUIDs up to the first argument that is not a string. It
+  ignores a string that is not a GUID. If no GUID is valid, the call raises a
+  usage error.
+- You can give GUIDs only for unit events, the same events that
+  `RegisterUnitEvent` takes units for. Other events raise
+  `Attempt to register unknown event "<event>"`.
+- A GUID registration is separate from `RegisterEvent` and
+  `RegisterUnitEvent`. A frame can have both for one event. Then the frame
+  receives the event for each token that matches, and one more time for the
+  GUID.
+- `IsEventRegistered` and `UnregisterEvent` do not include GUID
+  registrations. `UnregisterAllEvents` removes them.
+- A unit event that other code fires with a GUID as its first argument does
+  not reach a GUID registration.
+- A unit fires most of its events only while it is in view. Group members
+  also fire their health and power events out of view.
+
+### `frame:UnregisterGUIDEvent(event)`
+
+Removes the GUID registration of the frame for `event`. If the frame has no
+GUID registration for `event`, the call does nothing.
+
+### `frame:IsGUIDEventRegistered(event)`
+
+Returns `true` if the frame has a GUID registration for `event`, else
+`false`. The GUIDs follow the boolean, in the order that they were given. If
+there is no registration, the second return is `nil`.
+
+```lua
+f:RegisterGUIDEvent("UNIT_AURA", UnitGUID("target"))
+f:IsGUIDEventRegistered("UNIT_AURA")    -- true, "0xF130..."
+f:UnregisterGUIDEvent("UNIT_AURA")
+f:IsGUIDEventRegistered("UNIT_AURA")    -- false, nil
+```
 
 ### `frame:GetEffectiveAlpha()`
 
@@ -10476,7 +12628,11 @@ modifier/button-qualified, same precedence as `type`):
 | `menu` / `togglemenu` | — | Pops the standard unit dropdown at the cursor (whisper / inspect / trade / invite / …, the same menu `PlayerFrame` / `TargetFrame` / `PartyMemberFrame` show). |
 
 Every verb that acts on a unit uses the frame's `unit` attribute (resolved with
-the same modifier/button precedence).
+the same modifier/button precedence). For the `spell` and `item` verbs, a
+ground-target spell or item is placed at the position of the `unit`, and the
+`unit` attribute `"cursor"` places it at the cursor, as
+[`C_Spell.CastAtCursor`](#c_spellcastatcursorspellidorname) and
+[`C_Item.UseAtCursor`](#c_itemuseatcursoritem) do.
 
 **One verb per click.** Setting a `type*` attribute installs a **chained
 `OnClick` on that frame only** (nothing global). When a verb resolves, our
@@ -10634,11 +12790,10 @@ Rules:
   are OR'd.
 - A `@unit` or `target=unit` piece sets the group's target. Conditions that
   need a unit use it, and default to `"target"`.
-- The unit can be a character name as well as a token, so
-  `[target=Feral] Rejuvenation` heals the player called Feral. The name
-  matches on its start and picks the nearest match, and it has to be
-  someone around you. See
-  [`UnitTokenFromName`](#unittokenfromnamename--exactmatch).
+- The unit can also be the name of you, a group member, or one of your
+  pets. Thus `[target=Feral] Rejuvenation` heals the group member called
+  Feral. A group with any other name does not match. See
+  [Unit tokens (names)](#unit-tokens-names).
 - A group whose only piece is a `@unit` matches only while that unit exists.
   So `[@mouseover][] Spell` uses the mouseover unit when there is one, and
   falls through to `[]` (your target) when there is not. A bare `[]` always
@@ -10688,7 +12843,7 @@ SecureCmdOptionParse("[nocombat] rest")      -- "rest" out of combat, else nil
 | `pet` / `pet:name` | you have a pet / a pet with that name or family |
 | `channeling` / `channeling:spell` | you are channeling / channeling that spell |
 | `equipped:type` | an item of that type is equipped, as [`IsEquippedItemType`](#isequippeditemtypetype) tells (`worn` is the same) |
-| `cursor` | the cursor holds an item, a spell, or money |
+| `cursor` / `cursor:kind` | the cursor holds an item, money, a spell, a merchant item, a macro or an equipment set / the cursor holds that kind: `item`, `money`, `spell`, `merchant`, `macro` or `equipmentset` |
 | `spec` / `spec:1` | always true (there is one spec) |
 | `known:spellID` / `known:name` | you know that spell |
 
@@ -10861,20 +13016,24 @@ a `RegisterForClicks` call in `OnLoad` replaces the attribute.
 
 ### `button:RegisterForMouse(...)`
 
-Sets which mouse buttons run the `OnMouseDown` and `OnMouseUp` scripts of the
-button. Each argument is a mouse button and an action: `LeftButtonDown`,
-`LeftButtonUp`, `RightButtonDown`, `RightButtonUp`, `MiddleButtonDown`,
-`MiddleButtonUp`, `Button4Down`, `Button4Up`, `Button5Down`, or `Button5Up`.
-`AnyDown` and `AnyUp` stand for all five buttons. Names are not case-sensitive,
-and a name that is not in this list counts as no button.
+Sets which mouse buttons the button takes. Each argument is a mouse button and an action, for example
+`LeftButtonDown` or `RightButtonUp`. The buttons are `LeftButton` (or
+`Button1`), `RightButton` (or `Button2`), `MiddleButton` (or `Button3`), and
+`Button4` to `Button31`, and the actions are `Down` and `Up`. `AnyDown` and
+`AnyUp` stand for all buttons. Names are not case-sensitive. An argument that
+is not one of these names is an error.
 
 - A new button responds to `AnyDown` and `AnyUp`.
 - Each call replaces the previous one. A call with no argument removes all
   buttons.
+- A press of a button whose down action is not registered does nothing: no
+  `OnMouseDown`, no click, no pushed state and no drag. A release whose up
+  action is not registered does nothing: no `OnMouseUp`, no click, and the
+  button does not go back to its normal state.
 - `OnMouseUp` runs only when the down action of the same button is also
   registered.
-- This method changes only `OnMouseDown` and `OnMouseUp`. Clicks still follow
-  `RegisterForClicks`, and drags still follow `RegisterForDrag`.
+- For the registered buttons, clicks still follow `RegisterForClicks`, and
+  drags still follow `RegisterForDrag`.
 
 ```lua
 btn:RegisterForMouse("RightButtonDown", "RightButtonUp")
@@ -11323,26 +13482,57 @@ gameobject GUID does not match).
 
 ### `GameTooltip:SetUnitAura(unit, index, [filter])`
 
-Unified-aura method. `index` is in the same `HELPFUL` / `HARMFUL` index
-space as `C_UnitAuras.GetAuraDataByIndex`, so an index you got from
-`C_UnitAuras` always opens the matching tooltip. That includes a debuff
-that the server parked in a buff slot. The tooltip is the same as the one
-from `SetUnitBuff` or `SetUnitDebuff`. `filter` defaults to
-helpful when omitted. Only its `HELPFUL` or `HARMFUL` token is read, so
-pass an index from the same plain list.
+Unified-aura method. `index` counts the auras that `filter` selects, in the
+same order as `C_UnitAuras.GetAuraDataByIndex`. Thus an index that you got
+from `GetAuraDataByIndex` opens the tooltip of the same aura when you give the
+same filter. `filter` takes all the `C_UnitAuras` tokens, for example
+`"HARMFUL|PLAYER"`. Without a filter, the index counts buffs. If no aura has
+that index, the tooltip does not change.
+
+The tooltip is the same as the one from `SetUnitBuff` or `SetUnitDebuff`. When
+the aura has a known end time, the tooltip also has a last line with the time
+left. That end time is the `expirationTime` that `UnitAura` gives. The line
+does not update by itself. To make it count down, call `SetUnitAura` again
+while the tooltip is open.
 
 ```lua
 GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
-GameTooltip:SetUnitAura("player", 1, "HELPFUL")  -- first buff
-GameTooltip:SetUnitAura("player", 1, "HARMFUL")  -- first debuff
-GameTooltip:SetUnitAura("player", 1)              -- defaults to HELPFUL
+GameTooltip:SetUnitAura("player", 1, "HELPFUL")         -- first buff
+GameTooltip:SetUnitAura("target", 1, "HARMFUL|PLAYER")  -- your first debuff
+GameTooltip:SetUnitAura("player", 1)                    -- defaults to HELPFUL
 GameTooltip:Show()
 ```
 
-`SetUnitBuff` and `SetUnitDebuff` index their own slot ranges, which
-differ from the `C_UnitAuras` index space once a debuff sits in a buff
-slot. This method translates between the two, so you do not need to
-split on the filter yourself.
+`SetUnitBuff` and `SetUnitDebuff` index their own slot ranges. These ranges
+differ from the `C_UnitAuras` order, for example when a debuff sits in a buff
+slot. This method translates between the two.
+
+For a group member that is out of range, only the `HELPFUL` or `HARMFUL` part
+of `filter` applies.
+
+### `GameTooltip:SetUnitAuraByAuraInstanceID(unit, auraInstanceID, [filter])` / `SetUnitBuffByAuraInstanceID` / `SetUnitDebuffByAuraInstanceID`
+
+Shows the tooltip of the aura that has the instance ID `auraInstanceID` on
+`unit`. The tooltip is the same as the one from `SetUnitAura`. If the aura
+does not pass `filter`, or no aura on the unit has the ID, the tooltip does
+not change.
+
+- `SetUnitAuraByAuraInstanceID` accepts buffs and debuffs when `filter` has no
+  `HELPFUL` or `HARMFUL` token.
+- `SetUnitBuffByAuraInstanceID` accepts only buffs, and
+  `SetUnitDebuffByAuraInstanceID` accepts only debuffs. The other tokens of
+  `filter` still apply, for example `PLAYER`.
+
+Only an aura in the unit's aura list has an instance ID. Thus these methods
+show nothing for a group member that is out of range.
+
+```lua
+local d = C_UnitAuras.GetAuraDataByIndex("target", 1, "HARMFUL")
+if d and d.auraInstanceID then
+    GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
+    GameTooltip:SetUnitAuraByAuraInstanceID("target", d.auraInstanceID)
+end
+```
 
 ### `GameTooltip:AddTexture(texture)`
 
@@ -11975,11 +14165,10 @@ The counts are the same as in
 An item in the bank counts as "in inventory" only while the bank window
 is open.
 
-**Localization.** The count lines are formatted through
-[`Game::Lua::PushLocalizedFormatInt`](#) — Blizzard's `ITEMS_VARIABLE_QUANTITY`,
+**Localization.** The lines use Blizzard's `ITEMS_VARIABLE_QUANTITY`,
 `ITEMS_EQUIPPED`, `ITEMS_IN_INVENTORY`, `ITEM_SLOTS_IGNORED`, and
-`ITEM_MISSING` FrameXML globals are tried first, with English C-string
-fallbacks for servers stripped of standard GlobalStrings. The
+`ITEM_MISSING` global strings, with English fallbacks for servers
+stripped of the standard GlobalStrings. The
 companion `!!!ClassicAPI` addon ships English defaults for these keys
 so the tooltip works on bare-bones builds where FrameXML hasn't
 populated them.
@@ -12309,22 +14498,26 @@ The weapon that a [`PLAYER_SWING`](#player_swing-event) or
 
 ### `Enum.PowerType`
 
-The integer enum `UnitPowerType` returns and `UnitPower` /
-`UnitPowerMax` accept. Only slots 0..4 are defined. Slot 4 is
-`Happiness` (pet happiness).
+The integer enum `UnitPowerType` returns and the `UnitPower` functions take.
 
-| Value | Field        | Notes |
-|------:|--------------|-------|
-| `-2`  | `HealthCost` | Sentinel for "use HEALTH instead of POWER". |
-| `-1`  | `None`       | Sentinel for "unit's primary power" (= omit the arg). |
-| `0`   | `Mana`       | |
-| `1`   | `Rage`       | |
-| `2`   | `Focus`      | |
-| `3`   | `Energy`     | |
-| `4`   | `Happiness`  | Pet happiness. |
+| Value | Field | Notes |
+|------:|-------|-------|
+| `-2` | `HealthCost` | A spell that costs health. |
+| `-1` | `None` | |
+| `0` | `Mana` | |
+| `1` | `Rage` | |
+| `2` | `Focus` | |
+| `3` | `Energy` | |
+| `4` | `ComboPoints` | The player's combo points. |
+| `27` | `Happiness` | Pet happiness. |
+
+The enum also has the other values from `5` to `29` (`Runes`,
+`RunicPower`, `SoulShards`, and so on). No unit has these powers. The
+`UnitPower` functions accept them and return `0`.
 
 ```lua
 local rage = UnitPower("player", Enum.PowerType.Rage)
+local points = UnitPower("player", Enum.PowerType.ComboPoints)
 ```
 
 ### `Enum.SpellBookSpellBank`
@@ -12422,22 +14615,13 @@ end
 
 ## Gossip
 
-Struct-shaped wrappers around the flat `GetGossipText` /
-`GetGossipOptions` / `GetGossipAvailableQuests` / `GetGossipActiveQuests`
-/ `SelectGossipOption` / `SelectGossipAvailableQuest` /
-`SelectGossipActiveQuest` / `CloseGossip` surface. The data is the
-same. These calls only shape it into the struct-tables that addons
-expect.
+`C_GossipInfo.*` reads the gossip window of an NPC: its text, options and
+quests. The text and quest functions also read the quest greeting window.
+That is the window of an NPC that has quests but no gossip menu
+(`QUEST_GREETING`). A quest greeting window has no options.
 
-**Fields the server simply doesn't send** — and therefore aren't
-in any of the returned tables — include `rewards` and `spellID`,
-per-option `status` (Available / Unavailable / Locked / AlreadyComplete
-— the server doesn't compute this), and UX hints like `overrideIconID`
-and `selectOptionWhenOnlyOption`.
-
-The `icon` field is the raw icon-type byte that the server sends
-(server-extensible — pservers can add custom NPC types past the
-Blizzard 0..10 range). Default Blizzard types resolve to
+The `icon` field of an option is the icon type that the server sends. The
+default types show these textures, at
 `Interface\GossipFrame\<Type>GossipIcon`:
 
 | Value | Type | Value | Type |
@@ -12449,12 +14633,16 @@ Blizzard 0..10 range). Default Blizzard types resolve to
 | `4` | Healer       | `10` | Auctioneer   |
 | `5` | Binder (innkeeper) | | |
 
+A server can send more types after `10`. The field gives them without
+change.
+
 ### `C_GossipInfo.GetText()`
 
-Returns the greeting text of the NPC. For a gossip window it is the
-same value that `GetGossipText()` returns. For a quest greeting window
-(an NPC with several quests and no gossip), it is the greeting of that
-window.
+Returns the greeting text of the NPC. For a gossip window, it is the same
+value that `GetGossipText()` returns. The text stays after the window
+closes. While the text of the next NPC loads, the function returns the
+previous text. For a quest greeting window, it is the same value that
+`GetGreetingText()` returns.
 
 ```lua
 print(C_GossipInfo.GetText())
@@ -12462,16 +14650,20 @@ print(C_GossipInfo.GetText())
 
 ### `C_GossipInfo.GetOptions()`
 
-Returns an array of gossip-option tables in display order. Each entry
-contains:
+Returns an array of option tables in display order. The array is empty when
+no gossip window is open. Each table contains:
 
-| Field            | Type    | Notes |
-|------------------|---------|-------|
-| `gossipOptionID` | number  | The option index that the server sends. The same value `C_GossipInfo.SelectOption` expects; arbitrary integer assigned by the server. |
-| `name`           | string  | Option text (locale-applied by the server). |
-| `icon`           | number  | Raw icon-type byte that the server sends — passed through unmapped so pserver-added types (anything past the default `0..10` range) survive. See the type table above for the default Blizzard categories and the `Interface\GossipFrame\<Type>GossipIcon` path each one resolves to. |
-| `flags`          | number  | Bit 0 set = `boxCoded` (the option asks for confirmation text — `Are you sure?` boxes). |
-| `orderIndex`     | number  | 1-based position in the emitted list. Matches the index `SelectGossipOption` (legacy) expects. |
+| Field                        | Type    | Notes |
+|------------------------------|---------|-------|
+| `gossipOptionID`             | number  | The option ID that the server sends. `C_GossipInfo.SelectOption` takes this ID. |
+| `name`                       | string  | The text of the option. |
+| `icon`                       | number  | The icon type. See the table above. It is not a file ID. |
+| `status`                     | number  | Always `Enum.GossipOptionStatus.Available`. |
+| `flags`                      | number  | Always `0`. |
+| `selectOptionWhenOnlyOption` | boolean | Always `false`. |
+| `orderIndex`                 | number  | The 1-based position in the list. `C_GossipInfo.SelectOptionByIndex` and `SelectGossipOption` take this index. |
+
+`spellID`, `overrideIconID` and `failureDescription` are always nil.
 
 ```lua
 for _, opt in ipairs(C_GossipInfo.GetOptions()) do
@@ -12479,105 +14671,145 @@ for _, opt in ipairs(C_GossipInfo.GetOptions()) do
 end
 ```
 
-### `C_GossipInfo.GetAvailableQuests()`
+### `C_GossipInfo.GetAvailableQuests()` / `C_GossipInfo.GetActiveQuests()`
 
-Returns an array of deliverable-quest tables (quests the giver is
-offering to start), in display order. For a gossip window the list
-holds the same quests as `GetGossipAvailableQuests`. For a quest
-greeting window it holds that window's quests.
+`GetAvailableQuests` returns the quests that the NPC offers.
+`GetActiveQuests` returns the quests that the NPC can take back, complete or
+not. Each list is in display order. For a gossip window, it holds the same
+quests as `GetGossipAvailableQuests()` or `GetGossipActiveQuests()`. For a
+quest greeting window, it holds the quests of that window. The list is empty
+when neither window is open. Each table contains:
 
-| Field        | Type   | Notes |
-|--------------|--------|-------|
-| `questID`    | number | Quest.dbc row ID. |
-| `title`      | string | Localized quest title. |
-| `questLevel` | number | Quest level. |
-
-### `C_GossipInfo.GetActiveQuests()`
-
-Returns an array of active-quest tables (quests the giver wants you
-to turn in, in-progress or complete). For a gossip window the list
-holds the same quests as `GetGossipActiveQuests`. For a quest greeting
-window it holds that window's quests.
-
-| Field        | Type    | Notes |
-|--------------|---------|-------|
-| `questID`    | number  | Quest.dbc row ID. |
-| `title`      | string  | Localized quest title. |
-| `questLevel` | number  | Quest level. |
-| `isComplete` | boolean | `true` when the quest is ready to turn in; `false` when it is still in progress. |
+| Field         | Type    | Notes |
+|---------------|---------|-------|
+| `questID`     | number  | The quest ID. |
+| `title`       | string  | The quest title. |
+| `questLevel`  | number  | The quest level. |
+| `isTrivial`   | boolean | `true` when the quest is gray: the player level is more than `GetQuestGreenRange()` above the quest level. |
+| `isComplete`  | boolean | Active quests only. `true` when the quest is ready to turn in. nil on an available quest. |
+| `questInfoID` | number  | The quest type (Group, Dungeon, Raid and more), from the quest data. `0` when the quest data is not loaded. |
+| `frequency`   | number  | Always `0` (`Enum.QuestFrequency.Default`). |
+| `repeatable`  | boolean | Always `false`. |
+| `isLegendary` | boolean | Always `false`. |
+| `isIgnored`   | boolean | Always `false`. |
+| `isImportant` | boolean | Always `false`. |
+| `isMeta`      | boolean | Always `false`. |
 
 ### `C_GossipInfo.GetNumOptions()` / `GetNumAvailableQuests()` / `GetNumActiveQuests()`
 
-Convenience counters — return the length of each of the three lists
-above without building the table.
+Return the number of entries in the three lists above. Each is `0` when the
+window of its list is not open.
 
-### `C_GossipInfo.SelectOption(gossipOptionID)` / `SelectOptionByIndex(orderIndex)`
+### `C_GossipInfo.SelectOption(gossipOptionID[, text, confirmed])` / `SelectOptionByIndex(orderIndex[, text, confirmed])`
 
-Picks a gossip option. `SelectOption` finds the 1-based slot of the
-`gossipOptionID`, then selects it the same way as
-`SelectGossipOption`. `SelectOptionByIndex` is a thin
-passthrough for callers that already have the slot index (e.g. from
-`opt.orderIndex` on a `GetOptions()` entry, or from a UI button bound
-directly to the slot).
+Select a gossip option. `SelectOption` finds the option by its
+`gossipOptionID`. `SelectOptionByIndex` finds the option by its
+`orderIndex`. Both send the same request to the server as
+`SelectGossipOption`. They return nothing.
 
-Both send the same request to the server. The option-ID variant exists so addons can
-drive selections off the `gossipOptionID` key without keeping
-their own slot mapping. Returns nothing.
+`text` is the code for an option that asks for one. It is the text that the
+player types in the `GOSSIP_ENTER_CODE` dialog. `confirmed` has no effect.
 
-`SelectOption` takes an optional second argument, `text`, for
-`boxCoded` options. The text goes to the server with the selection, as
-the password typed into the confirm dialog does.
+When no gossip window is open, or no option has that ID or index, the
+functions do nothing.
 
-### `C_GossipInfo.SelectAvailableQuest(questID)`
+### `C_GossipInfo.SelectAvailableQuest(questID)` / `C_GossipInfo.SelectActiveQuest(questID)`
 
-Picks a deliverable quest by `questID`. Finds the 1-based slot of the
-quest in the `GetAvailableQuests` list, and selects it the same way as
-`SelectGossipAvailableQuest`. Returns nothing.
+Select a quest by its `questID`. `SelectAvailableQuest` looks in the
+`GetAvailableQuests` list. `SelectActiveQuest` looks in the
+`GetActiveQuests` list. For a gossip window, they send the same request as
+`SelectGossipAvailableQuest` or `SelectGossipActiveQuest`. For a quest
+greeting window, they send the same request as `SelectAvailableQuest` or
+`SelectActiveQuest`. They return nothing.
 
-### `C_GossipInfo.SelectActiveQuest(questID)`
-
-Picks an in-progress quest by `questID`. Same shape as
-`SelectAvailableQuest`, but uses the `GetActiveQuests` list and
-selects the quest the same way as `SelectGossipActiveQuest`. Returns
-nothing.
+When neither window is open, or the list has no quest with that ID, the
+functions do nothing.
 
 ### `C_GossipInfo.CloseGossip()`
 
 Closes the gossip window. Same as `CloseGossip`. Returns nothing.
 
+### `C_GossipInfo.ForceGossip()` / `GetCompletedOptionDescriptionString()` / `GetCustomGossipDescriptionString()`
+
+`ForceGossip` always returns `false`. The two description functions always
+return nil.
+
+### `C_GossipInfo.GetFriendshipReputation(friendshipFactionID)` / `GetFriendshipReputationRanks(friendshipFactionID)`
+
+The client has no friendship factions.
+
+`GetFriendshipReputation` returns nothing when `friendshipFactionID` is `0`
+or less. For other IDs, it returns this table:
+
+| Field                 | Value |
+|-----------------------|-------|
+| `friendshipFactionID` | `0` |
+| `standing`            | `0` |
+| `maxRep`              | `0` |
+| `text`                | `""` |
+| `texture`             | `0` |
+| `reaction`            | `""` |
+| `reactionThreshold`   | `0` |
+
+`name` and `nextThreshold` are nil.
+
+`GetFriendshipReputationRanks` returns `{ currentLevel = 0, maxLevel = 0 }`.
+
+```lua
+local info = C_GossipInfo.GetFriendshipReputation(factionID)
+if info and info.friendshipFactionID > 0 then
+    -- a friendship faction
+end
+```
+
 ### `C_GossipInfo.GetPoiForUiMapID(uiMapID)`
 
-Returns the ID of the gossip point of interest on the map `uiMapID`, or nil.
-Some gossip options add this marker to the map, for example the directions
-that a city guard gives. There is only one marker at a time, and its ID is
-always `1`.
+Returns the ID of the gossip point of interest, or nil. Some gossip options
+add this marker to the map, for example the directions that a city guard
+gives. There is only one marker at a time, and its ID is always `1`.
 
-The function returns nil when there is no marker, or when the marker is not
-inside the map. The marker goes away when the player comes within 10 yards of
-it, or 8 minutes after it was added.
+The function returns the ID when the map `uiMapID` is on the same continent
+or instance as the marker. The marker does not have to be inside that map.
+The function returns nil when there is no marker.
+
+The marker goes away when the player comes within 10 yards of it, or 8
+minutes after it was added.
 
 ### `C_GossipInfo.GetPoiInfo(uiMapID, gossipPoiID)`
 
 Returns a table that describes the gossip point of interest on the map
-`uiMapID`, or nil. It returns nil in the same conditions as
-`GetPoiForUiMapID`, and when `gossipPoiID` is not the ID that
-`GetPoiForUiMapID` returns.
+`uiMapID`, or nil. It returns nil when `GetPoiForUiMapID` returns nil, when
+`gossipPoiID` is not the ID of the marker, and when the marker is outside
+the map.
 
 | Field          | Type    | Description |
 |----------------|---------|-------------|
 | `name`         | string  | The name of the location, for example `"Stormwind Bank"`. |
 | `textureIndex` | number  | The icon index. It is the same index that `GetMapLandmarkInfo` returns for this marker. |
 | `position`     | vector2 | The position on the map, from 0 to 1 on each axis. |
-| `inBattleMap`  | boolean | Always `false`. |
+| `inBattleMap`  | boolean | A flag that the server sends with the marker. |
 
 ```lua
 local mapID = C_Map.GetBestMapForUnit("player")
 local poiID = C_GossipInfo.GetPoiForUiMapID(mapID)
-if poiID then
-    local info = C_GossipInfo.GetPoiInfo(mapID, poiID)
+local info = poiID and C_GossipInfo.GetPoiInfo(mapID, poiID)
+if info then
     print(info.name, info.position:GetXY())
 end
 ```
+
+### `Enum.GossipOptionStatus`
+
+The values of the `status` field of an option.
+
+| Field | Value |
+|---|---|
+| `Available` | 0 |
+| `Unavailable` | 1 |
+| `Locked` | 2 |
+| `AlreadyComplete` | 3 |
+
+Every option is `Available`.
 
 ### `GetNumGossipAvailableQuests()` / `GetNumGossipActiveQuests()`
 
@@ -12625,10 +14857,10 @@ hooksecurefunc(GameTooltip, "SetInventoryItem", function(self, unit, slot)
 end)
 ```
 
-The "secure" label refers to taint-propagation behavior for
-protected-frame manipulation. There is no taint system here, so the
-function is equivalent to a plain "after-hook" — the name is kept for
-API parity.
+The hook does not spread its taint. The original function runs with its own
+taint, and the hook runs with the taint of the code that installed it. As a
+result, a hooked function that does a protected action (for example, a jump)
+still works when the default UI calls it.
 
 - All of the original's return values reach the caller, however many
   there are.
@@ -13530,7 +15762,7 @@ local link = C_Item.GetItemLink({bagID = 0, slotIndex = 1})
 ### `C_Item.GetItemLocation(itemGUID)`
 
 Reverse lookup from a GUID string (the format `C_Item.GetItemGUID`
-returns) to an `itemLocation` table identifying the slot currently
+returns) to an `ItemLocationMixin` that identifies the slot currently
 holding that item. Returns `nil` if you do not have the item there.
 
 ```lua
@@ -13538,13 +15770,14 @@ local guid = C_Item.GetItemGUID({equipmentSlotIndex = INVSLOT_HEAD})
 -- player moves item to bag, drops it, etc. — guid stays valid across
 -- bag/equipment rearrangements until the item leaves the session
 local loc = C_Item.GetItemLocation(guid)
--- loc might now be { bagID = 1, slotIndex = 4 }, or nil if sold
+-- loc can now be in bag 1, slot 4: loc:GetBagAndSlot() gives 1, 4
 ```
 
-The function returns a plain table with the same field shape every other
-`C_Item.*` API in ClassicAPI accepts as input (`{equipmentSlotIndex=N}`
-or `{bagID=B, slotIndex=S}`), so the result pipes straight into
-`C_Item.GetItemQuality(loc)`, `C_Item.GetItemLink(loc)`, etc.
+The result is a new table with the `ItemLocationMixin` methods, for
+example `IsBagAndSlot` and `GetEquipmentSlot`. It has the field
+`equipmentSlotIndex`, or the fields `bagID` and `slotIndex`. You can give
+it to each `C_Item` function that takes an item location, for example
+`C_Item.GetItemLink(loc)`.
 
 **Scope.** Equipped items and equipped bags (`equipmentSlotIndex`),
 the backpack and bags 1..4, the keyring (bagID -2), and, while the bank
@@ -14292,7 +16525,9 @@ item cache, `false` otherwise. The "ByID" variant takes an itemID or
 
 These read the cache without firing a server query — pair with
 `RequestLoadItemData(ByID)` if you need to ensure the data is loaded
-before checking.
+before checking. `IsItemDataCachedByID` raises a usage error when `item`
+is missing or is not a number or a string. `IsItemDataCached` raises a
+usage error when the location is not valid or holds no item.
 
 ```lua
 if not C_Item.IsItemDataCachedByID(itemID) then
@@ -14514,21 +16749,26 @@ C_Item.PickupItem(itemLink)
 
 ### `C_Item.RequestLoadItemDataByID(item)` / `C_Item.RequestLoadItemData(itemLocation)`
 
-Asks the server for the item's data if it is not already cached.
-Returns `true` if the request was initiated (or the input was
-parseable to an itemID). Returns `false` for malformed input, and when
-512 requests already wait for an answer. Fire-and-forget —
-the data lands in the cache when the server responds.
+Asks the server for the data of the item if the data is not cached.
+Returns nothing.
 
-Fires `ITEM_DATA_LOAD_RESULT(itemID, success)` when the data lands in
-the cache. Synchronously fired when the item
-was already cached (so polling code paths still work), asynchronously
-fired when the server answers.
+`item` is an item ID or an item link. If `item` is missing, or is not a
+number or a string, the function raises a usage error.
+`RequestLoadItemData` raises a usage error when the location is not
+valid or holds no item.
 
-> **`success` is `1` or `nil`.** The event gives `1` for success and
-> `nil` for failure. `if success then …` distinguishes them correctly —
-> `nil` is falsy, `1` is truthy. Same encoding as `GET_ITEM_INFO_RECEIVED`
-> and `QUEST_DATA_LOAD_RESULT`.
+Each call fires `ITEM_DATA_LOAD_RESULT(itemID, success)` one time:
+- If the data is cached, the event fires during the call, with `success`
+  `true`.
+- If the item ID is `0` or less, the event fires during the call, with
+  `success` `false`.
+- Otherwise the event fires when the server answers. When you call the
+  function three times before the answer, the event fires three times.
+
+`success` is `true` or `false`.
+
+When `GetItemInfo` or another item function also waits on the same item,
+`GET_ITEM_INFO_RECEIVED` fires too.
 
 ```lua
 local f = CreateFrame("Frame")
@@ -14549,7 +16789,7 @@ C_Item.RequestLoadItemDataByID(2589)
 > inventory), the event fires when that data arrives. For other items
 > (quest rewards, AH browse targets, and more), the request goes to the
 > server after a short delay. If no data arrives in about 20–40 seconds,
-> `ITEM_DATA_LOAD_RESULT(itemID, nil)` fires.
+> `ITEM_DATA_LOAD_RESULT(itemID, false)` fires.
 
 ### `C_Item.UnlockAllItems()`
 
@@ -14611,15 +16851,18 @@ C_Item.UseAtCursor({ bagID = 0, slotIndex = 1 })
 Returns `true` when the effect of the item lands at the cursor. Returns
 `false` when:
 
-- the cursor is not on the ground, for example over a frame or off the screen
+- nothing is under the cursor, for example the sky
 - the item has no ground target
 - the item needs another target in addition to the ground position
 - you do not carry the item, or the argument is not an item
 - the game refuses the use, for example while you are shapeshifted
 
-If the cursor is not on the ground, the reticle is cancelled and the item is
-not used, so an off-screen call does not waste a grenade. An item with no
-ground target is used normally, on your current target.
+The position is the ground under the mouse, also behind a unit or a frame.
+When nothing is under the cursor, the item is not used and you get the error
+"You can't use that here", so such a call does not waste a grenade. An item
+with no ground target is used normally, on your current target. Out-of-range
+and too-near positions move as for
+[`C_Spell.CastAtCursor`](#c_spellcastatcursorspellidorname).
 
 A reticle that is already up when you call this function is cancelled first.
 The function only places the reticle that its own call opens.
@@ -14701,7 +16944,11 @@ target for items that fire a spell (scrolls, traps, on-use targeted
 effects). For self-use items (hearthstone, potions, food) the `unit`
 argument has no effect, so passing one is harmless. Unrecognized
 strings are treated as "no target" rather than raising, matching the
-silently-no-op contract of `item`.
+silently-no-op contract of `item`. An item with a ground effect is placed at
+the position of `unit`, as with
+[`C_Item.UseAtUnit`](#c_itemuseatunititem-unit--placegroundspell). `unit` can
+also be `"cursor"`: an item with a ground effect then places it at the cursor,
+as with [`C_Item.UseAtCursor`](#c_itemuseatcursoritem).
 
 ```lua
 C_Item.UseItemByName("Hearthstone")                       -- hearth home
@@ -15048,9 +17295,9 @@ that data is in the cache.
 
 When the load of the item's data ends, `item:ContinueOnItemLoad(callback)`
 calls `callback(itemID, success)`. If the data is already in the cache, the
-call occurs immediately. If the data loaded, `success` is `1`. If the load
+call occurs immediately. If the data loaded, `success` is `true`. If the load
 fails (for example, the server has no item with this ID), the callback also
-occurs, with `success` set to `nil`. If the item is empty (for example, an
+occurs, with `success` set to `false`. If the item is empty (for example, an
 empty bag slot), `ContinueOnItemLoad` raises an error.
 
 `item:ContinueWithCancelOnItemLoad(callback)` does the same, and returns a
@@ -15432,19 +17679,25 @@ formatter:FormatNumber(-1)     -- "-1"
 | `formatter:Copy()` | Returns a new formatter with the same breakpoints. A change to one formatter does not change the other. |
 
 If two breakpoints have the same `threshold`, the first one that you added
-applies. A formatter has only these methods. You cannot store other values
-in it.
+applies. When `SetBreakpoints` gets more than 32 breakpoints, the order of
+breakpoints with the same `threshold` is not known.
+
+You can store other values in a formatter, for example
+`formatter.name = "cast"`. All objects of the same formatter share these
+values, and `Copy` does not copy them. A method name cannot be replaced: an
+assignment to it is an error. Two objects of the same formatter are equal
+(`==`).
 
 `NumericRuleFormatBreakpoint`:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `threshold` | number | The smallest number that the breakpoint applies to. It must be a finite number. |
+| `threshold` | number | The smallest number that the breakpoint applies to. |
 | `step` | number, optional | Rounds the number to a multiple of `step`. A `step` of `0` or less does not round. |
 | `rounding` | `Enum.NumericRuleFormatRounding`, optional | How `step` rounds. The default is `Nearest`. |
 | `min` | number, optional | After the rounding, a smaller number changes to `min`. |
 | `max` | number, optional | After the rounding, a larger number changes to `max`. |
-| `format` | string | A format string, as for `string.format`. Without `components`, the format gets the number as its one value. The format can contain color codes, for example `"\|cffff3333%d\|r"`. |
+| `format` | string | A format string, similar to `string.format`. Without `components`, the format gets the number as its one value. The format can contain color codes, for example `"\|cffff3333%d\|r"`. See the notes on the format below. |
 | `components` | table, optional | A list of `NumericRuleFormatComponent` tables. Each component gives one value to `format`, in order. |
 
 `NumericRuleFormatComponent`:
@@ -15456,16 +17709,19 @@ in it.
 | `step` | number, optional | After `div` and `mod`, rounds the result to a multiple of `step`. |
 | `rounding` | `Enum.NumericRuleFormatRounding`, optional | How `step` rounds. The default is `Nearest`. |
 
-A `div` or `mod` of `0` has no effect. Each component starts from the number
-after the `step`, `min`, and `max` of its breakpoint.
+A `div` or `mod` of `0` or less has no effect. Each component starts from
+the number after the `step`, `min`, and `max` of its breakpoint.
+
+Each number field must be a finite number. `rounding` cuts a fraction to a
+whole number, so `1.7` is `Up`.
 
 `Enum.NumericRuleFormatRounding`:
 
 | Name | Value | Description |
 |------|-------|-------------|
-| `Nearest` | `0` | To the nearest multiple. A number halfway between two multiples goes up: `2.5` gives `3`, and `-2.5` gives `-2`. |
+| `Nearest` | `0` | To the nearest multiple. A positive number halfway between two multiples goes up: `2.5` gives `3`. A negative number goes to the multiple nearer to zero: `-2.5` and `-2.6` give `-2`. |
 | `Up` | `1` | To the next larger multiple. |
-| `Down` | `2` | To the next smaller multiple. |
+| `Down` | `2` | To the next multiple nearer to zero: `2.5` gives `2`, and `-2.5` gives `-2`. |
 
 The formatter selects the breakpoint before it rounds. For example, with
 breakpoints at `0` (`step = 1`, `Up`) and at `60`, the number `59.5` uses
@@ -15477,8 +17733,143 @@ components `{ div = 60, step = 1, rounding = Down }` and
 gives `"1:60"`. If you also set `step = 1` and `rounding = Up` on the
 breakpoint, `119.5` changes to `120` first and gives `"2:00"`.
 
-If `format` asks for more values than the breakpoint gives, `FormatNumber`
-gives an error that starts with `NumericFormatter:FormatNumber():`.
+Notes on the format:
+
+- It takes `%d`, `%i`, `%o`, `%u`, `%x`, `%X`, `%c`, `%e`, `%E`, `%f`, `%g`,
+  `%G`, `%s` and `%%`. `%t`, `%F` and `%T` are the same as `%f`. `%q` is an
+  error.
+- `%1$` to `%9$` select a value by its position, for example `"%2$d %1$d"`.
+- `%d` cuts a fraction: `4.7` gives `"4"`. `%s` writes a number as `tostring`
+  does.
+- The text stops at 1023 characters, and at a zero byte from `%c`.
+
+If `format` asks for more values than the breakpoint gives, or has an option
+that is not in the list, `FormatNumber` gives an error that starts with
+`NumericFormatter:FormatNumber():`.
+
+### `C_StringUtil.CreateAbbreviatedNumberFormatter()`
+
+Returns a new formatter that shortens numbers with an abbreviation. The
+formatter has a list of `NumberAbbreviationBreakpoint` tables, as
+[`AbbreviateNumbers`](#abbreviatenumbersnumber--options) uses them. A new
+formatter has the default breakpoints for the language of the client.
+
+```lua
+local formatter = C_StringUtil.CreateAbbreviatedNumberFormatter()
+formatter:FormatNumber(1234)    -- "1.2K"
+formatter:FormatNumber(12345)   -- "12K"
+formatter:FormatNumber(999)     -- "999"
+formatter:SetBreakpoints({
+    { breakpoint = 100, abbreviation = "h", significandDivisor = 10, fractionDivisor = 10,
+      abbreviationIsGlobal = false },
+})
+formatter:FormatNumber(1234)    -- "12.3h"
+```
+
+| Method | Notes |
+| --- | --- |
+| `formatter:FormatNumber(number)` | Returns the text for `number`, as `AbbreviateNumbers` makes it. The formatter uses the first breakpoint that `number` reaches. If no breakpoint applies, the text is the number as `tostring` writes it. |
+| `formatter:SetBreakpoints(breakpoints)` | Replaces all breakpoints with the tables in the list. The formatter sorts them from the largest `breakpoint` to the smallest. If one table is not correct, the breakpoints do not change. |
+| `formatter:AddBreakpoint(breakpoint)` | Adds one breakpoint, after all breakpoints that are equal or larger. |
+| `formatter:GetBreakpoints()` | Returns a new list of the breakpoints, from the largest to the smallest. Each table has all five fields. |
+| `formatter:ClearBreakpoints()` | Removes all breakpoints. |
+| `formatter:ResetBreakpoints()` | Replaces the breakpoints with the default breakpoints for the language of the client. |
+| `formatter:Copy()` | Returns a new formatter with the same breakpoints. |
+
+`breakpoint`, `significandDivisor` and `fractionDivisor` must be more than
+`0`. If one is not, `AddBreakpoint` and `SetBreakpoints` give an error that
+starts with `AbbreviatedNumberFormatter:`. `abbreviationIsGlobal` is
+`true` when you do not set it.
+
+You can store other values in the formatter, as in a
+[`NumericRuleFormatter`](#c_stringutilcreatenumericruleformatter). Two
+objects of the same formatter are equal (`==`).
+
+### `C_StringUtil.CreateSecondsFormatter()`
+
+Returns a new formatter that writes a number of seconds as a duration. In a
+font string, `93` shows as `"1 Minute 33 Seconds"`.
+
+```lua
+local A = Enum.SecondsFormatterAbbreviation
+local formatter = C_StringUtil.CreateSecondsFormatter()
+formatter:Format(93)                 -- "1 |4Minute:Minutes; 33 |4Second:Seconds;"
+formatter:Format(93, A.OneLetter)    -- "1 m 33 s"
+formatter:Format(3661)               -- 1 hour 1 minute: two units by default
+formatter:SetApproximationSeconds(60)
+formatter:Format(30)                 -- "< 1 |4Minute:Minutes;"
+```
+
+The text comes from the global strings `D_SECONDS`, `D_MINUTES`, `D_HOURS`
+and `D_DAYS`, and for the abbreviations from `SECONDS_ABBR` and
+`SECOND_ONELETTER_ABBR` and the related strings. Their `|4` codes select
+the singular or the plural when the text shows. With `Truncate`, the text
+has the unit word without the count, for example `"Min Sec"`.
+
+How `Format` works:
+
+1. If `seconds` is less than the milliseconds threshold, the text is the
+   number with one decimal, for example `"3.1"`. The default threshold is
+   `0`, so a negative number gives text such as `"-5.0"`.
+2. Otherwise the formatter rounds `seconds` up to a whole number.
+3. If the result is `0`, the text is the zero text: `0` of the minimum
+   interval.
+4. If the result is less than the approximation seconds, the text is
+   `"< "` and the count of one unit, rounded up. The unit is minutes or
+   larger.
+5. Otherwise the formatter writes units from the maximum interval down to
+   the minimum interval, and stops after the desired unit count. It rounds
+   each count down. With `CanRoundUpLastUnit`, it rounds the last count up.
+
+With `CanRoundUpIntervals`, a count equal to the number of seconds in its
+own unit changes to one more of the next unit. As a result, 60 minutes
+change to 1 hour, but 1 second also changes to 1 more minute: `61` gives
+`"2 Minutes"`.
+
+| Method | Notes |
+| --- | --- |
+| `formatter:Format(seconds [, abbreviation])` | Returns the text. Without `abbreviation`, the formatter uses its default abbreviation. |
+| `formatter:FormatZero([abbreviation])` | Returns the zero text. |
+| `formatter:FormatNumber(seconds)` | The same as `Format` with the default abbreviation. |
+| `formatter:SetDefaultAbbreviation(abbreviation)` / `GetDefaultAbbreviation()` | An `Enum.SecondsFormatterAbbreviation`. The default is `None`. |
+| `formatter:SetMinInterval(interval)` / `GetMinInterval()` | The smallest unit, an `Enum.SecondsFormatterInterval`. The default is `Seconds`. |
+| `formatter:SetMaxInterval(interval)` / `GetMaxInterval()` | The largest unit. The default is `Days`. When the minimum interval is larger, the formatter uses the minimum interval. |
+| `formatter:SetDesiredUnitCount(count)` / `GetDesiredUnitCount()` | The number of units, from `0` to `255`. The default is `2`. |
+| `formatter:SetMinIntervalCurve(curve)` / `GetMinIntervalCurve()` | Gets the minimum interval from a curve. See below. |
+| `formatter:SetMaxIntervalCurve(curve)` / `GetMaxIntervalCurve()` | Gets the maximum interval from a curve. |
+| `formatter:SetDesiredUnitCountCurve(curve)` / `GetDesiredUnitCountCurve()` | Gets the unit count from a curve. |
+| `formatter:EvaluateMinInterval(seconds)` / `EvaluateMaxInterval(seconds)` / `EvaluateDesiredUnitCount(seconds)` | Return the value that the formatter uses for `seconds`. |
+| `formatter:SetApproximationSeconds(seconds)` / `GetApproximationSeconds()` | Below this number, the text is `"< "` and one unit. The default is `0`. |
+| `formatter:CanApproximate(seconds)` | Returns `true` when `seconds` is more than `0` and less than the approximation seconds. |
+| `formatter:SetMillisecondsThreshold(threshold)` / `GetMillisecondsThreshold()` | Below this number, the text is the number with one decimal. The default is `0`. |
+| `formatter:SetCanRoundUpLastUnit(canRound)` / `CanRoundUpLastUnit()` | Rounds the last count up. The default is `false`. |
+| `formatter:SetCanRoundUpIntervals(canRound)` / `CanRoundUpIntervals()` | Changes a full unit to the next unit. The default is `false`. |
+| `formatter:SetConvertToLower(convert)` / `GetConvertToLower()` | Writes the unit text in lowercase. The default is `false`. |
+| `formatter:SetStripIntervalWhitespace(strip)` / `GetStripIntervalWhitespace()` | An `Enum.SecondsFormatterIntervalWhitespace`. The default is `Preserve`. |
+| `formatter:Reset()` | Sets all values to their defaults. |
+
+A setter that ends in `Curve` takes a
+[`LuaCurveObject`](#c_curveutilcreatecurve). The formatter keeps the curve
+itself, not a copy, so a change to the curve changes the formatter. For each
+duration, the formatter gets the value of the curve at the number of seconds
+and cuts the fraction. An interval past `Days` changes to `Seconds`. While a
+curve is set, the getter without `Curve` returns `nil`. A setter without
+`Curve` removes the curve. The getter with `Curve` returns a new object of
+the same curve, which is equal (`==`) to the curve that you set.
+
+`Strip` removes the spaces in the unit text, but not on German and Russian
+clients. `StripIgnoreLocale` always removes them. The spaces between units
+stay.
+
+`Enum.SecondsFormatterAbbreviation`: `None` (`0`), `Truncate` (`1`),
+`OneLetter` (`2`).
+`Enum.SecondsFormatterInterval`: `Seconds` (`0`), `Minutes` (`1`), `Hours`
+(`2`), `Days` (`3`).
+`Enum.SecondsFormatterIntervalWhitespace`: `Preserve` (`0`), `Strip`
+(`1`), `StripIgnoreLocale` (`2`).
+
+You can store other values in the formatter, as in a
+[`NumericRuleFormatter`](#c_stringutilcreatenumericruleformatter).
 
 ### `breakUpLargeNumbers` (CVar)
 
@@ -15722,60 +18113,86 @@ the full link as well as the `item:...` payload.
 The `C_LootHistory` namespace gives the history of group-loot rolls. Each item
 in the history has the vote and roll of each player, and the winner.
 
-The name and class of each player are kept from the time of the roll. They
-stay correct after that player leaves the group.
+The history records rolls only while you are in a party or a raid. When a roll
+starts, its item goes to the front of the history. The item has a player list
+with each member of your group at that time. When the same loot slot starts a
+new roll, the new item replaces the old item.
 
-The history keeps the last 128 rolled items. It stays through `/reload` and
-clears at logout. `C_LootHistory.Clear()` clears it at any time. The
-master-loot functions (`SetExpiration`, `GiveMasterLoot`, `CanMasterLoot`) are
-not available.
+The history keeps 10 items. When a roll starts, items after the first 10 are
+removed if they are older than 600 seconds.
+[`C_LootHistory.SetExpiration`](#c_loothistorysetexpirationnumitemstosave-secondstosave)
+changes these two values. The history stays through `/reload` and is empty
+after a logout. `C_LootHistory.Clear()` makes it empty at any time.
 
-The `LOOT_HISTORY_ROLL_CHANGED`, `LOOT_HISTORY_ROLL_COMPLETE`, and
-`LOOT_HISTORY_FULL_UPDATE` events tell you when the history changes. Refer to
+The `LOOT_HISTORY_ROLL_CHANGED`, `LOOT_HISTORY_ROLL_COMPLETE`,
+`LOOT_HISTORY_FULL_UPDATE`, and `LOOT_HISTORY_AUTO_SHOW` events tell you when
+the history changes. Refer to
 the
-[Events](#loot_history_roll_changed--loot_history_roll_complete--loot_history_full_update-events)
+[Events](#loot_history_roll_changed--loot_history_roll_complete--loot_history_full_update--loot_history_auto_show-events)
 section.
 
 ### `C_LootHistory.GetNumItems()`
 
-Returns the number of rolled items in the history.
+Returns the number of items in the history.
 
-### `C_LootHistory.GetItem(itemIndex)`
+### `C_LootHistory.GetItem(itemIdx)`
 
-`itemIndex` starts at `1`. The oldest item is `1`. Returns
+`itemIdx` starts at `1`. The newest item is `1`. Returns
 `rollID, itemLink, numPlayers, isDone, winnerIdx, isMasterLoot, isCurrency`:
-- `rollID` — a stable ID for the roll. The `itemIndex` of an item changes when
-  the history is full and drops its oldest item. The `rollID` does not change.
-  Use it as the key for data about a row, for example "this row is expanded".
-- `itemLink` — `item:<id>:0:<suffix>:<unique>`. You can give it to
-  `GetItemInfo` and `GameTooltip:SetHyperlink`. It has the random suffix of
-  the item, so an "of the X" item keeps its suffix.
+- `rollID` — the ID of the roll. It is the same `rollID` that
+  `START_LOOT_ROLL` gives. The `itemIdx` of an item changes when items are
+  added or removed. The `rollID` does not change. Use it as the key for data
+  about a row, for example "this row is expanded".
+- `itemLink` — the item link, with the random suffix of the item. `nil` while
+  the data of the item is not loaded. `LOOT_HISTORY_FULL_UPDATE` fires when
+  the data arrives.
 - `numPlayers` — the number of players in the list for this item.
 - `isDone` — `true` when the item has a winner, or when all players passed.
 - `winnerIdx` — the player index of the winner, for
-  `C_LootHistory.GetPlayerInfo(itemIndex, winnerIdx)`. `nil` when the item has
-  no winner yet, or when all players passed. The winner is always in the
-  player list.
+  `C_LootHistory.GetPlayerInfo(itemIdx, winnerIdx)`. `nil` while the roll is
+  open, and when all players passed.
 - `isMasterLoot` — always `false`.
 - `isCurrency` — always `false`.
 
-Returns nothing when `itemIndex` is out of range.
+Returns nothing when `itemIdx` is out of range.
 
-### `C_LootHistory.GetPlayerInfo(itemIndex, playerIndex)`
+### `C_LootHistory.GetPlayerInfo(itemIdx, playerIdx)`
 
-Both indexes start at `1`. Returns `name, class, rollType, roll, isWinner, isMe`:
-- `name` — the name of the player. `nil` when the name was not known at
-  the time of the roll.
+Both indexes start at `1`. While the roll is open, the players are in group
+order. When the roll is complete, the order is: the winner, then need, greed,
+and pass, then the highest roll. Returns
+`name, class, rollType, roll, isWinner, isMe`:
+- `name` — the name of the player, as `Name-Realm` for a player from a
+  different realm. `nil` when the name is not known.
 - `class` — the class token (`"WARRIOR"`, `"MAGE"`, and more) for
-  `RAID_CLASS_COLORS`. `nil` when the class is not known.
-- `rollType` — `0` = pass, `1` = need, `2` = greed.
-- `roll` — the dice roll, `1` to `100`. `nil` when the player has no roll.
-  For example, a player who passed has no roll. A greed voter has no roll when
-  a need voter wins.
+  `RAID_CLASS_COLORS`. `nil` when the name is not known.
+- `rollType` — `0` = pass, `1` = need, `2` = greed. `nil` while the roll is
+  open and the player did not vote. When the roll is complete, a player who
+  did not vote has `0`.
+- `roll` — the dice roll, `1` to `100`. `nil` while the roll is open. Also
+  `nil` when the player has no roll. For example, a player who passed has no
+  roll.
 - `isWinner` — `true` when this player won the item.
 - `isMe` — `true` when this player is you.
 
-Returns nothing when `itemIndex` or `playerIndex` is out of range.
+Returns nothing when `itemIdx` or `playerIdx` is out of range.
+
+### `C_LootHistory.SetExpiration(numItemsToSave, secondsToSave)`
+
+Sets how many items the history keeps, and for how long. When a roll starts,
+items after the first `numItemsToSave` are removed if they are older than
+`secondsToSave`. This function also removes those items immediately. The
+defaults are `10` and `600`.
+
+### `C_LootHistory.GetExpiration()`
+
+Returns `numItemsToSave, secondsToSave`, the values that
+`C_LootHistory.SetExpiration` set.
+
+### `C_LootHistory.CanMasterLoot(itemIdx, playerIdx)` / `C_LootHistory.GiveMasterLoot(itemIdx, playerIdx)`
+
+No item in the history comes from master loot. `CanMasterLoot` always returns
+nothing, and `GiveMasterLoot` does nothing.
 
 ### `C_LootHistory.Clear()`
 
@@ -15785,20 +18202,36 @@ the empty history.
 
 ## LossOfControl
 
-`C_LossOfControl` — the active crowd-control / interrupt effects on
-the **local player**. The CC types come from the player's debuffs. The
-school-interrupt lockout comes from the lockout that the server sends after a
-Counterspell or Kick.
+`C_LossOfControl` gives the loss-of-control effects on the **local player**.
+There are two kinds of effect:
 
-### `C_LossOfControl.GetActiveLossOfControlDataCount()`
+- **Control effects** come from the player's debuffs. Each effect of a debuff
+  that stuns, fears, confuses, charms, possesses, roots, silences, pacifies or
+  disarms is one entry. Thus a debuff with two such effects gives two entries.
+- **School lockouts** come from the lockout that the server sends after a
+  Counterspell, Kick or other interrupt. Each locked school is one entry.
 
-Returns the number of active loss-of-control effects on the player (`0` when
-none).
+The list is in this order:
 
-### `C_LossOfControl.GetActiveLossOfControlData(index)`
+1. The full-screen effects (`displayType` 2), by `priority`, highest first.
+   Effects with the same priority are sorted by end time, the latest first.
+2. All other effects, in the order that they landed.
 
-Returns a `LossOfControlData` table for the `index`-th active effect (1-based,
-up to the count above), or `nil` if the index is out of range.
+A control effect stays in the list until its debuff goes, also after its timer
+has run out. A school lockout leaves the list when its timer runs out.
+
+### `C_LossOfControl.GetActiveLossOfControlDataCount()` / `C_LossOfControl.GetActiveLossOfControlDataCountByUnit(unitToken)`
+
+Return the number of loss-of-control effects on the player, `0` when there
+are none. `GetActiveLossOfControlDataCountByUnit` gives the count when
+`unitToken` is the player, and `0` for any other unit.
+
+### `C_LossOfControl.GetActiveLossOfControlData(index)` / `C_LossOfControl.GetActiveLossOfControlDataByUnit(unitToken, index)`
+
+Return a `LossOfControlData` table for the effect at position `index`
+(1-based), or `nil` when no effect has that position.
+`GetActiveLossOfControlDataByUnit` gives `nil` for any unit but the player. A
+missing or negative `index` raises a usage error.
 
 ```lua
 for i = 1, C_LossOfControl.GetActiveLossOfControlDataCount() do
@@ -15809,35 +18242,55 @@ end
 
 | Field | Type | Notes |
 |---|---|---|
-| `locType` | string | `"STUN"`, `"FEAR"`, `"ROOT"`, `"CONFUSE"`, `"CHARM"`, `"POSSESS"`, `"SILENCE"`, `"PACIFY"`, `"PACIFYSILENCE"`, `"DISARM"`, or `"SCHOOL_INTERRUPT"`. |
-| `spellID` | number | The spell causing the effect. `0` for `SCHOOL_INTERRUPT` (the server does not send the interrupting spell). |
-| `displayText` | string | Effect name — the spell name for CC, `"Interrupted"` for `SCHOOL_INTERRUPT`. |
-| `iconTexture` | string | The spell's icon path (there are no FileDataIDs here; the path is the functional equivalent). `""` for `SCHOOL_INTERRUPT`. |
-| `startTime` | number? | `GetTime()`-epoch seconds. `nil` when the effect has no timer. |
-| `timeRemaining` | number? | Seconds remaining. |
-| `duration` | number? | Effect duration, in seconds. |
-| `lockoutSchool` | number | The locked spell-school mask for `SCHOOL_INTERRUPT` (feed to `C_Spell.GetSchoolString` for the name); `0` for CC effects. |
-| `priority` | number | Always `0` — no equivalent here. |
-| `displayType` | number | Always `2` (show for the effect's full duration). |
+| `locType` | string | `"POSSESS"`, `"CONFUSE"`, `"CHARM"`, `"FEAR"`, `"STUN"`, `"PACIFY"`, `"ROOT"`, `"SILENCE"`, `"PACIFYSILENCE"`, `"DISARM"` or `"SCHOOL_INTERRUPT"`. |
+| `spellID` | number | The spell of the debuff. `0` for `SCHOOL_INTERRUPT`, because the server does not send the interrupting spell. |
+| `displayText` | string | The global string `LOSS_OF_CONTROL_DISPLAY_<mechanic>` for the mechanic of the effect, for example `"Polymorphed"` or `"Sapped"`. Without a mechanic, it is `LOSS_OF_CONTROL_DISPLAY_<locType>`, for example `"Stunned"`. When that global string is missing, it is the name of the global string. |
+| `iconTexture` | string | The icon path of the spell. `""` for `SCHOOL_INTERRUPT`. |
+| `startTime` | number? | In `GetTime()` seconds. `nil` when the effect has no timer. |
+| `timeRemaining` | number? | In seconds. `0` after the timer has run out. `nil` when the effect has no timer. |
+| `duration` | number? | In seconds. `nil` when the effect has no timer. |
+| `lockoutSchool` | number | The mask of the locked school for `SCHOOL_INTERRUPT`, for `C_Spell.GetSchoolString`. `0` for a control effect. |
+| `priority` | number | See the table below. |
+| `displayType` | number | `0` not shown, `1` alert, `2` full screen. See the table below. |
+| `auraInstanceID` | number? | The instance ID of the debuff (see [`AuraData`](#auradata-table-shape)). `nil` for `SCHOOL_INTERRUPT`. |
 
-Fidelity notes:
+| `locType` | `priority` | `displayType` |
+|---|---|---|
+| `POSSESS`, `CONFUSE`, `CHARM`, `FEAR`, `STUN` | 5 | 2 |
+| `PACIFYSILENCE` | 4 | 1 |
+| `PACIFY`, `SILENCE`, `DISARM` | 3 | 1 |
+| `SCHOOL_INTERRUPT` | 2 | 1 |
+| `ROOT` | 1 | 0 |
 
-- **`SCHOOL_INTERRUPT`** comes from the lockout that the server sends. The
-  server locks every spell of the interrupted school for the same duration, so
-  the school and duration are exact. The server does not send the interrupting
-  spell, so `spellID = 0` and `displayText = "Interrupted"`.
-- **CC timing** comes from the server's timer for your debuff, the same timer
-  `GetPlayerBuffTimeLeft` uses. It includes diminishing returns and the
-  caster's talents. `startTime` / `timeRemaining` / `duration` are `nil` when
-  the debuff has no timer.
-- **`auraInstanceID`** is the instance ID of the CC debuff (see
-  [`AuraData`](#auradata-table-shape)). It is `nil` for
-  `SCHOOL_INTERRUPT`, which is not an aura.
+Notes:
+
+- **`SCHOOL_INTERRUPT`**: the server locks every spell of the interrupted
+  school for the same duration, so the school and the duration are exact.
+- **Control-effect timing** comes from the server's timer for your debuff, the
+  same timer that `GetPlayerBuffTimeLeft` uses. It includes diminishing returns
+  and the talents of the caster.
+- **`displayText` strings**: ClassicAPI gives the `LOSS_OF_CONTROL_DISPLAY_*`
+  global strings in all supported locales, together with
+  `LOSS_OF_CONTROL_DISPLAY_INTERRUPT_SCHOOL` (`"%s Locked"`).
+
+### `C_LossOfControl.GetActiveLossOfControlDuration(unitToken, index)`
+
+Returns the timer of the effect at position `index` as a duration object (see
+[`C_DurationUtil.CreateDuration`](#c_durationutilcreateduration)), or `nil` when no effect has that
+position. The object is zero for an effect with no timer. It is `nil` for any
+unit but the player.
+
+### `Constants.LossOfControlConsts`
+
+| Field | Value |
+|---|---|
+| `LOSS_OF_CONTROL_ACTIVE_INDEX` | 1 |
 
 ### `C_LossOfControl.GetSchoolLockout([filterMask])`
 
-Returns `lockedMask, secondsRemaining` for the school-interrupt lockout — the
-`SCHOOL_INTERRUPT` slice of the list above, without building the list.
+**ClassicAPI extension.** Returns `lockedMask, secondsRemaining` for the school
+lockouts: the `SCHOOL_INTERRUPT` part of the list above, without building the
+list.
 
 ```lua
 local mask, remaining = C_LossOfControl.GetSchoolLockout()
@@ -15855,32 +18308,23 @@ end
 
 | Return | Type | Notes |
 |---|---|---|
-| `lockedMask` | number | Every currently locked school OR'd together, as `1 << schoolIndex` — the same shape as `lockoutSchool`. `0` when nothing is locked. |
-| `secondsRemaining` | number? | Until every school in `lockedMask` is clear, i.e. the lockout ending last. `nil` when `lockedMask` is `0`. |
+| `lockedMask` | number | All locked schools together, as `1 << schoolIndex`. This is the same form as `lockoutSchool`. `0` when no school is locked. |
+| `secondsRemaining` | number? | The time until all schools in `lockedMask` are clear, that is, until the last lockout ends. `nil` when `lockedMask` is `0`. |
 
-`filterMask` narrows the scan to those schools, so one school's own remaining
-time is `GetSchoolLockout(1 << schoolIndex)`. Omitted or `0` means all schools.
+`filterMask` limits the result to those schools. Thus the remaining time of one
+school is `GetSchoolLockout(1 << schoolIndex)`. Omitted or `0` means all
+schools.
 
-Two schools can be locked at the same time — each interrupt
-locks one, so being kicked on fire and then on frost leaves both active. That is
-why this returns a mask rather than a single school, and why walking the list
-above and stopping at the first `SCHOOL_INTERRUPT` entry is wrong.
+Two schools can be locked at the same time: each interrupt locks one school.
+For example, a Kick on a fire spell and then on a frost spell locks both. For
+this reason the function returns a mask.
 
-Prefer this over the list walk whenever only the school lockout matters: it
-reads the lockout state directly, allocating no table and skipping the
-debuff scan that every `GetActiveLossOfControlData` call performs. Cheap enough
-to call per frame from a macro conditional.
+The function makes no table and does not read the debuffs, so you can call it
+each frame, for example from a macro conditional.
 
-The `LOSS_OF_CONTROL_ADDED` / `LOSS_OF_CONTROL_UPDATE` events fire as these
-effects change — see [Events](#loss_of_control_added--loss_of_control_update-events).
-Note that they are driven by a diff of *which* effects are active, so
-re-locking an already-locked school extends its lockout without firing either
-event. Read the remaining time when you need it rather than caching it on the
-events.
-
-For the effect that blocks one specific spell, shaped as a cooldown, see
+For the effect that blocks one spell, as a cooldown, see
 [`C_Spell.GetSpellLossOfControlCooldown`](#c_spellgetspelllossofcontrolcooldownspellidentifier)
-and its spellbook-slot variants.
+and the related functions.
 
 ## Lua
 
@@ -15918,6 +18362,10 @@ What each form does:
   `-1 % 3` is `2`, while `math.mod(-1, 3)` is `-1`.
 - `...` as an expression yields all the varargs. The `...` in a function
   parameter list stays as the vararg declaration.
+- A call to a function that reads its `...` (or `arg`) makes a new table
+  for the varargs. Lua 5.1 does not make this table. Do not put such a
+  function on a path that runs each frame. A function that declares `...`
+  and does not read it makes no table.
 - `0xFF00` becomes its decimal value (`65280`) — the same number Lua 5.1
   produces. The 5.0 lexer rejects `0x` literals, so without this an addon
   needs `tonumber("0xFF00", 16)`.
@@ -15963,11 +18411,12 @@ needs that addon's opt-in.
   `"LongBrackets"`. This
   reverts affected chunks to the state that fails to compile, so use it
   only to answer "is the rewrite breaking this addon?".
-- `_classicapi_TranspileStats()` returns six numbers: the chunks loaded,
+- `_classicapi_TranspileStats()` returns seven numbers: the chunks loaded,
   their bytes, the chunks that needed a full token pass, those bytes,
-  the milliseconds the rewrite has used since the client started, and the
+  the milliseconds the rewrite has used since the client started, the
   number of [XML script bodies](#xml-script-bodies-see-self-and-their-arguments)
-  compiled with their parameters.
+  compiled with their parameters, and the number of unread `...`
+  declarations the rewrite removed.
 
 ### Upvalue limit
 
@@ -16196,15 +18645,22 @@ the handler.
 
 - `GetCallstackHeight()` returns the number of call levels on the stack.
   The function that calls `GetCallstackHeight` is level 1. C functions
-  count as levels, the same as in `debugstack`.
-- `GetErrorCallstackHeight()` returns the stack height of the code that
-  caused the error, while the game reports an error to the error handler.
-  If code calls the error handler directly, `GetErrorCallstackHeight`
-  returns the value that `SetErrorCallstackHeight` set, or nil.
-- `SetErrorCallstackHeight(height)` sets the height for an error handler
-  that code calls directly, with no error. `SetErrorCallstackHeight(nil)`
-  removes the value. `CallErrorHandler` and `assertsafe` use this function
-  to report from the code that called them.
+  count as levels. A tail call that Lua does not keep does not count, so
+  the number can be less than the levels of `debugstack`. Inside a
+  coroutine, the function counts the levels of the main thread.
+- `GetErrorCallstackHeight()` returns the stack height of the Lua function
+  that caused the error, while the game reports an error to the error
+  handler. C functions such as `error` and `assert` are skipped, so the
+  height is that of the function that called them. A chunk is skipped too:
+  for an error raised directly in a `/run` line, the height is that of the
+  chat code that ran the line. With no Lua function above the error, the
+  height is `0`. When no error is being reported, the function returns nil.
+- `SetErrorCallstackHeight(height)` sets the height that
+  `GetErrorCallstackHeight` returns. A set height is also used for a raised
+  error, until `SetErrorCallstackHeight(nil)` removes it. `CallErrorHandler`
+  and `assertsafe` use this function to report from the code that called
+  them. `height` must be a number in the 32-bit range, or the call raises
+  an error; a fraction rounds toward `0`.
 
 This function returns the stack from the code that caused the error:
 
@@ -16238,16 +18694,26 @@ Returns the local variables and the upvalues of a call level as one string.
 An error handler uses it to show the values in the code that caused the
 error. `level` counts the same as in `debugstack`, and is 1 by default.
 
-Each variable is one `name=value` line. A string value is in quotes. A
-table shows the name of its frame, or `<table>`, then its fields one space in,
-then `}`. Fields of tables inside a table do not show. A function shows the
-file and line where it is defined.
+Each variable is one `name=value` line:
+
+- A number with no fraction shows as a whole number (`12`), any other number
+  with six decimals (`2.500000`), and an infinite number or NaN as
+  `Infinite`.
+- A string shows in quotes, up to its first line break.
+- A table shows its header, then its fields one space in, between `{` and
+  `}`. A table with no field to show is its header alone. The header is the
+  result of the table's `ToDebugString` method when it has one. For a frame,
+  it is the frame's name (or its type, when it has no name) and where it was
+  created: `MyFrame <MyAddon.lua:12>`, or `<MyAddon.xml>` for a frame from
+  XML. Otherwise it is `<table>`. A table inside a table shows its header
+  only.
+- A field key prints as a number in the same way, as text, or as the name of
+  its type.
+- A function shows the file and line where it is defined.
 
 If `skipFunctionsAndUserdata` is `true`, function and userdata values do not
-show. The text stops at 4095 bytes.
-
-`debuglocals` works only while an error handler runs. At other times it
-returns nothing.
+show, also inside tables. The text stops at 4095 bytes. A `level` that does
+not exist returns an empty string.
 
 ```lua
 seterrorhandler(function(message)
@@ -16318,6 +18784,80 @@ table.count({ [-3] = "x" })           -- 1, 0, 0
 Pure iteration over the table (`lua_next`), so no dependency on Lua's internal
 storage layout. Errors on non-table input.
 
+### `table.create(arraySizeHint [, nodeSizeHint])`
+
+Returns a new empty table with space for `arraySizeHint` array entries (keys
+1 to n) and `nodeSizeHint` other keys. As a result, the table does not grow
+step by step while you fill it.
+
+- Each hint is a number. The function removes the fractional part of a hint
+  (it rounds toward zero).
+- A hint less than 0 counts as 0. A hint more than 1048576 counts as 1048576.
+- `nodeSizeHint` is optional. The default is 0.
+- The hints only reserve space. The new table is empty, and `#t` is 0.
+
+```lua
+local list = table.create(100)   -- space for 100 array entries
+local map = table.create(0, 16)  -- space for 16 keyed entries
+```
+
+The function gives an error in these conditions:
+
+- `arraySizeHint` is missing.
+- A hint is not a number.
+- A hint is less than -2147483648 or more than 2147483647.
+
+### `C_TableUtil.FindIndexedMismatch(t1, t2)`
+
+Returns the first index `i` where `t1[i]` and `t2[i]` are not equal. Returns
+nil when there is no such index.
+
+- The function compares the indexes from 1 to the longer length (`#t1` or
+  `#t2`).
+- Each comparison is the same as the `==` operator.
+- After the end of the shorter table, its values are nil. As a result, two
+  tables with different lengths differ at the index after the end of the
+  shorter table.
+- Both arguments must be tables. Other types give an error.
+
+```lua
+C_TableUtil.FindIndexedMismatch({ 1, 2, 3 }, { 1, 2, 3 }) -- nil
+C_TableUtil.FindIndexedMismatch({ 1, 2, 3 }, { 1, 5, 3 }) -- 2
+C_TableUtil.FindIndexedMismatch({ 1, 2 }, { 1, 2, 3 })    -- 3
+```
+
+### `table.freeze(tbl)`
+
+Makes `tbl` read-only and returns it. A frozen table stays frozen.
+
+After the call:
+
+- An assignment `tbl[k] = v` gives the error "attempted to perform indexed
+  assignment on a frozen table".
+- If the metatable of `tbl` has a `__newindex` field, each assignment goes to
+  `__newindex` and does not give an error. This is also true for keys that
+  already exist.
+- `rawset`, `table.insert`, `table.remove`, `table.sort`, `table.wipe`, and
+  other functions that write to the table give the same error. These
+  functions do not use `__newindex`.
+- `setmetatable(tbl, ...)` gives the error "attempted to replace metatable of
+  a frozen table".
+- Reads and iteration work as before.
+
+Code from an addon can freeze only a table that the same addon made. Code from
+a macro or `/run` can freeze only a table that macro code made. For other
+tables, the function gives an error. The default UI can freeze all tables.
+
+```lua
+local t = table.freeze({ 1, 2, 3 })
+print(t[2])                            -- 2
+print(pcall(function() t[4] = 4 end))  -- false, "...a frozen table"
+```
+
+### `table.isfrozen(tbl)`
+
+Returns `true` if `table.freeze` froze `tbl`. Otherwise returns `false`.
+
 ### `table.maxn(t)`
 
 Returns the largest positive numeric key of `t`, or `0` when it has none
@@ -16385,13 +18925,17 @@ old behavior:
 
 ### `Mixin(object, ...)` / `CreateFromMixins(...)`
 
-The FrameXML table-mixin primitives, provided as engine C functions.
+- **`Mixin(object, ...)`** copies each key and value of each mixin onto
+  `object`, and returns `object`. If two mixins have the same key, the later
+  mixin wins. The copy does not use the `__newindex` metamethod of `object`.
+- **`CreateFromMixins(...)`** returns a new table with the keys and values of
+  all the mixins.
 
-- **`Mixin(object, ...)`** — shallow-copies every key/value from each table
-  argument onto `object` (later arguments win on key collisions) and returns
-  `object`. Non-table arguments are skipped.
-- **`CreateFromMixins(...)`** — `Mixin({}, ...)`: returns a new table seeded
-  from the given mixins.
+All arguments must be tables, and `Mixin` must have at least one. For other
+calls, the function gives the error "Usage: local outObject = Mixin(object,
+...)" or "Usage: local object = CreateFromMixins(...)". The second line of
+the error shows the taint of the calling code: "Lua Taint: <name>" or "No Lua
+Taint".
 
 ```lua
 local Greeter = {}
@@ -16400,14 +18944,6 @@ local obj = CreateFromMixins(Greeter)
 obj.name = "Bob"
 obj:Hello()   -- "hi, Bob"
 ```
-
-ClassicAPI provides these as C functions (rather than leaving them in the
-`!!!ClassicAPI` addon) so they exist
-whenever the DLL is injected — even if the addon is disabled. The composite
-`CreateAndInitFromMixin(mixin, ...)` (which calls a `:Init` method) remains a
-Lua helper in the addon. The taint-based `SecureMixin` family is intentionally
-omitted — there is no execution taint system, so there is nothing for it to
-guard.
 
 ### `string.match` / `string.gmatch`
 
@@ -16885,16 +19421,13 @@ mouse, through
 [`C_Item.UseAtCursor`](#c_itemuseatcursoritem). A spell or item with no
 ground effect is cast or used normally.
 
-`[@player]` drops a ground-target spell or item at your own feet. A spell or
-item with no ground effect is cast or used on you.
-
-Your own feet and the cursor are the only two positions a ground-target
-spell or item can be aimed at this way. `[@target]` and the other units cast
-the spell on that unit when it takes a unit, and otherwise bring up the
-reticle for you to click, which is aim you already had.
+`[@unit]` places a ground-target spell or item at the position of that unit,
+for example `[@player]` at your own feet or `[@mouseover]` at the unit under
+your mouse. A spell or item with no ground effect is cast or used on the unit.
 
 ```
 /cast [@cursor] Blizzard
+/cast [@mouseover,exists][@cursor] Blizzard
 /use [@cursor] item:4390
 /use [@player] item:4390
 ```
@@ -17566,9 +20099,8 @@ zone, the button has no range state.
 
 The function ignores `unit` when `value` is `false`, `nil` or an empty
 string, because the macro then aims at nothing. A call with the same `value`
-and a different `unit` changes the unit. If `unit` is not a unit token, the
-function raises the error `Unknown unit name: <unit>`, the same error that
-`UnitExists` gives. Then it publishes nothing.
+and a different `unit` changes the unit. If `unit` is not a unit token, it
+names no unit, and the range check uses your target as above.
 
 **What the button picks up.** The spell is written where the client keeps
 each macro's spell, which is the field its own buttons read. So cooldown,
@@ -18937,6 +21469,12 @@ A `ModelScene` frame shows many models in one 3D scene. Each model is an
 and the actors in scene coordinates: `z` is up, and distances are in yards.
 The scene can also show a WMO, for example a dungeon, around the actors.
 
+A wrong argument to a method of a scene or of an actor raises an error in
+this form: `bad argument #N to 'Method' (Usage: self:Method(...))`. The
+methods that set one number, for example `SetCameraFieldOfView`,
+`SetFogNear` and `actor:SetScale`, also need a finite number. The angles of
+`SetCameraOrientationByYawPitchRoll` also need finite numbers.
+
 ### `CreateFrame("ModelScene" [, name, parent, template])`
 
 Makes a `ModelScene` frame. In XML, use the `<ModelScene>` element.
@@ -18962,9 +21500,14 @@ attributes of a frame:
 | XML | Effect |
 |---|---|
 | `drawLayer="OVERLAY"` | `SetDrawLayer` |
-| `fogNear="10"` / `fogFar="40"` | `SetFogNear` / `SetFogFar`. A negative value becomes `0`. |
-| `<FogColor r="1" g="0" b="0"/>` | `SetFogColor` |
-| `<ViewInsets left="0" right="0" top="50" bottom="0"/>` | `SetViewInsets` |
+| `fogNear="10"` / `fogFar="40"` | `SetFogNear` / `SetFogFar`. The scene keeps the value as it is. A negative value stays negative. |
+| `<FogColor r="1" g="0" b="0"/>` | `SetFogColor`. Only the first `<FogColor>` has an effect. |
+| `<ViewInsets left="0" right="0" top="50" bottom="0"/>` | `SetViewInsets`. A missing attribute is `0`. Without the four attributes, an `<AbsInset>` or `<RelInset>` child gives the insets. |
+
+A scene inside a frame that clips its children
+([`frame:SetClipsChildren`](#framesetclipschildrenclipschildren--framedoesclipchildren)),
+or inside a `ScrollFrame`, is cut to the rectangle of that frame. A scene
+that is fully outside that rectangle draws nothing.
 
 ```lua
 local scene = CreateFrame("ModelScene", nil, UIParent)
@@ -18981,14 +21524,30 @@ horse:SetModelByCreatureDisplayID(2404)   -- a brown horse
 
 Adds an actor to the scene and returns it. `name` gives the actor a global
 name. In `name`, `$parent` stands for the name of the scene. `template` is
-the name of a virtual `<Actor>` element. The actor gets the template's
-mixins, scripts and key values, and then its `OnLoad` runs.
+the name of a virtual `<Actor>` element (see [`<Actor>` templates](#actor-templates)).
+The actor gets the settings of the template, and then its `OnLoad` runs.
+`OnLoad` runs before the actor goes into the list of the scene. Thus
+`GetNumActors` in `OnLoad` does not count the new actor.
+
+A `template` that is not a string has no effect. When no template has the
+name, the call raises the error `Couldn't find inherited node "name"`. When
+the `inherits` chain of the template comes back to a template in the chain,
+the call raises the error `Recursively inherited node "name"`.
 
 ### `scene:GetNumActors()` / `scene:GetActorAtIndex(index)`
 
 `GetNumActors` returns the number of actors in the scene.
 `GetActorAtIndex` returns one actor. Index `1` is the first actor that the
-scene made.
+scene made. For an index out of the range, `GetActorAtIndex` returns
+nothing. When `index` is not a number, it raises the error
+`Invalid index passed`.
+
+### `scene:TakeActor(actor)`
+
+Moves an actor of another scene into this scene. The actor loses its model,
+and its `OnModelCleared` script runs. Give the actor a model again after the
+move. The actor goes to the end of the list of this scene. For an actor of
+this scene, the call does nothing.
 
 ### `scene:SetCameraPosition(x, y, z)` / `scene:GetCameraPosition()`
 
@@ -18998,12 +21557,15 @@ Sets or returns the position of the camera.
 
 Turns the camera. All three angles are in radians. `yaw` turns about the up
 axis, a positive `pitch` looks down, and `roll` turns about the direction
-that the camera looks.
+that the camera looks. The axes that the angles give go through the test of
+`SetCameraOrientationByAxisVectors`.
 
 ### `scene:SetCameraOrientationByAxisVectors(forwardX, forwardY, forwardZ, rightX, rightY, rightZ, upX, upY, upZ)`
 
 Turns the camera so that it looks along the forward vector, with the right
-and up vectors as its sides.
+and up vectors as its sides. Each vector must have a length of 1, and each
+two vectors must be at a right angle. If they are not, the call raises the
+error `Each vector must be orthonormal`, and the camera does not turn.
 
 ### `scene:GetCameraForward()` / `scene:GetCameraRight()` / `scene:GetCameraUp()`
 
@@ -19011,12 +21573,23 @@ Each one returns three numbers: one axis of the camera.
 
 ### `scene:SetCameraFieldOfView(fov)` / `scene:GetCameraFieldOfView()`
 
-Sets or returns the vertical field of view of the camera, in radians.
+Sets or returns the vertical field of view of the camera, in radians. A
+value less than `0` becomes `0`. A value more than 2π (`6.2831855`) becomes
+2π.
 
 ### `scene:SetCameraNearClip(nearClip)` / `scene:SetCameraFarClip(farClip)`
 
 Sets the nearest and the farthest distance that the camera draws.
-`GetCameraNearClip()` and `GetCameraFarClip()` return them.
+`GetCameraNearClip()` and `GetCameraFarClip()` return them. A value of `0`
+or less becomes `0`. While the near clip is not less than the far clip, the
+scene draws nothing.
+
+The clip distances and the fog distances follow the scale of the frame. The
+scene divides each of these distances by `GetScale()`, multiplied by
+`GetEffectiveScale()` and by a factor of the screen. Thus a scene at a
+smaller UI scale draws to a farther distance, and its fog is farther away.
+The positions of the camera and of the actors do not follow the scale. The
+getters return the values that you set.
 
 ### `scene:SetViewInsets(left, right, top, bottom)` / `scene:GetViewInsets()`
 
@@ -19090,7 +21663,8 @@ scene:SetActiveCamera(camera)
 
 ### `scene:SetLightType(lightType)` / `scene:GetLightType()`
 
-`0` makes a directional light, and `1` makes a point light.
+`0` makes a directional light, and `1` makes a point light. Other values
+raise an argument error.
 
 ### `scene:SetLightVisible([visible])` / `scene:IsLightVisible()`
 
@@ -19099,25 +21673,39 @@ Turns the light on or off.
 ### `scene:SetLightDirection(x, y, z)` / `scene:SetLightPosition(x, y, z)`
 
 Sets the direction of a directional light, or the position of a point
-light. `GetLightDirection()` and `GetLightPosition()` return them.
+light. `GetLightDirection()` and `GetLightPosition()` return them. The scene
+keeps the direction as a vector with a length of 1, so `GetLightDirection`
+returns the normalized vector.
 
 ### `scene:SetLightAmbientColor(r, g, b)` / `scene:SetLightDiffuseColor(r, g, b)`
 
-Sets the colors of the light, from `0` to `1`. `GetLightAmbientColor()` and
-`GetLightDiffuseColor()` return them.
+Sets the colors of the light, from `0` to `1`. A value less than `0`
+becomes `0`, and a value more than `1` becomes `1`. The scene keeps each
+value in steps of 1/255. `GetLightAmbientColor()` and
+`GetLightDiffuseColor()` return the stored values.
 
 ### `scene:SetFogColor(r, g, b)` / `scene:GetFogColor()`
 
-Sets the color of the fog and turns the fog on.
+Sets the color of the fog, from `0` to `1`, with the same limits and steps
+as the light colors. The call changes only the color: it does not change
+the fog distances. The fog is white by default.
 
 ### `scene:SetFogNear(near)` / `scene:SetFogFar(far)`
 
 Sets the distance where the fog starts and the distance where it is full.
-`GetFogNear()` and `GetFogFar()` return them.
+`GetFogNear()` and `GetFogFar()` return them. The scene keeps the value as
+you give it.
+
+The fog of a scene is always on. The default distances (`10000000` and
+`100000000`) are too far for fog to show. A call to `SetFogNear` or
+`SetFogFar` alone thus makes white fog. The fog distances follow the scale
+of the frame, as the clip distances do (see
+[`scene:SetCameraNearClip`](#scenesetcameranearclipnearclip--scenesetcamerafarclipfarclip)).
 
 ### `scene:ClearFog()`
 
-Turns the fog off.
+Sets the fog distances back to their defaults, near `10000000` and far
+`100000000`, so that no fog shows. The color of the fog does not change.
 
 ### `scene:SetDrawLayer(layer)` / `scene:GetDrawLayer()`
 
@@ -19126,35 +21714,28 @@ Sets the draw layer of the scene, for example `"ARTWORK"` or `"OVERLAY"`.
 
 ### `scene:SetPaused(paused [, affectsGlobalPause])`
 
-`true` stops the animations of all the actors. Each actor stays at its
-current frame. `false` starts the animations again from the same frame.
-`affectsGlobalPause` has no effect. To pause one actor, use
-[`actor:SetPaused`](#actorsetpausedpaused--affectsglobalpause--actorgetpaused).
+Pauses or unpauses each actor of the scene that has a model at the time of
+the call. For each of these actors, the call is the same as
+[`actor:SetPaused(paused, affectsGlobalPause)`](#actorsetpausedpaused--affectsglobalpause--actorgetpaused).
+`paused` is necessary: without it, the call raises an argument error.
+`affectsGlobalPause` is `true` by default.
 
-These also stop with the animations:
+The scene keeps no pause of its own. Thus the call does not change these:
 
+- An actor that the scene makes after the call, and an actor without a
+  model at the time of the call.
 - The clock of the scene ([`scene:GetSceneTime`](#scenegetscenetime)) and
   the timers of the scene.
-- The movement of all the actors: walking, running, jumping, falling,
-  swimming and `MoveTo`. A movement command that you give while the scene is
-  paused starts when the scene starts again.
-- The spell visuals of `PlaySpellVisual`, missiles in flight and chain
-  bolts. The flight sounds of the missiles stop.
-- The shards of a spell ground area (`actor:SetModelBySpellArea`). The
-  sound of the area stops.
-- The click-to-move marker of `scene:SetMoveMarker`.
-
-When the scene starts again, each of these continues from where it stopped.
-The `OnUpdate` scripts of the actors continue to run while the scene is
-paused.
+- The movement of the actors, the camera shakes and the click-to-move
+  marker of `scene:SetMoveMarker`.
 
 ### `scene:GetSceneTime()`
 
 Returns the time on the clock of the scene, in seconds. The clock starts
 at 0 when the scene is made. The actors animate and move by this clock.
 
-The clock stops while the scene is paused (`scene:SetPaused`) and while
-the scene is hidden. This is a ClassicAPI extension.
+The clock stops while the scene is hidden. `scene:SetPaused` does not stop
+it. This is a ClassicAPI extension.
 
 ### `scene:After(seconds, callback)` / `scene:NewTimer(seconds, callback)` / `scene:NewTicker(seconds, callback [, iterations])`
 
@@ -19163,8 +21744,7 @@ These functions are the same as
 [`C_Timer.NewTimer`](#c_timernewtimerseconds-callback) and
 [`C_Timer.NewTicker`](#c_timernewtickerseconds-callback-iterations), but
 they use the clock of the scene. Time does not pass for these timers while
-the scene is paused or hidden. Thus the timers stay in step with the
-animations of the actors.
+the scene is hidden. `scene:SetPaused` does not stop them.
 
 The scene runs its timers when its clock moves, before the actors update.
 A ticker runs one time in each frame at most. A `/reload` cancels all the
@@ -19182,8 +21762,21 @@ ticker:Cancel()
 
 ### `scene:SetAllowOverlappedModels(allow)` / `scene:GetAllowOverlappedModels()`
 
-Stores a flag. It is `false` by default. The flag has no effect: a scene
-always draws, also when another model frame covers it.
+Sets how the scene uses the depth of the screen. `allow` is necessary:
+without it, the call raises an argument error. The flag is `false` by
+default.
+
+- `true` clears the depth under the scene before the scene draws.
+- `false` keeps the depth of the scenes that drew earlier in the same
+  frame. Thus the models of a scene that overlaps this scene can hide the
+  models of this scene.
+
+### `scene:SetDesaturation(strength)`
+
+Gives `strength` to each actor that the scene has now, as
+[`actor:SetDesaturation`](#actorsetdesaturationstrength--actorgetdesaturation)
+does. The scene keeps no value. Thus an actor that you create after the
+call shows full color. There is no `scene:GetDesaturation()`.
 
 ### `scene:SetGroundTerrain([terrainTypeID])` / `scene:GetGroundTerrain()`
 
@@ -19208,7 +21801,7 @@ the sounds of their footsteps and death thuds (see
 Without `terrainTypeID`, an actor stands on the floor of the WMO of the scene
 ([`scene:SetWorldModel`](#scenesetworldmodelpath--x-y-z--yaw--doodadset--mapid))
 or on its ground
-([`scene:SetWorldTerrain`](#scenesetworldterrainmapid-x-y--radius)),
+([`scene:SetWorldTerrain`](#scenesetworldterrainmapid)),
 whichever is nearer under it, as in the world. The material of the WMO floor,
 or the main texture of the ground at that point, selects the sounds. An actor
 with no floor and no ground under it makes no footsteps and no death thuds.
@@ -19282,7 +21875,7 @@ in it:
   take the light of the place where they are. An arrow in a bow or in a
   target takes the light of the actor that holds it.
 
-The far clip of the camera (`100` yards by default) also
+The far clip of the camera (`100` by default) also
 cuts the WMO. For a large WMO, increase the far clip with
 `scene:SetCameraFarClip`. `scene:GetActorAtCursor` does not return the WMO
 or its props.
@@ -19321,27 +21914,40 @@ onyxia:SetPosition(0.7, -211.97, -86.08) -- her place in the lair
 
 Removes the WMO of the scene and its props. This is a ClassicAPI extension.
 
-### `scene:SetWorldTerrain(mapID, x, y [, radius])`
+### `scene:SetWorldTerrain(mapID)`
 
-Shows the ground of a map around a point and returns `true`. `mapID` is a
-row of `Map.dbc`, for example `0` for Eastern Kingdoms. `x` and `y` are a
-position on that map, so the positions in the scene are the positions on
-the map. The scene shows each part of the ground that is less than
-`radius` yards from the point. The default radius is 533.33 yards, the
-width of one map tile.
+Shows the ground of a map and returns `true`. `mapID` is a row of
+`Map.dbc`, for example `0` for Eastern Kingdoms. The positions in the scene
+are the positions on the map.
+
+The ground follows the camera of the scene, as the ground of the world
+follows the camera of the world. The ground within the far clip of the
+camera (see `scene:SetCameraFarClip`) loads at once. A ring of ground past
+it loads a little in each frame. Ground that the camera leaves behind is
+removed. When the camera moves to a new place, the ground there loads in
+the same frame, so a large move can make one frame slow.
 
 The ground looks as it does in the world: the same textures, the same
 shadows and the same level of detail. The light of the scene stands in for
-the sun, and the fog of the scene stands in for the fog of the zone. In a
-scene without a WMO, the sky of the map shows behind the ground: its
-colors, the sun and the moons, the stars, the clouds and the skybox, in the
-light of the map at the camera and at the time of day of the world. The
-sky hides the background of the scene. A WMO from
+the sun, and the fog of the scene stands in for the fog of the zone. When
+the camera is not inside a WMO, the sky of the map shows behind the ground:
+its colors, the sun and the moons, the stars, the clouds and the skybox, in
+the light of the map at the camera and at the time of day of the world. The
+sky hides the background of the scene. To light the ground as the world
+lights it at a time of day, use
+[`scene:SetWorldTimeOfDay`](#scenesetworldtimeofdaytimeofday--scenegetworldtimeofday--sceneclearworldtimeofday).
+
+The WMOs that the map puts on that ground also show, for example the
+buildings of a town or a whole city. Each one shows as
 [`scene:SetWorldModel`](#scenesetworldmodelpath--x-y-z--yaw--doodadset--mapid)
-stands on the ground when you give it its position on the same map.
+shows a WMO: its light, its fog, its props, its water, and collision for the
+actors. A WMO that you set with `scene:SetWorldModel` shows together with
+them. To put it on the ground, give it its position on the same map.
 
 The function returns `false` and shows no ground when the map has no
-ground within the radius. A new call replaces the ground of the scene.
+ground, for example a map that is one WMO (use
+[`scene:SetWorldModelByMapID`](#scenesetworldmodelbymapidmapid) for it). A
+new call replaces the ground of the scene.
 
 Actors stand, walk and fall on the ground as on the floor of a WMO (see
 [`actor:SetMovementEnabled`](#actorsetmovementenabledenabled--actorismovementenabled)),
@@ -19349,7 +21955,7 @@ and
 [`scene:TraceSegment`](#scenetracesegmentstartx-starty-startz-endx-endy-endz--camera)
 and
 [`scene:SweepCollider`](#scenesweepcolliderfeetx-feety-feetz-radius-height-movex-movey-movez)
-find it. Past the radius there is no ground.
+find it where it has loaded.
 
 The props of the map on that ground, for example trees, plants and rocks,
 show as in the world. They fade with distance, and actors collide with them.
@@ -19366,16 +21972,48 @@ liquid around the camera, with the `waterParticulates` setting. This is a Classi
 extension.
 
 ```lua
--- The Gurubashi Arena: the arena WMO where the map puts it, on its ground.
-scene:SetWorldModel("World\\wmo\\Azeroth\\Collidable Doodads\\Stranglethorn\\StranglethornArena\\StrangleGladiatorArena.wmo",
-    -13205.914, 271.832, 20.280, math.rad(64) + math.pi, 0, 0)
-scene:SetWorldTerrain(0, -13205.914, 271.832, 250)
+-- The Gurubashi Arena: its ground, with the arena WMO that the map puts there.
 scene:SetCameraFarClip(500)
+scene:SetCameraPosition(-13205.914, 271.832, 60)
+scene:SetWorldTerrain(0)
 ```
 
 ### `scene:ClearWorldTerrain()`
 
 Removes the ground of the scene. This is a ClassicAPI extension.
+
+### `scene:SetWorldTimeOfDay(timeOfDay)` / `scene:GetWorldTimeOfDay()` / `scene:ClearWorldTimeOfDay()`
+
+Lights the ground or the map WMO of the scene as the world lights it at a
+time of day. `timeOfDay` is a part of the day: `0` is midnight, `0.25` is
+six in the morning and `0.5` is noon. A number out of this range wraps
+around, so `1.25` is also six in the morning.
+
+The scene takes the light of the map at its camera, at that time:
+
+- The sun lights the actors, the ground and the outside of the WMOs from
+  its place at that time, with the colors of that time.
+- The fog is the fog of the map at that time. Under water or lava, the fog
+  is the fog of the map for that liquid, as before.
+- The sky, the sun, the moons and the stars show that time.
+
+While the scene draws, this light and fog take the place of the light and
+the fog of the scene (`scene:SetLightAmbientColor`, `scene:SetFogColor` and
+the other light and fog functions). Those functions keep their values, and
+the scene uses them again after `scene:ClearWorldTimeOfDay()`. Then the sky
+shows the time of day of the world again.
+
+`scene:GetWorldTimeOfDay()` returns the time of day that you set, or nil
+when there is none. The time has an effect only on a scene with
+[`scene:SetWorldTerrain`](#scenesetworldterrainmapid) or
+[`scene:SetWorldModelByMapID`](#scenesetworldmodelbymapidmapid). This is a
+ClassicAPI extension.
+
+```lua
+-- Dusk in Stranglethorn.
+scene:SetWorldTerrain(0)
+scene:SetWorldTimeOfDay(20.5 / 24)
+```
 
 ### `scene:SetPlayWorldModelSounds(enabled)` / `scene:GetPlayWorldModelSounds()`
 
@@ -19395,7 +22033,7 @@ Returns the first face of the WMO or of the ground on the segment from the
 start to the end. The positions are scene positions. The function tests the
 faces that the line of sight of the world tests: the walls, floors and
 roofs of the WMO, and the ground of
-[`scene:SetWorldTerrain`](#scenesetworldterrainmapid-x-y--radius). It does
+[`scene:SetWorldTerrain`](#scenesetworldterrainmapid). It does
 not test small details or the props of the WMO.
 
 The function returns `hitX, hitY, hitZ, normalX, normalY, normalZ, fraction`:
@@ -19427,7 +22065,7 @@ local _, _, floorZ = scene:TraceSegment(x, y, z + 2, x, y, z - 50)
 ### `scene:GetLiquidAtPoint(x, y, z)`
 
 Returns the liquid of the WMO or of the terrain
-([`scene:SetWorldTerrain`](#scenesetworldterrainmapid-x-y--radius)) at a
+([`scene:SetWorldTerrain`](#scenesetworldterrainmapid)) at a
 scene point, as the world finds it for a unit that stands at the point. The
 liquid of the WMO comes first. The function returns `liquidType, surfaceZ`:
 
@@ -19448,7 +22086,7 @@ This is a ClassicAPI extension.
 
 Moves a body in a straight line until it touches the WMO, one of its
 props, or the ground of
-[`scene:SetWorldTerrain`](#scenesetworldterrainmapid-x-y--radius). The
+[`scene:SetWorldTerrain`](#scenesetworldterrainmapid). The
 world moves a character into a wall or onto a floor in the same way. The body
 has the shape of a character in the world: a square box over a downward
 point at the feet. `radius` is half the width of the box, and `height` is
@@ -19572,11 +22210,11 @@ same pulsing yellow mark that the world shows where you click to move. The
 scene shows one marker. A new call moves it to the new point.
 
 - In a scene with a WMO or ground
-  ([`scene:SetWorldTerrain`](#scenesetworldterrainmapid-x-y--radius)), the
+  ([`scene:SetWorldTerrain`](#scenesetworldterrainmapid)), the
   marker lies on their faces near the point. In a scene with neither, it
   lies flat at the height of the point.
 - The marker pulses between 0.5 and 0.75 yards in size, two times each
-  second. It stops while the scene is paused.
+  second.
 - The marker stays until you call `ClearMoveMarker`. It does not go away
   when an actor gets to the point.
 
@@ -19632,15 +22270,37 @@ extension.
 ### `actor:SetModelByCreatureDisplayID(displayID [, useActivePlayerCustomizations])`
 
 Shows a creature by its display ID (a `CreatureDisplayInfo` ID) and returns
-`true`. It returns `false` and shows nothing for an ID that is not a
-display. A display of a character model is dressed in the clothes of its
+`true`. For an ID that is not a display, it returns `false` and keeps the
+old model. A display of a character model is dressed in the clothes of its
 NPC. `useActivePlayerCustomizations` has no effect.
+
+### `actor:SetModelByCharacterAppearance(appearance)`
+
+Shows the body of a player character with no unit, and returns `true`.
+`appearance` is a table:
+
+| Field | Value |
+|---|---|
+| `raceID`, `sex` | The race (a `ChrRaces` ID) and the sex (`0` male, `1` female). |
+| `skin`, `face`, `hairStyle`, `hairColor`, `facialHair` | The choices made at character creation. The default is `0`. |
+| `emblemStyle`, `emblemColor`, `emblemBorderStyle`, `emblemBorderColor`, `emblemBackgroundColor` | The guild emblem of a tabard. Give all five, or none. |
+
+The body has no clothes. Put items on it with `TryOn` or
+`SetItemTransmogInfo`. These items wait for the model to load. A tabard
+that shows a guild emblem shows the emblem of the table. The function
+returns `false` when the race and sex have no model. This is a ClassicAPI
+extension.
+
+```lua
+actor:SetModelByCharacterAppearance({ raceID = 1, sex = 0, skin = 2, face = 3, hairStyle = 4 })
+actor:SetItemTransmogInfo(ItemUtil.CreateItemTransmogInfo(2575), 4) -- a shirt
+```
 
 ### `actor:SetModelByPath(path [, useMips])`
 
 Shows a model file, for example `"Creature\\Wolf\\Wolf.mdx"`, and returns
-`true`. It returns `false` when the path does not give a model. `useMips`
-has no effect.
+`true`. When the path does not give a model, it returns `false` and keeps
+the old model. `useMips` has no effect.
 
 ### `actor:SetModelBySpellArea(spellID, radius)`
 
@@ -19661,8 +22321,9 @@ Returns `true`, or `false` when the spell has no ground area.
 - When you hide the actor or change its model, the area stops. No more
   shards fall, and the sound fades out in 3 seconds. Shards that are in the
   air land first. When you show the actor again, the area starts again.
-- While the scene or the actor is paused, the shards stop where they are
-  and the sound stops. When the pause ends, they continue.
+- While the actor is paused (`actor:SetPaused` or `scene:SetPaused`), the
+  shards stop where they are and the sound stops. When the pause ends, they
+  continue.
 
 This is a ClassicAPI extension.
 
@@ -19673,10 +22334,174 @@ storm:SetModelBySpellArea(10, 8) -- Blizzard, 8 yards
 storm:SetGroundReticle(8)
 ```
 
+### `actor:SetModelByGameObjectDisplayID(gameObjectDisplayID)`
+
+Shows the model of a game object display on the actor, as the world shows a
+door, a chest or a sign. `gameObjectDisplayID` is a
+`GameObjectDisplayInfo.dbc` id. Returns `true`, or `false` when the display
+has no model. A display whose model is a world model (a WMO), for example a
+ship or an elevator, also returns `false`.
+
+This is a ClassicAPI extension.
+
+### `actor:SetPortraitTexture(texture)`
+
+Shows the round portrait of the actor on a texture, as
+`SetPortraitTexture(texture, unit)` shows the portrait of a unit. The
+portrait shows the model of the actor as it looks, for example the body and
+the armor of a player. It does not show helm, shoulder and weapon models.
+
+- The portrait draws after the model loads and the scene draws the actor.
+  Until then the texture is transparent. An actor that the scene does not
+  draw, for example a hidden actor, keeps its last portrait.
+- When the model of the actor changes, the portrait draws again. The texture
+  keeps the actor's portrait, so you call this function one time.
+- A model without a portrait camera gives no portrait.
+
+This is a ClassicAPI extension.
+
+```lua
+local portrait = frame:CreateTexture(nil, "ARTWORK")
+portrait:SetWidth(64)
+portrait:SetHeight(64)
+actor:SetPortraitTexture(portrait)
+```
+
+### `actor:PlaySwing(victim, result [, critical [, offHand]])`
+
+Plays a melee swing of the actor, as a unit swings in the world. The actor
+swings the weapon in its hand. With `offHand`, it swings its off hand. The
+victim reacts when the swing strikes.
+
+| `result` | Reaction of the victim |
+|---|---|
+| `"HIT"` | It flinches at the hit point of the swing, as with `PlayWoundAnimation(critical)`. |
+| `"PARRY"` | It parries at the parry point of the swing, as with `PlayParryAnimation`. |
+| `"DODGE"`, `"DEFLECT"` | It dodges at the parry point of the swing. |
+| `"BLOCK"` | It blocks with its shield at the parry point of the swing. |
+| Other, for example `"MISS"` | Nothing. |
+
+- The swing animation comes from the weapon type, for example Attack1H for
+  a sword or Attack1HPierce for a dagger. Without a weapon, the actor
+  swings unarmed.
+- The swing plays on the upper body while the actor moves (see
+  `SetMoving`) or rides, so the legs continue. Otherwise it plays on the
+  whole body. A dodge or a block of the victim follows the same rule.
+- A swing that misses, is dodged or is evaded continues at half speed after
+  its hit point.
+- A swing during a swing does not start again. The first swing plays at
+  twice its speed, and the new result shows at its hit point. The second
+  swing plays after the first while the actor attacks and stands still
+  (see `SetAttacking`).
+- The reaction comes from the swing animation of the actor model. A swing
+  animation without a hit point or a parry point shows nothing.
+- Use a nil `victim` when the victim is not in the scene. A victim in
+  another scene counts as nil.
+
+This is a ClassicAPI extension.
+
+```lua
+attacker:SetAttacking(true)
+attacker:PlaySwing(victim, "HIT", true) -- the victim flinches when the swing strikes
+```
+
+### `actor:PlayWoundAnimation([critical])`
+
+Makes the actor flinch, as a unit flinches when a hit lands on it:
+
+| Case | Animation |
+|---|---|
+| `critical` is `true` | CombatCritical |
+| The actor attacks (`SetAttacking(true)`) | CombatWound |
+| Other | StandWound |
+
+- The flinch plays on the upper body while the actor moves, rides or
+  attacks, so the legs continue. A StandWound on an actor that stands still
+  plays on the whole body.
+- If the body plays a ready stance, the flinch plays on the whole body.
+- Nothing plays while the actor plays a death animation, before its model
+  loads, or when the model has no such animation.
+- Nothing plays for a creature that never flinches in the world (see
+  `SetCreatureID`).
+- Nothing plays while an aura holds the actor still, for example Freezing
+  Trap or Ice Block (see `AddAuraVisual`).
+
+Spells that the actor plays use the same flinch on their targets.
+
+This is a ClassicAPI extension.
+
+### `actor:PlayParryAnimation()`
+
+Makes the actor parry with the weapon in its main hand, as a unit does:
+
+| Main-hand weapon | Animation |
+|---|---|
+| One-handed axe, mace, sword or exotic, dagger, miscellaneous | Parry1H |
+| Two-handed axe, mace, sword or exotic | Parry2H |
+| Polearm, staff, spear | Parry2HL |
+| Fist weapon | ParryUnarmed |
+
+- Nothing plays without a melee weapon in the main hand.
+- The parry plays on the upper body while the actor moves or rides.
+- Nothing plays while the actor is dead, or for a creature that never
+  parries in the world (see `SetCreatureID`).
+
+This is a ClassicAPI extension.
+
+### `actor:SetCreatureID(creatureID)` / `actor:SetAttacking(attacking)` / `actor:SetMoving(moving)`
+
+These set the state that `PlaySwing`, `PlayWoundAnimation` and
+`PlayParryAnimation` read. All three are off (`0`, `false`) by default.
+
+- `SetCreatureID` sets the creature that the actor shows. A creature that
+  never flinches or parries in the world does not flinch or parry on the
+  actor. The creature data must be in the cache.
+  Use `C_CreatureInfo.RequestLoadCreatureByID` to load it.
+- `SetAttacking` sets whether the actor attacks a target in melee.
+- `SetMoving` sets whether the actor moves. An actor with movement enabled
+  also counts as moving while it moves on its own. A seated rider (see
+  `AttachToMount`) always swings and reacts on its upper body.
+
+This is a ClassicAPI extension.
+
+```lua
+victim:SetCreatureID(1501)     -- a creature
+victim:SetAttacking(true)
+victim:PlayWoundAnimation()     -- CombatWound on the upper body
+victim:PlayWoundAnimation(true) -- CombatCritical
+```
+
+### `actor:SetGameObjectState(state [, previousState])`
+
+Shows a game object model in a state, as the world animates a door or a
+chest when its state changes:
+
+| `state` | Door | Animation |
+|---|---|---|
+| `0` (active) | Open | Opened |
+| `1` (ready) | Closed | Closed |
+| `2` (alternative) | Destroyed | Destroyed |
+
+If you give `previousState`, the change plays first: Open from `1` to `0`,
+Close from `0` to `1`, Rebuild from `2` to `1`, and Destroy from `1` to `2`.
+Then the end animation repeats. If the model has no Open or Close animation,
+the world's replacement plays, and some replacements hold still. A
+`SetAnimation` call stops the state.
+
+This is a ClassicAPI extension.
+
+```lua
+local door = scene:CreateActor()
+door:SetModelByGameObjectDisplayID(3614) -- a Stratholme portcullis
+door:SetGameObjectState(1)               -- closed
+door:SetGameObjectState(0, 1)            -- opens
+```
+
 ### `actor:SetModelByUnit(unit [, sheatheWeapons, autoDress, hideWeapons, usePlayerNativeForm, holdBowString, customRaceID])`
 
 Shows a copy of a unit, with the items that it wears and holds, and returns
-`true`. It returns `false` when the unit does not exist.
+`true`. When the unit does not exist, it returns `false` and keeps the old
+model.
 
 | Argument | Default | Effect |
 |---|---|---|
@@ -19701,13 +22526,23 @@ shows its own display. It returns `false` when the unit does not exist.
 Returns the GUID of the unit that `SetModelByUnit` shows. It returns
 nothing for an actor that does not show a unit.
 
+### `actor:SetPlayerModelFromGlues([characterIndex, sheatheWeapons, autoDress, hideWeapons, usePlayerNativeForm, customRaceID])`
+
+Always returns `false` and changes nothing. A scene exists only in the
+world, and the list of characters of the character screen is not available
+there.
+
 ### `actor:Dress()` / `actor:Undress([includeWeapons])` / `actor:UndressSlot(slot)`
 
 These work on an actor that shows a unit. `Dress` puts on everything that
-the unit wears. `Undress` takes everything off. With `includeWeapons` set to
-`false`, the weapons stay, the ranged weapon too. `UndressSlot` takes off the
-item in one inventory slot, from `1` (head) to `19` (tabard). Slot `18` is
-the ranged slot.
+the unit wears. For a unit that is not your character, `Dress` also turns
+off the `hideWeapons` setting of `SetModelByUnit`. `Undress` takes
+everything off. With `includeWeapons` set to `false`, the weapons stay, the
+ranged weapon too.
+
+`UndressSlot` takes off the item in one armor slot or one hand. `slot` is
+an inventory slot, from `1` (head) to `19` (tabard). The ranged slot (`18`),
+the neck, the rings and the trinkets do not change.
 
 ### `actor:TryOn(item [, handSlotName, spellEnchantID])`
 
@@ -19766,24 +22601,25 @@ from `1` (head) to `19` (tabard). This undoes a `TryOn` or an `UndressSlot`
 on that slot. If the unit wears nothing in the slot, the slot becomes empty.
 A helm or a cloak that the unit hides stays off.
 
-It works on an actor that shows a unit (`SetModelByUnit`), while the unit is
-near enough for your client to see it. A hand slot changes only that hand.
-Slot `18` puts back the ranged weapon of the unit. For example, after a two-hand weapon goes on with `TryOn`, `DressPlayerSlot(17)`
-puts the off-hand item of the unit back next to it.
+It works only on an actor that shows your character (`SetModelByUnit`). On
+other actors, it does nothing. A hand slot changes only that hand. The
+ranged slot (`18`) does not change. For example, after a two-hand weapon
+goes on with `TryOn`, `DressPlayerSlot(17)` puts the off-hand item of your
+character back next to it.
 
 ### `actor:IsSlotAllowed(slot)` / `actor:IsSlotVisible(slot)`
 
-`IsSlotAllowed` returns `true` when the actor can wear an item in the
-inventory slot:
+`IsSlotAllowed` returns `true` when the actor can wear an item in an armor
+slot. The armor slots are the head, the shoulders, the shirt, the chest,
+the waist and the legs. The feet, the wrists, the hands (gloves, slot
+`10`), the back and the tabard are also armor slots. They are allowed when
+`TryOn` can put armor on the actor.
 
-- The hands (`16` and `17`) and the ranged slot (`18`) are allowed on all
-  models.
-- The armor slots are allowed when `TryOn` can put armor on the actor.
-- The neck, the rings, and the trinkets are not allowed.
-
-It returns `false` for an actor that shows no model. `IsSlotVisible` returns
-the same value. An item in an allowed slot shows, but a ranged weapon shows
-only while the actor shoots.
+All other slots return `false`. These are the main hand and the off hand
+(`16` and `17`), the ranged slot (`18`), the neck, the rings and the
+trinkets. An
+actor that shows no model also returns `false`. `IsSlotVisible` returns the
+same value as `IsSlotAllowed`.
 
 ### `actor:GetItemTransmogInfo(slot)` / `actor:GetItemTransmogInfoList()`
 
@@ -19793,13 +22629,15 @@ table has three fields:
 | Field | Value |
 |-------|-------|
 | `appearanceID` | The item ID, or `0` for an empty slot. |
-| `secondaryAppearanceID` | Always `0` (`Constants.Transmog.NoTransmogID`). |
+| `secondaryAppearanceID` | `0` (`Constants.Transmog.NoTransmogID`). In the list of `GetItemTransmogInfoList`, a main hand (slot `16`) that wears an item has `-1` (`Constants.Transmog.MainHandTransmogIsIndividualWeapon`). |
 | `illusionID` | On a weapon, the SpellItemEnchantment ID of the enchant glow that the weapon shows. Else `0`. |
 
 `GetItemTransmogInfo` returns the table for one inventory slot, from `1`
-(head) to `19` (tabard). It returns nothing for an actor that shows no model,
-or for a slot number outside this range. `GetItemTransmogInfoList` returns a
-list of 19 tables, one for each inventory slot, in slot order.
+(head) to `19` (tabard). It returns nothing for a slot that wears nothing,
+for an actor that shows no model, and for a slot number outside this range.
+`GetItemTransmogInfoList` returns a list of 19 tables, one for each
+inventory slot, in slot order. In this list, an empty slot has an
+`appearanceID` of `0`.
 
 An actor that shows a player (`SetModelByUnit`) starts with the items that
 the player wears. A helm or a cloak that the player hides is `0`. The neck,
@@ -19818,9 +22656,12 @@ values.
 ### `actor:SetItemTransmogInfo(info [, slot, ignoreChildItems])`
 
 Puts the item `info.appearanceID` on the actor, as `TryOn` does. A weapon
-shows the glow of the enchant `info.illusionID`. It returns the same
-`Enum.ItemTryOnReason` values as `TryOn`. These are the differences:
+shows the glow of the enchant `info.illusionID`. It returns
+`Enum.ItemTryOnReason.Success` or `Enum.ItemTryOnReason.NotEquippable`.
+These are the differences from `TryOn`:
 
+- An item that is not in the item cache returns `Success`. The actor wears
+  the item when the data arrives.
 - It shows no error message. The caller shows `ERR_NOT_EQUIPPABLE` when the
   result is not `Success`.
 - A `slot` of `16` or `17` selects the hand that holds a weapon. With all
@@ -19842,19 +22683,65 @@ for slot, info in ipairs(saved) do
 end
 ```
 
+### `actor:SetUseTransmogSkin(use)` / `actor:SetUseTransmogChoices(use)` / `actor:SetObeyHideInTransmogFlag(obey)`
+
+Each method stores a flag, and `GetUseTransmogSkin()`,
+`GetUseTransmogChoices()` and `GetObeyHideInTransmogFlag()` return it. The
+argument is necessary: without it, the call raises an argument error. The
+flags have no effect on the actor.
+
+### `actor:ResetNextHandSlot()`
+
+Has no effect. Each `TryOn` already selects the hand for a one-handed
+weapon: the off hand when the main hand holds a one-handed weapon, else
+the main hand.
+
 ### `actor:SetSheathed(sheathed [, hidden])` / `actor:GetSheathed()`
 
-Puts the weapons of the actor in its hands or in their sheaths. `hidden`
-set to `true` hides them. The setting also applies to items that `TryOn`
+Puts the weapons of the actor in its hands or in their sheaths.
+`sheathed` is necessary: without it, the call raises an argument error.
+`hidden` set to `true` hides them. The setting also applies to items that `TryOn`
 puts on later. After a ranged shot, the call also puts the ranged weapon
 away.
+
+### `actor:SetSheatheState(state)`
+
+Holds the weapons of the actor as the sheathe state of a unit holds them.
+`0` puts all the weapons in their sheaths. `1` puts the melee weapons in
+the hands. `2` puts the ranged weapon in the hand and the melee weapons in
+their sheaths, as the start of a ranged spell does. This is a ClassicAPI
+extension.
+
+### `actor:SetHeldItem(inventorySlot [, itemDisplayID, itemClass, itemSubclass, inventoryType, sheatheType])`
+
+Puts an item in a hand of the actor by its display, as a creature holds its
+weapons: the item needs no item record. `inventorySlot` is `16` (main hand),
+`17` (off hand) or `18` (ranged). `itemDisplayID` is a row of
+`ItemDisplayInfo.dbc`. The other values tell how the item hangs:
+
+- `inventoryType` `14` (a shield) hangs on the arm, and `26` (a right-hand
+  ranged weapon) in the right hand.
+- `sheatheType` is where the item hangs while the weapons are sheathed. `0`
+  has no sheath place, so the item does not show while sheathed.
+
+Without `itemDisplayID`, or with `0`, the slot becomes empty. The item hangs
+when the model has loaded, by `SetSheathed` or `SetSheatheState`. A ranged
+item shows only while the ranged weapon is in the hand. This is a ClassicAPI
+extension.
+
+```lua
+-- A short sword (display 679) in the main hand, sheathed at the hip (type 3).
+actor:SetHeldItem(16, 679, 2, 7, 13, 3)
+actor:SetSheatheState(1)
+```
 
 ### `actor:SetSheathedCategory(slot, category)`
 
 Sets where the item in a hand hangs while the actor's weapons are sheathed.
 `slot` is `16` (main hand) or `17` (off hand). Other slots change nothing.
 A ranged weapon has no sheath place. `category` is an
-`Enum.TransmogOutfitSlotOptionSheatheCategory` value:
+`Enum.TransmogOutfitSlotOptionSheatheCategory` value. A `category` that is
+not an integer from `0` to `3` raises an argument error.
 
 | Value | Name | Sheathed item |
 |---|---|---|
@@ -19876,14 +22763,17 @@ actor:SetSheathedCategory(16, Enum.TransmogOutfitSlotOptionSheatheCategory.Side)
 
 ### `actor:UseUnitSheatheCategory(useCategory)`
 
-`useCategory` set to `true` puts each sheathed item at its own place. The
-`SetSheathedCategory` categories have no effect until a call with `false`.
-Units do not keep a sheath category, so the place of the item is the place
-of the unit. The default is `false`.
+Stores a flag. The call does not change the items that the actor holds
+now. The next model of the actor uses the flag. With `true`, each sheathed
+item of that model goes to its own place, and the `SetSheathedCategory`
+categories have no effect. Units do not keep a sheath category, so the
+place of the item is the place of the unit. The default is `false`.
+`useCategory` is necessary: without it, the call raises an argument error.
 
 ### `actor:SetAutoDress(autoDress)` / `actor:GetAutoDress()`
 
-Sets whether the next `SetModelByUnit` call dresses the actor.
+Sets whether the next `SetModelByUnit` call dresses the actor. `autoDress`
+is necessary: without it, the call raises an argument error.
 
 ### `actor:IsGeoReady()`
 
@@ -19891,13 +22781,17 @@ Returns `true` when the model and the item models on it have loaded.
 
 ### `actor:ClearModel()` / `actor:IsLoaded()` / `actor:GetModelPath()`
 
-`ClearModel` removes the model. `IsLoaded` returns `true` after the model
-has loaded and `OnModelLoaded` has run. `GetModelPath` returns the file of
-the model, or `""` for a unit copy.
+`ClearModel` removes the model. `OnModelCleared` runs each time, also for
+an actor without a model. `IsLoaded` returns `true` when the model file has
+loaded. The clothes and the items of the model can load after that time.
+`GetModelPath` returns the file of the model, or `""` for a unit copy.
 
 ### `actor:SetPosition(x, y, z)` / `actor:GetPosition()`
 
-Moves the actor in the scene.
+Moves the actor in the scene. The position is in units of the scale of the
+actor: the model stands at the position multiplied by `actor:GetScale()`.
+For example, at a scale of `2`, `SetPosition(1, 0, 0)` puts the model at
+`(2, 0, 0)`. `GetPosition` returns the position that you set.
 
 ### `actor:SetYaw(yaw)` / `actor:SetPitch(pitch)` / `actor:SetRoll(roll)`
 
@@ -19907,22 +22801,34 @@ the angles.
 
 ### `actor:SetScale(scale)` / `actor:GetScale()`
 
-Sets the size of the actor. `1` is the size of the model file.
+Sets the size of the actor. `1` is the size of the model file. A value
+less than `0.01` becomes `0.01`, also in the `scale` attribute of an
+`<Actor>` template. The scale also multiplies the position (see
+`actor:SetPosition`).
 
 ### `actor:SetUseCenterForOrigin([x, y, z])` / `actor:IsUsingCenterForOrigin()`
 
 For each axis set to `true`, the center of the model stands at the position
 of the actor. For each axis set to `false`, the origin of the model file
 stands there. For example, `SetUseCenterForOrigin(false, false, true)`
-moves a model up or down so that its middle is at the actor's height.
+moves a model up or down so that its middle is at the actor's height. The
+center is the center that the model had when it loaded. A later animation
+does not move it.
 
 ### `actor:GetActiveBoundingBox()` / `actor:GetMaxBoundingBox()`
 
 Each one returns six numbers: the bottom corner `x, y, z` and then the top
 corner `x, y, z`, in the coordinates of the model file.
 `GetActiveBoundingBox` gives the box of the current animation, and
-`GetMaxBoundingBox` gives the box of the whole model. Both return nothing
-until the model has loaded.
+`GetMaxBoundingBox` gives the box of the whole model. Before the model file
+has loaded, both return six `nil` values.
+
+### `actor:SetPreferModelCollisionBounds(prefer)` / `actor:IsPreferringModelCollisionBounds()`
+
+Sets whether `GetActiveBoundingBox` gives the collision box of the model in
+place of the box of the current animation. A model without a collision box
+gives the box of the animation. The default is `false`. `prefer` is
+necessary: without it, the call raises an argument error.
 
 ### `actor:Show()` / `actor:Hide()` / `actor:SetShown(shown)`
 
@@ -19938,7 +22844,7 @@ away, for example a corpse. Then the actor hides: `IsShown()` returns
 - The fade starts from the alpha that the actor shows and slows at the end.
 - When the actor shows less than 1/100 alpha, or its model has not loaded,
   it hides at once.
-- While the scene is paused, the fade stops where it is.
+- While the scene is hidden, the fade stops where it is.
 - `actor:Show`, `actor:Hide` and `actor:SetShown` end the fade. Then the
   actor shows at its alpha again, or hides.
 - `actor:GetAlpha` returns the alpha that you set. The fade does not change
@@ -19959,6 +22865,27 @@ end)
 Sets the opacity of the actor, from `0` to `1`. The alpha of the scene
 frame multiplies it.
 
+### `actor:SetDesaturation(strength)` / `actor:GetDesaturation()`
+
+Removes color from the model of the actor. `strength` is a number from `0`
+(full color) to `1` (gray). A value less than `0` is `0`, and a value more
+than `1` is `1`. A value that is not a finite number raises
+`Usage: self:SetDesaturation(strength)`. `GetDesaturation` returns the
+value, `0` by default.
+
+- The models attached to the model of the actor also lose their color: its
+  weapons, and the rider on it when it is a mount.
+- The actor keeps the value when it gets a new model.
+- The particles and ribbons of the model keep their color.
+- If the graphics card does not support pixel shader 2.0, or the client
+  uses OpenGL, the model shows full color. `GetDesaturation` still returns
+  the value.
+
+```lua
+local actor = scene:GetActorByTag("unwrapped")
+actor:SetDesaturation(1)    -- a gray mount, for a mount that you do not have
+```
+
 ### `actor:SetAnimation(animation [, variation, animSpeed, animOffsetSeconds])`
 
 Plays an animation (an `AnimationData` ID, for example `0` for stand and
@@ -19974,16 +22901,27 @@ runs. Use `OnAnimFinished` to go on to the next animation.
 `GetAnimation()` returns the animation. `GetAnimationVariation()` returns
 the variation, or `4294967295` when any variation plays.
 
+When `animation` is not a number, the call raises the error
+`Invalid animation type used`. An animation ID of `1866` or more changes
+nothing. When you give `animSpeed` or `animOffsetSeconds`, it must be a
+number. Else the call raises an argument error.
+
 ### `actor:SetAnimationBlendOperation(blendOperation)` / `actor:GetAnimationBlendOperation()`
 
 Sets how the next animation starts. `Enum.ModelBlendOperation.Anim` (`1`,
 the default) blends from the animation that plays.
 `Enum.ModelBlendOperation.None` (`0`) starts the new animation at once.
+Other values raise an argument error.
 
 ### `actor:SetPaused(paused [, affectsGlobalPause])` / `actor:GetPaused()`
 
 Stops the animation of one actor at its current frame. The other actors
-continue. The actor still moves, turns and fades when you change it, and
+continue. `paused` is necessary: without it, the call raises an argument
+error.
+
+The pause belongs to the model of the actor. An actor without a model does
+not change, and `GetPaused` returns `false, false` for it. A new model
+plays: it does not keep the pause of the old model. The actor still moves, turns and fades when you change it, and
 its animation does not end, so `OnAnimFinished` does not run. The flight
 sounds of its missiles and the sound of its spell ground area stop. When
 you unpause it, the animation continues from the same frame, and the
@@ -20044,8 +22982,10 @@ These have no effect. There are no animation kits in this game.
 
 Seats another actor of the same scene on this actor, and returns `true`.
 The rider plays `animation` (`91` is the mount animation for most mounts).
-With `spellKitVisualID`, the rider also shows that spell visual kit. A
-rider that sits on another mount moves to this one. It returns `false` when
+An `animation` of `0` plays `91`. An `animation` of `1866` or more raises an
+argument error. With `spellKitVisualID`, the rider shows that spell visual
+kit. Without it, the rider loses its spell visual kit. A rider that sits on
+another mount moves to this one. It returns `false` when
 either actor shows no model, when the rider is in another scene, or when
 the rider is this actor or the actor that this actor hangs on.
 
@@ -20054,8 +22994,10 @@ rider fit the mount, use `rider:SetScale(1 / mount:CalculateMountScale(rider))`.
 
 ### `actor:DetachFromMount(rider)`
 
-Takes the rider off this actor, and returns `true`. The rider keeps its
-animation. It returns `false` when the rider does not sit on this actor.
+Takes the rider off the actor that it sits on or hangs on, also when that
+actor is not this actor. The rider keeps its animation. The function
+returns `true` when this actor and the rider both show a model, else
+`false`.
 
 ### `actor:CalculateMountScale(rider)`
 
@@ -20118,7 +23060,7 @@ default. When it is `true`, the animations play these sounds:
   every 10 seconds. A copy of your own character does not play it.
 - Footsteps and the death thud. These need a ground: the floor of the WMO
   of the scene, its ground from
-  [`scene:SetWorldTerrain`](#scenesetworldterrainmapid-x-y--radius), or a
+  [`scene:SetWorldTerrain`](#scenesetworldterrainmapid), or a
   ground that you set with
   [`scene:SetGroundTerrain`](#scenesetgroundterrainterraintypeid--scenegetgroundterrain).
   Footsteps also need the `FootstepSounds` setting. At the surface of
@@ -20155,7 +23097,7 @@ units have on the ground in the world. The default is off.
 - In a scene with a WMO
   ([`scene:SetWorldModel`](#scenesetworldmodelpath--x-y-z--yaw--doodadset--mapid))
   or ground
-  ([`scene:SetWorldTerrain`](#scenesetworldterrainmapid-x-y--radius)), the
+  ([`scene:SetWorldTerrain`](#scenesetworldterrainmapid)), the
   shadow lies on the floor under the actor, as on the ground in the world.
   It follows slopes and steps, and it fades with the height of the actor
   above the floor. An actor with no floor under it shows no shadow.
@@ -20367,7 +23309,10 @@ The visual plays in these steps, as it does in the world:
    cast animation and flies to the target at the speed of the spell, with
    its flight sound. It follows the target if the target moves.
 4. The impact: the target flinches when a missile hits it. Then the impact
-   effects, animation and sound play on the target.
+   effects, animation and sound play on the target. A harmful spell without
+   a missile also makes the target flinch after its impact. The flinch is
+   the one that [`actor:PlayWoundAnimation`](#actorplaywoundanimationcritical)
+   plays.
 5. The channel, for a channeled spell such as Drain Life, Mind Flay or
    Hellfire: after the cast, the channel effects of the spell stay on the
    actor and its channel animation repeats. A beam goes from the hand of
@@ -20389,14 +23334,14 @@ result of the spell at the moment that the impact shows.
 You hear the sounds from the camera of the scene (see
 [Scene sounds](#scene-sounds)). The sounds of the caster play at the
 caster, the sounds of the impact play at the target, and the flight sound
-moves with the missile. While the scene or the caster is paused, the flight
-sound stops. It starts again when the pause ends.
+moves with the missile. While the caster is paused, the flight sound
+stops. It starts again when the pause ends.
 
 Some spells shake the camera of the scene, as they shake the camera in the
 world. For example, Thunder Clap and War Stomp shake it when they are cast,
 and Knockdown shakes it at the impact. The camera moves, but it does not
 turn. A shake is strongest within 9 yards of the camera, weaker farther
-away, and gone past 80 yards. While the scene is paused, its shakes stop.
+away, and gone past 80 yards. While the scene is hidden, its shakes stop.
 The auras of `AddAuraVisual`, the kits of `SetSpellVisualKit` and
 `ApplySpellVisualKit`, and the ground areas of `SetModelBySpellArea` shake
 the camera in the same way.
@@ -20529,6 +23474,11 @@ While the actor does not move, it plays the animation of its newest aura
 with one, in place of its own animation, and a death replaces it. When the
 actor moves, it plays its own animation again. After the aura ends, the
 animation finishes its cycle, then the actor's own animation plays.
+
+Some auras hold the actor still, for example Freezing Trap, Ice Block and
+Petrify. While such an aura shows, the animations of the actor stop. The
+actor does not flinch, and a new animation does not move either. When the
+aura ends, the animations continue.
 
 An actor shows any number of auras at the same time, and they show next to
 the kit of `SetSpellVisualKit`. A spell shows one time: when you add the
@@ -20826,14 +23776,20 @@ work as they do on frames.
 
 | Script | Runs |
 |---|---|
-| `OnLoad` | After `CreateActor` has applied the template. |
+| `OnLoad` | After `CreateActor` applies the template, before the actor goes into the list of the scene. |
 | `OnUpdate(self, elapsed)` | Each frame while the scene shows. |
-| `OnModelLoading` | When the actor gets a new model. |
+| `OnModelLoading` | When the actor gets a new model, during the `SetModelBy...` call. |
 | `OnModelLoaded` | When the model and its clothes have loaded. |
-| `OnModelCleared` | When the actor loses its model. |
+| `OnModelCleared` | When `ClearModel` or `scene:TakeActor` removes the model. |
 | `OnAnimFinished` | Each time the animation ends. |
 | `OnSpellVisualImpact(self, spellID, target, castID)` | When a spell of `actor:PlaySpellVisual` reaches its target. |
 | `OnMoveFinished` | When the actor arrives at the point of `actor:MoveTo`. |
+
+A new model replaces the old model, and `OnModelCleared` does not run for
+the old model. When a `SetModelBy...` call fails, it returns `false`, and
+the actor keeps the old model. When the new model has already loaded,
+`OnModelLoaded` runs first and `OnModelLoading` runs next. Both run during
+the `SetModelBy...` call.
 
 An actor also has `GetObjectType()` (`"ModelSceneActor"`),
 `IsObjectType(type)`, `GetName()` and `GetParent()` (the scene).
@@ -20851,16 +23807,39 @@ A virtual `<Actor>` element is a template for `CreateActor`:
 </Actor>
 ```
 
-It takes `inherits`, `mixin`, `parentKey`, `parentArray`, `alpha`, `scale`
-and `file` (a model path), and the `<Scripts>` and `<KeyValues>` children.
+It takes `inherits`, `mixin`, `parentKey`, `parentArray`, `alpha`, `scale`,
+`desaturation` and `file` (a model path), and the `<Scripts>` and
+`<KeyValues>` children.
 `parentKey` and `parentArray` put the actor on the scene.
+
+A template that `inherits` names gives only its mixins and its key values.
+The base template applies first. The scripts, `parentKey`, `parentArray`,
+`file`, `scale`, `alpha` and `desaturation` come only from the template that
+`CreateActor` names.
 
 ### `C_ModelInfo.GetModelSceneInfoByID(modelSceneID)`
 
 Returns four values for a model scene: `modelSceneType`, a table of the
-camera IDs, a table of the actor IDs, and `flags`. Model scenes `4` (mounts),
-`44` (the Qiraji battle tanks) and `596` are available. For other IDs, the
-function returns nothing.
+camera IDs, a table of the actor IDs, and `flags`. `modelSceneType` is an
+[`Enum.ModelSceneType`](#enummodelscenetype) value. `flags` holds
+[`Enum.UIModelSceneFlags`](#enumuimodelsceneflags) bits. These model
+scenes are available:
+
+| ID | Scene |
+|---|---|
+| `4` | Mounts |
+| `44` | The Qiraji battle tanks |
+| `595` | The character sheet |
+| `596` | The dressing room |
+| `59`, `253`, `290`, `343`, `420`, `718`, `1695` | Other scenes of the game UI |
+
+For other IDs, the function returns nothing.
+
+These rules apply to the four `C_ModelInfo` getters:
+
+- A missing ID, or an ID that is not a number from `0` to `4294967295`,
+  raises an argument error.
+- The getters are also available on the glue screens.
 
 ### `C_ModelInfo.GetModelSceneCameraInfoByID(modelSceneCameraID)`
 
@@ -20883,6 +23862,73 @@ Returns a table with the settings of a scene actor: `modelActorID`,
 Returns a table with the animation, alpha and scale that a scene actor
 starts with: `animation`, `animationVariation`, `animSpeed`,
 `animationKitID`, `spellVisualKitID`, `alpha` and `scale`.
+
+### `C_ModelInfo.AddActiveModelScene(modelSceneFrame, modelSceneID)` / `C_ModelInfo.AddActiveModelSceneActor(modelSceneFrameActor, modelSceneActorID)` / `C_ModelInfo.ClearActiveModelScene(modelSceneFrame)` / `C_ModelInfo.ClearActiveModelSceneActor(modelSceneFrameActor)`
+
+These functions do a test of their arguments and do nothing else. The first
+argument must be a `ModelScene` frame or an actor of a scene, as its name
+tells. The ID of an `Add` function must be a number from `0` to
+`4294967295`. A wrong argument raises an argument error.
+
+### `Enum.ModelSceneType`
+
+The types of model scene, for `modelSceneType`.
+
+| Field | Value |
+|---|---|
+| `MountJournal` | 0 |
+| `PetJournalCard` | 1 |
+| `ShopCard` | 2 |
+| `EncounterJournal` | 3 |
+| `PetJournalLoadout` | 4 |
+| `ArtifactTier2` | 5 |
+| `ArtifactTier2ForgingScene` | 6 |
+| `ArtifactTier2SlamEffect` | 7 |
+| `CommentatorVictoryFanfare` | 8 |
+| `ArtifactRelicTalentEffect` | 9 |
+| `PvPWarModeOrb` | 10 |
+| `PvPWarModeFire` | 11 |
+| `PartyPose` | 12 |
+| `AzeriteItemLevelUpToast` | 13 |
+| `AzeritePowers` | 14 |
+| `AzeriteRewardGlow` | 15 |
+
+### `Enum.UIModelSceneFlags`
+
+The bits of the `flags` of a model scene.
+
+| Field | Value |
+|---|---|
+| `SheatheWeapon` | 1 |
+| `HideWeapon` | 2 |
+| `Autodress` | 4 |
+| `NoCameraSpin` | 8 |
+
+### `Enum.UIModelSceneActorFlag`
+
+The bits of the flags of a scene actor.
+`C_ModelInfo.GetModelSceneActorInfoByID` gives the three
+`UseCenterForOrigin` bits as the fields `useCenterForOriginX`,
+`useCenterForOriginY` and `useCenterForOriginZ`.
+
+| Field | Value |
+|---|---|
+| `Deprecated1` | 1 |
+| `UseCenterForOriginX` | 2 |
+| `UseCenterForOriginY` | 4 |
+| `UseCenterForOriginZ` | 8 |
+
+### `Enum.UIModelSceneContext`
+
+| Field | Value |
+|---|---|
+| `None` | -1 |
+| `PerksProgram` | 0 |
+
+### `UI_MODEL_SCENE_INFO_UPDATED` event
+
+The event fires when the data of the model scenes changes. The data of the
+model scenes in this game never changes, so the event never fires.
 
 ## Mount
 
@@ -20913,17 +23959,19 @@ Returns the mount ID of an item that summons a mount. The mount ID is the
 ID of the item's use spell. For an item that does not summon a mount, the
 function returns `nil`.
 
-`itemID` can be an item ID or an item link. When the game does not have
-the data for the item yet, the function returns `nil` and requests the
-data. Call the function again after the item data has arrived.
+`itemID` must be an item ID (a number). Another value, for example an item
+link, raises an argument error. When the game does not have the data for
+the item yet, the function returns `nil` and requests the data. Call the
+function again after the item data has arrived.
 
 On Turtle WoW, a mount item has the spell "Add Mount to Collection" (46499)
 in place of its mount spell. So the function returns `nil` for it.
 
 ### `C_MountJournal.GetMountInfoExtraByID(mountID)`
 
-Returns nine values for a mount. For an ID that is not a mount, the function
-returns nothing.
+Returns eight values for a mount. For an ID that is not a mount, the
+function returns nothing. A `mountID` that is not a number raises an
+argument error.
 
 | # | Value | Contents |
 |---|---|---|
@@ -20935,7 +23983,8 @@ returns nothing.
 | 6 | `uiModelSceneID` | The model scene for a preview of the mount. `44` for the Qiraji battle tanks, `4` for all other mounts. |
 | 7 | `animID` | The animation of the rider on the mount. Always `91`. |
 | 8 | `spellVisualKitID` | Always `0`. |
-| 9 | `disablePlayerMountPreview` | Always `false`. |
+
+The function does not return `disablePlayerMountPreview`.
 
 The display ID comes from the data of the creature that the mount spell
 summons. If the game does not have this data, the function returns `nil` for
@@ -21268,10 +24317,47 @@ alpha. Addons that draw their own plates keep their own settings.
 The alpha of a default nameplate whose unit is the current target. At
 the default `1`, the target plate draws at full alpha. At `0.5`, it
 draws half-faded like the rest. Addons that draw their own plates keep
-their own settings.
+their own settings. Each character has its own value.
 
 ```lua
 /console nameplateSelectedAlpha 0.5
+```
+
+### Nameplates by kind of unit
+
+These cvars select which kinds of units get a nameplate. They work
+together with the enemy and friendly nameplate switches
+(`ShowNameplates()`, `ShowFriendNameplates()`). A unit that a cvar
+turns off gets no plate, and no `NAME_PLATE_UNIT_ADDED` fires for it.
+
+| cvar | default | the units it covers |
+|---|---|---|
+| `nameplateShowFriendlyPlayers` | `1` | Friendly players, and the pets, guardians and totems of players. |
+| `nameplateShowFriendlyNpcs` | `1` | All other friendly units. |
+| `nameplateShowEnemyPets` | `1` | Enemy pets of players. |
+| `nameplateShowEnemyGuardians` | `1` | Enemy guardians of players. |
+| `nameplateShowEnemyTotems` | `1` | Enemy totems of players. |
+| `nameplateShowEnemyMinions` | `1` | Sets the three enemy cvars above when it changes. |
+| `nameplateShowFriendlyPlayerPets` | `1` | Friendly pets of players. |
+| `nameplateShowFriendlyPlayerGuardians` | `1` | Friendly guardians of players. |
+| `nameplateShowFriendlyPlayerTotems` | `0` | Friendly totems of players. |
+| `nameplateShowFriendlyPlayerMinions` | `1` | Sets the three friendly player cvars above when it changes. |
+| `SoftTargetNameplateFriend` | `0` | `1` keeps the plate of `"softfriend"` when its friendly cvar is off. |
+| `SoftTargetNameplateInteract` | `0` | `1` keeps the plate of `"softinteract"` when its friendly cvar is off. |
+
+A unit that a player owns is a totem, a pet or a guardian:
+
+- A totem is a unit of creature type Totem.
+- A pet is a unit that a player charmed or summoned.
+- A guardian is a unit that a player created, and did not charm or
+  summon.
+
+The pet, guardian and totem cvars apply only to the units of players.
+The units of NPCs follow `nameplateShowFriendlyNpcs`, or the enemy
+switch. A friendly totem of an NPC never gets a plate.
+
+```lua
+/dump SetCVar("nameplateShowEnemyTotems", "0")
 ```
 
 ### `C_NamePlate.GetNamePlates()`
@@ -21387,6 +24473,81 @@ frames.
 The list includes a plate no matter which nameplate system draws it.
 The order is not stable across calls.
 
+### `C_NamePlate.SetNamePlateSize(width, height)`
+
+Sets the size of all nameplates, in UI units (the units of
+`Frame:SetSize`). The size is also the area that takes clicks. The
+health bar and the level text of a default plate scale with it. The
+plates that show now change at once.
+
+The size stays until the game closes. A `/reload` does not reset it.
+
+```lua
+/run C_NamePlate.SetNamePlateSize(160, 40)
+```
+
+### `C_NamePlate.GetNamePlateSize()`
+
+Returns `width, height`, the size of all nameplates in UI units. Before
+a call to `SetNamePlateSize`, it returns the default size for your
+screen.
+
+```lua
+/dump C_NamePlate.GetNamePlateSize()
+```
+
+### `C_NamePlateManager.SetNamePlateHitTestInsets(type, left, right, top, bottom)`
+
+Sets how far in from each edge the nameplates of a type stop taking
+clicks. `type` is `0` for the plates of friendly units and `1` for
+the plates of units that you can attack. The insets are UI units. A
+positive inset makes the area that takes clicks smaller. A negative
+inset cannot make it larger than the plate. A `/reload` sets all
+insets back to `0`.
+
+```lua
+/run C_NamePlateManager.SetNamePlateHitTestInsets(1, 10, 10, 5, 5)
+```
+
+### `C_NamePlateManager.GetNamePlateHitTestInsets(type)`
+
+Returns `left, right, top, bottom`, the insets of a nameplate type.
+A `type` other than `0` or `1` gives the insets of type `0`.
+
+```lua
+/dump C_NamePlateManager.GetNamePlateHitTestInsets(1)
+```
+
+### Unit events and tokens
+
+A unit event fires one time for each token of the unit. For example, a unit
+that is your target and your focus fires each event one time with `"target"`
+and one time with `"focus"`.
+
+The unit events that ClassicAPI adds use these tokens, in this order:
+`player`, `pet`, `partyN` or `partypetN`, `raidN` or `raidpetN`,
+`nameplateN`, `bossN`, `target`, `targettarget`, `focus`, `focustarget`,
+`npc`, `softenemy`, `softfriend`, `softinteract`, `pettarget`, `markN`, and
+`totemN`. Examples of these events are `UNIT_POWER_UPDATE`,
+`UNIT_TARGETABLE_CHANGED`, and `UNIT_CONNECTION`. They do not fire for
+`mouseover`.
+
+The other unit events, for example `UNIT_HEALTH`, `UNIT_AURA`, and
+`UNIT_COMBAT`, fire first for `player`, `pet`, `target`, `partyN`,
+`partypetN`, `raidN`, `raidpetN`, `npc`, and `mouseover`. Then they fire for
+`nameplateN`, `bossN`, `targettarget`, `focus`, `focustarget`, `softenemy`,
+`softfriend`, `softinteract`, `pettarget`, `markN`, and `totemN`.
+
+Some tokens have special rules:
+- In a raid, you are also `raidN`.
+- `targettarget` is the target of your target. When you are your own
+  target, it is you.
+- `focustarget` is the target of your focus. When you are your own focus, it
+  is your target.
+- `pettarget` is the target of your pet.
+- A `targettarget`, `focustarget`, or `pettarget` unit that is not
+  selectable gets no events, except a player.
+
 ### Unit tokens (`nameplateN`)
 
 `"nameplate1"`, `"nameplate2"`, … work as unit tokens against every
@@ -21465,6 +24626,71 @@ A unit that you mark while it is out of range fires its events when it
 comes into range. A marker on something that is not a unit fires no
 events.
 
+### Unit tokens (`totemN`)
+
+`"totem1"` … `"totem4"` are unit tokens for every `UnitX` function. Each
+token is your totem creature in one totem slot. The slots are the same as
+for [`GetTotemInfo`](#gettoteminfoslot): `1` Fire, `2` Earth, `3` Water,
+`4` Air. This is a ClassicAPI extension.
+
+```lua
+local guid = UnitGUID("totem1")                     -- your Fire totem
+if UnitExists("totem2") then
+    print(UnitName("totem2"), UnitHealth("totem2"))  -- your Earth totem
+end
+```
+
+`UnitExists("totemN")` returns `false` when the slot has no totem. It also
+returns `false` until the client sees the totem creature. At that time,
+`GetTotemInfo` also gets the name. Token chains also work, for example
+`"totem1target"`, the same as for the other token families.
+`TargetUnit("totem1")` does the same thing as `TargetTotem(1)`.
+
+**Unit events fire for `"totemN"`.** Every unit event fires with
+`arg1 == "totemN"` for your totem, as it does for `"target"`. This
+includes `UNIT_HEALTH`, `UNIT_AURA`, `UNIT_COMBAT`, and `UNIT_NAME_UPDATE`.
+The events start when the client sees the totem creature. They stop when
+the slot becomes empty.
+
+### Unit tokens (`bossN`)
+
+`"boss1"` … `"boss5"` are unit tokens for every `UnitX` function. Each
+token is a boss of the encounter that your group fights now. This is the
+encounter that writes `ENCOUNTER_START` to the combat log file: a fight
+between your group and a world boss.
+
+```lua
+for i = 1, 5 do
+    local unit = "boss" .. i
+    if UnitExists(unit) then
+        print(i, UnitName(unit), UnitHealth(unit))
+    end
+end
+```
+
+The tokens obey these rules:
+- `boss1` is the boss that started the fight. A boss that joins the fight
+  later gets the next number. For example, in the Twin Emperors fight, the
+  second emperor becomes `boss2`.
+- A boss keeps its token until the encounter ends, also after the boss dies.
+  The encounter ends at a kill, at a wipe, or at a loading screen. Then all
+  the tokens become empty at the same time.
+- Only world bosses get a token. For these bosses, `UnitClassification`
+  returns `"worldboss"`. Most dungeon bosses are only elite, so they get no
+  token. Adds get no token.
+- `UnitExists("bossN")` returns `false` when the token has no boss. It also
+  returns `false` when the boss is out of range, but `UnitGUID("bossN")`
+  still returns its GUID.
+- Token chains work, for example `"boss1target"`, the same as for the
+  other token families.
+
+[`INSTANCE_ENCOUNTER_ENGAGE_UNIT`](#instance_encounter_engage_unit-event)
+fires when a boss gets its token and when it loses its token.
+
+**Unit events fire for `"bossN"`.** Every unit event fires with
+`arg1 == "bossN"` for the boss, as it does for `"target"`. This includes
+`UNIT_HEALTH`, `UNIT_AURA`, `UNIT_COMBAT`, and `UNIT_NAME_UPDATE`.
+
 ### Unit tokens (GUID literals)
 
 A raw 64-bit GUID literal — `"0x"` followed by up to 16 hex digits
@@ -21490,14 +24716,57 @@ so when it's loaded we detect it and defer to its resolver (no double
 handling); when it isn't, this fills the gap. Either way GUID-token input
 behaves identically, so addons needn't care whether SuperWoW is present.
 
+### Unit tokens (names)
+
+The unit functions also accept a name in place of a token. The name can be
+yours, the name of a party or raid member, or the name of a pet that belongs
+to you or to a group member.
+
+```lua
+print(UnitHealth("Feral"), UnitClass("Feral"))
+TargetUnit("Feral-pet")
+```
+
+```
+/cast [@Feral] Rejuvenation
+```
+
+The rules for a name:
+
+- The name must match the full name of the unit. Uppercase and lowercase
+  letters are equal.
+- A group member matches also when the member is out of range. A pet
+  matches only when the client can see it.
+- In a raid, the raid members are compared. In a party, the party members
+  are compared. Your own name comes first, then the members, then the pets.
+  The first match is the unit.
+- A token comes before a name. If a member has the name `Target`,
+  `"Target"` gives your target. If the token has no unit at that time, the
+  member is the unit.
+- After the name, `-target` moves to the target of the unit, and `-pet`
+  moves to its pet. You can use more than one: `"Feral-pet-target"`. The
+  `-pet` part works for you and for group members.
+
+Other names are not accepted. This includes players outside your group and
+NPCs. To get a token for one of these units, use
+[`UnitTokenFromName`](#unittokenfromnamename--exactmatch).
+
+A text that is not a token and not one of these names names no unit. The
+unit functions then give the same result as for a unit that is not there,
+and they do not raise an error. For example, `UnitName("Nobody")` returns
+`nil`.
+
 ### `IsUnitToken(value)`
 
 Returns `true` when `value` is a unit token, and `false` when it is anything
-else, such as a character name.
+else. The name of you, a group member, or one of your pets counts as a
+token, because the unit functions accept it (see
+[Unit tokens (names)](#unit-tokens-names)). Other character names are
+`false`.
 
-Several functions come in pairs, one that takes a token and one that takes a
-name, and each raises an error on the other kind. Use this to pick between
-them:
+Several functions come in pairs, one that takes a token and one that searches
+by name. The token function does nothing for a name that it does not know.
+Use this to pick between them:
 
 ```lua
 if IsUnitToken(x) then TargetUnit(x) else TargetByName(x) end
@@ -21510,7 +24779,7 @@ That is the common case for conditional slash commands, because
 `Bob`.
 
 The answer covers every token family the client accepts, including
-`nameplateN`, `markN`, `focus`, GUID literals, and suffix chains such as
+`nameplateN`, `markN`, `totemN`, `bossN`, `focus`, GUID literals, and suffix chains such as
 `focustarget`.
 
 The question is whether the text names a token, not whether a unit is there.
@@ -21526,27 +24795,35 @@ function directly to reach a player named `Target`.
 
 Bag interfaces use these functions to show a glow on items that are new.
 
-An item is new when you get it after login. Items that you loot, create,
-buy, get as a quest reward, take from mail, or get in a trade are new.
-These items do not become new:
+An item becomes new when the server gives it to you. Items that you loot,
+create, buy, or get as a reward become new. Loot that goes onto a stack
+that you already have makes that stack new. These items do not become new:
 
-- Items that you had at login.
+- Items that you take from mail or get in a trade.
 - Items that you move between bags, the bank, and your equipment.
-- Loot that goes onto a stack that you already have.
 - The new stack that you make when you split a stack.
 
-The flag stays with the item when it moves to a different slot. Only items
-in your bags (bags 0 to 4) can be new.
+The flag stays with the item when it moves to a different slot. The flag
+stays until `C_NewItems.RemoveNewItem` or `C_NewItems.ClearAll` clears it,
+or until you exit the game. It stays when you log out and log in again. A
+maximum of 50 items get the flag.
+Items that you sold or destroyed and that still have the flag count in this
+number.
 
-`BAG_NEW_ITEMS_UPDATED` fires when an item gets or loses the flag. The
-event has no arguments.
+`BAG_NEW_ITEMS_UPDATED` fires each time an item gets the flag, also when the
+item has the flag already. The event has no arguments. It does not fire when
+a flag is cleared.
 
-### `C_NewItems.IsNewItem(bagID, slotIndex)`
+### `C_NewItems.IsNewItem(containerIndex, slotIndex)`
 
-Returns `true` if the item currently in bag `bagID` slot `slotIndex` is
-flagged new, `false` otherwise (empty slot, unflagged item, or non-numeric
-args). `bagID` 0 is the backpack; 1–4 are the equipped bags. Slot indices
-are 1-based, matching `GetContainerItemInfo`.
+Returns `true` if the item in bag `containerIndex` slot `slotIndex` has the
+new flag. Otherwise it returns `false`. `containerIndex` 0 is the backpack,
+1 to 4 are the bags, -1 is the bank, 5 to 10 are the bank bags, and -2 is
+the keyring. The bank and the bank bags are available only when the bank
+window is open. Slot indices start at 1, as in `GetContainerItemInfo`.
+
+Both arguments are necessary and must be numbers. A negative slot is an
+error. A slot that is not in the bag returns `false`.
 
 ```lua
 if C_NewItems.IsNewItem(0, 3) then
@@ -21554,18 +24831,16 @@ if C_NewItems.IsNewItem(0, 3) then
 end
 ```
 
-### `C_NewItems.RemoveNewItem(bagID, slotIndex)`
+### `C_NewItems.RemoveNewItem(containerIndex, slotIndex)`
 
-Clears the new flag for the item in that slot, for example after the
-player sees the item. No-op if the slot is empty or the item wasn't flagged. Fires
-`BAG_NEW_ITEMS_UPDATED` when it actually removes a flag. Because the flag is
-GUID-keyed, the item stays un-flagged even if it's later moved to another
-slot.
+Clears the new flag of the item in that slot. The arguments are the same as
+for `C_NewItems.IsNewItem`. An empty slot or an item without the flag
+changes nothing. The item does not get the flag again when it moves to a
+different slot.
 
 ### `C_NewItems.ClearAll()`
 
-Clears every new flag at once. Fires `BAG_NEW_ITEMS_UPDATED` if anything was
-flagged.
+Clears every new flag.
 
 ## PaperDollInfo
 
@@ -21716,7 +24991,9 @@ the tooltip" gate, and rounds out the item-usability trio:
 So this is what answers "a Mail chest on a Mage" (armor proficiency), "a
 level-40 item at level 20" (RequiredLevel), and class/race-restricted gear.
 
-`itemID` is a number (item links are also accepted). Checks performed:
+`itemID` is a number. An item link is also accepted (ClassicAPI extension).
+A missing argument, a number outside the int32 range, or a string with no
+item link in it raises a usage error. Checks performed:
 
 1. **Proficiency** — for weapons and armor, the player must have the
    proficiency for the item's subclass. Item classes with no proficiency concept
@@ -21819,6 +25096,31 @@ local sex = C_PlayerInfo.GetSex(loc)
   non-localized token (`"WARRIOR"`) those return.
 - An unresolvable or unsupported location returns nil. A malformed unit token
   raises an error, the same as passing it to `UnitName` or `UnitClass`.
+
+### `C_PlayerInfo.GetDisplayID()` / `GetNativeDisplayID()` / `IsDisplayRaceNative()`
+
+These functions give the creature display of your character. They take no
+arguments.
+
+| Function | Returns |
+|----------|---------|
+| `C_PlayerInfo.GetDisplayID()` | `displayID`, the display that your character shows now |
+| `C_PlayerInfo.GetNativeDisplayID()` | `nativeDisplayID`, the display of your character with no form |
+| `C_PlayerInfo.IsDisplayRaceNative()` | `true` when the display shows the race of your character |
+
+- A shapeshift form or a transform changes `GetDisplayID`.
+  `GetNativeDisplayID` does not change.
+- `IsDisplayRaceNative` is `false` when your character shows a character model
+  of a different race. A creature display, for example a cat form or a
+  polymorph, gives `true`.
+- With no character in the world, the two IDs are `0` and
+  `IsDisplayRaceNative` is `false`.
+
+```lua
+if C_PlayerInfo.GetDisplayID() ~= C_PlayerInfo.GetNativeDisplayID() then
+    print("You are in a form or a transform.")
+end
+```
 
 ## Profiling
 
@@ -22108,9 +25410,7 @@ cache. Synchronously fired when the data was already cached
 (so polling code paths still work), asynchronously fired after the server
 answers when the data was not cached.
 
-> **`success` is `1` or `nil`.** The value is `1` for success and `nil`
-> for failure. `if success then ...` works as expected
-> (`nil` falsy, `1` truthy). Same encoding as `ITEM_DATA_LOAD_RESULT`
+> **`success` is `true` or `false`,** as for `ITEM_DATA_LOAD_RESULT`
 > and `GET_ITEM_INFO_RECEIVED`.
 
 > **Server limitation:** for *invalid* questIDs (ones the server doesn't
@@ -22742,8 +26042,8 @@ Opening a bag or taking a step puts a file in it.
 > - **`|Hspell:N|h` hyperlink** — extracted by parsing for the
 >   embedded `spell:N` payload, so
 >   `C_Spell.X(GetSpellLink(id))` round-trips cleanly.
-> - **spell name** — case-sensitive lookup, with the same name rules as
->   `CastSpellByName`. Accepts `(Rank N)` suffixes. Bounded to spells in the **player's known
+> - **spell name** — the same name rules as `CastSpellByName`, so the
+>   lookup is not case-sensitive. Accepts `(Rank N)` suffixes. Bounded to spells in the **player's known
 >   spellbook** — not arbitrary Spell.dbc rows.
 >
 > Unrecognized identifiers (garbage strings, nil, tables, etc.) return
@@ -22789,8 +26089,8 @@ link, or the name of a spell in your spellbook. The function returns no
 values.
 
 The function sends `SPELL_DATA_LOAD_RESULT(spellID, success)` before it
-returns. If the spell exists, `success` is `1`. If no spell has this ID,
-`success` is `nil`. If `spellIdentifier` does not give a spell ID, the event
+returns. If the spell exists, `success` is `true`. If no spell has this ID,
+`success` is `false`. If `spellIdentifier` does not give a spell ID, the event
 does not occur.
 
 ```lua
@@ -22865,15 +26165,17 @@ Four input forms are accepted:
   `nil` for empty / out-of-range slots.
 - **`GetSpellInfo("name")`** — looks the name up in the player's, then
   the pet's, spellbook and returns the highest rank you know. The match
-  is exact and case-sensitive. The name must be a spell you have. A name
+  is the one `CastSpellByName` makes, and it is not case-sensitive. The
+  name must be a spell you have. A name
   you do not know returns `nil` (it does not
   raise an error). It is not a database-wide search — a name shared by
   many ranks or by NPC spells has no single answer, so only your own
   spellbook is used.
 - **`GetSpellInfo("name(Rank N)")`** — a rank in parentheses pins that
   exact rank instead of the highest, the same `SpellName(Rank N)` form
-  `CastSpellByName` accepts. A space before the parenthesis is allowed
-  (`"Mind Blast (Rank 8)"`). A rank you do not know returns `nil`.
+  `CastSpellByName` accepts. Put no space before the parenthesis:
+  `"Mind Blast (Rank 8)"` does not match. A rank you do not know returns
+  `nil`.
 - **`GetSpellInfo("|Hspell:ID|h[Name]|h")`** — a spell hyperlink. The
   `spellID` inside the link is used directly, so this works for any
   spell, learned or not.
@@ -22888,7 +26190,7 @@ local _, _, _, _, _, _, _, _, _, id = GetSpellInfo(1, "spell")
 
 -- by name (highest rank you know), a specific rank, and a link
 local name = GetSpellInfo("Fireball")
-local _, rank = GetSpellInfo("Mind Blast (Rank 8)")  -- rank="Rank 8"
+local _, rank = GetSpellInfo("Mind Blast(Rank 8)")  -- rank="Rank 8"
 local _, _, _, _, _, _, _, _, _, id = GetSpellInfo(GetSpellLink(133))
 ```
 
@@ -22909,7 +26211,8 @@ Table fields:
 | Field        | Type    | Notes |
 |--------------|---------|-------|
 | `name`       | string  | Localized name |
-| `iconID`     | string  | Icon **path** (e.g. `"Interface\\Icons\\Spell_Fire_FlameBolt"`). See note below. |
+| `iconID`     | string  | Icon **path** (e.g. `"Interface\\Icons\\Spell_Fire_FlameBolt"`). See note below. For Attack and Auto Shot, the weapon icon. For a recipe with the placeholder icon, the icon of the item it makes. See [`C_Spell.GetSpellTexture`](#c_spellgetspelltexturespellid). |
+| `originalIconID` | string | The spell's own icon **path**. |
 | `castTime`   | number  | Your cast time in milliseconds, with talents and cast speed; 0 for an instant or passive spell |
 | `minRange`   | number  | Your minimum range in yards, with talents; 0 for a melee spell |
 | `maxRange`   | number  | Your maximum range in yards, with talents; 0 for a melee spell |
@@ -22953,8 +26256,24 @@ local name = C_Spell.GetSpellName(133)  -- "Fireball"
 
 ### `C_Spell.GetSpellTexture(spellID)`
 
-Returns the icon path string for `spellID`, or `nil` if the spell ID is out
-of range or the icon record is empty.
+Returns `iconID, originalIconID`: the icon path the game shows for
+`spellID`, then the spell's own icon path. Returns `nil` if the spell ID is
+out of range or the icon record is empty.
+
+The two values are different only for these spells:
+
+- Attack shows the icon of the main-hand weapon. In a shapeshift form, it
+  shows the icon of the form. Disarmed or without a weapon, it shows
+  `Interface\Buttons\Spell-Reset`.
+- Auto Shot and the wand's Shoot show the icon of the ranged weapon, if one
+  is equipped.
+- Many recipes have the placeholder icon `Interface\Icons\Temp`. A spell
+  with that icon that makes an item shows the icon of the item. If the item
+  is not in the item cache yet, the first call returns the placeholder icon
+  and requests the item. Later calls return the icon of the item.
+
+`GetSpellInfo` and `C_Spell.GetSpellInfo` (`iconID`, `originalIconID`)
+follow the same rule.
 
 > **Path string, not fileID.** This value can be a `fileID:number`
 > elsewhere. There is no fileID system here — see the same
@@ -23260,7 +26579,7 @@ C_Spell.GetSpellPowerCost(10187)   -- Blizzard, Mage with 3/3 Frost Channeling
 
 | Field | Meaning |
 |-------|---------|
-| `type` | `Enum.PowerType` — `0` mana, `1` rage, `2` focus, `3` energy, `4` happiness (the spell's `PowerType`) |
+| `type` | `Enum.PowerType` — `0` mana, `1` rage, `2` focus, `3` energy, `27` happiness (the spell's power) |
 | `name` | power token (`"MANA"`, `"RAGE"`, …) |
 | `cost` | **effective** cost for the local player |
 | `minCost` | `== cost` (no optional-cost component) |
@@ -23535,7 +26854,7 @@ IsUsableSpell(1, "pet")      -- pet spellbook slot 1
 > Read cooldown with
 > [`C_Spell.GetSpellCooldown`](#c_spellgetspellcooldownspellidentifier)
 > and lockouts with
-> [`C_LossOfControl.GetActiveLossOfControlData`](#c_lossofcontrolgetactivelossofcontroldataindex).
+> [`C_LossOfControl.GetActiveLossOfControlData`](#c_lossofcontrolgetactivelossofcontroldataindex--c_lossofcontrolgetactivelossofcontroldatabyunitunittoken-index).
 >
 > For a pet spell, the test is the current power of the pet against
 > the spell cost, after the pet can act (not stunned, feared, or
@@ -23554,6 +26873,45 @@ local usable, noMana = C_Spell.IsSpellUsable(133)
 -- usable=true, noMana=false  → cast it
 -- usable=false, noMana=true  → drink up
 -- usable=false, noMana=false → unknown spell, wrong stance, dead, or another block
+```
+
+### `C_Spell.IsSpellReactiveReady(spell)`
+
+A ClassicAPI extension. Returns `isReady, comboTargetGUID`. `isReady`
+is `true` when the proc condition of a reactive spell is met now.
+Accepts a spellID, a spell link, or a spell name.
+
+The result tests only the requirements that the spell record gives:
+
+- Combo points. Overpower needs the hidden combo point that a dodge
+  gives. The combo target is not compared with your target.
+- An aura state on you. Revenge and Riposte need the state that a
+  dodge, a parry, or a block gives.
+- An aura state on your target. Execute and Hammer of Wrath need a
+  target below 20% health. The target must also be a valid target for
+  the spell: hostile for a harmful spell, friendly for a helpful spell.
+
+Stance, form, power, reagents, and cooldown are not part of the result.
+Thus a warrior in Defensive Stance can see that Overpower is ready
+before the change to Battle Stance. A spell with none of these
+requirements returns `true`. An unknown spell returns `false`.
+
+`comboTargetGUID` is the GUID of the unit that holds the combo points,
+in the `UnitGUID` format. It is set when the spell needs combo points
+and the count is more than 0. Otherwise it is `nil`. The points stay on
+the unit that gave them. If you dodge on mob A and then target mob B,
+`isReady` is `true`, but Overpower on mob B fails. Compare
+`comboTargetGUID` with `UnitGUID("target")` to find this case.
+
+`SPELL_UPDATE_USABLE` fires when an input of the result changes: your
+combo points, the aura state of you or your target, or your target.
+Read the result again in a handler for that event.
+
+```lua
+local ready, comboTarget = C_Spell.IsSpellReactiveReady("Overpower")
+if ready and (comboTarget == nil or comboTarget == UnitGUID("target")) then
+    -- the dodge window is open on this target, in any stance
+end
 ```
 
 ### `C_Spell.GetSpellCooldown(spellIdentifier)`
@@ -23669,12 +27027,39 @@ Which effects block which spells:
 An effect does not block a spell that makes you immune to that effect.
 For example, Polymorph does not block a druid's shapeshift forms.
 
-The function reports only effects with a known end time. See the timing
-note in [LossOfControl](#lossofcontrol): a school lockout always has one,
-and a control effect has one when ClassicAPI saw the cast that applied it.
-When only the end time is known, `startTime` is the current time and
-`duration` is the remaining time. When several effects block the spell,
-the function reports the one that ends last.
+When several effects block the spell, the function reports the one that ends
+last. An effect with no timer is reported as `startTime` = now and
+`duration` = `0`. When only the end time of an effect is known, `startTime`
+is the current time and `duration` is the remaining time.
+
+### `C_Spell.GetSpellLossOfControlCooldownInfo(spellIdentifier)` / `C_Spell.GetSpellLossOfControlCooldownDuration(spellIdentifier)` / `GetSpellLossOfControlCooldown(spell)`
+
+The same block as
+[`C_Spell.GetSpellLossOfControlCooldown`](#c_spellgetspelllossofcontrolcooldownspellidentifier),
+in other forms:
+
+- `GetSpellLossOfControlCooldownInfo` returns a table, or `nil` for an unknown
+  spell:
+
+  | Field | Type | Notes |
+  |---|---|---|
+  | `startTime` | number | In `GetTime()` seconds. `0` when nothing blocks the spell. |
+  | `duration` | number | In seconds. `0` when nothing blocks the spell. |
+  | `modRate` | number | Always `1`. |
+  | `isActive` | boolean | `true` while an effect with a timer blocks the spell. |
+  | `shouldReplaceNormalCooldown` | boolean | `true` when the effect ends after the spell's own cooldown. A button then shows the loss-of-control swipe instead of the normal one. |
+
+- `GetSpellLossOfControlCooldownDuration` returns a duration object (see
+  [`C_DurationUtil.CreateDuration`](#c_durationutilcreateduration)), or `nil` for an unknown spell. The
+  object is zero when `isActive` is `false`.
+- The global `GetSpellLossOfControlCooldown` returns `start, duration`. Both
+  are `0` when nothing blocks the spell. `spell` is one of:
+  - a spell ID;
+  - a spellbook slot and its `bookType` (`"spell"` or `"pet"`);
+  - a spell name, with an optional rank as a second argument.
+
+  When the arguments name no spell, the function returns nothing. A pet
+  spell gives `0, 0`.
 
 ### `C_Spell.IsCurrentSpell(spellIdentifier)`
 
@@ -23938,9 +27323,13 @@ The spell must be in your spellbook or in the spellbook of your pet.
   current target does not change.
 - Without `target`, the spell goes to your current target, as with
   `CastSpellByName`.
-- A ground-target spell shows the targeting circle for you to click.
-  To place it at a unit, use
+- `target` can also be `"cursor"`. A ground-target spell then lands at the
+  cursor, as with [`C_Spell.CastAtCursor`](#c_spellcastatcursorspellidorname).
+  Another spell is cast as without `target`.
+- With a unit `target`, a ground-target spell is placed at the position of
+  that unit, as with
   [`C_Spell.CastAtUnit`](#c_spellcastatunitspellidorname-unit--placegroundspell).
+  Without `target`, it shows the targeting circle for you to click.
 - A string that is not a unit token causes an "Unknown unit" error.
 
 | Case | Return |
@@ -24074,14 +27463,23 @@ you know.
 
 Returns `true` when the spell lands at the cursor. Returns `false` when:
 
-- the cursor is not on the ground, for example over a frame or off the screen
+- nothing is under the cursor, for example the sky
 - the spell has no ground target
 - the spell needs another target in addition to the ground position
 - the spell is not in your spellbook
 
-If the cursor is not on the ground, the reticle is cancelled and the spell is
-not cast. A spell with no ground target is cast normally, on your current
+The position is the ground under the mouse. A unit or a frame under the mouse
+does not stop it: the spell lands on the ground behind them. When nothing is
+under the cursor, the spell is not cast and you get the error "You can't use
+that here". A spell with no ground target is cast normally, on your current
 target.
+
+When the position is out of range, the spell lands at the farthest ground in
+range on the line from you toward the cursor. When the position is nearer
+than the spell's minimum range, the spell lands at that minimum range. The
+cvar `spellClampingEnable` (default `1`) turns this off with `0`. The cvar
+`spellClampingMinRange` (default `0`, which means 1.75 yards) sets the
+distance under which a position is not pushed out.
 
 A reticle that is already up when you call this function is cancelled first.
 The function only places the reticle that its own call opens.
@@ -24158,7 +27556,7 @@ CancelSpellByName("Cat Form")       -- Drop shapeshift
 | Function | Arg | Behavior |
 |----------|-----|----------|
 | `C_Spell.CancelSpellByID(spellID)` | spellID (number) | Sends a cancel request for `spellID` to the server. No client-side check that the buff is actually present — server validates and silently no-ops if not. |
-| `CancelSpellByName(name)` | name (string, case-insensitive) | Finds the first buff on the player whose localized name matches, then cancels by its spellID. Buff-only — debuffs are skipped. |
+| `CancelSpellByName(name)` | name (string, case-insensitive) | Finds the first aura on the player whose localized name matches, then cancels by its spellID. The search includes buffs and debuffs. The text from the first `(` is not read, so `"Name(Rank 3)"` matches the aura at any rank. |
 
 Neither function tests on the client whether the aura can be
 cancelled, as `CancelPlayerBuff` does. The server decides. The server
@@ -24250,6 +27648,19 @@ so progress is `(GetTime()*1000 - startTimeMs) / (endTimeMs - startTimeMs)`.
 >
 > `isTradeskill` is `true` for profession recipe casts (smelting,
 > cooking/enchanting recipes, …) and `false` for regular spells.
+> Many recipes and item spells have the placeholder icon
+> `Interface\Icons\Temp`. For a spell with that icon, `textureID` is one of
+> these icons, in this order:
+>
+> 1. The icon of the item that the cast comes from, for example an armor
+>    kit or a sharpening stone. You get this icon only for the casts of the
+>    player.
+> 2. The icon of the item that the spell makes.
+> 3. The placeholder icon.
+>
+> If the item is not in the item cache yet, the first call returns the next
+> icon in the list and requests the item. Later calls return the icon of
+> the item.
 > `endTimeMs` reflects the **effective** cast time (with level scaling,
 > cast-time talents like Improved Frostbolt, and the haste/cast-speed
 > multiplier), so it matches the in-game cast bar — e.g.
@@ -24632,7 +28043,7 @@ returned as a table. Returns `nil` for an empty slot.
 | `startTime` | number | Start of the blocking effect, in `GetTime()` seconds. `0` when nothing blocks the spell. |
 | `duration` | number | Length of the blocking effect in seconds. `0` when nothing blocks the spell. |
 | `modRate` | number | Always `1`. |
-| `isActive` | boolean | `true` while an effect blocks the spell. |
+| `isActive` | boolean | `true` while an effect with a timer blocks the spell. |
 | `shouldReplaceNormalCooldown` | boolean | `true` when the effect outlasts the spell's own cooldown. A button then draws the loss-of-control swipe instead of the normal one. |
 
 ### `C_SpellBook.GetSpellBookItemLossOfControlCooldownDuration(slotIndex, spellBank)`
@@ -25226,6 +28637,151 @@ if IsPlayerInWorld() then
 end
 ```
 
+## StringUtil
+
+`C_StringUtil` has functions that change text and that write numbers as
+text. The formatters of this namespace are in
+[Localization](#localization). Each function raises an error when an
+argument has the wrong type. A `text` argument can also be a number.
+
+### `C_StringUtil.EscapeDecimalNonPrintables(text)`
+
+Returns `text` with each control character written as a decimal escape: a
+`\` and three digits. Bytes that are not valid UTF-8 and zero bytes also
+change to escapes. Tab, line feed and carriage return do not change.
+
+```lua
+C_StringUtil.EscapeDecimalNonPrintables("a\1b\200")  -- the text a\001b\200
+C_StringUtil.EscapeDecimalNonPrintables("a\tb")      -- the text does not change
+```
+
+### `C_StringUtil.EscapeLuaFormatString(text)`
+
+Returns `text` with each `%` written two times. As a result,
+`string.format` writes the text without a change. The text stops at its
+first zero byte.
+
+```lua
+C_StringUtil.EscapeLuaFormatString("50%")  -- "50%%"
+```
+
+### `C_StringUtil.EscapeLuaPatterns(text)`
+
+Returns `text` with a `%` before each character that has a special meaning
+in a Lua pattern: `%`, `(`, `)`, `*`, `+`, `-`, `.`, `?`, `[` and `]`. A `^`
+gets a `%` only as the first character. A `$` gets a `%` only as the last
+character.
+
+```lua
+C_StringUtil.EscapeLuaPatterns("1.5 (max)")  -- "1%.5 %(max%)"
+```
+
+### `C_StringUtil.EscapeQuotedCodes(text)`
+
+Returns `text` with each `|` written two times. As a result, color codes
+and links show as plain text. The text stops at its first zero byte.
+
+```lua
+C_StringUtil.EscapeQuotedCodes("|cffff0000Red|r")  -- "||cffff0000Red||r"
+```
+
+### `C_StringUtil.FloorToNearestString(number)`
+
+Returns `number` as a whole number in text. The function cuts the fraction,
+so a negative number moves toward zero.
+
+```lua
+C_StringUtil.FloorToNearestString(2.7)   -- "2"
+C_StringUtil.FloorToNearestString(-1.5)  -- "-1"
+```
+
+### `C_StringUtil.RoundToNearestString(number)`
+
+Returns `number` rounded to a whole number, in text. A number halfway
+between two whole numbers moves away from zero.
+
+```lua
+C_StringUtil.RoundToNearestString(2.5)   -- "3"
+C_StringUtil.RoundToNearestString(-2.5)  -- "-3"
+C_StringUtil.RoundToNearestString(2.4)   -- "2"
+```
+
+### `C_StringUtil.TruncateWhenZero(number)`
+
+Returns `number` as a whole number in text, as
+[`FloorToNearestString`](#c_stringutilfloortoneareststringnumber) does.
+When `number` is between `-0.000001` and `0.000001`, the result is an empty
+string.
+
+```lua
+C_StringUtil.TruncateWhenZero(12.9)  -- "12"
+C_StringUtil.TruncateWhenZero(0)     -- ""
+C_StringUtil.TruncateWhenZero(0.5)   -- "0"
+```
+
+### `C_StringUtil.RemoveContiguousSpaces(text, maxAllowedSpaces)`
+
+Returns `text` with each series of spaces cut to `maxAllowedSpaces` spaces.
+Only the space character counts, not tabs or line feeds.
+`maxAllowedSpaces` is a whole number from `0` to `4294967295`. With `0`,
+the function removes all spaces.
+
+```lua
+C_StringUtil.RemoveContiguousSpaces("a    b  c", 1)  -- "a b c"
+```
+
+### `C_StringUtil.WrapString(infix [, prefix, suffix])`
+
+Returns `prefix`, `infix` and `suffix` as one string. When `infix` is
+empty, the result is an empty string, without `prefix` and `suffix`.
+
+```lua
+C_StringUtil.WrapString("12", "(", ")")  -- "(12)"
+C_StringUtil.WrapString("", "(", ")")    -- ""
+```
+
+### `C_StringUtil.StripHyperlinks(text [, maintainColor, maintainBrackets, stripNewlines, maintainAtlases, maintainTextures])`
+
+Returns `text` without links and other display codes. All options are
+`false` by default.
+
+```lua
+local link = "|cff1eff00|Hitem:2589:0:0:0|h[Linen Cloth]|h|r"
+C_StringUtil.StripHyperlinks(link)              -- "Linen Cloth"
+C_StringUtil.StripHyperlinks(link, true, true)  -- "|cff1eff00[Linen Cloth]|r"
+```
+
+| Code | What the function does |
+|------|------------------------|
+| `\|H...\|h` and the closing `\|h` of a link | Removes them. The function also removes the brackets around the text of the link, unless `maintainBrackets` is `true`. Brackets outside a link do not change. |
+| `\|cAARRGGBB` and `\|r` | Removes them, unless `maintainColor` is `true`. |
+| `\|A...\|a` | Removes the atlas, unless `maintainAtlases` is `true`. |
+| `\|T...\|t` | Removes the texture, unless `maintainTextures` is `true`. |
+| `\|W...\|w` | Removes the code and the text between. |
+| `\|n` | Removes it only when `stripNewlines` is `true`. |
+| `\|\|` | Does not change. |
+
+When a code has no closing code, the function removes the rest of the
+text. The text stops at its first zero byte.
+
+### `C_StringUtil.StripTextureMarkupForLooseFiles(text)`
+
+Returns `text` without the `|T...|t` textures that come from loose files.
+A loose file is a file on the disk, for example in a folder of an addon,
+and not a file in the archives of the game. Other textures and other text
+do not change.
+
+```lua
+C_StringUtil.StripTextureMarkupForLooseFiles(
+    "|TInterface\\Icons\\INV_Misc_QuestionMark:16|t |TInterface\\AddOns\\MyAddon\\icon:16|t")
+-- "|TInterface\\Icons\\INV_Misc_QuestionMark:16|t ", when the icon of MyAddon is on the disk
+```
+
+For each texture, the function looks for the same files as
+`texture:SetTexture`: `X.blp`, then `X.tga`. When a
+`|T` has no closing `|t`, the text before the `|T` appears two times in
+the result. The text stops at its first zero byte.
+
 ## SwingTimer
 
 `C_SwingTimer` reports whether your current target is in range for a
@@ -25269,8 +28825,8 @@ Host/OS-level helpers that aren't tied to a game domain.
 ### `GetPhysicalScreenSize()`
 
 Returns `(widthPixels, heightPixels)`: the size of the game window in
-pixels. In a window, this is the size of the window, and it changes when
-you resize the window. `PixelUtil` uses this function to convert pixels to
+pixels. The values are always whole numbers. In a window, this is the size
+of the window, and it changes when you resize the window. `PixelUtil` uses this function to convert pixels to
 UI units (`768.0 / physicalHeight`). With this conversion, addons can put
 frames on whole pixels, so borders stay sharp at all UI scales.
 
@@ -25331,6 +28887,32 @@ returns nothing.
 ```lua
 FlashClientIcon()       -- flash until focused (e.g. a battleground queue pops while alt-tabbed)
 FlashClientIcon(true)   -- brief flash
+```
+
+### Frame rate limits (`useMaxFPS`, `maxFPS`, `useMaxFPSBk`, `maxFPSBk`)
+
+These settings limit the frame rate. The game keeps them in
+`WTF\Config.wtf`, so you do not need an addon. You can also change the
+settings in the ClassicAPI options, on the Graphics page.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `useMaxFPS` | `0` | `1` limits the frame rate to `maxFPS` while WoW is the active window. |
+| `maxFPS` | `120` | The frame rate limit while WoW is the active window. |
+| `useMaxFPSBk` | `0` | `1` limits the frame rate to `maxFPSBk` while another window is active. |
+| `maxFPSBk` | `30` | The frame rate limit while another window is active. |
+
+- By default, `useMaxFPS` and `useMaxFPSBk` are `0`, and the frame rate has
+  no limit.
+- The value of `maxFPS` and `maxFPSBk` must be 8 or more. The game does not
+  accept a lower value.
+- `maxFPS` does not apply while another window is active. If `useMaxFPSBk`
+  is `0` at that time, the frame rate has no limit.
+- The limits also apply on the login screen and the character screens.
+
+```
+/console useMaxFPS 1
+/console maxFPS 60
 ```
 
 ## Talent
@@ -25414,6 +28996,239 @@ the tabs of the class in DBC row order, then the talents in DBC row
 order in each tab. Thus `GetTalentIDByIndex(t, i)` and
 `GetTalentIDByIndex(t, i, <player's class>)` return identical values.
 
+### Talent previews
+
+A talent preview is a plan of talent points. You add points to the plan
+and remove them, and then you learn all of the plan with one call. The plan
+spends no points until you learn it.
+
+The plan obeys the talent rules:
+
+- You can add a point only when you have a free point that the plan does
+  not use.
+- A talent can get points only when its tab has 5 points for each tier
+  before the talent. Learned points and planned points both count.
+- A talent can get points only when each talent that it needs has the
+  necessary rank in the plan.
+- The planned rank stays between the learned rank and the maximum rank.
+- You cannot remove a point that a planned talent needs. You cannot remove
+  a point that a higher tier with points needs.
+
+The client clears the plan when your free talent points change. This occurs
+when you learn a talent, gain a level or reset your talents, and at login.
+When `CHARACTER_POINTS_CHANGED` fires, the plan is already clear.
+
+The functions accept the `isPet` and `groupIndex` arguments. Only your own
+talents in group 1 have a plan. For a pet or for another group, the
+functions change nothing and return 0.
+
+The default talent frame does not show the plan. An addon shows the plan
+with these functions.
+
+### `AddPreviewTalentPoints(tabIndex, talentIndex, points[, isPet[, groupIndex]])`
+
+Adds points to the planned rank of a talent. A negative `points` removes
+planned points.
+
+```lua
+AddPreviewTalentPoints(1, 1, 1)    -- plan one point in the first talent of tab 1
+AddPreviewTalentPoints(1, 1, -1)   -- remove the planned point
+```
+
+The planned rank stops at the maximum rank of the talent. When you remove
+points, the planned rank stops at the learned rank. If a talent rule
+refuses the change, the plan does not change.
+
+The function makes sure that one free point is available. It does not
+make sure that all of `points` are free. Add one point for each click to
+keep the plan in your free points.
+
+When the planned points change, the function fires
+[`PREVIEW_TALENT_POINTS_CHANGED`](#preview_talent_points_changed-event).
+If `tabIndex`, `talentIndex` or `points` is not a number, the function
+raises the error `Usage: AddPreviewTalentPoints(tabIndex, talentIndex,
+points[, isPet[, groupIndex]])`. The function returns no value.
+
+### `ResetPreviewTalentPoints(tabIndex[, isPet[, groupIndex]])`
+
+Removes all planned points from one talent tab.
+
+```lua
+ResetPreviewTalentPoints(2)
+```
+
+When planned points are removed, the function fires
+[`PREVIEW_TALENT_POINTS_CHANGED`](#preview_talent_points_changed-event)
+with `talentIndex` 0. If `tabIndex` is not a number, the function raises the
+error `Usage: ResetPreviewTalentPoints(tabIndex[, isPet[, groupIndex]])`.
+The function returns no value.
+
+### `ResetGroupPreviewTalentPoints([isPet[, groupIndex]])`
+
+Removes all planned points from all talent tabs.
+
+```lua
+ResetGroupPreviewTalentPoints()
+```
+
+When planned points are removed, the function fires
+[`PREVIEW_TALENT_POINTS_CHANGED`](#preview_talent_points_changed-event)
+with `talentIndex` 0 and `tabIndex` 0. The function returns no value.
+
+### `GetPreviewTalentPointsSpent(tabIndex[, isPet[, groupIndex]])`
+
+Returns the number of planned points in one talent tab. Learned points are
+not included.
+
+```lua
+local planned = GetPreviewTalentPointsSpent(1)   -- 3
+```
+
+Returns 0 for a tab that does not exist. If `tabIndex` is not a number,
+the function raises the error `Usage: GetPreviewTalentPointsSpent(tabIndex[,
+isPet[, groupIndex]])`.
+
+### `GetGroupPreviewTalentPointsSpent([isPet[, groupIndex]])`
+
+Returns the number of planned points in all talent tabs. Learned points are
+not included.
+
+```lua
+local free = UnitCharacterPoints("player") - GetGroupPreviewTalentPointsSpent()
+```
+
+### `LearnPreviewTalents([isPet])`
+
+Asks the server to learn the plan.
+
+```lua
+LearnPreviewTalents()
+```
+
+The function sends one request for each talent in the plan. The requests
+go in the order of the tabs and the tiers. A talent that another talent
+needs goes first.
+
+The server learns each request that obeys its talent rules. It does not
+report a refused request. When your free talent points change, the client
+clears the plan. Thus a refused talent is not in the plan after the learn.
+
+The function does nothing when the plan is empty or when `isPet` is true.
+The function returns no value.
+
+### `C_SpecializationInfo.GetTalentInfo(query)`
+
+Returns a table with the learned rank and the planned rank of a talent.
+
+```lua
+local info = C_SpecializationInfo.GetTalentInfo({specializationIndex = 1, talentIndex = 1})
+print(info.name, info.rank, info.previewRank, info.maxRank)   -- "Improved Wrath" 3 5 5
+```
+
+`query` is a table with these fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `specializationIndex` | number | The talent tab. |
+| `talentIndex` | number | The talent in the tab, as in `GetTalentInfo`. |
+| `tier` | number | With `column`, gives the talent when `talentIndex` is not set. |
+| `column` | number | The column of the talent. |
+| `isInspect` | boolean | `true` returns `nil`. |
+| `isPet` | boolean | `true` returns `nil`. |
+| `groupIndex` | number | A value other than 1 returns `nil`. |
+
+The result has these fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `talentID` | number | The talent ID. |
+| `name` | string | The name of the talent. |
+| `icon` | string | The texture path of the icon. Not set when the spell has no icon. |
+| `tier` | number | The tier, from 1. |
+| `column` | number | The column, from 1. |
+| `rank` | number | The learned rank. 0 when the talent has no points. |
+| `maxRank` | number | The maximum rank. |
+| `meetsPrereq` | boolean | `true` when you know the spell that the talent needs, or when it needs no spell. |
+| `previewRank` | number | The planned rank. The learned rank when the talent has no planned points. |
+| `meetsPreviewPrereq` | boolean | The same value as `meetsPrereq`. |
+| `isExceptional` | boolean | `true` when the talent teaches an ability. |
+
+Returns `nil` when no talent matches the query. If `query` is not a table,
+the function raises the error `Usage: local result =
+C_SpecializationInfo.GetTalentInfo(query)`.
+
+`meetsPrereq` does not include the talents that this talent needs. Use
+[`C_SpecializationInfo.GetTalentPrereqs`](#c_specializationinfogettalentprereqstabindex-talentindex-isinspect-ispet-groupindex)
+for those talents.
+
+### `C_SpecializationInfo.GetTalentPrereqs(tabIndex, talentIndex[, isInspect[, isPet[, groupIndex]]])`
+
+Returns four values for each talent that a talent needs:
+
+| Value | Type | Description |
+|---|---|---|
+| `tier` | number | The tier of the talent that is needed, from 1. |
+| `column` | number | The column of the talent that is needed, from 1. |
+| `isLearnable` | number | 1 when the learned rank of that talent is sufficient, else `nil`. |
+| `isPreviewLearnable` | number | 1 when the planned rank of that talent is sufficient, else `nil`. |
+
+```lua
+local tier, column, isLearnable, isPreviewLearnable =
+    C_SpecializationInfo.GetTalentPrereqs(1, 3)
+```
+
+`GetTalentPrereqs` returns the first three values of each group. A talent
+that needs no talent returns no value. For `isInspect`, `isPet` or a group
+other than 1, the third and fourth values are `nil`. If `tabIndex` or
+`talentIndex` is not a number, the function raises the error `Usage:
+C_SpecializationInfo.GetTalentPrereqs(tabIndex, talentIndex[, isInspect[,
+isPet[, groupIndex]]])`.
+
+### `GameTooltip:SetTalent(tabIndex, talentIndex[, isInspect[, isPet[, groupIndex[, isPreview]]]])`
+
+`isPreview` shows the talent with the rank in the plan. Without `isPreview`,
+the tooltip shows the learned rank, as before.
+
+```lua
+GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
+GameTooltip:SetTalent(1, 1, nil, nil, nil, true)
+```
+
+With `isPreview`, the tooltip changes in these ways:
+
+- The rank line, the description and the next rank use the planned rank.
+- The red lines for necessary talents and tier points use the plan. Planned
+  points count for the tier.
+- The green "click to learn" line is not shown. A green
+  `TALENT_TOOLTIP_ADDPREVIEWPOINT` line is shown when
+  `AddPreviewTalentPoints` can add one point to the talent.
+
+`isPreview` has an effect only for your own talents in group 1. When
+`isInspect` or `isPet` is true, or `groupIndex` is not 1, the tooltip shows
+the learned rank.
+
+#### `PREVIEW_TALENT_POINTS_CHANGED` event
+
+Fires when the number of planned talent points changes.
+
+| Argument | Type | Description |
+|---|---|---|
+| `arg1` | number | The talent index. 0 when a tab or all of the plan was cleared. |
+| `arg2` | number | The tab index. 0 when all of the plan was cleared. |
+| `arg3` | number | The talent group, always 1. |
+| `arg4` | number | The change in planned points. Negative for removed points. |
+
+```lua
+local f = CreateFrame("Frame")
+f:RegisterEvent("PREVIEW_TALENT_POINTS_CHANGED")
+f:SetScript("OnEvent", function()
+    print(arg1, arg2, arg3, arg4)
+end)
+```
+
+The event does not fire when the client clears the plan after your free
+talent points change. Use `CHARACTER_POINTS_CHANGED` for that change.
+
 ## Targeting
 
 More target-selection functions, next to `TargetNearestEnemy`,
@@ -25422,7 +29237,7 @@ More target-selection functions, next to `TargetNearestEnemy`,
 `ClearTarget`.
 
 Not backported (no equivalent here — soft-target / action-camera features):
-`TargetPriorityHighlightStart/End`, `IsTargetLoose`, `TargetToggle`.
+`TargetPriorityHighlightStart/End`, `TargetToggle`.
 
 ### `GetPlayerFacing()`
 
@@ -25501,6 +29316,64 @@ Like `TargetNearest`, but only enemy **players**.
 
 Like `TargetNearest`, but only friendly **players** that you can assist.
 
+### Scored Tab targeting (`TargetNearestUseNew`)
+
+When `TargetNearestUseNew` is `1`, the Tab functions pick from the scored
+list that [soft targeting](#soft-enemy-and-soft-friend-softenemy--softfriend--anyenemy--anyfriend)
+uses. These functions are `TargetNearestEnemy`, `TargetNearestFriend`,
+`TargetNearestPartyMember`, `TargetNearestRaidMember`, `TargetNearest`,
+`TargetNearestEnemyPlayer` and `TargetNearestFriendPlayer`. The Tab key and
+an attack with no target also use the scored list. When the cvar is `0`
+(the default), the functions work as described above.
+
+**The order.** Units near the center of the camera and near you come
+first. An enemy that casts or channels a spell counts for more. A unit must
+be on the screen, in line of sight and in range. Critters are skipped.
+
+**Soft units first.** When there is a `"softenemy"`, `TargetNearestEnemy`
+targets it, unless it is already your locked target. `TargetNearestFriend`
+does the same with `"softfriend"`. When your target is loose and the
+function accepts it, the call only locks the target.
+`PLAYER_TARGET_CHANGED` does not fire for this change.
+
+**The cycle.** Each call selects the best unit that the cycle has not
+selected yet. A call with `reverse` goes back through the units that the
+cycle selected, in the reverse order. After you go back, a call without
+`reverse` replaces the units that came after the target.
+
+**Restarts.** The cycle starts again from the best unit in these cases:
+
+- 3 seconds after the target changed.
+- The camera turned more than 20° since the target changed.
+- You moved more than 15 yards since the target changed.
+
+The cycle forgets the units that it selected after 6 seconds, a turn of
+more than 80°, or a move of more than 100 yards. It also forgets them when
+your target is cleared. When you click a unit, the next call continues from
+that unit.
+
+**Combat.** When your target is an enemy in combat with you, only enemies
+in combat count (`TargetPriorityCombatLock`). When no enemy in combat is in
+front of the camera, all enemies count
+(`TargetPriorityCombatLockContextualRelaxation`). When no enemy in combat
+qualifies, all enemies count. When no unit qualifies, the target does not
+change.
+
+`TargetNearestRaidMember` selects only the members of your own party. In a
+raid, that is your group.
+
+| cvar | default | values |
+|---|---|---|
+| `TargetNearestUseNew` | `0` | `1`: the Tab functions use the scored list. `0`: they use the list of nearest units. |
+| `TargetPriorityAllowAnyOnScreen` | `0` | `1`: when your target does not qualify, enemies that are not in combat also count at once. `2`: the same, and when no unit qualifies, units out of range or behind you also count. |
+| `TargetPriorityContinueFromManualTarget` | `1` | `1`: after you click a unit, the next call continues from it. `0`: the next call starts from the best unit. |
+| `TargetPriorityAutoTargetIgnoreWindow` | `500` | Milliseconds. For this time after the game set your target (for example `TargetEnemyAttacker`), that target does not set the place in the cycle. |
+| `TargetPriorityPvpLock` | `0` | `1`: when `TargetPriorityPvp` is `2` and your target is a PvP unit in a duel, in free-for-all PvP or on a battleground, only PvP units count. `0`: no such rule. |
+
+```
+/dump SetCVar("TargetNearestUseNew", "1"), GetCVar("TargetNearestUseNew")
+```
+
 ### `InteractUnit(unit [, exactMatch])`
 
 Targets a unit or object and interacts with it. The result is the same
@@ -25545,10 +29418,12 @@ returns a boolean.
 
 - `unit` and `exactMatch` are the same as for `InteractUnit`. Use
   `"anyinteract"` for the object that the Interact Key uses.
-- `looseTargeting` is `true` if you do not give it. When it is `true` and
-  you have a target, the interaction does not change your target. When it
-  is `false`, or when you have no target, a unit that you interact with
-  becomes your target.
+- `looseTargeting` is `true` if you do not give it. When it is `true`, a
+  unit that you interact with becomes your loose target, but a target that
+  you chose does not change. A `"soft…"` or `"any…"` token also fires
+  [`PLAYER_SOFT_TARGET_INTERACTION`](#player_soft_target_interaction-event).
+  When it is `false`, a unit that you interact with becomes your target.
+- `"anyleftinteract"` does nothing and returns `false`.
 
 Returns `true` if the interaction ran, or `false` if nothing matched.
 
@@ -25560,7 +29435,7 @@ end
 
 ### Soft interact (`softinteract` / `anyinteract`)
 
-Soft interact picks the nearest object in front of you that you can
+Soft interact picks the best object in front of you that you can
 interact with. Bind **Interact With Target** to a key, then press it to
 interact with that object. This is the Interact Key.
 
@@ -25574,49 +29449,96 @@ To turn it off:
 **What it picks.** It picks only an object that shows an interact cursor
 when you put the mouse over it. For example: an NPC with a service, a
 corpse that you can loot or skin, a mailbox, a chest, or an herb or mining
-node. It does not pick an enemy that you can only attack. The object must
-be on the screen, and inside the arc and the range of the settings below.
-If more than one object qualifies, it picks the nearest one.
+node. It does not pick an enemy that you can only attack, or a player's
+corpse. A game object or a dead unit must be within 16 yards. The object
+must be on the screen and inside the arc. If more than one object
+qualifies, the best one wins, the same as for the
+[soft enemy](#soft-enemy-and-soft-friend-softenemy--softfriend--anyenemy--anyfriend):
+near the center of the view and near to you. While you fish, your bobber
+is picked first, wherever it is on the screen. When `SoftTargetMatchLocked`
+is `1`, your locked target is picked when you can interact with it now.
+The pick is made again 10 times each second. Between two picks, the object
+can only be removed, for example when it goes out of the range below.
 
 **Unit tokens.**
 
 - `"softinteract"` is the object that soft interact picked. It is empty
   when nothing qualifies or when soft interact is off.
-- `"anyinteract"` is your target when you can interact with it now. This
-  is true also when the target is behind you. When your target is too far
-  away, `"anyinteract"` is the same as `"softinteract"`. If
-  `"softinteract"` is empty, `"anyinteract"` is your target. When you
+- `"anyinteract"` is your locked target when you can interact with it now.
+  This is true also when the target is behind you. When your target is
+  too far away or loose, `"anyinteract"` is the same as `"softinteract"`.
+  If `"softinteract"` is empty, `"anyinteract"` is your target. When you
   cannot interact with your target, `"anyinteract"` is the same as
   `"softinteract"`.
 - `"anyleftinteract"` is the same as `"anyinteract"`.
 
-Both tokens can point at a game object or a corpse. `UnitGUID` returns
+Both tokens can point at a game object. `UnitGUID` returns
 the GUID of that object. Functions that read unit data, such as
-`UnitName`, return nothing for a game object or a corpse.
+`UnitName`, return nothing for a game object.
 
 **Settings.**
 
 | cvar | default | values |
 |---|---|---|
 | `SoftTargetInteract` | `3` | `0` off, `1` gamepad, `2` keyboard and mouse, `3` always. Only `2` and `3` turn soft interact on. |
-| `SoftTargetInteractArc` | `0` | `0`: the object must be directly in front of the camera, within about 1.2 yards of a line from you in the direction of the camera. `1`: the object must be within 30 degrees of the direction of the camera, on each side. `2`: the object can be in any direction. The arc follows the camera, not the direction that your character faces. |
-| `SoftTargetInteractRange` | `10` | The maximum distance in yards. The range cannot be more than the `targetNearestDistance` cvar. |
+| `SoftTargetInteractArc` | `0` | `0`: directly in front. The object is very near, or the center line of the camera or of your character goes through it. `1`: also inside a small cone in front of the camera. `2`: anywhere on the screen. |
+| `SoftTargetInteractRange` | `10` | The maximum distance in yards. A soft object farther away is removed. |
 | `SoftTargetInteractRangeIsHard` | `0` | `0`: an object that you can interact with now is picked also when it is past the range. `1`: the range always applies. |
 
+**The circle and the name.** When the picked object is a unit, it shows
+the soft circle and its name, the same as `"softenemy"`. A game object
+shows neither. For the details, see the circles and the names of
+[soft enemy and soft friend](#soft-enemy-and-soft-friend-softenemy--softfriend--anyenemy--anyfriend).
+
 **The icon.** When `SoftTargetIconInteract` is `1`, an icon shows over the
-picked object. For a game object, such as a mailbox, a chest or a node,
-`SoftTargetIconGameObject` must also be `1`. The icon is the cursor
-image that the mouse shows over the object (see
+picked object. The icon is the cursor image that the mouse shows over the
+object (see
 [`SetUnitCursorTexture`](#setunitcursortexturetexture-unit--style--includelowpriority)).
-For a unit, the icon is above its name. For a game object or a corpse, the
-icon is above the top of the object. When you are too far away, the icon is
-the grey "Unable" form. The icon is hidden when the object is off the screen.
+When you are too far away, the icon is the grey "Unable" form. When the
+unit has a nameplate, the icon is on the nameplate. In all other cases,
+the icon is above the name of the unit, or above the top of a game object.
+A raid target marker over the unit replaces the icon. The icon is hidden
+when the object is off the screen.
+
+An icon on a nameplate is `SoftTargetNameplateSize` pixels square. Any
+other icon is `SoftTargetWorldtextSize` screen pixels square at all
+distances. When `SoftTargetWorldtextNearScale` is more than `1`, a near
+icon is larger. At `SoftTargetWorldtextNearDist` yards from the camera,
+the size is multiplied by `SoftTargetWorldtextNearScale`. At
+`SoftTargetWorldtextFarDist` yards and more, the size is multiplied by
+`1`. When an icon appears, it grows from half size to full size in
+approximately a tenth of a second.
 
 | cvar | default | values |
 |---|---|---|
-| `SoftTargetIconInteract` | `0` | `1` shows the icon, `0` hides it. |
-| `SoftTargetIconGameObject` | `0` | `1` shows the icon over a game object, `0` hides it. The icon also needs `SoftTargetIconInteract`. |
-| `SoftTargetNameplateSize` | `19` | The size of the icon, and of the soft enemy and soft friend icons. |
+| `SoftTargetIconInteract` | `1` | `1` shows the icon, `0` hides it. |
+| `SoftTargetNameplateSize` | `19` | The size in pixels of an icon on a nameplate. `0` hides the icons on nameplates. This also applies to the soft enemy and soft friend icons. |
+| `SoftTargetWorldtextSize` | `32` | The size in screen pixels of an icon that is not on a nameplate. This also applies to the soft enemy and soft friend icons. |
+| `SoftTargetWorldtextNearScale` | `1` | The size multiplier for a near icon. `1` or less gives all icons the same size. |
+| `SoftTargetWorldtextNearDist` | `4` | The distance in yards where the full near multiplier applies. |
+| `SoftTargetWorldtextFarDist` | `40` | The distance in yards where the multiplier is `1`. |
+
+**The tooltip.** The game tooltip can show a soft target without the
+mouse over it. It shows the first of these whose setting is on: the soft
+interact object, your target, the soft enemy, the soft friend. It shows
+when that object changes. After `SoftTargetTooltipDurationMs`, it fades
+out. When none of them is set, the tooltip hides. While the mouse is over
+an object in the world, that object has the tooltip. **Show Target
+Tooltip** in the Interact Key options turns on the soft interact and the
+soft enemy tooltips together.
+
+The unit name shows in the same reaction color as on the mouseover
+tooltip. For this tooltip, `GameTooltip:GetUnit()` returns the token that
+`UnitTokenFromGUID` gives for the unit, for example `"target"` or
+`"softenemy"`.
+
+| cvar | default | values |
+|---|---|---|
+| `SoftTargetTooltipInteract` | `0` | `1` shows the tooltip of `"softinteract"`. |
+| `SoftTargetTooltipLocked` | `0` | `1` shows the tooltip of your target. |
+| `SoftTargetTooltipEnemy` | `0` | `1` shows the tooltip of `"softenemy"`. |
+| `SoftTargetTooltipFriend` | `0` | `1` shows the tooltip of `"softfriend"`. |
+| `SoftTargetTooltipDurationMs` | `2000` | The time in milliseconds before the tooltip fades out. `0` keeps it. |
 
 When the picked object changes,
 [`PLAYER_SOFT_INTERACT_CHANGED`](#player_soft_interact_changed-event)
@@ -25628,8 +29550,8 @@ fires.
 
 ### Soft enemy and soft friend (`softenemy` / `softfriend` / `anyenemy` / `anyfriend`)
 
-Soft enemy picks the nearest enemy near you, and soft friend picks the
-nearest friendly unit. They do not change your target. An addon or a
+Soft enemy picks the best enemy near you, and soft friend picks the
+best friendly unit. They never change a target that you chose. An addon or a
 macro uses the picked unit through its token.
 
 Both are off by default. To turn them on:
@@ -25639,52 +29561,103 @@ Both are off by default. To turn them on:
 /console SoftTargetFriend 3
 ```
 
-**What they pick.** Soft enemy picks a unit that Tab targeting can select
-as an enemy: a living unit that you can attack. Soft friend picks a living
-unit that you can assist, for example a party member. Neither picks you.
-The unit must be on the screen, and inside the arc and the range of the
-settings below. If more than one unit qualifies, it picks the nearest one.
+**What they pick.** Soft enemy picks a living unit that you can attack and
+that does not show as dead.
+When you are not flagged for PvP, it does not pick a unit that is flagged
+for PvP, except in a duel, in free-for-all PvP, or on a battleground. Soft friend picks a living, friendly unit that you can assist, for
+example a party member. Neither picks you or a unit that you control. The
+unit must be on the screen, in line of sight (for an enemy that is not a
+player), not far behind you, and inside the arc. Units farther from where
+you and the camera face must be nearer: the full distance (51 yards) is
+allowed only near the front. If more than one unit qualifies, the best one
+wins. The best unit is near the center of the view and near to you. A unit
+in melee range, a unit in the center of the camera, and an enemy that is in
+combat with you while you attack count for more. Critters count for much
+less. The pick is made again 10 times each second. Between two picks, a soft
+unit can only be removed, for example when it goes out of the range below.
+
+**PvP.** In a duel, in free-for-all PvP, or on a battleground, PvP units
+count for much more. A PvP player is a player that is flagged for PvP, in
+free-for-all PvP, or in a duel with you. `TargetPriorityPvp` sets which
+units count for more:
+
+- `1`: PvP players and bosses. They also count as enemies in combat with
+  you.
+- `2`: the same, and every other unit that is flagged for PvP.
+- `3`: PvP players only.
+- `0`: no unit.
 
 **Locked and loose targets.** A target that you choose (with a click,
 Tab, `/target` or `TargetUnit`) is a locked target. A target that soft
-targeting sets is a loose target. A click on a loose target makes it
-locked. [`IsTargetLoose()`](#istargetloose) tells the two apart.
+targeting sets is a loose target. Soft targeting never replaces a locked
+target. A click on a loose target makes it locked.
+[`IsTargetLoose()`](#istargetloose) tells the two apart.
 
 **Your target.** When `SoftTargetMatchLocked` is `1`, a locked target is
-the soft unit when it qualifies. For example, when you target an enemy
-inside the range, `"softenemy"` is that enemy, also when another enemy is
-nearer. When `SoftTargetWithLocked` is `0`, there is no soft enemy and no
-soft friend while you have a locked target. A loose target counts for
-neither setting.
+the soft unit when it qualifies, also when another unit is better. When it
+is `2`, a loose target that your spell set also counts. When
+`SoftTargetWithLocked` is `0`, there is no soft enemy and no soft friend
+while you have a target. When you attack your locked target, it is not the
+soft enemy, unless `SoftTargetWithLocked` is `2`.
 
-**Attacks.** When you have no target, **Attack Target**, `/startattack`,
-`AttackTarget()` and `StartAttack()` attack `"softenemy"`. Your target
-stays empty.
+**Attacks.** **Attack Target**, `/startattack`, `AttackTarget()` and
+`StartAttack()` attack `"anyenemy"` when you give no unit. That is
+`"softenemy"`, unless your locked target is an enemy that qualifies. Your
+target does not change. When you attack a different unit, that unit
+becomes your locked target.
 
-**Spells.** When you have no target, a harmful spell goes to
-`"softenemy"` and a helpful spell goes to `"softfriend"`. A spell that
-only you can receive still goes to you. If the soft unit is out of the
-spell's range, the cast fails with "Out of range". When a harmful spell
-goes off, its unit becomes your loose target.
+**Spells.** When you give no unit, a harmful spell goes to `"anyenemy"`
+and a helpful spell goes to `"anyfriend"`. When that unit is empty, or when
+the spell is not harmful or helpful, the spell goes to `"anytarget"`. This
+rule applies to action buttons, `/cast`, `CastSpellByName()`, `CastSpell()`,
+`UseContainerItem()` and `UseInventoryItem()`. When you give a unit, or set
+the `onSelf` argument, the spell goes to that unit. For example, with a
+friendly locked target, a harmful spell goes to `"softenemy"`. A spell that
+only you can receive still goes to you.
 
-**Loose targets follow.** When `SoftTargetForce` is `1` and your target
-is loose, your target changes to each new `"softenemy"`. When there is no
-soft enemy, the loose target is cleared. When `SoftTargetForce` is `2`,
-the same happens with `"softfriend"`. Soft targeting never changes a
-locked target, and it never selects a target when you have none.
+**Range and results.** `IsActionInRange()` tests the range to the unit
+that the spell goes to. If that unit is out of the spell's range, the cast
+fails with "Out of range". When your harmful spell lands on `"softenemy"`
+and `TargetAutoEnemy` is `1`, that unit becomes your loose target.
+`TargetAutoFriend` does the same for a helpful spell on `"softfriend"`.
+
+**Pets and emotes.** When you give no unit, `PetAttack()`, a click on the
+pet bar, `CastPetAction()` and `CastSpell()` for the pet book use
+`"anytarget"`. `DoEmote()` uses `"anytarget"` when you give no name, or a
+name that starts with `%`.
+
+**The forced target.** When `SoftTargetForce` is `1` and you have no
+locked target, your target is set to `"softenemy"`, and it changes to each
+new `"softenemy"`. This target is hidden: `UnitExists("target")` is
+`false` for it, and `PLAYER_TARGET_CHANGED` does not fire. A running
+attack moves to each new soft enemy. When `stopAutoAttackOnTargetChange`
+is `1`, the attack stops instead. When there is no soft enemy and
+`SoftTargetEnemyArc` is `0`, the forced target is cleared at once. With
+another arc, it is cleared when it is no longer a soft unit. When
+`SoftTargetForce` is `2`, the same happens with `"softfriend"`.
+
+`ClearTarget()` clears a loose target that is a soft unit, but returns
+false for it, unless you attack. So Escape opens the game menu, and soft
+targeting sets the forced target again.
+
+A click on the forced target, or a spell that makes it your loose target,
+shows it: `UnitExists("target")` becomes `true` and `PLAYER_TARGET_CHANGED`
+fires. To show the soft unit in a frame, use
+[`PLAYER_SOFT_ENEMY_CHANGED`](#player_soft_enemy_changed--player_soft_friend_changed-events)
+and `"softenemy"`.
 
 **Unit tokens.**
 
 - `"softenemy"` is the unit that soft enemy picked. It is empty when
   nothing qualifies or when soft enemy is off.
 - `"softfriend"` is the unit that soft friend picked, in the same way.
-- `"anyenemy"` is the first of these that exists:
-  1. your target, when it qualifies as a soft enemy
-  2. `"softenemy"`
-  3. your target
-  4. `"softfriend"`
-- `"anyfriend"` is the same as `"anyenemy"`, with enemy and friend
-  changed around.
+- `"anyenemy"` is `"softenemy"`. It is your target instead when your
+  target is locked and qualifies as a soft enemy, or when there is no soft
+  enemy.
+- `"anyfriend"` is the same, for `"softfriend"`.
+- `"anytarget"` is the first of `"softenemy"` and `"softfriend"` that
+  exists, when your target is empty or loose. If neither exists and you
+  have no target, it is `"softinteract"`. Otherwise, it is your target.
 
 A `target` suffix also works, for example `"softenemytarget"`.
 
@@ -25702,20 +29675,32 @@ with `"target"` and one time with `"softenemy"`. `"anyenemy"` and
 |---|---|---|
 | `SoftTargetEnemy` | `1` | `0` off, `1` gamepad, `2` keyboard and mouse, `3` always. Only `2` and `3` turn soft enemy on. |
 | `SoftTargetFriend` | `0` | The same values, for soft friend. |
-| `SoftTargetEnemyArc` / `SoftTargetFriendArc` | `0` | The same values as `SoftTargetInteractArc`. |
-| `SoftTargetEnemyRange` / `SoftTargetFriendRange` | `45` | The maximum distance in yards. The range cannot be more than the `targetNearestDistance` cvar. |
-| `SoftTargetMatchLocked` | `1` | `1`: your target is the soft unit when it qualifies. `0`: the soft unit is always the nearest unit that qualifies. |
-| `SoftTargetWithLocked` | `1` | `0`: no soft enemy and no soft friend while you have a locked target. `1` and `2`: they are picked also while you have a locked target. |
-| `SoftTargetForce` | `1` | `1`: a loose target follows `"softenemy"`. `2`: a loose target follows `"softfriend"`. `0`: a loose target stays. |
+| `SoftTargetEnemyArc` / `SoftTargetFriendArc` | `0` | `0`: directly in front. The unit is very near, or the center line of the camera or of your character goes through it. `1`: also inside a small cone in front of the camera. `2`: anywhere on the screen. |
+| `SoftTargetEnemyRange` / `SoftTargetFriendRange` | `45` | The maximum distance in yards. A soft unit farther away is removed. `0` turns the side off. |
+| `SoftTargetMatchLocked` | `1` | `1`: a locked target is the soft unit when it qualifies. `2`: a loose target that your spell set also counts. `0`: the soft unit is always the best unit. |
+| `SoftTargetWithLocked` | `1` | `0`: no soft enemy and no soft friend while you have a target. `1`: they are picked also while you have a target. `2`: the same, and your attacked target can also be the soft enemy. |
+| `TargetPriorityCombatLock` | `1` | `1`: while you attack, an enemy that is in combat counts for more. `2`: only an enemy in combat that attacks. |
+| `TargetPriorityCombatLockContextualRelaxation` | `1` | `1`: enemies in combat count for more only when one of them is in front of the camera. `0`: always. |
+| `TargetPriorityPvp` | `1` | In a duel, in free-for-all PvP, or on a battleground: `1` PvP players and bosses count for more, `2` also every unit that is flagged for PvP, `3` PvP players only, `0` no unit. |
+| `SoftTargetForce` | `1` | `1`: with no locked target, your target is set to `"softenemy"`. `2`: the same with `"softfriend"`. `0`: soft targeting sets no target. |
+| `TargetAutoEnemy` | `1` | `1`: your harmful spell that lands on `"softenemy"` makes it your loose target. `0`: it does not. This setting is saved for each character. |
+| `TargetAutoFriend` | `0` | The same, for your helpful spell on `"softfriend"`. This setting is saved for each character. |
+| `TargetEnemyAttacker` | `1` | `1`: a unit becomes your target when its melee attack hits you, or when it starts to cast a spell at you and cannot help you. This occurs when you have no target or one that the game set. `0`: being attacked never sets your target. While you attack, a running attack does not move to it. This setting is saved for each character. |
+| `TargetAutoLock` | `1` | `1`: a target that the game sets (`TargetEnemyAttacker`, `C_PlayerInteractionManager.InteractUnit` on a unit token) is locked. `0`: it is loose. This setting is saved for each character. |
 
-**The circles.** A selection circle shows under `"softenemy"` and under
-`"softfriend"`. It has the same color as the circle under your target, but
-it is smaller and dimmer. When the soft unit is also your target, the unit shows only
-the target circle. `ObjectSelectionCircle` `0` hides the soft circles with
-the target circle.
+**The circles.** A soft circle shows under `"softenemy"`, under
+`"softfriend"` and under a `"softinteract"` unit. The soft circle is an
+even ring over a filled disc. It is smaller and fainter than the circle
+under your target, and its color is paler. When a soft unit is also your
+target, the unit shows only one circle. A loose target, for example the
+forced target, shows the soft circle. A locked target shows the target
+circle. `ObjectSelectionCircle` `0` hides the soft circles with the target
+circle. A soft unit and a loose target do not light up. The model of a
+locked target lights up, the same as when the mouse is over a model.
 
-**The names.** The name of `"softenemy"` and of `"softfriend"` shows above
-the unit, the same as the name of your target. When the `UnitName` cvars
+**The names.** The names of `"softenemy"`, `"softfriend"` and a
+`"softinteract"` unit show above the unit, the same as the name of your
+target. When the `UnitName` cvars
 hide the names of other units, the soft unit names also show. When a soft
 unit has a nameplate, the nameplate shows and the name does not, the same as
 for your target.
@@ -25723,13 +29708,12 @@ for your target.
 **The icons.** When `SoftTargetIconEnemy` is `1`, an icon shows above the
 name of `"softenemy"`. When `SoftTargetIconFriend` is `1`, an icon shows
 above the name of `"softfriend"`. The icon is the cursor image that the
-mouse shows over the unit, the same as the
+mouse shows over the unit. It has the same place and the same size as the
 [soft interact icon](#soft-interact-softinteract--anyinteract). A unit
 gets one icon, also when it is more than one soft unit.
 When the mouse shows only the normal pointer over the unit, for example
 over a party member, the icon is low priority. A low-priority icon shows
 only when `SoftTargetLowPriorityIcons` is `1`.
-`SoftTargetNameplateSize` sets the size of the icons.
 
 | cvar | default | values |
 |---|---|---|
@@ -25750,11 +29734,14 @@ fires.
 Returns `true` when your target is loose, and `false` when it is locked.
 See [Soft enemy and soft friend](#soft-enemy-and-soft-friend-softenemy--softfriend--anyenemy--anyfriend).
 
-- A spell that goes off on `"softenemy"` makes a loose target.
+- The forced target of `SoftTargetForce` is loose. It is hidden from
+  `"target"`, so `UnitExists("target")` is `false` for it.
+- A spell that makes its unit your target (`TargetAutoEnemy`,
+  `TargetAutoFriend`) makes a loose target.
+- The Interact Key (`C_PlayerInteractionManager.InteractUnit` with
+  `"anyinteract"`) makes a loose target.
 - A target that you choose is locked.
-- After `/cleartarget`, the result is `true` while `SoftTargetForce` is
-  `1` and soft enemy is on, or `2` and soft friend is on. Otherwise it is
-  `false`.
+- With no target, the result is `false`.
 
 ```lua
 if UnitExists("target") and IsTargetLoose() then
@@ -25980,6 +29967,7 @@ Table fields:
 | `bottomTexCoord` | number | Bottom edge of the rectangle, from 0 to 1. |
 | `tilesHorizontally` | boolean | True when the art repeats across its width. |
 | `tilesVertically` | boolean | True when the art repeats down its height. |
+| `sliceData` | table | Set only for an atlas that draws as a nine-slice. The fields are `marginLeft`, `marginTop`, `marginRight`, `marginBottom` (in pixels of the art) and `sliceMode` (`Enum.UITextureSliceMode`). |
 | `filename` | string | Path of the texture that holds the art. |
 
 Textures are named by path, so `filename` carries the texture and the `file` field
@@ -26242,61 +30230,97 @@ Notes (apply to all three functions):
 
 ### `C_DateAndTime` overview
 
-Backport of the `C_DateAndTime` namespace — calendar-style
-date math built on top of the server clock. The calendar functions
-exchange `CalendarTime` tables with these fields (matching
-Blizzard's `TimeDocumentation.lua`):
+The `C_DateAndTime` functions do date arithmetic and read the server
+clock. The calendar functions use `CalendarTime` tables with these
+fields:
 
 | Field | Range | Notes |
 |-------|-------|-------|
-| `year` | full year, e.g. 2026 | |
+| `day` | 0 | Always 0 in a result. An argument can leave it out. |
+| `year` | full year, for example 2026 | |
 | `month` | 1..12 | luaIndex (1-based) |
 | `monthDay` | 1..31 | luaIndex (1-based) |
-| `weekday` | 1..7 | luaIndex; 1 = Sunday |
+| `weekday` | 1..7 | luaIndex. 1 is Sunday. |
 | `hour` | 0..23 | |
 | `minute` | 0..59 | |
 
-> **Two clocks.** A realm sends the client both an instant and a wall
-> clock, and they differ by the realm's timezone. `GetServerTime` and
-> `GetSecondsUntilDailyReset` report the instant, so they are the ones
-> to compare, sort, store, and count down with.
-> `GetCurrentCalendarTime` and `GetServerTimeLocal` report the wall
-> clock, for display, and always agree with `GetGameTime()`.
+A table that you give as an argument must have all the fields except
+`day`. The functions drop the fraction of a value. These causes give an
+error:
+
+- an argument that is not a table.
+- a missing field. The message names the field.
+- a field that is not a number, or a number out of range. `month`,
+  `monthDay` and `weekday` must be from 0 to 4294967295. `year`, `hour`
+  and `minute` must be 32-bit integers.
+
+```text
+bad argument #3 to `AdjustTimeByDays' (Current Field: [hour], Usage: local newDate = C_DateAndTime.AdjustTimeByDays(date, days))
+```
+
+> **Two clocks.** A realm sends the client two clocks: the instant, and
+> the wall clock of the realm. They differ by the time zone of the realm.
+> `GetServerTime` and `GetSecondsUntilDailyReset` use the instant. Use
+> these to compare, sort, store and count down.
+> `GetCurrentCalendarTime` and `GetServerTimeLocal` use the wall clock.
+> They are for display, and they always agree with `GetGameTime()`.
 >
-> **Daily reset semantics.** `GetSecondsUntilDailyReset` counts down to
-> UTC midnight, which is where a realm's own day boundary sits. A realm
-> can shift that boundary by a configured amount, and it never tells the
-> client, so a realm that shifts it resets at a different moment.
+> **Daily reset.** `GetSecondsUntilDailyReset` counts down to midnight
+> UTC, where the day of a realm starts. A realm can move this boundary by
+> a configured amount, and it does not tell the client. On such a realm,
+> the reset occurs at a different time.
 >
-> **Weekly reset not implemented.** There is no server-broadcast
-> weekly reset schedule, and Turtle WoW realm schedules vary, so
-> `C_DateAndTime.GetSecondsUntilWeeklyReset` would have to hardcode a
-> weekday/hour that's wrong on some realms. Addons that need it can
-> compute their own value from the daily reset + a CVAR.
+> **No weekly reset.** There is no
+> `C_DateAndTime.GetSecondsUntilWeeklyReset`. The server sends no weekly
+> reset schedule, and raids reset on different cycles.
 
 ### `C_DateAndTime.GetCurrentCalendarTime()`
 
-Returns the realm's date and time as a CalendarTime table, or nothing
-before login. The `hour` and `minute` fields always agree with
-`GetGameTime()`. This is realm time, not the instant, so it does not
-match `GetCalendarTimeFromEpoch(GetServerTime())` on a realm that is
-not on UTC.
+Returns the date and time of the realm as a CalendarTime table. Before
+login, it returns nothing. The `hour` and `minute` fields always agree
+with `GetGameTime()`. This is realm time, not the instant. Thus on a
+realm that is not on UTC, it is not the same as the result of
+`GetCalendarTimeFromEpoch`.
 
 ```lua
 local t = C_DateAndTime.GetCurrentCalendarTime()
--- t = { year=2026, month=5, monthDay=11, weekday=2, hour=14, minute=30 }
+-- t = { day=0, year=2026, month=5, monthDay=11, weekday=2, hour=14, minute=30 }
 ```
 
 ### `C_DateAndTime.GetCalendarTimeFromEpoch(epoch)`
 
-Converts a Unix epoch (seconds since 1970-01-01 UTC) to a
-CalendarTime table. Uses no game state.
+Converts `epoch` to a CalendarTime table in the time zone of the
+computer. `epoch` is in **microseconds** since 1970-01-01 UTC. The
+function uses no game state.
+
+`GetServerTime()` and `time()` give seconds. Multiply their value by
+1000000 before you give it to this function.
+
+```lua
+local t = C_DateAndTime.GetCalendarTimeFromEpoch(GetServerTime() * 1000000)
+```
+
+An `epoch` that is not a number from 0 to 9007199254740991 causes an
+error.
+
+CAUTION: The function uses the daylight-saving state of the current
+moment for all dates. Thus the hour of a date in the other half of the
+year can be one hour wrong.
 
 ### `C_DateAndTime.AdjustTimeByDays(date, days)` / `AdjustTimeByMinutes(date, minutes)`
 
-Returns a new CalendarTime offset from the input by the given number
-of days (or minutes). Negative deltas walk backwards. Out-of-range
-inputs (`month=13`, `monthDay=32`) are normalized.
+Return a new CalendarTime, moved by `days` or by `minutes`. A negative
+value moves back in time. The functions normalize a date that is out of
+range, for example `month=13` or `monthDay=32`.
+
+`AdjustTimeByDays` changes only the date and the weekday. The `hour` and
+`minute` fields do not change. The input `weekday` has no effect.
+
+If `year` is before 2000, or `month` or `monthDay` is 0, the date does
+not change.
+
+`days` and `minutes` must be 32-bit integers. Another value causes an
+error.
 
 ```lua
 local today = C_DateAndTime.GetCurrentCalendarTime()
@@ -26307,23 +30331,33 @@ local yesterday = C_DateAndTime.AdjustTimeByDays(today, -1)
 ### `C_DateAndTime.CompareCalendarTime(lhs, rhs)`
 
 Returns `1` if `lhs` is earlier than `rhs`, `0` if they are equal, and
-`-1` if `lhs` is later. The sign tells you where `rhs` is in relation
-to `lhs`. Compares by epoch conversion so denormalized inputs sort
-consistently.
+`-1` if `lhs` is later. The sign tells you where `rhs` is in relation to
+`lhs`.
+
+The function compares the fields one at a time in this sequence: `year`,
+`month`, `monthDay`, `weekday`, `hour`, `minute`. It does not normalize
+the fields. It skips a field when the field is not set in one of the
+tables. A field is not set when it has one of these values:
+
+- `month`, `monthDay` or `weekday` is 0.
+- `year` is before 2000.
+- `hour` or `minute` is negative.
 
 ### `C_DateAndTime.GetServerTimeLocal()`
 
-Returns [`GetServerTime()`](#getservertime) offset by the server's
-timezone. The result is a display value, not an instant: formatting it
-shows the realm's clock digits. If the realm reports 14:30, this
-returns the epoch for 14:30 UTC, so `date("!%H:%M", t)` prints
-`14:30`. Do not compare it against a real timestamp.
+Returns [`GetServerTime()`](#getservertime) moved by the time zone of
+the server. The result is a display value, not an instant. When you
+format it as UTC, it shows the clock of the realm. If the realm shows
+14:30, this function returns the epoch for 14:30 UTC, so
+`date("!%H:%M", t)` prints `14:30`. Do not compare it with a real
+timestamp.
 
 ### `C_DateAndTime.GetSecondsUntilDailyReset()`
 
-Returns seconds until the next UTC midnight, where the realm's day
-boundary sits. Returns nothing if called before login. See the overview's
-"Daily reset semantics" note.
+Returns the seconds until the next midnight UTC, where the day of the
+realm starts. The count stops at the last second before midnight. Thus
+the value is from 0 to 86399. Before login, it returns nothing. Refer to
+"Daily reset" in the overview.
 
 ## Totem
 
@@ -26381,6 +30415,9 @@ expires, is recalled, or moves out of view). The slot also becomes empty
 when you leave the world, but not on a UI reload. Slot changes fire
 [`PLAYER_TOTEM_UPDATE`](#player_totem_update-event).
 
+To get the GUID, the health, or other unit data of the totem, use its unit
+token. See [Unit tokens (`totemN`)](#unit-tokens-totemn).
+
 ### `GetTotemTimeLeft(slot)`
 
 Returns the time, in whole seconds, until the totem in the slot expires.
@@ -26399,21 +30436,22 @@ the same as for [`GetTotemInfo`](#gettoteminfoslot).
 
 Returns a [duration object](#c_durationutilcreateduration) for the active
 totem in the slot. Its time span starts when the totem appears and lasts
-the full duration of the totem. When the slot has no active totem, the
-duration object holds a zero time span. Each call returns a new duration
-object.
+the full duration of the totem. When the slot has no active totem, it
+returns nothing. Each call returns a new duration object.
 
 ```lua
 local duration = GetTotemDuration(1)
-print(duration:GetTotalDuration())      -- e.g. 60
-bar:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate,
-    Enum.StatusBarTimerDirection.RemainingTime)
+if duration then
+    print(duration:GetTotalDuration())  -- e.g. 60
+    bar:SetTimerDuration(duration, Enum.StatusBarInterpolation.Immediate,
+        Enum.StatusBarTimerDirection.RemainingTime)
+end
 ```
 
 - The times are exact. `GetTotemInfo` gives the start time and the
   duration in whole seconds.
-
-The slot errors are the same as for [`GetTotemInfo`](#gettoteminfoslot).
+- A slot that is not a number is an error. A slot that is out of range
+  returns nothing.
 
 ### `TargetTotem(slot)`
 
@@ -26601,6 +30639,41 @@ end
 The Craft window (Enchanting, pet training) already has this in
 `GetCraftDescription`.
 
+### `GetTradeSkillTools(index)`
+
+Returns what the recipe in row `index` of the trade-skill window needs near
+the player. The values come in pairs: a name, then 1 when the requirement is
+met or nil when it is not. The spell focus, for example a Cooking Fire or an
+Anvil, is the first pair. The tools, for example a Blacksmith Hammer, come
+after it.
+
+The spell-focus flag is 1 only when a matching object is in range of the
+player. The range is the same range that the server uses for the cast. If the
+client does not show the object, the flag is nil.
+
+While the trade-skill window is open, it reads the flags again every 0.75
+seconds. A requirement that is not met shows in red, and the Create buttons
+stay disabled.
+
+```lua
+local function PrintMissing(...)
+    for i = 1, select("#", ...), 2 do
+        local name, met = select(i, ...)
+        if not met then
+            print("Missing: " .. name)
+        end
+    end
+end
+PrintMissing(GetTradeSkillTools(GetTradeSkillSelectionIndex()))
+```
+
+### `GetCraftSpellFocus(index)`
+
+Returns what the recipe in row `index` of the craft window needs near the
+player. The function works like
+[`GetTradeSkillTools`](#gettradeskilltoolsindex), and the craft window reads
+the flags again in the same way.
+
 ### `IsTradeSkillLinked()`
 
 When the trade-skill window shows a profession from a link, the function
@@ -26651,14 +30724,13 @@ end
 
 Returns an array of rows, each shaped
 `{ baseTag = "FOO_COLOR", color = ColorMixin }`, mirroring the
-function of the same name. The `color` field is a real `ColorMixin`
-instance (carries `GetRGB`, `GenerateHexColorMarkup`, etc.) — the DLL
-calls back into Lua's `CreateColor(r,g,b,a)` per row to construct it,
-so `ColorMixin` and `CreateColor` must already be defined when
-`GetColors` is called.
+function of the same name. Each `color` is a new table with the
+`ColorMixin` methods, for example `GetRGB` and
+`GenerateHexColorMarkup`, and the fields `r`, `g`, `b` and `a`. Each
+field is a float in steps of 1/255, so `0.3` comes back as
+`0.3019607961177826`.
 
-The companion addon `!!!ClassicAPI/Util/Color.lua` does both: it
-defines `ColorMixin`/`CreateColor` first, then loops the result the
+The companion addon `!!!ClassicAPI/Util/Color.lua` loops the result the
 same way `Blizzard_SharedXMLBase/Color.lua` does —
 assigning each row as a global under its `baseTag` plus a `_CODE`
 variant holding the `|c`-prefixed hex markup:
@@ -26686,12 +30758,6 @@ with the higher ID wins, as `ipairs(DBColors)` assigns them. Colors for
 Death Knight runes, Mythic+ medals, healing
 absorbs, glyphs, and the objective tracker aren't in the snapshot and so
 aren't surfaced — none have a use case here anyway.
-
-If `CreateColor` happens not to be defined when `GetColors` is called
-(e.g. another DLL or addon manages to call us before `!!!ClassicAPI`
-loads), each `color` field falls back to a plain `{r,g,b,a}` table.
-The loop above tolerates both shapes — `dbColor.color.r` reads the
-same way either way — so consumers shouldn't notice.
 
 ## Unit
 
@@ -26735,10 +30801,10 @@ Best-effort reverse lookup: given a GUID string in the
 known unit tokens and return the first one currently mapped to that
 GUID, or `nil` if none of them point at it.
 
-The search order omits tokens that the client does not recognize
-(`vehicle`, `arenaN`, `arenapetN`, `bossN`). `nameplateN`, `focus`,
-`softenemy`, `softfriend` and `softinteract` are included, because
-ClassicAPI adds these token forms. As with the other positional tokens, a returned
+The search order omits `vehicle`, `arenaN`, and `arenapetN`, because no
+unit can have these tokens. `nameplateN`, `bossN`, `focus`, `softenemy`,
+`softfriend`, and `softinteract` are included. A boss gives `bossN` before
+`target`. As with the other positional tokens, a returned
 `"nameplate3"` result is only valid at that instant; the slot may
 shift to a different unit between calls, so re-verify with
 `UnitGUID(token)` before reusing.
@@ -26773,8 +30839,9 @@ end
 ### `UnitTokenFromName(name [, exactMatch])`
 
 Finds the unit called `name` and returns a token for it, or `nil` when
-nobody around matches. This is what lets a character name stand in for a
-unit token, as `[target=Feral]` does in a macro.
+nobody around matches. The unit functions accept the name of a group member
+or a pet directly (see [Unit tokens (names)](#unit-tokens-names)). Use this
+function for other units, for example a player outside your group or an NPC.
 
 ```lua
 local token = UnitTokenFromName("Feral")
@@ -27062,6 +31129,20 @@ work for `if UnitIsInMyGuild(x) then` checks.
 The roster search includes offline guildmates. The "show offline"
 toggle has no effect on it.
 
+### `IsUnitUntargetable(unit)`
+
+Returns `true` when `unit` is a player that no one can target, and `false`
+for all other units. A Game Master can make a player untargetable on
+servers that have this command. A player that is untargetable is also not
+selectable, so
+[`UNIT_TARGETABLE_CHANGED`](#unit_targetable_changed-event) fires when the
+result changes. If `unit` is not a string, the function raises a usage
+error.
+
+```lua
+IsUnitUntargetable("target")   -- false for a creature
+```
+
 ### `UnitIsPossessed(unit)`
 
 Returns `true` if the unit is currently possessed (priest's `Mind
@@ -27197,25 +31278,33 @@ UnitStandState("party1")    -- 0 if the slot is empty
 
 ### `UnitInRange(unit)`
 
-Returns `(inRange, checkedRange)` — whether `unit` is within 40 yards
-of the player, plus a flag indicating whether the range check could
-actually be performed.
+Returns `(inRange, checkedRange)`. The function tells you if a member of
+your group is within 40 yards of you.
 
-While you control another unit (for example with Mind Control or Eyes
-of the Beast), the distance is measured from that unit. When the client
-moves no unit, the result is `(false, false)`.
+The function checks only group units. A group unit is you, a party or
+raid member, or the pet of one of these, while you are in a party or a
+raid. For all other units, the result is `(false, false)`. This includes
+your target, other players and creatures, and you and your pet when you
+are not in a group.
+
+The distance is measured from the unit that you move. Usually this is
+you. While you control another unit (for example with Mind Control or
+Eyes of the Beast), it is that unit.
 
 ```lua
 local inRange, checked = UnitInRange("party1")
 if checked and not inRange then
-    -- partymate is loaded but >40 yards away → skip the heal
+    -- the party member is more than 40 yards away: skip the heal
 end
 ```
 
 | Return | Meaning |
 |--------|---------|
-| `inRange` | `true` if the unit is within a 40-yard heal's reach of the player. `false` if out of range OR if `checkedRange` is `false`. |
-| `checkedRange` | `true` when a position-based range check was performed. `false` when the unit's position isn't available — either the token didn't resolve (empty `partyN` slot, no target, raid member in a different zone, etc.) or `unit == "player"` (see below). |
+| `inRange` | `true` when the unit is in view and within the reach of a 40-yard heal. Otherwise `false`. |
+| `checkedRange` | `true` for a group unit, also when the unit is not in view or is on a different map. `false` for all other units. |
+
+A group member who is not in view gives `(false, true)`. In a group,
+`UnitInRange("player")` gives `(true, true)`.
 
 **Reach-aware.** The threshold is not a flat 40 yards on the raw
 center-to-center distance — it's `40 + playerReach + targetReach`, the
@@ -27227,16 +31316,6 @@ large target the reach gap is 2–3 yards). If the size of a unit is not
 known yet, the reach term is 0 and the check degrades to a plain
 40-yard cap. Note this is the one difference from `UnitDistanceSquared`,
 which stays raw center-to-center.
-
-> **`UnitInRange("player")` returns `(false, false)`** by design.
-> The function is meant for healing-frame "is *another* unit in range"
-> checks; querying yourself is
-> meaningless. The result is always `checkedRange=false`, so it is
-> unambiguous.
-
-Works for any visible unit (party/raid members in your zone, target,
-mouseover, etc.). For raid members in a different zone or otherwise
-not visible to the client, the function reports `(false, false)`.
 
 ### `UnitDistanceSquared(unit)`
 
@@ -27268,8 +31347,8 @@ UnitXP_SP3's niche). The value equals what you'd compute from the
 [`UnitPosition`](#unitpositionunit) coordinates. It does not need
 another DLL.
 
-> No self-quirk (unlike `UnitInRange`): `UnitDistanceSquared("player")`
-> returns a legitimate `(0, true)`. Because a real `0` (self, or two
+> `UnitDistanceSquared("player")` returns `(0, true)`, also when you
+> are not in a group. Because a real `0` (self, or two
 > exactly co-located units) is indistinguishable by value from the miss
 > placeholder, always branch on `checkedPosition`.
 
@@ -27473,97 +31552,105 @@ the percentage form for non-grouped units (where `UnitHealthMax` is
 
 ### `UnitPower(unit [, powerType [, unmodified]])` / `UnitPowerMax(unit [, powerType [, unmodified]])`
 
-Multi-power-type getters. The stock
-`UnitMana(unit)` / `UnitManaMax(unit)` return whichever
-primary power the unit happens to have (mana for casters, energy
-for rogues, rage for warriors, etc.); these add the explicit
-`powerType` arg so addons can read a specific power slot without
-caring what the unit's primary is.
+Return the current and the maximum power of one type. `UnitMana(unit)` and
+`UnitManaMax(unit)` return only the unit's own power (mana for casters, energy
+for rogues, rage for warriors). These functions take the power type as an
+argument.
 
 ```lua
-local mana    = UnitPower("player", 0)   -- explicit mana
-local energy  = UnitPower("player", 3)   -- explicit energy
-local primary = UnitPower("player")      -- whatever the player's primary is
-local maxMana = UnitPowerMax("target", 0)
+local mana    = UnitPower("player", Enum.PowerType.Mana)
+local energy  = UnitPower("player", Enum.PowerType.Energy)
+local primary = UnitPower("player")    -- the unit's own power
+local points  = UnitPower("player", Enum.PowerType.ComboPoints)
+local maxMana = UnitPowerMax("target", Enum.PowerType.Mana)
 ```
 
-`powerType` values:
+`powerType` is a value of [`Enum.PowerType`](#enumpowertype). If you omit it
+or give `nil`, the functions use the unit's own power (the type that
+`UnitPowerType` returns). Any other value must be an integer from `0` to
+`29`, or the call raises a usage error. `-1` also raises the error.
 
-| value | type |
-|---|---|
-| `0` | MANA |
-| `1` | RAGE |
-| `2` | FOCUS |
-| `3` | ENERGY |
-| `4` | HAPPINESS |
+Behavior notes:
 
-These match the [`Enum.PowerType`](#globals) namespace published
-alongside — `UnitPower("player", Enum.PowerType.Mana)` is the
-idiomatic shape.
+- `UnitPower` returns `0` for a power that is not the unit's own power,
+  unless the unit is the player or your pet. `UnitPowerMax` returns the
+  maximum for every unit.
+- **Combo points** (`4`): the player's combo points, from `0` to `5`, for
+  rogues and druids. The value does not check your target. The server sets
+  the points to `0` when you target a different unit. To get the points on
+  your target, use `GetComboPoints("player", "target")`.
+  `UnitPowerMax("player", 4)` returns `5` for rogues and druids. For other
+  classes and other units, both functions return `0`.
+- **Happiness** (`27`): pet happiness.
+- A group member that the client cannot see returns the value of its own
+  power, from the group data. Other power types return `0`.
+- The functions return `0` for a token that names no unit.
 
-Omitting `powerType` (or passing `-1` / any out-of-range value)
-falls back to the unit's primary power.
-
-Returns `0` for invalid units, unresolvable tokens, or power types
-outside the 0..4 range (Runes / Runic Power do not exist on a unit
-here).
-
-Display-divisor applied. Some power types are stored at a
-scaled value internally and divided before Lua sees them, as
-`UnitMana` does:
+The functions divide some powers by a display divisor, as `UnitMana` does:
 
 | type | divisor |
 |---|---|
-| `0` MANA | 1 |
-| `1` RAGE | **10** (raw `0..1000` → display `0..100`) |
-| `2` FOCUS | 1 |
-| `3` ENERGY | 1 |
-| `4` HAPPINESS | 1000 |
+| `1` RAGE | **10** (internal `0..1000`, shown as `0..100`) |
+| `27` HAPPINESS | 1000 |
+| all others | 1 |
 
-So a fresh warrior reads `UnitPower("player", 1)` = `0..100`, not
-`0..1000`.
-
-Pass a truthy `unmodified` (third arg) to bypass the divisor and get the raw
-internal value — `UnitPower("player", 1, true)` returns rage as `0..1000`.
-The same third argument `UnitPower` / `UnitPowerMax` take.
+So a warrior's `UnitPower("player", 1)` is `0..100`, not `0..1000`. Give a
+true `unmodified` (third argument) to get the internal value:
+`UnitPower("player", 1, true)` returns rage as `0..1000`.
 
 [`UNIT_POWER_UPDATE` and `UNIT_MAXPOWER`](#unit_power_update--unit_power_frequent--unit_maxpower-events)
 fire when these values change.
 
 ### `UnitPowerMissing(unit [, powerType [, unmodified]])`
 
-The power deficit — `UnitPowerMax(...) - UnitPower(...)` for the given type —
-in one call. The power analogue of [`UnitHealthMissing`](#unithealthmissingunit),
-for energy/mana/rage "resource needed" checks. Same `unit` / `powerType`
-handling and invalid-unit-returns-`0` semantics as `UnitPower`.
+Returns `UnitPowerMax(...) - UnitPower(...)` for the type, in one call. It
+takes the same arguments as `UnitPower`.
 
 ```lua
 local energyNeeded = UnitPowerMissing("player", Enum.PowerType.Energy)
-local rageMissing  = UnitPowerMissing("player")   -- primary power
+local rageMissing  = UnitPowerMissing("player")   -- the unit's own power
 ```
 
-`unmodified` (arg 3, any truthy value) skips the display divisor and returns
-the raw internal deficit — the same third argument `UnitPower` takes.
+The result is the difference of the two shown values, so it is the same as
+`UnitPowerMax(...) - UnitPower(...)`. The result is not limited to `0` or
+more: where `UnitPower` returns `0` and `UnitPowerMax` does not, the result
+is the maximum.
 
-Computed as the difference of the two **display** values (each integer-divided
-by the per-type divisor), not by dividing the raw difference, so it equals
-`UnitPowerMax(...) - UnitPower(...)` exactly. Those diverge for rage: raw
-`1000/55` displays as `100/5`, a deficit of `95`, whereas `(1000-55)/10`
-truncates to `94`. Clamped at 0.
+### `UnitPartialPower(unit [, powerType [, unmodified]])`
+
+Returns the part of a power point that a unit has built up between whole
+points. It takes the same arguments as `UnitPower`. The server sends only
+whole points in this client, so the result is always `0`.
+
+### `UnitHasPowerType(unit, powerType)`
+
+Returns `true` if the unit has a power of that type. `powerType` is required.
+
+- The player has the powers of its class: a power with a maximum above `0`,
+  and combo points for rogues and druids.
+- Your pet has its own power and happiness.
+- Another unit has only its own power.
+- A group member that the client cannot see has only its own power, from the
+  group data.
+
+```lua
+UnitHasPowerType("player", Enum.PowerType.ComboPoints)  -- true for a rogue
+```
+
+### `UnitPowerDisplayMod(powerType)`
+
+Returns the number that the `UnitPower` functions divide a power by: `10` for
+rage, `1000` for happiness, and `1` for all other types.
 
 ### `UnitPowerType(unit)`
 
-The stock version returns just the integer power type;
-this implementation extends it to the 2-tuple
-`(powerType, powerToken)`. Strict-superset signature — addons
-that destructure only the first return are unaffected.
+Returns the unit's own power type and its token: `(powerType, powerToken)`.
+Code that reads only the first value works as before.
 
 ```lua
 local pt, token = UnitPowerType("player")
--- e.g. (0, "MANA") for a paladin, (1, "RAGE") for a warrior
+-- (0, "MANA") for a paladin, (1, "RAGE") for a warrior
 ```
-
-Token strings:
 
 | value | token |
 |---|---|
@@ -27571,16 +31658,29 @@ Token strings:
 | `1` | `"RAGE"` |
 | `2` | `"FOCUS"` |
 | `3` | `"ENERGY"` |
-| `4` | `"HAPPINESS"` |
-| `5` | `"RUNES"` |
-| `6` | `"RUNIC_POWER"` |
+| `27` | `"HAPPINESS"` |
 
-5/6 are power types that can't appear on a unit here;
-they're included in the table for symmetry in case a private server
-pushes one through.
+Unit resolution is the same as in the stock `UnitPowerType`, with its pet and
+totem fallbacks.
 
-Unit resolution is the same as in the stock `UnitPowerType`, with its
-pet / totem / vehicle fallbacks.
+### `GetComboPoints(unit, target)`
+
+Returns the combo points that `unit` has on `target`.
+
+```lua
+local points = GetComboPoints("player", "target")
+local onPlate = GetComboPoints("player", "nameplate3")
+```
+
+- With a `target`, `unit` must be a string, or the call raises
+  `Usage: GetComboPoints("unit"[, "target"]`.
+- Only `"player"` (or another token for the player) has combo points, and
+  only for rogues and druids. Other units return `0`.
+- The result is `0` unless `target` names the unit that has the points.
+
+Without a `target` argument, `GetComboPoints` ignores `unit` and returns the
+points on your current target, so `GetComboPoints()` and
+`GetComboPoints("target")` work as before.
 
 ### `UnitSpellHaste(unit)`
 
@@ -27715,6 +31815,12 @@ this order, an index is not the same index that the native `UnitBuff` or
 functions and to `GameTooltip:SetUnitAura`. For a party or raid member
 with no live unit object, the auras stay in slot order.
 
+The order changes only when the auras on the unit change, and then
+`UNIT_AURA` fires. Thus an index or a slot list that you got after the last
+`UNIT_AURA` stays correct until the next one. If the caster of an aura
+becomes known after the aura appears, the aura moves to its group at the
+next change.
+
 When a party/raid member has **no live unit object at all** (a
 different map, far out of range), there is no unit to read — but
 the server still sends that member's current aura spell IDs, and
@@ -27736,13 +31842,13 @@ these functions surface them, exactly as the built-in `UnitBuff` /
 | `expirationTime` | number | for `unit == "player"`, the same data `GetPlayerBuffTimeLeft` returns. For any other unit, the cast time + duration of an observed cast (see below). `0` when neither source has it, and `0` for one of your auras that lasts until you cancel it. `expirationTime - GetTime()` gives the true remaining time |
 | `sourceUnit` | string | unit token of the caster (`"player"`, `"raid7"`, `"nameplate1"`, …), from the observed cast. `nil` if the cast wasn't observed or the caster maps to no current token |
 | `sourceGUID` | string | caster's `"0x…"` GUID string from the same observed cast. **A ClassicAPI extension — not a standard `AuraData` field.** Set whenever a caster is known, including when `sourceUnit` is `nil` (caster left token range). Stable for the session, unlike the volatile nameplate token; doubles as a unit token under SuperWoW. `nil` when the cast was not observed |
-| `charges` / `maxCharges` | number | always `0` — there are stacks, not charges |
 | `timeMod` | number | always `1` — there are no haste-affected auras |
 | `isFromPlayerOrPlayerPet` | boolean | true when a player — any player, not only you — or a player's pet applied the aura. Read from the cached caster GUID, so it is `false` when the cast was not seen this session. Totem buffs read `false`: a totem is a creature, not a pet |
 | `canApplyAura` | boolean | true when you or your pet know the aura's spell, and the spell applies an aura |
 | `isRaid` | boolean | true when the aura passes the `RAID` filter: a buff that you can cast on other players, or a debuff that you can dispel |
+| `canActivePlayerDispel` | boolean | true when the aura is a debuff that you can dispel. Always false for a buff |
 | `isStealable` | boolean | true when you can remove the buff from an enemy: you can attack the unit, the aura is a buff that is not passive, not an area aura and not channeled, and you or your pet know a spell that removes its dispel type from an enemy (for example Purge, Dispel Magic, Tranquilizing Shot, Devour Magic) |
-| `isBossAura`, `isNameplateOnly`, `nameplateShowAll`, `nameplateShowPersonal`, `shouldConsolidate` | boolean | always `false` — UI concepts not present here |
+| `isBossAura`, `isNameplateOnly`, `nameplateShowAll`, `nameplateShowPersonal` | boolean | always `false` — the spell data has no value for them |
 | `auraInstanceID` | number | a number that identifies this aura on this unit. It stays the same while the aura stays on the unit. An aura that goes off and comes back gets a new number. `nil` for an aura that is not in the unit's aura list (a group member out of range, or an aura that only the cast cache knows) |
 | `points` | (absent) | omitted from the table — Lua read yields nil for "field doesn't apply" |
 
@@ -27776,6 +31882,16 @@ by target and spell ID:
 
 An application never replaces the data of a direct cast, so a
 directly-cast aura keeps its talented timing and its caster.
+
+**Totem auras.** The caster of an aura from a totem is the shaman who
+owns the totem, not the totem. This is a ClassicAPI extension. Thus
+`sourceUnit` is `"player"` for the auras of your own totems. This is true
+for an aura that a totem casts on a unit, such as Earthbind. It is also
+true for a buff that a totem gives to a group, such as Strength of Earth.
+For that buff, the caster comes from a visible totem that has the same
+buff. If the unit has its own totem with the buff, that totem is used.
+Otherwise, the totem nearest to the unit is used. If two groups put the
+same totem near each other, the result can be the wrong shaman.
 
 Implications:
 
@@ -27869,15 +31985,20 @@ rest) are accepted and ignored — there is no data for them. Token
 matching is whole-token, so `RAID_PLAYER_DISPELLABLE` is not read as
 `PLAYER`.
 
-### `C_UnitAuras.GetBuffDataByIndex(unit, index)` / `GetDebuffDataByIndex(unit, index)`
+### `C_UnitAuras.GetBuffDataByIndex(unit, index [, filter])` / `GetDebuffDataByIndex(unit, index [, filter])`
 
-Convenience wrappers locking the filter to `HELPFUL` or `HARMFUL`
-respectively. Equivalent to `GetAuraDataByIndex(unit, index,
-"HELPFUL")` / `"HARMFUL"`.
+`GetAuraDataByIndex` with the range locked to `HELPFUL` or `HARMFUL`. The
+`filter` still honors all the other tokens, for example `PLAYER` and
+`RAID`. A range token in `filter` has no effect.
+
+```lua
+-- Your second debuff on the target:
+local d = C_UnitAuras.GetDebuffDataByIndex("target", 2, "PLAYER")
+```
 
 ### `C_UnitAuras.UnitAura(unit, index [, filter])`
 
-Returns the same aura as `GetAuraDataByIndex`, but as 15 positional values
+Returns the same aura as `GetAuraDataByIndex`, but as 16 positional values
 instead of a table — so it allocates nothing. Use it in an `OnUpdate` loop that
 scans many auras, where one table per aura strains Lua's garbage collector.
 Prefer [`AuraUtil.ForEachAura`](#aurautilforeachaura) for iteration.
@@ -27887,8 +32008,16 @@ The values, in order:
 ```
 name, icon, count, dispelType, duration, expirationTime, source, isStealable,
 nameplateShowPersonal, spellId, canApplyAura, isBossDebuff, castByPlayer,
-nameplateShowAll, timeMod
+nameplateShowAll, timeMod, auraInstanceID
 ```
+
+The first 15 values are the classic `UnitAura` values. Position 16,
+`auraInstanceID`, is a ClassicAPI extension. It is the `auraInstanceID` field
+of the [`AuraData`](#auradata-table-shape) table, and it is `nil` in the same
+cases: a group member out of range, or an aura that only the cast cache knows.
+Code that reads 15 values gets the same result as before. Pass the ID to
+[`GameTooltip:SetUnitAuraByAuraInstanceID`](#gametooltipsetunitaurabyaurainstanceidunit-aurainstanceid-filter--setunitbuffbyaurainstanceid--setunitdebuffbyaurainstanceid)
+to show the aura's tooltip without a table.
 
 Returns a single `nil` when the unit has fewer than `index` matching auras.
 `dispelType` is the dispel-type string (`"Magic"`, `"Curse"`, `"Disease"`,
@@ -27957,7 +32086,7 @@ end
 
 `GetAuraDataBySlot` returns the `AuraData` table for the aura that slot id
 `slot` names on `unit`. It returns `nil` when the slot id no longer names an
-aura. `UnitAuraBySlot` returns the same aura as the 15 positional values of
+aura. `UnitAuraBySlot` returns the same aura as the 16 positional values of
 [`C_UnitAuras.UnitAura`](#c_unitaurasunitauraunit-index--filter), so it
 allocates nothing. Get slot ids from `GetAuraSlots`.
 
@@ -27990,12 +32119,12 @@ if d then
 end
 ```
 
-### `C_UnitAuras.GetUnitAuraBySpellID(unit, spellID [, filter])`
+### `C_UnitAuras.GetUnitAuraBySpellID(unit, spellID)`
 
 Searches `unit`'s auras for one whose `spellId` matches and returns
-its `AuraData`, or `nil` if not found. If more than one aura matches,
-your own aura comes first (see [Aura order](#unitauras)). Without a
-filter, searches both ranges (helpful first, then harmful).
+its `AuraData`, or `nil` if not found. The search includes buffs and
+debuffs. If more than one aura matches, the function returns the aura in
+the lowest slot. That aura is not necessarily your own.
 
 ```lua
 -- Is the player blessed with Wisdom right now?
@@ -28010,12 +32139,13 @@ common consumer pattern (WeakAuras-style aura tracking).
 
 ### `C_UnitAuras.GetAuraDataBySpellName(unit, spellName [, filter])`
 
-Searches `unit`'s auras for one whose locale-resolved `name` matches
-`spellName`. If more than one aura matches, your own aura comes first.
-Case is not
-important: `"inner fire"` finds Inner Fire. Returns the `AuraData` for
-that slot or `nil` if not found. Without a filter, searches both
-ranges (helpful first, then harmful).
+Searches `unit`'s auras for one whose locale-resolved `name` is
+`spellName`. The name must match exactly, case included: `"inner fire"`
+does not find Inner Fire. If more than one aura matches, your own aura
+comes first. Returns the `AuraData` for that aura, or `nil` if no aura
+matches.
+Without a range token in the filter, the function searches buffs, then
+debuffs.
 
 ```lua
 local d = C_UnitAuras.GetAuraDataBySpellName("player", "Inner Fire")
@@ -28114,16 +32244,62 @@ slightly.
 C_UnitAuras.RegisterAuraDurationModifierByTrigger(6, 5, 6, tonumber("4000000", 16), 9, "refresh")
 ```
 
-### `C_UnitAuras.GetUnitAuras(unit [, filter])`
+### `C_UnitAuras.GetUnitAuras(unit [, filter [, maxCount [, sortRule [, sortDirection]]]])`
 
-Returns a numerically-indexed array of `AuraData` tables for every
-populated aura on `unit`. Without a filter the array is helpful auras
-followed by harmful; with a filter it's restricted to one range.
-Empty array (`{}`) if the unit has no auras or doesn't resolve.
+Returns an array of `AuraData` tables for the auras on `unit` that match
+`filter`. Returns an empty array (`{}`) if the unit has no auras or does
+not resolve.
+
+- `filter` takes the same tokens as `GetAuraDataByIndex`. `HELPFUL` and
+  `HARMFUL` select those ranges. A filter with neither token selects buffs
+  and debuffs, so `"PLAYER"` gives all the auras that you cast.
+- `sortRule` is an `Enum.UnitAuraSortRule` value. The default is
+  `Unsorted`.
+- `sortDirection` is an `Enum.UnitAuraSortDirection` value: `Normal` (the
+  default) or `Reverse`. `Reverse` reverses the whole sorted list.
+- `maxCount` limits the number of auras. The function applies it after it
+  sorts the list.
+
+| `Enum.UnitAuraSortRule` | Order |
+|---|---|
+| `Unsorted` (0) | Buffs, then debuffs, each in [aura order](#unitauras) |
+| `Default` (1) | Your own auras, then auras you can apply, then the others |
+| `BigDefensive` (2) | Auras that other casters cast, then your own auras. In each group, auras with no end come first, then the aura that ends last |
+| `Expiration` (3) | Your own auras, then auras you can apply, then the others. In each group, the aura that ends first comes first, and auras with no end come last |
+| `ExpirationOnly` (4) | The aura that ends first comes first. Auras with no end come last |
+| `Name` (5) | Your own auras, then auras you can apply, then the others. In each group, by name |
+| `NameOnly` (6) | By name |
+
+"Your own auras" are the auras that you cast. The auras of your pet are not
+included. Names compare without regard to case. If two names are equal in
+that compare, their case decides the order. When two auras are equal under a
+rule, the lower `auraInstanceID` comes first. A wrong `sortRule` or
+`sortDirection` value causes an error.
 
 ```lua
-for _, aura in ipairs(C_UnitAuras.GetUnitAuras("target")) do
-    print(aura.spellId, aura.dispelName, aura.isHarmful)
+for _, aura in ipairs(C_UnitAuras.GetUnitAuras("target", "HARMFUL|PLAYER", 5,
+        Enum.UnitAuraSortRule.Expiration)) do
+    print(aura.spellId, aura.expirationTime)
+end
+```
+
+### `C_UnitAuras.GetUnitAuraInstanceIDs(unit [, filter [, maxCount [, sortRule [, sortDirection]]]])`
+
+Returns an array of the `auraInstanceID` values of the auras that
+`GetUnitAuras` returns with the same arguments, in the same order. Only an
+aura in the unit's aura list has an instance ID. Thus the array is empty
+for a group member that is out of range.
+
+### `C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraInstanceID, filter)`
+
+Returns `true` when `filter` does not select the aura with the instance ID
+`auraInstanceID` on `unit`. Also returns `true` when no aura on the unit
+has this ID. The function reads `filter` as `GetUnitAuras` does: a filter
+with no range token selects buffs and debuffs.
+
+```lua
+if not C_UnitAuras.IsAuraFilteredOutByInstanceID("target", id, "HARMFUL|PLAYER") then
+    -- the aura is one of your debuffs
 end
 ```
 
@@ -28674,8 +32850,32 @@ attribute. They are the same as
 The atlas applies after the other content of the element. An atlas that
 ClassicAPI does not know keeps the texture that the element set.
 
+A `<Color>` element inside an atlas texture tints the atlas. It is the same
+as `texture:SetVertexColor`:
+
+```xml
+<Texture parentKey="BottomLeft" atlas="uiframebackground-nineslice-cornerbottomleft" useAtlasSize="true">
+    <Color r="0.2" g="0.2" b="0.2"/>
+</Texture>
+```
+
 A `<Size>` element, an `<Anchor>` or an `<Offset>` can give only `x` or
 only `y`. The value that it does not give is 0.
+
+### Global colors in XML
+
+A `<Color>` element takes a `color` attribute: the name of a global color,
+such as `NORMAL_FONT_COLOR` or `PANEL_BACKGROUND_COLOR`. An `a` attribute
+on the same element replaces the alpha of that color:
+
+```xml
+<Texture parentKey="Shade" setAllPoints="true">
+    <Color color="BLACK_FONT_COLOR" a="0.5"/>
+</Texture>
+```
+
+A name that is not a global color keeps the `r`, `g`, `b` and `a` values of
+the element.
 
 ### Masks in XML
 
@@ -28688,16 +32888,19 @@ A `<Texture>` element takes a `mask` attribute. It is the same as
 ```
 
 A `<Layer>` also takes a `<MaskTexture>` element. It is the same as
-[`frame:CreateMaskTexture`](#framecreatemasktexturename-layer-): the mask
+[`frame:CreateMaskTexture`](#framecreatemasktexturename-drawlayer-templatename-sublevel): the mask
 loads like a texture (`file`, `inherits`, `parentKey`, `<Size>`, `<Anchors>`)
 and never draws itself. Each `<MaskedTexture>` inside `<MaskedTextures>`
 attaches the mask to one texture, the same as
 [`texture:AddMaskTexture(mask)`](#textureaddmasktexturemask):
 
 - `childKey="Icon"` names the texture at `parent.Icon`, where `parent` is the
-  frame that holds the layer.
+  frame that holds the layer. Keys can be joined with dots
+  (`childKey="Art.Icon"`), and a `$parent` part steps up to the parent of the
+  object before it.
 - `target="$parentIcon"` names a texture by its global name. `$parent` at the
-  start stands for the name of that frame.
+  start stands for the name of that frame (ClassicAPI extension).
+- When both are present, `target` is used.
 
 ```xml
 <Frame name="MyFrame">
@@ -28718,9 +32921,11 @@ attaches the mask to one texture, the same as
 </Frame>
 ```
 
-A `<MaskedTexture>` can name a texture from any layer of the same frame. If
-it names no texture, the load log gets a warning and the mask is not
-attached.
+A `<MaskedTexture>` can name a texture from any layer of the same frame. A
+template that a `<MaskTexture>` inherits also attaches its own
+`<MaskedTextures>`. If an entry names no texture, the load log gets a warning
+(`Texture <mask>: Can't find texture to be masked <target>`, or `Can't find
+child texture to be masked <childKey>`) and the mask is not attached.
 
 ### `function` and `method` on XML script handlers
 

@@ -50,9 +50,10 @@
 #include "spell/AtUnit.h"
 #include "spell/Lookup.h"
 #include "spell/MacroPrimarySpell.h"
+#include "spell/Placement.h"
+#include "target/Reason.h"
 
 #include <cstdint>
-#include <cstdio>
 #include <cstring>
 
 namespace Spell::CastNoToggle {
@@ -60,12 +61,7 @@ namespace Spell::CastNoToggle {
 namespace {
 
 
-using CastSpellByName_t = int(__fastcall *)(void *L);
-using NameToSlot_t = int(__fastcall *)(const char *name, int *outBookType);
 using IsToggleAuraActive_t = int(__fastcall *)(unsigned slot, int bookType);
-
-const CastSpellByName_t Script_CastSpellByName_Engine =
-    reinterpret_cast<CastSpellByName_t>(Offsets::FUN_SCRIPT_CAST_SPELL_BY_NAME);
 
 int ReadActiveSpellID() {
     return Game::Read<int>(
@@ -73,12 +69,7 @@ int ReadActiveSpellID() {
 }
 
 const char *LocaleName(int spellID) {
-    const uint8_t *record = Spell::Lookup::RecordForID(spellID);
-    if (record == nullptr)
-        return nullptr;
-    const int locale = Game::Read<int>(
-        static_cast<uintptr_t>(Offsets::VAR_LOCALE_INDEX));
-    return Game::Read<const char *>(record, Offsets::OFF_SPELL_NAMES + locale * 4);
+    return Spell::Lookup::Name(Spell::Lookup::RecordForID(spellID));
 }
 
 // Case-insensitive name match for the auto-repeat-name gate. Walks
@@ -106,17 +97,6 @@ bool NameMatches(const char *userInput, const char *spellName) {
     return (*userInput == '\0' || *userInput == '(') && *spellName == '\0';
 }
 
-// Resolves `name` to a (slot, bookType) pair via the engine's name
-// resolver. Goes through `Spell::NameResolve`'s hook so numeric input
-// like `"5019"` is accepted in addition to spell names. Returns -1 on
-// resolution failure.
-int ResolveSlot(const char *name, int *outBookType) {
-    auto fn = reinterpret_cast<NameToSlot_t>(
-        static_cast<uintptr_t>(Offsets::FUN_RESOLVE_SPELL_NAME_TO_SLOT));
-    *outBookType = 0;
-    return fn(name, outBookType);
-}
-
 bool IsAuraToggleActive(int slot, int bookType) {
     if (slot < 0)
         return false;
@@ -132,7 +112,7 @@ bool IsAuraToggleActive(int slot, int bookType) {
 // when we either started the cast or determined the spell was already
 // active; false when input was invalid or the cast didn't take effect.
 int __fastcall Script_CastSpellNoToggle(void *L) {
-    char nameBuf[128];
+    const char *spellName = nullptr;
     int requestedID = 0;
 
     const int argType = Game::Lua::Type(L, 1);
@@ -147,7 +127,7 @@ int __fastcall Script_CastSpellNoToggle(void *L) {
             Game::Lua::PushBool(L, false);
             return 1;
         }
-        std::snprintf(nameBuf, sizeof(nameBuf), "%s", name);
+        spellName = name;
     } else if (argType == Game::Lua::TYPE_STRING) {
         const char *s = Game::Lua::ToString(L, 1);
         if (s == nullptr || *s == '\0') {
@@ -168,9 +148,7 @@ int __fastcall Script_CastSpellNoToggle(void *L) {
             if (*p != '\0')
                 s = p;
         }
-        // Copy off Lua's string heap — the SetTop+PushString below
-        // could shift it and invalidate `s`.
-        std::snprintf(nameBuf, sizeof(nameBuf), "%s", s);
+        spellName = s;
     } else {
         Game::Lua::Error(
             L,
@@ -179,18 +157,14 @@ int __fastcall Script_CastSpellNoToggle(void *L) {
     }
 
     // Optional arg2 — a unit token to cast at (issue #22), e.g.
-    // CastSpellNoToggle("Auto Shot", "focus"). Copy it off Lua's string
-    // heap now, before the toggle gates and the SetTop below can shift the
-    // stack. A non-string arg2 (nil / absent) leaves unitToken null and the
-    // call keeps its original single-arg behavior.
-    char unitBuf[64];
+    // CastSpellNoToggle("Auto Shot", "focus"). A non-string arg2 (nil /
+    // absent) leaves unitToken null and the call keeps its original
+    // single-arg behavior.
     const char *unitToken = nullptr;
     if (Game::Lua::Type(L, 2) == Game::Lua::TYPE_STRING) {
         const char *u = Game::Lua::ToString(L, 2);
-        if (u != nullptr && *u != '\0') {
-            std::snprintf(unitBuf, sizeof(unitBuf), "%s", u);
-            unitToken = unitBuf;
-        }
+        if (u != nullptr && *u != '\0')
+            unitToken = u;
     }
 
     // Optional arg3 — the ground-target rule, read exactly as
@@ -209,7 +183,7 @@ int __fastcall Script_CastSpellNoToggle(void *L) {
     if (activeAutoRepeat != 0) {
         const bool match = (requestedID > 0)
             ? (activeAutoRepeat == requestedID)
-            : NameMatches(nameBuf, LocaleName(activeAutoRepeat));
+            : NameMatches(spellName, LocaleName(activeAutoRepeat));
         if (match) {
             Game::Lua::PushBool(L, true); // already auto-repeating — spam-safe
             return 1;
@@ -223,7 +197,7 @@ int __fastcall Script_CastSpellNoToggle(void *L) {
     // Check 2 — self-aura (shapeshift / stance / aspect / blessing /
     // seal / etc.). Resolve name → slot, then ask the engine.
     int bookType = 0;
-    const int slot = ResolveSlot(nameBuf, &bookType);
+    const int slot = Spell::Arg::NameToSlot(spellName, &bookType);
     if (IsAuraToggleActive(slot, bookType)) {
         Game::Lua::PushBool(L, true); // already active — no-op
         return 1;
@@ -238,14 +212,12 @@ int __fastcall Script_CastSpellNoToggle(void *L) {
         // and string input match the no-unit path (highest known rank). A
         // genuinely unknown token raises the engine's standard "Unknown unit"
         // error, same as UnitHealth.
-        Spell::AtUnit::CastByName(nameBuf, unitToken, placeGroundSpell);
+        Spell::AtUnit::CastByName(spellName, unitToken, placeGroundSpell);
     } else {
-        // Delegate to the engine with a fresh, one-arg stack so
-        // `lua_toboolean(L, 2)` (the `onSelf` flag inside
-        // Script_CastSpellByName) sees nil → false.
-        Game::Lua::SetTop(L, 0);
-        Game::Lua::PushString(L, nameBuf);
-        Script_CastSpellByName_Engine(L);
+        // CastSpellByName with no unit: the name's book slot through the
+        // cast dispatcher with no target, the default spell target as an
+        // action button and `/cast` take it (Target::SoftCast).
+        Spell::Placement::DispatchSpellCastByName(spellName);
     }
 
     // Reflect the post-cast state: true if either toggle is now active.

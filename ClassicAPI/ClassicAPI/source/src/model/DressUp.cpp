@@ -303,7 +303,7 @@ int __fastcall Script_TryOn(void *L) {
 
 int __fastcall Script_Dress(void *L) {
     g_dressing = true;
-    const int n = reinterpret_cast<Game::Lua::CFunction>(Offsets::FUN_SCRIPT_DRESSUPMODEL_DRESS)(L);
+    const int n = Game::Lua::CallScript(Offsets::FUN_SCRIPT_DRESSUPMODEL_DRESS, L);
     g_dressing = false;
     return n;
 }
@@ -397,7 +397,9 @@ int __fastcall Script_SetItemTransmogInfo(void *L) {
     if (pane == nullptr)
         return 0;
     TryOn::Request request;
-    if (!TryOn::ReadTransmogInfo(L, Game::Lua::ObjectDisplayName(pane), request))
+    if (!TryOn::ReadTransmogInfo(
+            L, "Usage: local result = self:SetItemTransmogInfo(itemTransmogInfo [, inventorySlot, ignoreChildItems])",
+            request))
         return 0;
     Game::Lua::PushNumber(L, request.itemID == 0 ? TryOn::kNotEquippable
                                                  : TryOnRequest(pane, request));

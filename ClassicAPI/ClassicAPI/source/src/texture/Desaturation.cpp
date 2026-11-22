@@ -51,7 +51,8 @@
 
 #include "Game.h"
 #include "Offsets.h"
-#include "debug/Log.h"
+#include "gx/Device.h"
+#include "gx/PixelShader.h"
 #include "xml/FrameLoad.h"
 #include "xml/TypeLoad.h"
 
@@ -68,11 +69,7 @@ constexpr int kFull = kLevels - 1;
 
 // --- engine entry points ----------------------------------------------------
 
-using ShaderCreate_t = void(__fastcall *)(int type, void **outSlot, const char *path);
-using ArrayGrow_t = void(__thiscall *)(void *desc, uint32_t newCap);
-using CompilePs_t = void(__thiscall *)(void *device, void *shader);
 using SetShader_t = void(__thiscall *)(void *region, void *shader);
-using ScriptFn_t = int(__fastcall *)(void *L);
 using GetUiPixelShader_t = void *(__fastcall *)(int index);
 
 // --- shader bytecode --------------------------------------------------------
@@ -151,13 +148,8 @@ int g_forcedProfile = -1;     // diagnostic override of the device profile index
 
 void *Device() { return Game::Read<void *>(Offsets::VAR_GX_DEVICE); }
 
-// Our bytecode is D3D9-only. The OpenGL device has another layout and takes ARB
-// programs, so it keeps the engine's on/off behaviour.
-bool IsD3d() {
-    void *dev = Device();
-    return dev != nullptr &&
-           Game::Read<void *>(dev, 0) == reinterpret_cast<void *>(Offsets::PTR_GXDEVICE_D3D_VTBL);
-}
+// Our bytecode is D3D9-only (Gx::IsD3d).
+using Gx::IsD3d;
 
 int Profile() {
     if (g_forcedProfile >= 0)
@@ -187,86 +179,27 @@ void *ShaderForLevel(int level) {
     const int profile = Profile();
     if (profile < 0)
         return nullptr;
-    void *dev = Device();
-    // The device is lost (a failed Present; fullscreen alt-tab) until the engine
-    // resets it. The compile gate is this same flag, so a build now can only
-    // fail — report unavailable for this call and retry on the next one; only a
-    // rejection by a live device is latched below.
-    if (Game::Read<int>(dev, Offsets::OFF_GXDEVD3D_ALIVE) == 0)
-        return nullptr;
 
-    // The engine's loader: registers the node in the device's shader table
-    // (dedup by path), tries the file, compiles what it finds. Our path has no
-    // file, so the node comes back registered and empty.
+    const uint32_t *blob = profile >= 4 ? kPs20 : kPs11;
+    const uint32_t count = profile >= 4 ? kPs20Count : kPs11Count;
+    uint32_t tokens[kMaxTokens];
+    std::memcpy(tokens, blob, count * sizeof(uint32_t));
+    const float amount = static_cast<float>(level) / static_cast<float>(kFull);
+    uint32_t bits;
+    std::memcpy(&bits, &amount, sizeof bits);
+    for (int i = 0; i < kAmountTokenCount; ++i)
+        tokens[kAmountTokenFirst + i] = bits;
+
     char path[80];
-    std::snprintf(path, sizeof path, "Shaders\\Pixel\\ClassicAPI\\Desaturate_ps%d_%03d.bls",
-                  profile, level);
-    void *node = nullptr;
-    reinterpret_cast<ShaderCreate_t>(Offsets::FUN_GX_SHADER_CREATE)(Offsets::GXSHADER_TYPE_PIXEL,
-                                                                    &node, path);
-    if (node == nullptr) {
-        Debug::Log::Printf("[desat] level %d: the shader loader returned no node for %s", level,
-                           path);
+    std::snprintf(path, sizeof path, "Shaders\\Pixel\\ClassicAPI\\Desaturate_ps%d_%03d.bls", profile, level);
+    // A lost device reports unavailable for this call and retries on the next;
+    // only a rejection by a live device is latched.
+    Gx::PixelShader::Result result;
+    void *node = Gx::PixelShader::Build(path, tokens, count, "desat", result);
+    if (result == Gx::PixelShader::Result::Rejected)
         g_failed[level] = true;
-        return nullptr;
-    }
-
-    // Empty node: supply the bytecode the file would have carried, in the field
-    // state the parser leaves (code array grown by the engine's own grow, size,
-    // code type, valid), then compile the way the loader does. A node that
-    // already has code was a dedup hit or a real file at our path — use it as is.
-    if (Game::Read<uint32_t>(node, Offsets::OFF_GXSHADER_CODE_SIZE) == 0) {
-        const uint32_t *blob = profile >= 4 ? kPs20 : kPs11;
-        const uint32_t count = profile >= 4 ? kPs20Count : kPs11Count;
-        uint32_t tokens[kMaxTokens];
-        std::memcpy(tokens, blob, count * sizeof(uint32_t));
-        const float amount = static_cast<float>(level) / static_cast<float>(kFull);
-        uint32_t bits;
-        std::memcpy(&bits, &amount, sizeof bits);
-        for (int i = 0; i < kAmountTokenCount; ++i)
-            tokens[kAmountTokenFirst + i] = bits;
-
-        const uint32_t bytes = count * sizeof(uint32_t);
-        reinterpret_cast<ArrayGrow_t>(Offsets::FUN_GX_ARRAY_GROW_BYTES)(
-            Game::Ptr<uint8_t>(node, Offsets::OFF_GXSHADER_CODE_DESC), bytes);
-        uint8_t *data = Game::Read<uint8_t *>(node, Offsets::OFF_GXSHADER_CODE_DATA);
-        if (data == nullptr) {
-            Debug::Log::Printf("[desat] level %d: the code-array grow returned no buffer", level);
-            g_failed[level] = true;
-            return nullptr;
-        }
-        std::memcpy(data, tokens, bytes);
-        Game::Ref<uint32_t>(node, Offsets::OFF_GXSHADER_CODE_SIZE) = bytes;
-        Game::Ref<int>(node, Offsets::OFF_GXSHADER_CODE_TYPE) = Offsets::GXSHADER_CODE_D3D;
-        Game::Ref<int>(node, Offsets::OFF_GXSHADER_VALID) = 1;
-        reinterpret_cast<CompilePs_t>(Offsets::FUN_GX_D3D_COMPILE_PIXEL_SHADER)(dev, node);
-
-        // The engine swallows CreatePixelShader's HRESULT. On a failed compile
-        // ask the device directly with the same bytes, so the log carries the
-        // reason (D3DERR_INVALIDCALL 0x8876086C = the validator rejected it).
-        if (Game::Read<void *>(node, Offsets::OFF_GXSHADER_D3D_OBJECT) == nullptr) {
-            using CreatePs_t = long(__stdcall *)(void *device, const uint32_t *code, void **out);
-            using Release_t = unsigned long(__stdcall *)(void *object);
-            void *d3d = Game::Read<void *>(dev, Offsets::OFF_GXDEVD3D_DEVICE9);
-            long hr = 0;
-            if (d3d != nullptr) {
-                void **vtbl = *reinterpret_cast<void ***>(d3d);
-                void *ps = nullptr;
-                hr = reinterpret_cast<CreatePs_t>(vtbl[106])(d3d, tokens, &ps);
-                if (ps != nullptr)
-                    reinterpret_cast<Release_t>(vtbl[2])(ps);
-            }
-            Debug::Log::Printf("[desat] level %d: CreatePixelShader rejected the %s program (hr=0x%08lX)",
-                               level, profile >= 4 ? "ps_2_0" : "ps_1_1", hr);
-        }
-    }
-
-    if (Game::Read<int>(node, Offsets::OFF_GXSHADER_VALID) == 0 ||
-        Game::Read<void *>(node, Offsets::OFF_GXSHADER_D3D_OBJECT) == nullptr) {
-        g_failed[level] = true; // the node stays inert in the table; never handed out
-        return nullptr;
-    }
-    g_levels[level] = node;
+    if (node != nullptr)
+        g_levels[level] = node;
     return node;
 }
 
@@ -325,7 +258,11 @@ void SetAmount(void *region, double amount) {
         amount = 0.0;
     else if (amount > 1.0)
         amount = 1.0;
-    const int level = static_cast<int>(amount * kFull + 0.5);
+    // 3.80.2 stores the float and IsDesaturated is `amount > 0`
+    // (0x140A68E40), so any amount above 0 takes at least the first level.
+    int level = static_cast<int>(amount * kFull + 0.5);
+    if (level == 0 && amount > 0.0)
+        level = 1;
 
     if (!g_enabled || !Available()) {
         ApplyStock(region, level > 0);
@@ -346,11 +283,13 @@ void *ResolveSelf(void *L) {
 
 // --- Lua surface ------------------------------------------------------------
 
-// texture:SetDesaturation(amount) — amount 0..1 (clamped). Returns nothing.
+// texture:SetDesaturation(amount) — amount 0..1 (clamped), a number and not a
+// numeric string (3.80.2's reader 0x140A6D0D0 checks the Lua type). Returns
+// nothing.
 int __fastcall Script_SetDesaturation(void *L) {
     void *region = ResolveSelf(L);
-    if (region == nullptr || !Game::Lua::IsNumber(L, 2)) {
-        Game::Lua::Error(L, "Usage: texture:SetDesaturation(amount)");
+    if (region == nullptr || Game::Lua::Type(L, 2) != Game::Lua::TYPE_NUMBER) {
+        Game::Lua::Error(L, "Usage: self:SetDesaturation(desaturation)");
         return 0;
     }
     SetAmount(region, Game::Lua::ToNumber(L, 2));
@@ -361,35 +300,48 @@ int __fastcall Script_SetDesaturation(void *L) {
 int __fastcall Script_GetDesaturation(void *L) {
     void *region = ResolveSelf(L);
     if (region == nullptr) {
-        Game::Lua::Error(L, "Usage: texture:GetDesaturation()");
+        Game::Lua::Error(L, "Usage: local desaturation = self:GetDesaturation()");
         return 0;
     }
     Game::Lua::PushNumber(L, GetAmount(region));
     return 1;
 }
 
-// texture:SetDesaturated(flag) — the engine method, re-routed through the
-// shared state so `false` clears any amount. Same contract as the engine:
-// returns 1 when desaturation is supported, nil when it isn't (FrameXML then
-// falls back to a grey vertex colour).
+// texture:SetDesaturated([desaturated]) — the engine method, re-routed through
+// the shared state so `false` clears any amount. The flag is plain
+// lua_toboolean, so no argument is false, as 3.80.2's (0x140A69800). The
+// return stays the engine's, which 1.12 FrameXML reads: 1 when desaturation is
+// supported, nil when it isn't (FrameXML then falls back to a grey vertex
+// colour).
 int __fastcall Script_SetDesaturated(void *L) {
     if (!g_enabled || !IsD3d())
-        return reinterpret_cast<ScriptFn_t>(Offsets::FUN_SCRIPT_TEXTURE_SET_DESATURATED)(L);
+        return Game::Lua::CallScript(Offsets::FUN_SCRIPT_TEXTURE_SET_DESATURATED, L);
 
     void *region = ResolveSelf(L);
     if (region == nullptr) {
-        Game::Lua::Error(L, "Usage: texture:SetDesaturated(flag)");
+        Game::Lua::Error(L, "Usage: self:SetDesaturated([desaturated])");
         return 0;
     }
     if (Profile() < 0) {
         Game::Lua::PushNil(L);
         return 1;
     }
-    if (!Apply(region, Game::Lua::ToFlag(L, 2, true) ? kFull : 0)) {
+    if (!Apply(region, Game::Lua::ToBoolean(L, 2) ? kFull : 0)) {
         Game::Lua::PushNil(L);
         return 1;
     }
     Game::Lua::PushNumber(L, 1.0);
+    return 1;
+}
+
+// texture:IsDesaturated() -> bool: true for any amount above 0, as 3.80.2's
+// (0x140A68E40). The engine's (FUN_SCRIPT_TEXTURE_IS_DESATURATED) answers 1 or
+// nil from the same shader slot; it still raises the usage error.
+int __fastcall Script_IsDesaturated(void *L) {
+    void *region = ResolveSelf(L);
+    if (region == nullptr)
+        return Game::Lua::CallScript(Offsets::FUN_SCRIPT_TEXTURE_IS_DESATURATED, L);
+    Game::Lua::PushBool(L, Game::Read<void *>(region, Offsets::OFF_SIMPLETEXTURE_SHADER) != nullptr);
     return 1;
 }
 
@@ -464,6 +416,7 @@ const Game::Lua::FrameMethodEntry g_methods[] = {
     {"SetDesaturation", &Script_SetDesaturation},
     {"GetDesaturation", &Script_GetDesaturation},
     {"SetDesaturated", &Script_SetDesaturated},
+    {"IsDesaturated", &Script_IsDesaturated},
 };
 
 const Game::Doc::Field kSetDesaturationArgs[] = {
@@ -480,9 +433,8 @@ const Game::Doc::Function kGetDesaturation{
     "Returns how much color is removed from the texture.", {}, kGetDesaturationRets};
 
 const Game::Doc::Field kSetDesaturatedArgs[] = {
-    Game::Doc::Opt("desaturated", "bool", "true",
-                   "True is SetDesaturation(1) and false is SetDesaturation(0); an explicit nil "
-                   "is false."),
+    Game::Doc::Opt("desaturated", "bool", "false",
+                   "True is SetDesaturation(1) and false is SetDesaturation(0)."),
 };
 const Game::Doc::Field kSetDesaturatedRets[] = {
     Game::Doc::Opt("supported", "number", nullptr,
@@ -491,10 +443,17 @@ const Game::Doc::Field kSetDesaturatedRets[] = {
 const Game::Doc::Function kSetDesaturated{"Sets whether the texture is drawn in grayscale.",
                                           kSetDesaturatedArgs, kSetDesaturatedRets};
 
+const Game::Doc::Field kIsDesaturatedRets[] = {
+    Game::Doc::Req("desaturated", "bool", "True for any desaturation above 0."),
+};
+const Game::Doc::Function kIsDesaturated{"Returns whether the texture is desaturated.", {},
+                                         kIsDesaturatedRets};
+
 const Game::Doc::Method g_methodDocs[] = {
     {"SetDesaturation", &kSetDesaturation},
     {"GetDesaturation", &kGetDesaturation},
     {"SetDesaturated", &kSetDesaturated},
+    {"IsDesaturated", &kIsDesaturated},
 };
 
 void RegisterLuaFunctions() {

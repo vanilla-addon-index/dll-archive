@@ -13,12 +13,16 @@
 
 #pragma once
 
-#include <cstdint>
+#include "Offsets.h"
 
-// Shared wrapper over the engine's object-manager GUID resolver
-// (`FUN_OBJECT_RESOLVE_BY_GUID` at 0x00468460). Every caller used to
-// re-declare the same `__fastcall` function-pointer typedef and split the
-// GUID by hand; this centralizes it.
+#include <cstdint>
+#include <type_traits>
+
+// Shared wrappers over the engine's object manager: the GUID resolver
+// (`FUN_OBJECT_RESOLVE_BY_GUID` at 0x00468460) and the object walker
+// (`FUN_CLNT_OBJ_MGR_ENUM_VISIBLE_OBJECTS` at 0x00468380). Every caller used
+// to re-declare the same `__fastcall` function-pointer typedefs and split the
+// GUID by hand; this centralizes them.
 
 namespace Object {
 
@@ -49,5 +53,70 @@ bool RegistryReady();
 // expect (the engine hands back the same pointer regardless of type).
 void *ByGuid(int typeMask, uint64_t guid, const char *debugName = nullptr,
              int priority = 0x172);
+
+// The object's own field block (OFF_OBJECT_DATA, CGObject + 0x08), which every
+// object type has: the OBJECT_FIELD_* values (GUID, type word, entry, scale).
+// Null for a null object or before the block is set.
+inline const uint8_t *Data(const void *obj) {
+    if (obj == nullptr)
+        return nullptr;
+    return *reinterpret_cast<const uint8_t *const *>(static_cast<const uint8_t *>(obj) +
+                                                     Offsets::OFF_OBJECT_DATA);
+}
+
+// OBJECT_FIELD_GUID, or 0.
+inline uint64_t Guid(const void *obj) {
+    const uint8_t *data = Data(obj);
+    return data != nullptr ? *reinterpret_cast<const uint64_t *>(data + Offsets::OFF_OBJECT_FIELD_GUID) : 0;
+}
+
+// OBJECT_FIELD_TYPE, the TYPEMASK_* word, or 0.
+inline uint32_t Type(const void *obj) {
+    const uint8_t *data = Data(obj);
+    return data != nullptr ? *reinterpret_cast<const uint32_t *>(data + Offsets::OFF_OBJECT_FIELD_TYPE) : 0;
+}
+
+// OBJECT_FIELD_ENTRY, the template id (an item's itemID, a creature's entry),
+// or 0.
+inline uint32_t Entry(const void *obj) {
+    const uint8_t *data = Data(obj);
+    return data != nullptr ? *reinterpret_cast<const uint32_t *>(data + Offsets::OFF_OBJECT_FIELD_ENTRY) : 0;
+}
+
+// The object's descriptor block (`m_objectFields`, the broadcast UpdateField
+// values) for a unit, player, game object or corpse: the pointer at
+// `OFF_OBJECT_FIELDS`. Null for a null object. An item's sits elsewhere
+// (`Item::ObjectFields`).
+inline const uint8_t *Fields(const void *obj) {
+    if (obj == nullptr)
+        return nullptr;
+    return *reinterpret_cast<const uint8_t *const *>(static_cast<const uint8_t *>(obj) +
+                                                     Offsets::OFF_OBJECT_FIELDS);
+}
+
+namespace Detail {
+
+// The walker's callback ABI: `ctx` arrives in ECX, `void *unusedEdx` absorbs
+// EDX, so MSVC reads the trailing `uint64_t guid` from the stack where the
+// engine pushes it. A zero return stops the walk.
+template <class Fn> int __fastcall VisibleThunk(void *ctx, void * /*unusedEdx*/, uint64_t guid) {
+    return (*static_cast<Fn *>(ctx))(guid) ? 1 : 0;
+}
+
+} // namespace Detail
+
+// Calls `fn(guid)` for every object in the engine's object list, in its list
+// order (`ClntObjMgrEnumObjects`, 0x00468380). `fn` returns true to go on and
+// false to stop. Does nothing out of world: the walker reads the object
+// manager with no null check, so it is gated on `RegistryReady` like `ByGuid`.
+template <class Fn> void ForEachVisible(Fn &&fn) {
+    if (!RegistryReady())
+        return;
+    using F = std::remove_reference_t<Fn>;
+    using Callback_t = int(__fastcall *)(void *ctx, void *unusedEdx, uint64_t guid);
+    using Enum_t = int(__fastcall *)(Callback_t cb, void *ctx);
+    reinterpret_cast<Enum_t>(static_cast<uintptr_t>(Offsets::FUN_CLNT_OBJ_MGR_ENUM_VISIBLE_OBJECTS))(
+        &Detail::VisibleThunk<F>, const_cast<void *>(static_cast<const void *>(&fn)));
+}
 
 } // namespace Object

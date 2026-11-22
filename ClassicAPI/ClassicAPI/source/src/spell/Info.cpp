@@ -15,6 +15,7 @@
 
 #include "Game.h"
 #include "Offsets.h"
+#include "dbc/Lookup.h"
 #include "spell/Known.h"
 #include "spell/Arg.h"
 #include "spell/Lookup.h"
@@ -85,32 +86,12 @@ static bool IsFriendlyTarget(uint32_t t) {
     }
 }
 
-template <typename T>
-static T ReadGlobal(uintptr_t addr) {
-    return *reinterpret_cast<T *>(addr);
-}
-
-// Sub-DBC lookup (SpellIcon, SpellCastTimes, SpellRange) — these are the
-// "indirected fields" of a Spell.dbc record. Different base/count
-// addresses than the main Spell.dbc, so they don't go through
-// `Spell::Lookup::RecordForID`.
-static const uint8_t *LookupSubRecord(uintptr_t baseAddr, uintptr_t countAddr, int id) {
-    if (id <= 0)
-        return nullptr;
-    const int count = ReadGlobal<int>(countAddr);
-    if (id > count)
-        return nullptr;
-    const uint8_t *const *records = ReadGlobal<const uint8_t *const *>(baseAddr);
-    if (records == nullptr)
-        return nullptr;
-    return records[id];
-}
-
 struct SpellInfoData {
     int spellID;
     const char *name;       // localized; nullable if record's locale slot is unset
     const char *rank;       // localized; same nullability as name
-    const char *iconPath;   // SpellIcon.dbc path; null if icon record missing
+    const char *iconPath;   // the shown icon (weapon for Attack / Auto Shot); nullable
+    const char *originalIconPath; // the spell's own SpellIcon.dbc path; nullable
     int cost;               // effective cost, or power per second for a funnel
     bool isFunnel;          // the cost is per second
     int powerType;          // 0=mana, 1=rage, 2=focus, 3=energy, 4=happiness
@@ -132,26 +113,25 @@ static bool ReadSpellInfo(int spellID, int pet, SpellInfoData &out) {
     if (record == nullptr)
         return false;
 
-    const int locale = ReadGlobal<int>(Offsets::VAR_LOCALE_INDEX);
-
+    // "" for an empty name or rank, which the returns push as strings.
+    const char *name = Spell::Lookup::Name(record);
+    const char *rank = Spell::Lookup::Rank(record);
     out.spellID = spellID;
-    out.name = Game::Read<const char *>(record, Offsets::OFF_SPELL_NAMES + locale * 4);
-    out.rank = Game::Read<const char *>(record, Offsets::OFF_SPELL_RECORD_RANK + locale * 4);
+    out.name = name != nullptr ? name : "";
+    out.rank = rank != nullptr ? rank : "";
 
-    out.iconPath = nullptr;
-    const int iconID = Game::Read<int>(record, Offsets::OFF_SPELL_RECORD_ICON_ID);
-    if (auto *iconRec = LookupSubRecord(Offsets::VAR_SPELL_ICON_RECORDS,
-                                        Offsets::VAR_SPELL_ICON_COUNT, iconID)) {
-        out.iconPath = Game::Read<const char *>(iconRec, Offsets::OFF_SPELLICON_PATH);
-    }
+    // 3.3.5's Script_GetSpellInfo shows the weapon for Attack and a ranged
+    // auto-repeat spell, as the 1.12 spellbook does, and a placeholder-icon
+    // recipe shows the item it makes (Spell::Lookup::DisplayIconPath); retail
+    // keeps the spell's own icon as originalIconID.
+    out.iconPath = Spell::Lookup::DisplayIconPath(record);
+    out.originalIconPath = Spell::Lookup::IconPath(record, false);
 
     out.powerType = Game::Read<int>(record, Offsets::OFF_SPELL_RECORD_POWER_TYPE);
 
     using PowerHelper_t = int32_t(__fastcall *)(int spellID, int pet);
-    using CastTime_t = int32_t(__fastcall *)(int spellID, int pet, int allowNegative);
     const auto divisor = static_cast<int32_t>(Unit::Power::DisplayDivisor(out.powerType));
-    const int32_t cost = reinterpret_cast<PowerHelper_t>(
-        static_cast<uintptr_t>(Offsets::FUN_GET_SPELL_COST))(spellID, pet) / divisor;
+    const int32_t cost = Spell::Lookup::PowerCost(spellID, pet != 0) / divisor;
     const int32_t costPerSecond = reinterpret_cast<PowerHelper_t>(
         static_cast<uintptr_t>(Offsets::FUN_GET_SPELL_POWER_PER_SECOND))(spellID, pet) / divisor;
     out.isFunnel = costPerSecond > 0;
@@ -161,8 +141,7 @@ static bool ReadSpellInfo(int spellID, int pet, SpellInfoData &out) {
     out.castTimeMs = 0;
     if (!(Game::Read<uint32_t>(record, Offsets::OFF_SPELL_RECORD_ATTRIBUTES) &
           Offsets::SPELL_ATTR_PASSIVE))
-        out.castTimeMs = reinterpret_cast<CastTime_t>(
-            static_cast<uintptr_t>(Offsets::FUN_GET_CAST_TIME))(spellID, pet, 1);
+        out.castTimeMs = Spell::Lookup::CastTimeMs(spellID, pet != 0, true);
 
     // Range as 4.3.4's `Script_GetSpellInfo` reports it: 0/0 for a melee
     // row (SpellRange flag 0x1), else the engine's resolver for the caster.
@@ -171,28 +150,18 @@ static bool ReadSpellInfo(int spellID, int pet, SpellInfoData &out) {
     out.minRange = 0.0f;
     out.maxRange = 0.0f;
     const int rangeIndex = Game::Read<int>(record, Offsets::OFF_SPELL_RECORD_RANGE_INDEX);
-    const auto *rangeRec = LookupSubRecord(Offsets::VAR_SPELL_RANGE_RECORDS,
-                                           Offsets::VAR_SPELL_RANGE_COUNT, rangeIndex);
+    const uint8_t *rangeRec =
+        rangeIndex > 0 ? DBC::Record(Offsets::VAR_SPELL_RANGE_RECORDS,
+                                     Offsets::VAR_SPELL_RANGE_COUNT,
+                                     static_cast<uint32_t>(rangeIndex))
+                       : nullptr;
     if (rangeRec == nullptr ||
         !(Game::Read<uint32_t>(rangeRec, Offsets::OFF_SPELLRANGE_RECORD_FLAGS) &
           SPELLRANGE_FLAG_MELEE))
-        Spell::Range::CasterMinMax(Unit::Position::ResolveToken(pet ? "pet" : "player"),
+        Spell::Range::CasterMinMax(Game::ResolveUnitToken(pet ? "pet" : "player"),
                                    spellID, out.minRange, out.maxRange);
 
     return true;
-}
-
-// Case-insensitive match against the literal string "pet". Anything else
-// (including the explicit "spell") maps to the player spellbook —
-// matches 1.12's `Script_GetSpellName` behavior, which `SStrCmpI`s the
-// input against "pet" and treats every other value as the player book.
-static bool BookTypeIsPet(const char *s) {
-    if (s == nullptr)
-        return false;
-    auto lc = [](char c) -> char {
-        return (c >= 'A' && c <= 'Z') ? static_cast<char>(c + 32) : c;
-    };
-    return lc(s[0]) == 'p' && lc(s[1]) == 'e' && lc(s[2]) == 't' && s[3] == '\0';
 }
 
 // Parses a spellID out of a spell hyperlink ("…|Hspell:<id>[:…]…").
@@ -230,7 +199,7 @@ static int ResolveLuaArgsToSpellID(void *L, int *outPet = nullptr) {
     if (Game::Lua::Type(L, 1) == Game::Lua::TYPE_STRING) {
         const char *s = Game::Lua::ToString(L, 1);
         const int fromLink = SpellIDFromLink(s);
-        return fromLink > 0 ? fromLink : Spell::Lookup::SpellNameToID(s);
+        return fromLink > 0 ? fromLink : Spell::Arg::NameToSpellID(s);
     }
     if (!Game::Lua::IsNumber(L, 1)) {
         Game::Lua::Error(L, "Usage: GetSpellInfo(spellID | \"name\" | link) "
@@ -240,8 +209,7 @@ static int ResolveLuaArgsToSpellID(void *L, int *outPet = nullptr) {
     const int arg1 = static_cast<int>(Game::Lua::ToNumber(L, 1));
 
     if (Game::Lua::Type(L, 2) == Game::Lua::TYPE_STRING) {
-        const char *book = Game::Lua::ToString(L, 2);
-        const int bookType = static_cast<int>(BookTypeIsPet(book));
+        const int bookType = Spell::Lookup::BookTypeArg(L, 2);
         if (outPet != nullptr)
             *outPet = bookType;
         return Spell::Lookup::SpellbookSlotToID(arg1, bookType);
@@ -305,6 +273,7 @@ static int __fastcall Script_C_GetSpellInfo(void *L) {
     // fileID system, so we surface the icon path string instead.
     // Practical: feed it directly to texture:SetTexture(...).
     SetField(L, "iconID", info.iconPath);
+    SetField(L, "originalIconID", info.originalIconPath);
     SetField(L, "castTime", static_cast<double>(info.castTimeMs));
     SetField(L, "minRange", static_cast<double>(info.minRange));
     SetField(L, "maxRange", static_cast<double>(info.maxRange));
@@ -325,9 +294,8 @@ static int __fastcall Script_C_GetSpellName(void *L) {
     if (record == nullptr)
         return 0; // nil for unknown spellID
 
-    const int locale = ReadGlobal<int>(Offsets::VAR_LOCALE_INDEX);
-    const char *name = Game::Read<const char *>(record, Offsets::OFF_SPELL_NAMES + locale * 4);
-    if (name == nullptr || *name == '\0')
+    const char *name = Spell::Lookup::Name(record);
+    if (name == nullptr)
         return 0; // empty / no name in current locale → nil
     Game::Lua::PushString(L, name);
     return 1;
@@ -339,16 +307,14 @@ static int __fastcall Script_C_GetSpellTexture(void *L) {
     if (record == nullptr)
         return 0;
 
-    const int iconID = Game::Read<int>(record, Offsets::OFF_SPELL_RECORD_ICON_ID);
-    auto *iconRec = LookupSubRecord(Offsets::VAR_SPELL_ICON_RECORDS,
-                                    Offsets::VAR_SPELL_ICON_COUNT, iconID);
-    if (iconRec == nullptr)
+    // (iconID, originalIconID) as in retail: the shown icon, then the spell's own.
+    const char *original = Spell::Lookup::IconPath(record, false);
+    const char *shown = Spell::Lookup::DisplayIconPath(record);
+    if (shown == nullptr && original == nullptr)
         return 0;
-    const char *path = Game::Read<const char *>(iconRec, Offsets::OFF_SPELLICON_PATH);
-    if (path == nullptr || *path == '\0')
-        return 0;
-    Game::Lua::PushString(L, path);
-    return 1;
+    Game::Lua::PushString(L, shown);
+    Game::Lua::PushString(L, original);
+    return 2;
 }
 
 // Builds the spell hyperlink string `|cff71d5ff|Hspell:ID:0|h[Name]|h|r`
@@ -364,9 +330,8 @@ static bool BuildSpellLink(int spellID, char *out, size_t outLen) {
     const uint8_t *record = Spell::Lookup::RecordForID(spellID);
     if (record == nullptr)
         return false;
-    const int locale = ReadGlobal<int>(Offsets::VAR_LOCALE_INDEX);
-    const char *name = Game::Read<const char *>(record, Offsets::OFF_SPELL_NAMES + locale * 4);
-    if (name == nullptr || *name == '\0')
+    const char *name = Spell::Lookup::Name(record);
+    if (name == nullptr)
         return false;
     const int n = std::snprintf(out, outLen, "|cff71d5ff|Hspell:%d:0|h[%s]|h|r",
                                 spellID, name);
@@ -463,41 +428,6 @@ static int __fastcall Script_C_IsSpellPassive(void *L) {
     return PushIsPassive(L, Spell::Arg::ResolveSpellID(L, 1));
 }
 
-// Walks the known-spell bitmap and calls `fn(spellID, record)` for every
-// set bit that has a Spell.dbc row, in ascending spellID order, until `fn`
-// returns false. This is `IsPlayerSpell` turned around: only a set bit ever
-// touches a record, so a full pass costs a few hundred lookups, not the
-// ~28,000-row table. The bitmap covers spellIDs 0..spellCount inclusive,
-// one bit each, so the last word is index spellCount >> 5; zero words — the
-// vast majority — cost one compare. No-op before login, when the bitmap is
-// not yet allocated.
-template <typename F>
-static void ForEachKnownSpell(F fn) {
-    auto *bitmap = Game::Read<const uint32_t *>(
-        static_cast<uintptr_t>(Offsets::VAR_PLAYER_SPELL_BITMAP));
-    if (bitmap == nullptr)
-        return;
-    const int spellCount = Game::Read<int>(
-        static_cast<uintptr_t>(Offsets::VAR_SPELL_RECORD_COUNT));
-    for (int word = 0; word <= (spellCount >> 5); ++word) {
-        const uint32_t bits = bitmap[word];
-        if (bits == 0)
-            continue;
-        for (int bit = 0; bit < 32; ++bit) {
-            if ((bits & (1u << bit)) == 0)
-                continue;
-            const int spellID = (word << 5) | bit;
-            if (spellID < 1 || spellID > spellCount)
-                continue;
-            const uint8_t *record = Spell::Lookup::RecordForID(spellID);
-            if (record == nullptr)
-                continue;
-            if (!fn(spellID, record))
-                return;
-        }
-    }
-}
-
 // `C_SpellBook.GetPlayerSpellsByAura(auraName)` -> { spellID, ... }
 //
 // Every spell the player currently knows whose Spell.dbc record has an
@@ -533,9 +463,10 @@ static int __fastcall Script_GetPlayerSpellsByAura(void *L) {
         return 1;
 
     int n = 0;
-    ForEachKnownSpell([&](int spellID, const uint8_t *record) {
+    Spell::Known::ForEach([&](uint32_t spellID) {
         // One entry per spell, however many effects match.
-        if (Spell::Lookup::HasAuraEffect(record, auraName)) {
+        if (Spell::Lookup::HasAuraEffect(Spell::Lookup::RecordForID(static_cast<int>(spellID)),
+                                         auraName)) {
             Game::Lua::PushNumber(L, static_cast<double>(++n));
             Game::Lua::PushNumber(L, static_cast<double>(spellID));
             Game::Lua::RawSet(L, -3);
@@ -552,7 +483,10 @@ static int __fastcall Script_GetPlayerSpellsByAura(void *L) {
 // adds counts too.
 static int __fastcall Script_ContainsAnyDisenchantSpell(void *L) {
     bool found = false;
-    ForEachKnownSpell([&](int, const uint8_t *record) {
+    Spell::Known::ForEach([&](uint32_t spellID) {
+        const uint8_t *record = Spell::Lookup::RecordForID(static_cast<int>(spellID));
+        if (record == nullptr)
+            return true;
         auto *effects = reinterpret_cast<const int32_t *>(
             record + Offsets::OFF_SPELL_RECORD_EFFECT);
         for (int e = 0; e < Offsets::SPELL_RECORD_EFFECT_COUNT; ++e) {
@@ -800,7 +734,9 @@ static const Game::Doc::Field kGetSpellInfoRets[] = {
     Game::Doc::Opt("name", "string", nullptr,
                    "Localized spell name; all returns are nil for an unknown spell."),
     Game::Doc::Opt("rank", "string", nullptr, "Localized rank text, such as \"Rank 2\"."),
-    Game::Doc::Opt("icon", "string", nullptr, "Icon texture path."),
+    Game::Doc::Opt("icon", "string", nullptr,
+                   "Icon texture path. Attack and Auto Shot show the equipped weapon's icon; a "
+                   "recipe with the placeholder icon shows the icon of the item it makes."),
     Game::Doc::Opt("cost", "number", nullptr,
                    "Power cost for the caster, with talents; per second when isFunnel."),
     Game::Doc::Opt("isFunnel", "bool", nullptr, "True when the cost is paid per second."),
@@ -821,7 +757,11 @@ static const Game::Doc::Function kGetSpellInfo{
 static const Game::Doc::Field kSpellInfoFields[] = {
     Game::Doc::Opt("name", "string", nullptr, "Localized spell name."),
     Game::Doc::Opt("iconID", "string", nullptr,
-                   "Icon texture path; give it to texture:SetTexture."),
+                   "Icon texture path; give it to texture:SetTexture. Attack and Auto Shot show the "
+                   "equipped weapon's icon; a recipe with the placeholder icon shows the icon of "
+                   "the item it makes."),
+    Game::Doc::Opt("originalIconID", "string", nullptr,
+                   "The spell's own icon texture path."),
     Game::Doc::Req("castTime", "number",
                    "Cast time for the player in milliseconds, with talents and cast speed; 0 when instant or passive."),
     Game::Doc::Req("minRange", "number",
@@ -853,8 +793,11 @@ static const Game::Doc::Function kCSpellGetSpellName{
     "Returns the localized name of a spell.", kSpellIdArgs, kSpellNameRets};
 
 static const Game::Doc::Field kSpellTextureRets[] = {
-    Game::Doc::Opt("texture", "string", nullptr,
-                   "Icon texture path; nil when the spell or its icon is unknown."),
+    Game::Doc::Opt("iconID", "string", nullptr,
+                   "Icon texture path; nil when the spell or its icon is unknown. Attack and Auto Shot "
+                   "show the equipped weapon's icon; a recipe with the placeholder icon shows the "
+                   "icon of the item it makes."),
+    Game::Doc::Opt("originalIconID", "string", nullptr, "The spell's own icon texture path."),
 };
 static const Game::Doc::Function kCSpellGetSpellTexture{
     "Returns the icon texture path for a spell.", kSpellIdArgs, kSpellTextureRets};

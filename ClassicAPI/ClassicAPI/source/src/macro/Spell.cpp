@@ -38,6 +38,7 @@
 
 #include "Game.h"
 #include "Offsets.h"
+#include "macro/Slot.h"
 #include "spell/Lookup.h"
 
 #include <cstdint>
@@ -47,14 +48,11 @@ namespace Macro::Spell {
 namespace {
 
 
-using MacroSlotToEntry_t = const uint8_t *(__fastcall *)(unsigned slot0Based);
 
 const uint8_t *EntryForSlot(int slot1Based) {
     if (slot1Based < 1 || slot1Based > Offsets::MACRO_SLOT_MAP_COUNT)
         return nullptr;
-    auto fn = reinterpret_cast<MacroSlotToEntry_t>(
-        Offsets::FUN_MACRO_SLOT_TO_ENTRY);
-    return fn(static_cast<unsigned>(slot1Based - 1));
+    return ::Macro::Slot::Entry(static_cast<unsigned>(slot1Based - 1));
 }
 
 // `GetMacroSpell(macroSlot)` — three returns: (name, rank, spellID).
@@ -80,16 +78,10 @@ int __fastcall Script_GetMacroSpell(void *L) {
     if (record == nullptr)
         return 0;
 
-    const int locale = *reinterpret_cast<const int *>(
-        static_cast<uintptr_t>(Offsets::VAR_LOCALE_INDEX));
-    const char *name = *reinterpret_cast<const char *const *>(
-        record + Offsets::OFF_SPELL_NAMES + locale * 4);
-    if (name == nullptr)
-        return 0;
-    const char *rank = *reinterpret_cast<const char *const *>(
-        record + Offsets::OFF_SPELL_RECORD_RANK + locale * 4);
+    const char *name = ::Spell::Lookup::Name(record);
+    const char *rank = ::Spell::Lookup::Rank(record);
 
-    Game::Lua::PushString(L, name);
+    Game::Lua::PushString(L, name != nullptr ? name : "");
     // Rank slot is empty for most non-class spells (racials, procs,
     // etc.). Surface that as "" so callers can `.. " (" .. rank .. ")"`
     // without nil-handling — matches modern behavior.

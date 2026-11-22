@@ -13,9 +13,16 @@
 
 // The soft-interact highlight: `softinteract` glows as the object under the
 // cursor does, while the player can interact with it right now (in reach).
-// `softenemy` / `softfriend` get no glow; they get the target's circle and
-// name (SoftTargetCircle, SoftTargetName). No cvar of its own: it follows
-// SoftTargetInteract.
+// Units and game objects alike. `softenemy` / `softfriend` get no glow; they
+// get the soft circle and name (SoftTargetCircle, SoftTargetName). No cvar of
+// its own: it follows SoftTargetInteract.
+//
+// 3.80.2 does the same. Its per-frame soft check (FUN_1405e1900) sets
+// highlight bit 4 on the soft interact while it is usable
+// (0x1405e1c4f, FUN_141591430) and clears it when that stops (0x1405e1c5f) or
+// when the soft interact moves on (0x1405e1c9e). The mouseover setter
+// (FUN_14169b6e0) uses the same call on bit 5, and every bit makes the same
+// model call, so the look is the mouseover's. No object-type test.
 //
 // The mouseover's glow is the engine's light bits: PublishWorldMouseover
 // sets bit 1 through CGObject_C::SetLight on an object with a model and

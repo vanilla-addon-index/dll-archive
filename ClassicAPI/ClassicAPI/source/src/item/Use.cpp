@@ -50,7 +50,10 @@
 #include "Offsets.h"
 #include "item/Location.h"
 #include "item/Use.h"
-#include "unit/TokenResolve.h"
+#include "object/Resolve.h"
+#include "spell/Placement.h"
+#include "unit/Identity.h"
+#include "unit/Position.h"
 
 #include <cstdint>
 
@@ -62,35 +65,45 @@ bool UseItem(const uint8_t *item, uint64_t targetGuid) {
     return reinterpret_cast<UseItem_t>(Offsets::FUN_ITEM_USE)(item, &targetGuid, 0) != 0;
 }
 
-namespace {
+bool UseAtCursor(const uint8_t *item) {
+    Spell::Placement::Stop();
+    return UseItem(item, 0) && Spell::Placement::CommitAtCursor();
+}
 
-using TokenToGUID_t = uint64_t(__fastcall *)(const char *token);
+bool UseAtUnit(const uint8_t *item, uint64_t guid) {
+    void *unit = guid != 0 ? ::Object::ByGuid(Offsets::TYPEMASK_UNIT, guid) : nullptr;
+    float pos[3];
+    if (unit == nullptr || !::Unit::Position::Read(unit, pos))
+        return UseItem(item, guid);
+    Spell::Placement::Stop();
+    return UseItem(item, guid) && Spell::Placement::FinishAtUnit(pos, true);
+}
+
+namespace {
 
 uint64_t ResolveUnitGuid(void *L, int idx) {
     if (!Game::Lua::IsString(L, idx))
         return 0;
-    const char *token = Game::Lua::ToString(L, idx);
-    // The engine's resolver RAISES for a string that names no token, which
-    // would turn a bad `unit` into an error out of a function whose contract
-    // is to no-op on bad input — and this is reached from secure-button
-    // attributes and key bindings, where the string is whatever an addon
-    // configured. Probe first so an unusable one is simply no target.
-    if (!Unit::TokenResolve::IsUnitToken(token))
-        return 0;
-    auto fn = reinterpret_cast<TokenToGUID_t>(Offsets::FUN_TOKEN_TO_GUID);
-    return fn(token);
+    // A string that names no unit is simply no target.
+    return ::Unit::Identity::GuidForToken(Game::Lua::ToString(L, idx));
 }
 
 int __fastcall Script_C_Item_UseItemByName(void *L) {
-    // Read the unit first: the item resolve below stomps the Lua stack.
-    const uint64_t targetGuid = ResolveUnitGuid(L, 2);
+    const bool atCursor = Game::Lua::IsString(L, 2) &&
+                          Spell::Placement::IsCursorTarget(Game::Lua::ToString(L, 2));
+    const uint64_t targetGuid = atCursor ? 0 : ResolveUnitGuid(L, 2);
 
     const uint8_t *item = Item::Location::ResolveItemArgOrLocation(L, 1);
     if (item == nullptr) {
         return 0;
     }
 
-    UseItem(item, targetGuid);
+    // 3.80.2: "cursor" names no unit and puts a ground effect at the cursor;
+    // a unit gets a ground effect at its feet.
+    if (atCursor)
+        UseAtCursor(item);
+    else
+        UseAtUnit(item, targetGuid);
     return 0;
 }
 
@@ -100,8 +113,9 @@ const Game::Doc::Field kUseItemByNameArgs[] = {
     Game::Doc::Req("itemInfo", "ItemInfo",
                    "An item ID, an item link, the name of a carried item, or an item location."),
     Game::Doc::Opt("target", "cstring", nullptr,
-                   "A unit token to use the item on; a string that is no unit token means no "
-                   "target."),
+                   "A unit token to use the item on, a ground effect at its feet, or "
+                   "\"cursor\" to place a ground effect at the cursor; a string that is no unit "
+                   "token means no target."),
 };
 const Game::Doc::Function kUseItemByName{
     "Uses an item you carry; does nothing when you do not have it or it cannot be used now.",

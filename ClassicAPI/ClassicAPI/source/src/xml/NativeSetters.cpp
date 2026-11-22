@@ -34,6 +34,8 @@
 
 #include "Game.h"
 #include "Offsets.h"
+#include "frame/Region.h"
+#include "storm/String.h"
 #include "xml/FrameLoad.h"
 #include "xml/TypeLoad.h"
 
@@ -43,11 +45,7 @@ namespace Xml::NativeSetters {
 
 namespace {
 
-using GetColor_t = void(__fastcall *)(void *region, void *edx, uint32_t *bgra);
-using SetColor_t = void(__fastcall *)(void *region, void *edx, const uint32_t *bgra);
 using SetFrameScale_t = bool(__fastcall *)(void *frame, void *edx, float scale, int force);
-using Tokenize_t = void(__stdcall *)(const char **cursor, char *out, unsigned outSize, const char *delims,
-                                     int *outQuoted);
 
 void OnRegionNode(void *object, const void *node, void * /*status*/) {
     float alpha = 0.0f;
@@ -57,10 +55,7 @@ void OnRegionNode(void *object, const void *node, void * /*status*/) {
         alpha = 0.0f;
     else if (alpha > 1.0f)
         alpha = 1.0f;
-    uint32_t bgra = 0;
-    reinterpret_cast<GetColor_t>(Offsets::FUN_REGION_GET_COLOR)(object, nullptr, &bgra);
-    bgra = (bgra & 0x00FFFFFF) | (static_cast<uint32_t>(alpha * 255.0f) << 24);
-    reinterpret_cast<SetColor_t>(Offsets::FUN_FONTSTRING_SET_COLOR)(object, nullptr, &bgra);
+    Frame::Region::SetAlpha(object, static_cast<uint8_t>(alpha * 255.0f));
 }
 
 const Xml::TypeLoad::AutoSubscribe _textureSub{Xml::TypeLoad::TEXTURE, &OnRegionNode};
@@ -73,7 +68,6 @@ void RegisterForDrag(void *frame, const char *value) {
     void *L = Game::Lua::State();
     if (L == nullptr)
         return;
-    auto tokenize = reinterpret_cast<Tokenize_t>(Offsets::FUN_STORM_STR_TOKENIZE);
     const int top = Game::Lua::GetTop(L);
     Game::Lua::PushCClosure(L, reinterpret_cast<Game::Lua::CFunction>(Offsets::FUN_SCRIPT_FRAME_REGISTERFORDRAG), 0);
     Game::Lua::PushObject(L, frame);
@@ -82,7 +76,7 @@ void RegisterForDrag(void *frame, const char *value) {
     const char *cursor = value;
     while (cursor != nullptr && *cursor != '\0') {
         token[0] = '\0';
-        tokenize(&cursor, token, sizeof token, " ,", nullptr);
+        Storm::Tokenize(&cursor, token, sizeof token, " ,", nullptr);
         if (token[0] != '\0') {
             Game::Lua::PushString(L, token);
             ++args;

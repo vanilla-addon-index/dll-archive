@@ -46,16 +46,18 @@
 #include "dbc/Lookup.h"
 #include "event/Custom.h"
 #include "item/CGItem.h"
+#include "item/ID.h"
 #include "item/Location.h"
 #include "item/Record.h"
 #include "net/PacketDispatch.h"
 #include "net/PacketReader.h"
-#include "net/SendObserver.h"
 #include "object/Resolve.h"
+#include "spell/Lookup.h"
 #include "tick/WorldTick.h"
 #include "time/Clock.h"
 #include "unit/Identity.h"
 #include "unit/Position.h"
+#include "spell/CastPacket.h"
 
 #include <cstdint>
 
@@ -126,24 +128,6 @@ uint32_t AttackTimeMs(SwingType type) {
     return *reinterpret_cast<const uint32_t *>(desc + off);
 }
 
-namespace {
-
-// Reads a unit's bounding radius (the same field `Unit::Range`'s
-// `UnitInRange`/`UnitDistanceSquared` and `Combat::SwingRange` read) off its
-// descriptor. 0 for a null object or an unpopulated descriptor.
-float BoundingRadius(void *obj) {
-    if (obj == nullptr)
-        return 0.0f;
-    auto *fields = *reinterpret_cast<const uint8_t *const *>(
-        static_cast<const uint8_t *>(obj) + Offsets::OFF_UNIT_DESCRIPTOR);
-    if (fields == nullptr)
-        return 0.0f;
-    return *reinterpret_cast<const float *>(
-        fields + Offsets::OFF_UNIT_FIELD_BOUNDING_RADIUS);
-}
-
-} // namespace
-
 bool InMeleeRange(void *player, void *target) {
     float playerPos[3];
     float targetPos[3];
@@ -154,7 +138,8 @@ bool InMeleeRange(void *player, void *target) {
         Game::Read<float>(static_cast<uintptr_t>(Offsets::VAR_MELEE_REACH_LEEWAY));
     const float floorRange =
         Game::Read<float>(static_cast<uintptr_t>(Offsets::VAR_MELEE_REACH_MIN));
-    float maxRange = BoundingRadius(player) + BoundingRadius(target) + leeway;
+    float maxRange = Unit::Position::BoundingRadius(player) +
+                     Unit::Position::BoundingRadius(target) + leeway;
     if (maxRange < floorRange)
         maxRange = floorRange;
 
@@ -164,13 +149,7 @@ bool InMeleeRange(void *player, void *target) {
 }
 
 namespace {
-AutoSwingResetOverride *g_overrides = nullptr;
 } // namespace
-
-AutoSwingResetOverride::AutoSwingResetOverride(SwingResetOverride fn)
-    : fn(fn), next(g_overrides) {
-    g_overrides = this;
-}
 
 namespace {
 
@@ -208,15 +187,9 @@ bool WasNonTriggeredCast(uint32_t spellId) {
     return false;
 }
 
-void OnSend(uint32_t opcode, CDataStore *packet) {
-    if (opcode != Offsets::OP_CMSG_CAST_SPELL)
-        return;
-    const uint32_t spellId = Net::Read<uint32_t>(packet);
-    if (spellId != 0)
-        RememberSentCast(spellId);
-}
+void OnSend(const Spell::CastPacket::Sent &s) { RememberSentCast(s.spellId); }
 
-const Net::SendObserver::AutoSubscribe _sendSub{&OnSend};
+const Spell::CastPacket::AutoSent _sendSub{&OnSend};
 
 // ---- Parry haste ----------------------------------------------------------
 
@@ -235,11 +208,9 @@ constexpr int kInvSlotOffHand1Based = 17;
 uint32_t UnhastedWeaponDelayMs(int slot1Based, SwingType fallbackType) {
     const uint8_t *cgItem = Item::Location::ResolveEquipmentSlot(slot1Based);
     if (cgItem != nullptr) {
-        const uint8_t *instance = Item::InstanceBlock(cgItem);
-        if (instance != nullptr) {
-            const uint32_t itemID = *reinterpret_cast<const uint32_t *>(
-                instance + Offsets::OFF_INSTANCE_BLOCK_ITEM_ID);
-            const uint8_t *stats = Item::PeekRecord(itemID);
+        const int itemID = Item::ID::FromCGItem(cgItem);
+        if (itemID != 0) {
+            const uint8_t *stats = Item::PeekRecord(static_cast<uint32_t>(itemID));
             if (stats != nullptr) {
                 const uint32_t delay = *reinterpret_cast<const uint32_t *>(
                     stats + Offsets::OFF_ITEMSTATS_DELAY);
@@ -296,7 +267,6 @@ void ApplyParryHaste() {
 
 // ---- Ranged wind-up compensation ------------------------------------------
 
-using GetCastTime_t = int(__fastcall *)(int spellID, int pet, int allowNegative);
 
 // Auto Shot / Shoot are re-cast by the server as TRIGGERED spells, so the
 // per-shot SMSG_SPELL_START is skipped and SMSG_SPELL_GO is the only packet
@@ -308,10 +278,7 @@ void HandleAutorepeatReset(uint32_t spellId) {
     const uint32_t rangedTime = AttackTimeMs(RANGED);
     if (rangedTime == 0)
         return;
-    auto getCastTime = reinterpret_cast<GetCastTime_t>(Offsets::FUN_GET_CAST_TIME);
-    int castTime = getCastTime(static_cast<int>(spellId), 0, 0);
-    if (castTime < 0)
-        castTime = 0;
+    const int castTime = Spell::Lookup::CastTimeMs(static_cast<int>(spellId), false, false);
     const auto windUp = static_cast<uint32_t>(castTime);
     MarkReset(RANGED, windUp >= rangedTime ? 0 : rangedTime - windUp);
 }
@@ -319,7 +286,7 @@ void HandleAutorepeatReset(uint32_t spellId) {
 // ---- SMSG_SPELL_GO dispatch -----------------------------------------------
 
 bool ForcedSwingReset(uint32_t spellId) {
-    for (auto *r = g_overrides; r != nullptr; r = r->next)
+    for (auto *r = AutoSwingResetOverride::head; r != nullptr; r = r->next)
         if (r->fn(spellId))
             return true;
     return false;
@@ -328,14 +295,11 @@ bool ForcedSwingReset(uint32_t spellId) {
 void OnSpellGo(uint32_t spellId) {
     if (spellId == 0)
         return;
-    const uint8_t *rec = DBC::Record(Offsets::VAR_SPELL_RECORDS,
-                                     Offsets::VAR_SPELL_RECORD_COUNT, spellId);
+    const uint8_t *rec = Spell::Lookup::RecordForID(static_cast<int>(spellId));
     if (rec == nullptr)
         return;
 
-    const uint32_t attr =
-        *reinterpret_cast<const uint32_t *>(rec + Offsets::OFF_SPELL_RECORD_ATTRIBUTES);
-    if (attr & Offsets::SPELL_ATTR_ON_NEXT_SWING) {
+    if (IsNextSwing(rec)) {
         // Replaces the next white hit -- not also evaluated as a cast-reset
         // spell below (an on-next-swing ability's InterruptFlags is unrelated).
         MarkReset(MAIN_HAND, AttackTimeMs(MAIN_HAND));
@@ -349,12 +313,7 @@ void OnSpellGo(uint32_t spellId) {
         return;
     }
 
-    const uint32_t interrupt = *reinterpret_cast<const uint32_t *>(
-        rec + Offsets::OFF_SPELL_RECORD_INTERRUPT_FLAGS);
-    if ((interrupt & Offsets::SPELL_INTERRUPT_FLAG_AUTOATTACK) &&
-        (ForcedSwingReset(spellId) ||
-         !(attrEx2 & Offsets::SPELL_ATTR_EX2_NOT_RESET_AUTO_ACTIONS)) &&
-        WasNonTriggeredCast(spellId)) {
+    if (ResetsSwing(spellId, rec) && WasNonTriggeredCast(spellId)) {
         // The server resets both timers on every such cast, attacking or
         // not (Spell::cast). Out of an attack no swing follows, so a buff
         // cast must not start a bar; the attack start below reports a reset
@@ -432,20 +391,34 @@ void OnPacket(uint32_t opcode, CDataStore *packet) {
         }
         return;
     }
-
-    if (opcode == Offsets::SMSG_SPELL_GO) {
-        Net::ReadPackedGuid(packet); // itemGuid -- unused here
-        const uint64_t caster = Net::ReadPackedGuid(packet);
-        const uint32_t spellId = Net::Read<uint32_t>(packet);
-        if (caster == player)
-            OnSpellGo(spellId);
-        return;
-    }
 }
 
 const Net::PacketDispatch::AutoSubscribe _sub{&OnPacket};
 
+void OnCastGo(const Spell::CastPacket::Go &g) {
+    if (g.header.caster != 0 && g.header.caster == Unit::Identity::PlayerGuid())
+        OnSpellGo(g.header.spellId);
+}
+
+const Spell::CastPacket::AutoGo _go{&OnCastGo};
+
 } // namespace
+
+bool IsNextSwing(const uint8_t *rec) {
+    return rec != nullptr &&
+           (Game::Read<uint32_t>(rec, Offsets::OFF_SPELL_RECORD_ATTRIBUTES) &
+            Offsets::SPELL_ATTR_ON_NEXT_SWING) != 0;
+}
+
+bool ResetsSwing(uint32_t spellId, const uint8_t *rec) {
+    if (rec == nullptr ||
+        (Game::Read<uint32_t>(rec, Offsets::OFF_SPELL_RECORD_INTERRUPT_FLAGS) &
+         Offsets::SPELL_INTERRUPT_FLAG_AUTOATTACK) == 0)
+        return false;
+    return (Game::Read<uint32_t>(rec, Offsets::OFF_SPELL_RECORD_ATTRIBUTES_EX2) &
+            Offsets::SPELL_ATTR_EX2_NOT_RESET_AUTO_ACTIONS) == 0 ||
+           ForcedSwingReset(spellId);
+}
 
 // ---- Weapon swap mid-combat (inventory-slot observer) -------------------
 //

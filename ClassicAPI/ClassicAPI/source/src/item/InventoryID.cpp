@@ -14,6 +14,8 @@
 #include "Game.h"
 #include "Offsets.h"
 #include "item/CGItem.h"
+#include "item/ID.h"
+#include "item/Location.h"
 #include "unit/Flags.h"
 
 #include <cstdint>
@@ -22,29 +24,13 @@ namespace Item::InventoryID {
 
 namespace {
 
-using GetItemBySlot_t = void *(__thiscall *)(void *invMgr, int slot);
-using GetVisibleItem_t = void *(__thiscall *)(void *unit, int slot);
-
-void *ResolveUnit(const char *token) {
-    return Game::ResolveUnitToken(token);
-}
-
 // Walks the local player's private inventory manager — the same path
 // `C_Item.GetItemID({equipmentSlotIndex=N})` uses. Bag/bank slots also
 // resolve here; we don't bound the slot up front since the engine's
 // own `GetItemBySlot` handles invalid slots by returning NULL.
 int ItemIDForLocalPlayer(void *playerPtr, int slot1Based) {
-    auto *player = static_cast<uint8_t *>(playerPtr);
-    auto *invMgr = player + Offsets::OFF_PLAYER_INVENTORY_MANAGER;
-    auto getBySlot = reinterpret_cast<GetItemBySlot_t>(Offsets::FUN_ITEMMGR_GET_ITEM_BY_SLOT);
-    auto *item = static_cast<uint8_t *>(getBySlot(invMgr, slot1Based - 1));
-    if (item == nullptr)
-        return 0;
-    auto *instance = Item::InstanceBlock(item);
-    if (instance == nullptr)
-        return 0;
-    return static_cast<int>(*reinterpret_cast<const uint32_t *>(
-        instance + Offsets::OFF_INSTANCE_BLOCK_ITEM_ID));
+    const auto *invMgr = static_cast<const uint8_t *>(playerPtr) + Offsets::OFF_PLAYER_INVENTORY_MANAGER;
+    return Item::ID::FromCGItem(Item::Location::SlotItem(invMgr, slot1Based - 1));
 }
 
 // For non-local-player units, the engine maintains a "visible items"
@@ -58,13 +44,7 @@ int ItemIDForLocalPlayer(void *playerPtr, int slot1Based) {
 // — the engine helper assumes a valid visible-items array and crashes
 // otherwise.
 int ItemIDForOtherUnit(void *unitPtr, int slot1Based) {
-    auto getVisibleItem = reinterpret_cast<GetVisibleItem_t>(
-        Offsets::FUN_UNIT_GET_VISIBLE_ITEM);
-    auto *entry = static_cast<uint8_t *>(getVisibleItem(unitPtr, slot1Based - 1));
-    if (entry == nullptr)
-        return 0;
-    return static_cast<int>(*reinterpret_cast<const uint32_t *>(
-        entry + Offsets::OFF_VISIBLE_ITEM_ITEM_ID));
+    return static_cast<int>(Item::ID::Visible(unitPtr, slot1Based - 1));
 }
 
 } // namespace
@@ -96,11 +76,11 @@ static int __fastcall Script_GetInventoryItemID(void *L) {
     if (unitToken == nullptr || slot < 1)
         return 0;
 
-    void *unitPtr = ResolveUnit(unitToken);
+    void *unitPtr = Game::ResolveUnitToken(unitToken);
     if (unitPtr == nullptr)
         return 0;
 
-    void *playerPtr = ResolveUnit("player");
+    void *playerPtr = Game::ResolveUnitToken("player");
     int itemID = 0;
     if (unitPtr == playerPtr) {
         itemID = ItemIDForLocalPlayer(playerPtr, slot);

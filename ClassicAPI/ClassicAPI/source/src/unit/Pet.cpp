@@ -49,6 +49,7 @@
 #include "guid/Guid.h"
 #include "unit/Flags.h"
 #include "unit/Identity.h"
+#include "object/Resolve.h"
 
 #include <cstdint>
 
@@ -58,7 +59,7 @@ namespace {
 
 // `int __fastcall(unit)` → 1 for a controllable pet, non-1 otherwise.
 // The engine's pet-vs-minion title discriminator. See
-// FUN_UNIT_PET_MINION_CLASS.
+// FUN_UNIT_CREATURE_TYPE.
 using PetMinionClass_t = int(__fastcall *)(const void *unit);
 
 const uint8_t *ResolveUnit(void *L) {
@@ -68,17 +69,6 @@ const uint8_t *ResolveUnit(void *L) {
     if (token == nullptr)
         return nullptr;
     return static_cast<const uint8_t *>(Game::ResolveUnitToken(token));
-}
-
-// The spell that summoned this unit (its UNIT_CREATED_BY_SPELL descriptor
-// field): the totem-drop spell for a totem, the summon spell for a
-// pet/guardian, etc. 0 for a unit not summoned by a spell (players, world
-// creatures) or an object with no descriptor.
-uint32_t CreatedBySpell(const uint8_t *unit) {
-    auto *desc = Game::Read<const uint8_t *>(unit, Offsets::OFF_UNIT_DESCRIPTOR);
-    if (desc == nullptr)
-        return 0;
-    return Game::Read<uint32_t>(desc, Offsets::OFF_UNIT_FIELD_CREATED_BY_SPELL);
 }
 
 // `UnitIsMinion(unit)` — true iff the unit is a player's minion (pet,
@@ -96,14 +86,14 @@ int __fastcall Script_UnitIsMinion(void *L) {
     bool minion = Guid::IsPlayer(Unit::Identity::OwnerGuid(unit));
     // Fallback: a player-controlled non-player with no owner GUID.
     if (!minion && Unit::Flags::IsPlayerControlled(unit))
-        minion = !Guid::IsPlayer(Unit::Identity::GuidForObject(unit));
+        minion = !Guid::IsPlayer(::Object::Guid(unit));
     Game::Lua::PushBool(L, minion);
     return 1;
 }
 
 // `UnitIsPet(unit)` — true iff the unit is a **pet** of a player (as
 // opposed to a guardian/totem "minion"): owned by a player AND the
-// engine's pet/minion classifier `FUN_UNIT_PET_MINION_CLASS` returns 1.
+// engine's pet/minion classifier `FUN_UNIT_CREATURE_TYPE` returns 1.
 // That classifier — reading the creature *family*, not the GUID or the
 // player-controlled flag — is exactly what the engine uses to title a unit
 // "X's Pet" vs "X's Minion". On 1.12/Turtle the GUID can't be used (pets
@@ -126,7 +116,7 @@ int __fastcall Script_UnitIsPet(void *L) {
     bool pet = false;
     if (Guid::IsPlayer(Unit::Identity::OwnerGuid(unit))) {
         auto classify = reinterpret_cast<PetMinionClass_t>(
-            Offsets::FUN_UNIT_PET_MINION_CLASS);
+            Offsets::FUN_UNIT_CREATURE_TYPE);
         pet = (classify(unit) == 1);
     }
     Game::Lua::PushBool(L, pet);
@@ -189,7 +179,7 @@ int __fastcall Script_UnitCreatedBySpell(void *L) {
         Game::Lua::PushNil(L);
         return 1;
     }
-    const uint32_t spellId = CreatedBySpell(unit);
+    const uint32_t spellId = Unit::Identity::CreatedBySpell(unit);
     if (spellId == 0) {
         Game::Lua::PushNil(L);
         return 1;

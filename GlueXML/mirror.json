@@ -9,7 +9,7 @@
     "url": "https://octowow.st/git/paste/GlueXML",
     "api": "https://octowow.st/git/api/v1/repos/paste/GlueXML"
   },
-  "commit": "5ad529b4655008df26b11265ba8cfd55cd6d54d9",
+  "commit": "bf0d2e83bd4225d0c182aea8a73845c9ded465af",
   "sourceFiles": {
     ".gitea/workflows/release.yml": {
       "sha256": "7b8e76945699574e356db01d461b907b634c79837bb745462f238ed80f2c7443",
@@ -24,8 +24,8 @@
       "bytes": 36972
     },
     "CharacterSelect.lua": {
-      "sha256": "20bb293156950aed5a6f8c4495110c3481dccc0a3746795e4b6bdb6e89a70aeb",
-      "bytes": 23026
+      "sha256": "7e506d6ef68f65a46b548fcbc08b4b8edfee84cc7b2109f3bef6fd5d34302b8f",
+      "bytes": 20868
     },
     "CharacterSelect.xml": {
       "sha256": "f60c1c7222b23ba67e444464b7f16f3643df042265b12c368a4190aae75ff43a",
@@ -44,8 +44,8 @@
       "bytes": 460
     },
     "README.md": {
-      "sha256": "a965124f3bd1644e3d0b0240b238003193767b2556cd65d0e1f1d2f67d56ae8c",
-      "bytes": 3413
+      "sha256": "0c3d00bfc6e2da2913dfb8cd5e554b805af8d7e88c25b26ce84b89cf61145bb6",
+      "bytes": 3251
     }
   },
   "symlinks": {},

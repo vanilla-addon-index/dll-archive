@@ -19,6 +19,7 @@
 #include "object/Resolve.h"
 #include "spell/Lookup.h"
 #include "unit/Position.h"
+#include "unit/Relation.h"
 
 #include <cmath>
 #include <cstdint>
@@ -113,20 +114,7 @@ constexpr uint32_t TARGET_WORD_GAMEOBJECT_ITEM = 0x4000;
 constexpr uint32_t TARGET_WORD_CORPSE_ALLY = 0x8000;
 constexpr int32_t TARGET_PET = 5;
 
-using Relation_t = bool(__thiscall *)(void *caster, void *other);
 using CreatureType_t = int(__thiscall *)(void *unit);
-
-bool Relation(uintptr_t fn, void *caster, void *other) {
-    return reinterpret_cast<Relation_t>(fn)(caster, other);
-}
-
-const uint8_t *Fields(const void *obj) {
-    return Game::Read<const uint8_t *>(obj, Offsets::OFF_UNIT_DESCRIPTOR);
-}
-
-const uint8_t *Head(const void *obj) {
-    return Game::Read<const uint8_t *>(obj, Offsets::OFF_UNIT_GUID_PTR);
-}
 
 void *Pet() {
     return Object::ByGuid(Offsets::TYPEMASK_UNIT,
@@ -182,7 +170,7 @@ uint32_t TargetWord(const uint8_t *rec, bool &aimsAtPet) {
 
 // A unit target (0x006E4511..0x006E469A).
 bool AdmitsUnit(void *caster, const uint8_t *rec, uint32_t word, void *unit) {
-    const uint8_t *fields = Fields(unit);
+    const uint8_t *fields = Object::Fields(unit);
     const uint32_t flags = Game::Read<uint32_t>(fields, Offsets::OFF_UNIT_FIELD_FLAGS);
     if (flags & Offsets::UNIT_FLAG_NON_ATTACKABLE_2)
         return false;
@@ -206,35 +194,35 @@ bool AdmitsUnit(void *caster, const uint8_t *rec, uint32_t word, void *unit) {
         return false;
     }
 
-    if ((word & TARGET_WORD_PARTY) && Relation(Offsets::FUN_UNIT_IN_SAME_PARTY, caster, unit) &&
-        Relation(Offsets::FUN_UNIT_CAN_ASSIST, caster, unit))
+    if ((word & TARGET_WORD_PARTY) && ::Unit::Relation::InSameParty(caster, unit) &&
+        ::Unit::Relation::CanAssist(caster, unit))
         return true;
-    if ((word & TARGET_WORD_RAID) && Relation(Offsets::FUN_UNIT_IN_SAME_RAID, caster, unit) &&
-        Relation(Offsets::FUN_UNIT_CAN_ASSIST, caster, unit))
+    if ((word & TARGET_WORD_RAID) && ::Unit::Relation::InSameRaid(caster, unit) &&
+        ::Unit::Relation::CanAssist(caster, unit))
         return true;
-    if ((word & TARGET_WORD_FRIEND) && Relation(Offsets::FUN_UNIT_CAN_ASSIST, caster, unit))
+    if ((word & TARGET_WORD_FRIEND) && ::Unit::Relation::CanAssist(caster, unit))
         return true;
-    if ((word & TARGET_WORD_ENEMY) && Relation(Offsets::FUN_UNIT_CAN_ATTACK, caster, unit))
+    if ((word & TARGET_WORD_ENEMY) && ::Unit::Relation::CanAttack(caster, unit))
         return true;
     if ((word & TARGET_WORD_UNIT) && (flags & Offsets::UNIT_FLAG_IMMUNE_TO_PLAYER) == 0)
         return true;
 
     const bool isPlayer =
-        (Game::Read<uint32_t>(Head(unit), Offsets::OFF_OBJECT_FIELD_TYPE) &
+        (::Object::Type(unit) &
          Offsets::TYPEMASK_PLAYER) != 0;
     if ((word & TARGET_WORD_CORPSE_ALLY) && dead &&
         (isPlayer || Game::Read<uint32_t>(fields, Offsets::OFF_UNIT_FIELD_PETNUMBER) != 0))
-        return Relation(Offsets::FUN_UNIT_CAN_ASSIST, caster, unit);
+        return ::Unit::Relation::CanAssist(caster, unit);
     return (word & TARGET_WORD_CORPSE_ENEMY) && dead && isPlayer &&
-           !Relation(Offsets::FUN_UNIT_CAN_ASSIST, caster, unit);
+           !::Unit::Relation::CanAssist(caster, unit);
 }
 
 // A corpse target (0x006E46B2..0x006E46FF).
 bool AdmitsCorpse(void *caster, uint32_t word, void *corpse) {
-    if (Game::Read<uint32_t>(Fields(corpse), Offsets::OFF_CORPSE_FIELD_FLAGS) &
+    if (Game::Read<uint32_t>(Object::Fields(corpse), Offsets::OFF_CORPSE_FIELD_FLAGS) &
         Offsets::CORPSE_FLAG_BONES)
         return false;
-    const bool assist = Relation(Offsets::FUN_UNIT_CAN_ASSIST_CORPSE, caster, corpse);
+    const bool assist = ::Unit::Relation::CanAssistCorpse(caster, corpse);
     return ((word & TARGET_WORD_CORPSE_ENEMY) && !assist) ||
            ((word & TARGET_WORD_CORPSE_ALLY) && assist);
 }
@@ -251,14 +239,14 @@ void *AdmittedTarget(void *caster, const uint8_t *rec, void *target) {
         word |= TARGET_WORD_UNIT;
     }
 
-    const uint32_t type = Game::Read<uint32_t>(Head(target), Offsets::OFF_OBJECT_FIELD_TYPE);
+    const uint32_t type = ::Object::Type(target);
     if (type & Offsets::TYPEMASK_UNIT) {
         if ((word & TARGET_WORD_CORPSE_ALLY) && (type & Offsets::TYPEMASK_PLAYER)) {
             const auto *info = Game::Read<const uint8_t *>(target, Offsets::OFF_CGPLAYER_INFO);
             if (info != nullptr &&
                 (Game::Read<uint32_t>(info, Offsets::OFF_PLAYER_INFO_FLAGS) &
                  Offsets::PLAYER_FLAG_GHOST) != 0) {
-                if (void *corpse = Object::Corpse::ByOwner(Game::Read<uint64_t>(Head(target), 0)))
+                if (void *corpse = Object::Corpse::ByOwner(::Object::Guid(target)))
                     return corpse;
             }
         }
@@ -278,7 +266,7 @@ bool SpellIDHasRange(int spellID) {
     if (spellID <= 0)
         return false;
     // A null caster zeroes both bounds, which reads as rangeless.
-    return EngineHasRange(Unit::Position::ResolveToken("player"), spellID);
+    return EngineHasRange(Game::ResolveUnitToken("player"), spellID);
 }
 
 void CasterMinMax(void *caster, int spellID, float &minRange, float &maxRange) {
@@ -293,8 +281,8 @@ int PlayerVsUnit(int spellID, const char *unitToken) {
     if (spellID <= 0 || unitToken == nullptr)
         return -1;
 
-    void *caster = Unit::Position::ResolveToken("player");
-    void *target = Unit::Position::ResolveToken(unitToken);
+    void *caster = Game::ResolveUnitToken("player");
+    void *target = Game::ResolveUnitToken(unitToken);
     if (caster == nullptr || target == nullptr)
         return -1;
     // Rangeless spell (self buff, etc.) has no meaningful "in range" answer.
@@ -308,8 +296,8 @@ int CastVsUnit(int spellID, const char *unitToken, bool petCaster) {
     if (spellID <= 0 || unitToken == nullptr)
         return -1;
     const uint8_t *rec = Spell::Lookup::RecordForID(spellID);
-    void *caster = petCaster ? Pet() : Unit::Position::ResolveToken("player");
-    void *target = Unit::Position::ResolveToken(unitToken);
+    void *caster = petCaster ? Pet() : Game::ResolveUnitToken("player");
+    void *target = Game::ResolveUnitToken(unitToken);
     if (rec == nullptr || caster == nullptr || target == nullptr)
         return -1;
     if (!EngineHasRange(caster, spellID))

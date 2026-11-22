@@ -23,6 +23,8 @@
 
 #include "model/TryOn.h"
 
+#include "lua/MethodArg.h"
+
 #include "Game.h"
 #include "Offsets.h"
 #include "dbc/Lookup.h"
@@ -31,9 +33,10 @@
 #include "item/ID.h"
 #include "item/Location.h"
 #include "item/Record.h"
+#include "lua/MixinTable.h"
 #include "model/Outfit.h"
+#include "spell/Lookup.h"
 
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
@@ -70,20 +73,18 @@ uint32_t RecipeItem(const char *link) {
     const long spellID = std::strtol(enchant + 8, nullptr, 10);
     if (spellID <= 0)
         return 0;
-    const uint8_t *spell = DBC::Record(Offsets::VAR_SPELL_RECORDS, Offsets::VAR_SPELL_RECORD_COUNT,
-                                       static_cast<uint32_t>(spellID));
+    const uint8_t *spell = Spell::Lookup::RecordForID(static_cast<int>(spellID));
     if (spell == nullptr ||
         (Game::Read<uint32_t>(spell, Offsets::OFF_SPELL_RECORD_ATTRIBUTES) &
          Offsets::SPELL_ATTR_TRADESPELL) == 0)
         return 0;
-    return Game::Read<uint32_t>(spell, Offsets::OFF_SPELL_RECORD_EFFECT_ITEM_TYPE);
+    return Spell::Lookup::CreatedItemID(spell);
 }
 
 } // namespace
 
 Request ReadArgs(void *L) {
     Request request;
-    // Read before the name search below, which stomps the Lua stack.
     if (Game::Lua::Type(L, 3) == Game::Lua::TYPE_STRING)
         request.bodySlot = NamedHand(Game::Lua::ToString(L, 3));
     const bool enchantGiven = Game::Lua::IsNumber(L, 4) != 0;
@@ -92,9 +93,7 @@ Request ReadArgs(void *L) {
     if (Game::Lua::Type(L, 2) == Game::Lua::TYPE_NUMBER) {
         request.itemID = static_cast<uint32_t>(Game::Lua::ToNumber(L, 2));
     } else if (Game::Lua::Type(L, 2) == Game::Lua::TYPE_STRING) {
-        // Copied: the name search below stomps the Lua stack.
-        char s[256];
-        std::snprintf(s, sizeof(s), "%s", Game::Lua::ToString(L, 2));
+        const char *s = Game::Lua::ToString(L, 2);
         if (std::strstr(s, "enchant:") != nullptr) {
             request.itemID = RecipeItem(s);
         } else {
@@ -106,7 +105,7 @@ Request ReadArgs(void *L) {
                 request.itemID = static_cast<uint32_t>(arg.itemID);
                 if (!enchantGiven)
                     request.enchant = static_cast<uint32_t>(arg.enchant);
-            } else if (arg.name != nullptr && Item::Location::FindByArg(L, arg, &found))
+            } else if (arg.name != nullptr && Item::Location::FindByArg(arg, &found))
                 request.itemID = static_cast<uint32_t>(Item::ID::FromCGItem(found.item));
         }
     }
@@ -134,22 +133,15 @@ namespace {
 
 // A number field of the table at `index`, or 0.
 uint32_t FieldNumber(void *L, int index, const char *key) {
-    Game::Lua::PushString(L, key);
-    Game::Lua::GetTable(L, index);
-    const double value = Game::Lua::IsNumber(L, -1) ? Game::Lua::ToNumber(L, -1) : 0.0;
-    Game::Lua::SetTop(L, -2);
+    const double value = Game::Lua::GetFieldNumber(L, index, key);
     return value > 0.0 ? static_cast<uint32_t>(value) : 0;
 }
 
 } // namespace
 
-bool ReadTransmogInfo(void *L, const char *name, Request &request) {
-    if (Game::Lua::Type(L, 2) != Game::Lua::TYPE_TABLE) {
-        Game::Lua::Error(L,
-                         "Usage: %s:SetItemTransmogInfo(transmogInfo [, inventorySlots, ignoreChildItems])",
-                         name);
-        return false;
-    }
+bool ReadTransmogInfo(void *L, const char *usage, Request &request) {
+    if (Game::Lua::Type(L, 2) != Game::Lua::TYPE_TABLE)
+        return Game::Lua::MethodArg::Fail(L, 2, usage);
     request.itemID = FieldNumber(L, 2, "appearanceID");
     request.enchant = FieldNumber(L, 2, "illusionID");
     request.quiet = true;
@@ -163,22 +155,20 @@ bool ReadTransmogInfo(void *L, const char *name, Request &request) {
     return true;
 }
 
-void PushTransmogInfo(void *L, const Outfit::Appearance &slot) {
-    Game::Lua::PushString(L, "ItemUtil");
-    Game::Lua::GetTable(L, Game::Lua::GLOBALS_INDEX);
-    Game::Lua::PushString(L, "CreateItemTransmogInfo");
-    Game::Lua::GetTable(L, -2);
-    Game::Lua::Remove(L, -2);
-    Game::Lua::PushNumber(L, slot.item);
-    Game::Lua::PushNumber(L, 0);
-    Game::Lua::PushNumber(L, slot.enchant);
-    Game::Lua::Call(L, 3, 1);
+void PushTransmogInfo(void *L, const Outfit::Appearance &slot, int secondaryAppearanceID) {
+    Game::Lua::MixinTable::Push(L, "ItemTransmogInfoMixin");
+    Game::Lua::SetFieldNumber(L, "appearanceID", slot.item);
+    Game::Lua::SetFieldNumber(L, "secondaryAppearanceID", secondaryAppearanceID);
+    Game::Lua::SetFieldNumber(L, "illusionID", slot.enchant);
 }
 
-void PushTransmogInfoList(void *L, const Outfit::Worn &worn) {
+void PushTransmogInfoList(void *L, const Outfit::Worn &worn, bool individualMainHand) {
     Game::Lua::NewTable(L);
     for (int i = 0; i < Outfit::kInventorySlots; ++i) {
-        PushTransmogInfo(L, worn[i]);
+        const Outfit::Appearance &slot = worn[i];
+        const bool individual = individualMainHand && i == Offsets::INVSLOT_MAINHAND - 1 &&
+                                (slot.item != 0 || slot.enchant != 0);
+        PushTransmogInfo(L, slot, individual ? -1 : 0);
         Game::Lua::RawSetI(L, -2, i + 1);
     }
 }

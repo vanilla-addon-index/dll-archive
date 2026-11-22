@@ -114,10 +114,14 @@
 #include "Offsets.h"
 #include "baselib/Ascii.h"
 #include "cursor/Info.h"
+#include "item/Location.h"
+#include "item/Use.h"
 #include "macro/Execute.h"
 #include "object/Resolve.h"
 #include "spell/AtUnit.h"
 #include "spell/Placement.h"
+#include "storm/String.h"
+#include "target/Reason.h"
 #include "tick/WorldTick.h"
 #include "unit/Focus.h"
 #include "unit/Identity.h"
@@ -136,11 +140,6 @@ namespace Frame::Attributes {
 
 namespace {
 
-using ScriptFn_t = int(__fastcall *)(void *L);
-
-int CallScript(uintptr_t fn, void *L) {
-    return reinterpret_cast<ScriptFn_t>(fn)(L);
-}
 
 // ---- small string helpers --------------------------------------------------
 
@@ -289,33 +288,19 @@ bool CallBoolGlobal(void *L, const char *name) {
     return r;
 }
 
-// _G[table][method](a, b) — two string args (null → nil, since PushString maps
-// NULL to nil), no results. Returns true iff the method resolved to a function
-// and got called. Used when the target is our own C_* function but the call must
-// cross the Lua boundary — e.g. C_Item.UseItemByName, whose bag walk does
-// SetTop(L, 0); going through lua_call gives it its own stack frame so that reset
-// clears only its frame, not the dispatcher's (a direct C++ call would wipe our
-// stack — the reason `spell`, which is stack-free, calls Spell::AtUnit directly
-// while `item` routes through here).
-bool CallTableFunc2Str(void *L, const char *table, const char *method,
-                       const char *a, const char *b) {
-    const int top = Game::Lua::GetTop(L);
-    bool called = false;
-    Game::Lua::PushString(L, table);
-    Game::Lua::GetTable(L, Game::Lua::GLOBALS_INDEX);   // _G[table]
-    if (Game::Lua::Type(L, -1) == Game::Lua::TYPE_TABLE) {
-        const int t = Game::Lua::GetTop(L);
-        Game::Lua::PushString(L, method);
-        Game::Lua::GetTable(L, t);                       // _G[table][method]
-        if (Game::Lua::Type(L, -1) == Game::Lua::TYPE_FUNCTION) {
-            Game::Lua::PushString(L, a);
-            Game::Lua::PushString(L, b);
-            Game::Lua::Call(L, 2, 0);
-            called = true;
-        }
-    }
-    Game::Lua::SetTop(L, top);
-    return called;
+// C_Item.UseItemByName(item, unit) for an attribute string: the same item
+// resolution (item GUID string, itemID, `item:N`, link or carried name) and the
+// same target (an unknown or absent unit is no target), called directly.
+void UseItemString(const char *item, const char *unit) {
+    Item::Location::ByGUIDResult found;
+    if (!Item::Location::FindItemStringArg(item, &found) || found.item == nullptr)
+        return;
+    // 3.80.2's item verb ends in UseItemByName(name, unit): "cursor" places a
+    // ground effect at the cursor.
+    if (Spell::Placement::IsCursorTarget(unit))
+        Item::Use::UseAtCursor(found.item);
+    else
+        Item::Use::UseAtUnit(found.item, unit ? Unit::Identity::GuidForToken(unit) : 0);
 }
 
 // ---- mouse-focus poll (drives the native mouseover slot) -------------------
@@ -408,13 +393,7 @@ std::string ModifiedUnit(void *L, void *frame) {
     const int fi = Game::Lua::GetTop(L);
     if (PushSub(L, fi, /*create*/ false)) {               // [frame, attrs]
         Game::Lua::SetTop(L, fi);
-        int errIdx = 0;
-        const int errRef = Game::Read<int>(
-            static_cast<uintptr_t>(Offsets::VAR_FRAMESCRIPT_ERROR_HANDLER_REF));
-        if (errRef > 0) {
-            Game::Lua::RawGetI(L, Game::Lua::REGISTRY_INDEX, errRef);
-            errIdx = Game::Lua::GetTop(L);
-        }
+        const int errIdx = Game::Lua::PushErrorHandler(L);
         Game::Lua::PushString(L, "SecureButton_GetModifiedUnit");
         Game::Lua::RawGet(L, Game::Lua::GLOBALS_INDEX);
         if (Game::Lua::Type(L, -1) == Game::Lua::TYPE_FUNCTION) {
@@ -687,7 +666,11 @@ bool DispatchVerb(void *L, int fi, const char *prefix, const char *suffix,
         // the caller asked for.
         int spellID;
         if (ReadModAttrInt(L, fi, prefix, "spell", suffix, &spellID)) {
-            if (unit)
+            // 3.80.2's spell verb ends in CastSpellByID / CastSpellByName with
+            // the unit, where "cursor" casts at the cursor's ground point.
+            if (Spell::Placement::IsCursorTarget(unit))
+                Spell::Placement::CastAtCursor(spellID);
+            else if (unit)
                 Spell::AtUnit::CastByID(spellID, unit);
             else
                 Spell::Placement::DispatchSpellCast(spellID);
@@ -701,7 +684,9 @@ bool DispatchVerb(void *L, int fi, const char *prefix, const char *suffix,
         char spell[128];
         if (!ReadModAttr(L, fi, prefix, "spell", suffix, spell, sizeof spell))
             return false;
-        if (unit)
+        if (Spell::Placement::IsCursorTarget(unit))
+            Spell::Placement::CastAtCursorByName(spell);
+        else if (unit)
             Spell::AtUnit::CastByName(spell, unit, /*placeGroundSpell*/ true);
         else
             Game::Lua::CallGlobalString(L, "CastSpellByName", spell);
@@ -714,7 +699,7 @@ bool DispatchVerb(void *L, int fi, const char *prefix, const char *suffix,
             if (ParseBagSlot(item, &bag, &slot))
                 CallGlobalNum2(L, "UseContainerItem", bag, slot);
             else
-                CallTableFunc2Str(L, "C_Item", "UseItemByName", item, unit);
+                UseItemString(item, unit);
             return true;
         }
         // Deprecated form: no `item`, take the `bag` + `slot` attributes.
@@ -735,18 +720,15 @@ bool DispatchVerb(void *L, int fi, const char *prefix, const char *suffix,
         // the previous target so the click doesn't leave the player retargeted.
         // The macro's actions (/cast etc.) dispatch against the clicked unit
         // synchronously while it's selected, so restoring the target afterward
-        // doesn't affect them.
-        uint64_t prevTarget = 0;
+        // doesn't affect them. The target's reason is saved with it: put
+        // back as a plain select, a soft target (SoftTargetForce's hidden
+        // one included) would come back chosen — locked and shown.
         const bool swapped = unit != nullptr;
-        if (swapped) {
-            prevTarget =
-                (static_cast<uint64_t>(Game::Read<volatile uint32_t>(
-                     Offsets::VAR_CURRENT_SELECTION_GUID_HI))
-                 << 32) |
-                Game::Read<volatile uint32_t>(
-                    Offsets::VAR_CURRENT_SELECTION_GUID_LO);
+        const uint64_t prevTarget = swapped ? Target::Reason::Selection() : 0;
+        const Target::Reason::Why prevWhy =
+            swapped ? Target::Reason::Current() : Target::Reason::None;
+        if (swapped)
             Game::Lua::CallGlobalString(L, "TargetUnit", unit);
-        }
         char macro[Offsets::MACRO_BODY_SIZE];
         bool handled = false;
         // `macrotext` is raw macro text (the modern default), `macro` a saved
@@ -758,17 +740,10 @@ bool DispatchVerb(void *L, int fi, const char *prefix, const char *suffix,
         } else if (ReadModAttr(L, fi, prefix, "macro", suffix, macro, sizeof macro)) {
             handled = Macro::Execute::Saved(macro, button);
         }
-        // Restore the target the click swapped away from. `FUN_TARGET_BY_GUID`
-        // validates the GUID resolves to a live unit and bails otherwise, so a
-        // target that despawned mid-macro is dropped cleanly rather than
-        // committed; a zero prior target means "no target" → ClearTarget.
-        if (swapped) {
-            if (prevTarget)
-                reinterpret_cast<void(__fastcall *)(const uint64_t *)>(
-                    Offsets::FUN_TARGET_BY_GUID)(&prevTarget);
-            else
-                Game::Lua::CallGlobal(L, "ClearTarget");
-        }
+        // Restore the target the click swapped away from, with its reason; a
+        // target that despawned mid-macro, or none, clears.
+        if (swapped)
+            Target::Reason::Restore(prevTarget, prevWhy);
         return handled;
     }
     if (Ascii::EqualCI(verb, "stop") || Ascii::EqualCI(verb, "stopcasting")) {
@@ -864,7 +839,7 @@ int __fastcall OnClick_c(void *L) {
 int __fastcall WireOnClick(void *L) {
     Game::Lua::SetTop(L, 1);                             // (self)
     Game::Lua::PushString(L, "OnClick");                 // (self, name)
-    CallScript(Offsets::FUN_SCRIPT_FRAME_GETSCRIPT, L);  // (self, name, old)
+    Game::Lua::CallScript(Offsets::FUN_SCRIPT_FRAME_GETSCRIPT, L);  // (self, name, old)
     if (Game::Lua::GetTop(L) < 3)                        // defensive
         Game::Lua::PushNil(L);
     Game::Lua::SetTop(L, 3);                             // (self, name, old|nil)
@@ -873,7 +848,7 @@ int __fastcall WireOnClick(void *L) {
         return 0;                                        // already our closure
     Game::Lua::PushValue(L, 1);                          // (self, name, old, self)
     Game::Lua::PushCClosure(L, &OnClick_c, 2);           // upvalues (old, self)
-    CallScript(Offsets::FUN_SCRIPT_FRAME_SETSCRIPT, L);
+    Game::Lua::CallScript(Offsets::FUN_SCRIPT_FRAME_SETSCRIPT, L);
     return 0;
 }
 
@@ -1093,7 +1068,6 @@ int __fastcall Script_GetAttribute(void *L) {
 // inherited templates are loaded first, so the frame's own values win.
 // Problems are the engine's load warnings, with 4.3.4's texts.
 void LoadXmlAttributes(void *L, void *frame, const void *attributes, void *status) {
-    using ToFloat_t = float(__stdcall *)(const char *);
 
     const int top = Game::Lua::GetTop(L);
     int frameIdx = 0;
@@ -1132,7 +1106,7 @@ void LoadXmlAttributes(void *L, void *frame, const void *attributes, void *statu
         else if (Ascii::EqualCI(type, "boolean"))
             Game::Lua::PushBool(L, Game::StringToFlag(value));
         else if (Ascii::EqualCI(type, "number"))
-            Game::Lua::PushNumber(L, reinterpret_cast<ToFloat_t>(Offsets::FUN_SSTR_TO_FLOAT)(value));
+            Game::Lua::PushNumber(L, Storm::ToFloat(value));
         else
             Game::Lua::PushString(L, value);
         Game::Lua::PCall(L, 3, 0, 0);

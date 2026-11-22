@@ -35,6 +35,8 @@
 #include "Game.h"
 #include "Offsets.h"
 #include "cvar/Factory.h"
+#include "spell/Lookup.h"
+#include "storm/String.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -78,8 +80,6 @@ constexpr int kDefaultRetention = 300;
 // The longest retention, in seconds, that the wrap-safe age test can measure.
 constexpr int kMaxRetention = 0x7FFFFFFF / 1000;
 
-using Tokenize_t = void(__stdcall *)(char **cursor, char *out, unsigned outSize,
-                                     const char *delims, int *outQuoted);
 
 
 bool Complete(uint32_t matched) {
@@ -123,12 +123,12 @@ uint64_t EventBits(const char *events) {
     if (events == nullptr)
         return ~0ull;
     std::string buffer = events;
-    char *cursor = buffer.data();
+    const char *cursor = buffer.data();
     uint64_t bits = 0;
     char token[kMaxToken];
     do {
         token[0] = '\0';
-        reinterpret_cast<Tokenize_t>(static_cast<uintptr_t>(Offsets::FUN_STORM_STR_TOKENIZE))(
+        Storm::Tokenize(
             &cursor, token, sizeof token, " ,", nullptr);
         if (token[0] == '\0')
             break;
@@ -162,7 +162,7 @@ bool Matches(const Filter &f, const Entry &e) {
         return e.spellId == f.spellId;
     if (!f.spellNamed)
         return true;
-    const char *name = e.spellPrefix ? SpellName(SpellRecord(e.spellId)) : nullptr;
+    const char *name = e.spellPrefix ? Spell::Lookup::Name(SpellRecord(e.spellId)) : nullptr;
     return name != nullptr && Game::StrCmpI(name, f.spellName.c_str()) == 0;
 }
 
@@ -181,10 +181,7 @@ void DropOldest() {
 }
 
 void PushCurrent(void *L) {
-    if (g_current >= 0)
-        Game::Lua::PushNumber(L, 1.0);
-    else
-        Game::Lua::PushNil(L);
+    Game::Lua::PushFlag(L, g_current >= 0);
 }
 
 int Count() { return static_cast<int>(g_entries.size()); }
@@ -343,10 +340,7 @@ int __fastcall Script_CombatLog_Object_IsA(void *L) {
     const uint32_t flags =
         static_cast<uint32_t>(static_cast<int64_t>(Game::Lua::ToNumber(L, 1))) &
         static_cast<uint32_t>(static_cast<int64_t>(Game::Lua::ToNumber(L, 2)));
-    if ((flags & SPECIAL_MASK) != 0 || Complete(flags))
-        Game::Lua::PushNumber(L, 1.0);
-    else
-        Game::Lua::PushNil(L);
+    Game::Lua::PushFlag(L, (flags & SPECIAL_MASK) != 0 || Complete(flags));
     return 1;
 }
 
@@ -460,6 +454,13 @@ bool MatchesFilter(const Entry &entry) {
             return true;
     }
     return false;
+}
+
+void ForEachNewest(const std::function<bool(const Entry &)> &visit) {
+    for (auto it = g_entries.rbegin(); it != g_entries.rend(); ++it) {
+        if (!visit(*it))
+            return;
+    }
 }
 
 } // namespace CombatLog::History

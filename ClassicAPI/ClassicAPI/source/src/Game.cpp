@@ -16,13 +16,17 @@
 #include "Offsets.h"
 #include "api/Documentation.h"
 #include "compat/WowTurbo.h"
+#include "debug/Log.h"
+
+#include <cstdio>
 
 namespace Game {
 
 void *ResolveUnitToken(const char *token) {
     using ResolveUnitToken_t = void *(__fastcall *)(const char *token);
-    auto fn = reinterpret_cast<ResolveUnitToken_t>(Offsets::FUN_RESOLVE_UNIT_TOKEN);
-    return fn(token);
+    if (token == nullptr)
+        return nullptr;
+    return reinterpret_cast<ResolveUnitToken_t>(Offsets::FUN_RESOLVE_UNIT_TOKEN)(token);
 }
 
 float PixelToInternal(float px) {
@@ -31,6 +35,12 @@ float PixelToInternal(float px) {
     if (div == 0.0f)
         return 0.0f;
     return px * mul / (div * Read<float>(Offsets::FLOAT_SCRIPT_COORD_SCALE));
+}
+
+void ReleaseHandle(void *handle) {
+    using Fn = void(__fastcall *)(void *handle);
+    if (handle != nullptr)
+        reinterpret_cast<Fn>(Offsets::FUN_HANDLE_RELEASE)(handle);
 }
 
 double InternalToPixel(float internal) {
@@ -103,11 +113,14 @@ namespace Lua {
     F(ToCFunction, lua_tocfunction, LUA_TO_C_FUNCTION)\
     F(GetStack,    lua_getstack,    LUA_GET_STACK)    \
     F(GetInfo,     lua_getinfo,     LUA_GET_INFO)     \
+    F(GetFenv,     lua_getfenv,     LUA_GET_FENV)     \
     F(XMove,       lua_xmove,       LUA_X_MOVE)       \
     F(NewThread,   lua_newthread,   LUA_NEW_THREAD)   \
     F(Resume,      lua_resume,      LUA_RESUME)       \
     F(Yield,       lua_yield,       LUA_YIELD)        \
     F(ArgError,    luaL_argerror,   LUAL_ARG_ERROR)   \
+    F(CheckType,   luaL_checktype,  LUAL_CHECK_TYPE)  \
+    F(Equal,       lua_equal,       LUA_EQUAL)        \
     F(CheckLString,luaL_checklstring,LUAL_CHECK_LSTRING)\
     F(CheckNumber, luaL_checknumber,LUAL_CHECK_NUMBER)\
     F(OptNumber,   luaL_optnumber,  LUAL_OPT_NUMBER)  \
@@ -117,13 +130,42 @@ namespace Lua {
     F(CheckStack,  lua_checkstack,  LUA_CHECK_STACK)  \
     F(Concat,      lua_concat,      LUA_CONCAT)       \
     F(NewUserdata, lua_newuserdata, LUA_NEW_USERDATA) \
-    F(ToUserdata,  lua_touserdata,  FUN_FRAMESCRIPT_GET_OBJECT)
+    F(ToUserdata,  lua_touserdata,  LUA_TO_USERDATA)
 
 #define CLASSICAPI_BIND_LUA(Name, Typedef, Offset) \
     const Typedef##_t Name = reinterpret_cast<Typedef##_t>(Offsets::Offset);
 CLASSICAPI_LUA_BINDINGS(CLASSICAPI_BIND_LUA)
 #undef CLASSICAPI_BIND_LUA
 #undef CLASSICAPI_LUA_BINDINGS
+
+void CreateTable(void *L, int narr, int nrec) {
+    using luaC_collectgarbage_t = void(__fastcall *)(void *L);
+    using luaH_new_t = void *(__fastcall *)(void *L, int narray, int lnhash);
+
+    // luaO_ceillog2, except that 1 node takes lnhash 1: lnhash 0 is the
+    // shared dummy node, which holds nothing. Past 24 luaH_new raises its own
+    // "table overflow", so the count stops at 25.
+    int lnhash = 0;
+    if (nrec > 0)
+        for (lnhash = 1; lnhash < 25 && (1 << lnhash) < nrec; ++lnhash) {
+        }
+
+    // lua_newtable (0x6F3C90) step for step: the GC step first (it can move
+    // the stack), then the TValue at top, then luaH_new, then top += 1.
+    const uint8_t *g = Game::Read<const uint8_t *>(L, Offsets::OFF_LUA_STATE_G);
+    if (Game::Read<uint32_t>(g, Offsets::OFF_LUA_G_NBLOCKS) >=
+        Game::Read<uint32_t>(g, Offsets::OFF_LUA_G_GCTHRESHOLD))
+        reinterpret_cast<luaC_collectgarbage_t>(Offsets::FUN_LUA_C_COLLECTGARBAGE)(L);
+
+    uint8_t *slot = Game::Read<uint8_t *>(L, Offsets::OFF_LUA_STATE_TOP);
+    Game::Ref<int>(slot, Offsets::OFF_LUA_TVALUE_TT) = TYPE_TABLE;
+    Game::Ref<uint32_t>(slot, Offsets::OFF_LUA_TVALUE_CONTEXT) =
+        Game::Read<uint32_t>(Offsets::VAR_FRAMESCRIPT_EXEC_CONTEXT);
+    Game::Ref<void *>(slot, Offsets::OFF_LUA_TVALUE_VALUE) =
+        reinterpret_cast<luaH_new_t>(Offsets::FUN_LUAH_NEW)(L, narr > 0 ? narr : 0, lnhash);
+    Game::Ref<uint8_t *>(L, Offsets::OFF_LUA_STATE_TOP) =
+        Game::Read<uint8_t *>(L, Offsets::OFF_LUA_STATE_TOP) + Offsets::SIZEOF_LUA_TVALUE;
+}
 
 namespace {
 using FrameScript_RegisterFunction_t = void(__fastcall *)(const char *name, CFunction func);
@@ -135,18 +177,11 @@ void *State() {
     return Game::Read<void *>(Offsets::VAR_LUA_STATE);
 }
 
-namespace {
-using FrameScriptPushObject_t = void(__fastcall *)(void *L, int idx, int unused);
-using FrameScriptGetObject_t = void *(__fastcall *)(void *L, int idx);
-} // namespace
-
 void *ResolveObject(void *L, int idx) {
-    auto PushObject = reinterpret_cast<FrameScriptPushObject_t>(
-        Offsets::FUN_FRAMESCRIPT_PUSH_OBJECT);
-    auto GetObject = reinterpret_cast<FrameScriptGetObject_t>(
-        Offsets::FUN_FRAMESCRIPT_GET_OBJECT);
-    PushObject(L, idx, 0);
-    void *result = GetObject(L, -1);
+    // The Set* method prologue's own path: the frame table's [0] is the
+    // lightuserdata CFrameScriptObject *.
+    RawGetI(L, idx, 0);
+    void *result = ToUserdata(L, -1);
     SetTop(L, -2);
     return result;
 }
@@ -174,6 +209,48 @@ const char *ObjectName(void *object) {
     using GetName_t = const char *(__thiscall *)(void *);
     const void *vtable = Game::Read<const void *>(object, 0);
     return Game::Read<GetName_t>(vtable, Offsets::VTBL_SCRIPTOBJECT_GET_NAME)(object);
+}
+
+const char *FrameObjectType(void *frame) {
+    using GetObjectType_t = const char *(__thiscall *)(void *);
+    const void *vtable = Game::Read<const void *>(frame, 0);
+    return Game::Read<GetObjectType_t>(vtable, Offsets::VTBL_FRAME_GET_OBJECT_TYPE)(frame);
+}
+
+void FormatClientMethodError(char (&out)[kClientErrorSize], const char *name, const char *fn,
+                             const char *message) {
+    if (name != nullptr)
+        std::snprintf(out, sizeof out, "%s:%s(): %s", name, fn, message);
+    else
+        std::snprintf(out, sizeof out, "%s(): %s", fn, message);
+}
+
+void RaiseClientMethodError(void *L, const char *name, const char *fn, const char *message) {
+    char text[kClientErrorSize];
+    FormatClientMethodError(text, name, fn, message);
+    Error(L, "%s", text);
+}
+
+void FormatClientPendingError(char (&out)[kClientErrorSize], const char *name, const char *fn,
+                              const char *message) {
+    // Only the first 199 characters of the result survive, so the pending
+    // text needs no more room than that.
+    char pending[kClientErrorSize];
+    const char *taint = Game::Read<const char *>(Offsets::VAR_FRAMESCRIPT_EXEC_CONTEXT);
+    if (taint != nullptr)
+        std::snprintf(pending, sizeof pending, "%s\nLua Taint: %s", message, taint);
+    else
+        std::snprintf(pending, sizeof pending, "%s\nNo Lua Taint", message);
+    if (fn == nullptr)
+        std::snprintf(out, sizeof out, "%s", pending);
+    else
+        FormatClientMethodError(out, name, fn, pending);
+}
+
+void RaiseClientPendingError(void *L, const char *name, const char *fn, const char *message) {
+    char text[kClientErrorSize];
+    FormatClientPendingError(text, name, fn, message);
+    Error(L, "%s", text);
 }
 
 const char *ObjectDisplayName(void *object) {
@@ -221,6 +298,14 @@ int FrameScriptTypeId(uintptr_t typeIdVar) {
         typeId = counter;
     }
     return typeId;
+}
+
+int PushErrorHandler(void *L) {
+    const int ref = Read<int>(static_cast<uintptr_t>(Offsets::VAR_FRAMESCRIPT_ERROR_HANDLER_REF));
+    if (ref <= 0)
+        return 0;
+    RawGetI(L, REGISTRY_INDEX, ref);
+    return GetTop(L);
 }
 
 bool IsA(void *object, uintptr_t typeIdVar) {
@@ -457,6 +542,14 @@ void RegisterConstants(const char *sub, ArrayRef<EnumIntegerEntry> entries,
         Api::Documentation::RecordConstants(sub, entries, docSystem);
 }
 
+double GetFieldNumber(void *L, int index, const char *key, double fallback) {
+    PushString(L, key);
+    GetTable(L, index);
+    const double value = IsNumber(L, -1) ? ToNumber(L, -1) : fallback;
+    SetTop(L, -2);
+    return value;
+}
+
 void SetFieldNumber(void *L, const char *key, double value) {
     PushString(L, key);
     PushNumber(L, value);
@@ -514,25 +607,15 @@ bool CallGlobalString(void *L, const char *name, const char *arg) {
     return called;
 }
 
-void PushLocalizedString(void *L, const char *globalName, const char *fallback) {
-    PushString(L, globalName);
-    GetTable(L, GLOBALS_INDEX);
-    if (Type(L, -1) != TYPE_STRING) {
-        // Replace the non-string at top with the fallback so callers
-        // always see exactly one string at -1.
-        SetTop(L, GetTop(L) - 1);
-        PushString(L, fallback);
-    }
+const char *GlobalText(const char *name) {
+    using GetText_t = const char *(__fastcall *)(const char *name, int count, int gender);
+    return reinterpret_cast<GetText_t>(static_cast<uintptr_t>(Offsets::FUN_FRAMESCRIPT_GET_TEXT))(
+        name, -1, 0);
 }
 
-void PushLocalizedFormatInt(void *L, const char *globalName,
-                            const char *fallback, int n) {
-    // Resolve `string.format` from _G.
-    PushString(L, "format");
-    GetTable(L, GLOBALS_INDEX);
-    PushLocalizedString(L, globalName, fallback);
-    PushNumber(L, static_cast<double>(n));
-    Call(L, 2, 1);                // format(fmt, n) → string
+const char *GlobalTextOr(const char *name, const char *fallback) {
+    const char *text = GlobalText(name);
+    return *text != '\0' ? text : fallback;
 }
 } // namespace Lua
 
@@ -559,64 +642,83 @@ void(__cdecl *const Printf)(const char *format, ...) =
 } // namespace Console
 
 namespace {
-ModuleAutoRegister *g_moduleHead = nullptr;
-GlueModuleAutoRegister *g_glueModuleHead = nullptr;
 HookAutoRegister *g_hookHead = nullptr;
-ReloadAutoRegister *g_reloadHead = nullptr;
 } // namespace
-
-ModuleAutoRegister::ModuleAutoRegister(Fn f) : fn(f), next(g_moduleHead) {
-    g_moduleHead = this;
-}
 
 void RunModuleRegistrations() {
     Api::Documentation::BeginPass(Api::Documentation::ENV_GAME);
-    for (auto *node = g_moduleHead; node != nullptr; node = node->next)
+    for (auto *node = ModuleAutoRegister::head; node != nullptr; node = node->next)
         node->fn();
     Api::Documentation::EndPass();
-}
-
-GlueModuleAutoRegister::GlueModuleAutoRegister(Fn f)
-    : fn(f), next(g_glueModuleHead) {
-    g_glueModuleHead = this;
 }
 
 void RunGlueModuleRegistrations() {
     Api::Documentation::BeginPass(Api::Documentation::ENV_GLUE);
-    for (auto *node = g_glueModuleHead; node != nullptr; node = node->next)
+    for (auto *node = GlueModuleAutoRegister::head; node != nullptr; node = node->next)
         node->fn();
     Api::Documentation::EndPass();
 }
 
-ReloadAutoRegister::ReloadAutoRegister(Fn f) : fn(f), next(g_reloadHead) {
-    g_reloadHead = this;
-}
-
 void RunReloadCleanups() {
-    for (auto *node = g_reloadHead; node != nullptr; node = node->next)
+    for (auto *node = ReloadAutoRegister::head; node != nullptr; node = node->next)
         node->fn();
 }
 
-HookAutoRegister::HookAutoRegister(uintptr_t target, void *hook, void **original)
-    : target(target), hook(hook), original(original), next(g_hookHead) {
+void RunGlueBootCleanups() {
+    for (auto *node = GlueBootAutoRegister::head; node != nullptr; node = node->next)
+        node->fn();
+}
+
+HookAutoRegister::HookAutoRegister(uintptr_t target, void *hook, void **original,
+                                   const char *file, int line)
+    : target(target), hook(hook), original(original), file(file), line(line),
+      next(g_hookHead) {
     g_hookHead = this;
 }
+
+namespace {
+
+// `path` from its `src` directory on (`text/InlineTexture.cpp`), or `path`
+// itself when it has none.
+const char *SourceRelativePath(const char *path) {
+    const char *rel = path;
+    for (const char *p = path; *p != '\0'; ++p)
+        if ((p[0] == '\\' || p[0] == '/') && p[1] == 's' && p[2] == 'r' && p[3] == 'c' &&
+            (p[4] == '\\' || p[4] == '/'))
+            rel = p + 5;
+    return rel;
+}
+
+void LogHookFailure(const char *step, const HookAutoRegister &node, MH_STATUS status) {
+    Debug::Log::Printf("[install] %s(0x%08X) failed: %s, registered at %s:%d. "
+                       "No ClassicAPI hook was enabled.",
+                       step, static_cast<unsigned>(node.target), MH_StatusToString(status),
+                       SourceRelativePath(node.file), node.line);
+}
+
+} // namespace
 
 bool RunHookRegistrations() {
     for (auto *node = g_hookHead; node != nullptr; node = node->next) {
         auto *targetPtr = reinterpret_cast<LPVOID>(node->target);
         // A hook must wrap the engine's body, not wow_turbo's reimplementation.
         Compat::WowTurbo::Reclaim(node->target);
-        if (MH_CreateHook(targetPtr, node->hook,
-                          reinterpret_cast<LPVOID *>(node->original)) != MH_OK)
+        MH_STATUS status =
+            MH_CreateHook(targetPtr, node->hook, reinterpret_cast<LPVOID *>(node->original));
+        if (status != MH_OK) {
+            LogHookFailure("MH_CreateHook", *node, status);
             return false;
+        }
         // Queue, don't enable. The caller (InstallHooks) applies every
         // queued hook with a single MH_ApplyQueued, so all ~90 hooks share
         // ONE thread-freeze instead of one freeze per hook. This is the
         // difference that keeps install cheap on machines whose security
         // stack intercepts SuspendThread / VirtualProtect per call.
-        if (MH_QueueEnableHook(targetPtr) != MH_OK)
+        status = MH_QueueEnableHook(targetPtr);
+        if (status != MH_OK) {
+            LogHookFailure("MH_QueueEnableHook", *node, status);
             return false;
+        }
     }
     return true;
 }

@@ -44,6 +44,8 @@
 #include "friendlist/FriendList.h"
 #include "object/Resolve.h"
 #include "unit/Identity.h"
+#include "unit/Relation.h"
+#include "unit/SelectionColor.h"
 
 #include <cstdint>
 
@@ -89,12 +91,6 @@ constexpr Type kReactionTypes[8] = {Hostile, Hostile,  Unfriendly, Neutral,
 
 // --- the ladder -------------------------------------------------------------
 
-bool CanAttack(void *attacker, void *target) {
-    using Fn = bool(__thiscall *)(void *attacker, void *target);
-    return reinterpret_cast<Fn>(static_cast<uintptr_t>(Offsets::FUN_UNIT_CAN_ATTACK))(attacker,
-                                                                                      target);
-}
-
 bool IsPartyMember(uint64_t guid) {
     using Fn = int(__fastcall *)(const uint64_t *guid);
     return reinterpret_cast<Fn>(static_cast<uintptr_t>(Offsets::FUN_PARTY_IS_MEMBER))(&guid) != 0;
@@ -138,7 +134,7 @@ Type ForGuid(uint64_t guid, bool extended) {
     if (unit == nullptr || viewer == nullptr)
         return RemoteType(guid, extended);
 
-    const uint8_t *fields = Game::Read<const uint8_t *>(unit, Offsets::OFF_UNIT_DESCRIPTOR);
+    const uint8_t *fields = Object::Fields(unit);
     if (fields == nullptr)
         return RemoteType(guid, extended);
     const uint32_t flags = Game::Read<uint32_t>(fields, Offsets::OFF_UNIT_FIELD_FLAGS);
@@ -146,15 +142,13 @@ Type ForGuid(uint64_t guid, bool extended) {
     if ((flags & Offsets::UNIT_FLAG_PLAYER_CONTROLLED) == 0) {
         if (extended && Game::Read<int32_t>(fields, Offsets::OFF_UNIT_FIELD_HEALTH) < 1)
             return Dead;
-        using Reaction = int(__thiscall *)(void *unit, void *other);
-        const int reaction = reinterpret_cast<Reaction>(
-            static_cast<uintptr_t>(Offsets::FUN_UNIT_REACTION))(unit, viewer);
+        const int reaction = ::Unit::Relation::Reaction(unit, viewer);
         return kReactionTypes[reaction & 7];
     }
 
-    if (CanAttack(unit, viewer))
-        return CanAttack(viewer, unit) ? Hostile : PlayerType(extended);
-    if (CanAttack(viewer, unit))
+    if (::Unit::Relation::CanAttack(unit, viewer))
+        return ::Unit::Relation::CanAttack(viewer, unit) ? Hostile : PlayerType(extended);
+    if (::Unit::Relation::CanAttack(viewer, unit))
         return Neutral;
 
     using IsPvp = bool(__thiscall *)(void *unit);
@@ -162,7 +156,7 @@ Type ForGuid(uint64_t guid, bool extended) {
         reinterpret_cast<IsPvp>(static_cast<uintptr_t>(Offsets::FUN_UNIT_IS_PVP_UI))(unit);
     // The engine skips the party test for the player itself; IsMember counts it.
     Type type;
-    if (extended && guid != Unit::Identity::GuidForObject(viewer) && GroupType(guid, pvp, &type))
+    if (extended && guid != ::Object::Guid(viewer) && GroupType(guid, pvp, &type))
         return type;
     return pvp ? Friendly : PlayerType(extended);
 }
@@ -170,7 +164,7 @@ Type ForGuid(uint64_t guid, bool extended) {
 // --- the engine's ladder: the friend rung -----------------------------------
 
 uint32_t ExitColor(const void *unit, uintptr_t engineColor) {
-    if (FriendList::IsGuidFriend(Unit::Identity::GuidForObject(unit)))
+    if (FriendList::IsGuidFriend(::Object::Guid(unit)))
         return kColors[Friend];
     return Game::Read<uint32_t>(engineColor);
 }
@@ -205,18 +199,13 @@ __declspec(naked) void UnflaggedExitThunk() {
     }
 }
 
-int g_friendListUpdateId = -1;
-
-bool OnSignal(int eventID) {
-    if (g_friendListUpdateId < 0)
-        g_friendListUpdateId = Event::Custom::LookupByName("FRIENDLIST_UPDATE");
-    if (eventID == g_friendListUpdateId)
-        reinterpret_cast<void(__cdecl *)()>(
-            static_cast<uintptr_t>(Offsets::FUN_PLAYER_NAME_MARK_ALL_COLOR_DIRTY))();
-    return false;
+void OnFriendListUpdate() {
+    reinterpret_cast<void(__cdecl *)()>(
+        static_cast<uintptr_t>(Offsets::FUN_PLAYER_NAME_MARK_ALL_COLOR_DIRTY))();
 }
 
-const Event::SignalHook::AutoSubscribe _friendListUpdate{&OnSignal};
+const Event::SignalHook::AutoObserve _friendListUpdate{Offsets::EVENT_FRIENDLIST_UPDATE,
+                                                       &OnFriendListUpdate};
 
 // --- Lua ----------------------------------------------------------------------
 
@@ -291,5 +280,11 @@ void Register() {
 const Game::ModuleAutoRegister _autoreg{&Register};
 
 } // namespace
+
+int TypeOf(uint64_t guid, bool extended) { return ForGuid(guid, extended); }
+
+uint32_t Color(int type) {
+    return type >= 0 && type < static_cast<int>(sizeof kColors / sizeof kColors[0]) ? kColors[type] : kColors[Neutral];
+}
 
 } // namespace Unit::SelectionColor

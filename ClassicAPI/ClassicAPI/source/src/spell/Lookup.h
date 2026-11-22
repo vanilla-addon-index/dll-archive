@@ -22,6 +22,17 @@ namespace Spell::Lookup {
 // always invalid.
 const uint8_t *RecordForID(int spellID);
 
+// The spell's name / rank text ("Rank 3") in the client's locale, or nullptr
+// for a null record and for an empty string (`DBC::LocalizedString`).
+const char *Name(const uint8_t *spellRecord);
+const char *Rank(const uint8_t *spellRecord);
+
+// The spell's duration in ms for the local player as caster, through the
+// engine's own helper (FUN_GET_SPELL_DURATION: base + per-level, capped at
+// the row's max, then the player's duration SpellMods when `applyMods`).
+// Negative for an infinite duration, as the engine returns it.
+int DurationMs(const uint8_t *spellRecord, bool applyMods);
+
 // True if `spellRecord`'s SpellFamilyName equals `family` and its
 // SpellFamilyFlags overlap `flagMask` — the client-side form of the server's
 // `SpellEntry::IsFitToFamily<FAMILY, FLAG>()`. `flagMask` must be non-zero
@@ -34,6 +45,16 @@ bool IsFitToFamily(const uint8_t *spellRecord, uint32_t family,
 // Whether one of the spell's three effects is `effect` — 4.3.4's
 // SpellHasEffect. False for a null record.
 bool HasEffect(const uint8_t *spellRecord, int effect);
+
+// The player's (or, with `pet`, the pet's) cast time for `spellID` in ms,
+// talents and gear included (FUN_GET_CAST_TIME, the engine's cast bar and
+// tooltip source). `allowNegative` false clamps a negative result to 0.
+int CastTimeMs(int spellID, bool pet, bool allowNegative);
+
+// The player's (or the pet's) power cost for `spellID` in stored units (rage
+// in tenths), cost mods folded in (FUN_GET_SPELL_COST); -1 with no caster or
+// a bad spell.
+int32_t PowerCost(int spellID, bool pet);
 
 // The index (0..2) of the first of the spell's three effects that applies
 // the aura `aura` (EffectApplyAuraName), or -1 when none does or the record
@@ -55,6 +76,27 @@ bool HasAuraEffect(const uint8_t *spellRecord, int aura);
 //   - "spell" or anything-not-pet  → 0 (player)
 //   - "pet"                          → 1 (pet)
 int SpellbookSlotToID(int slot1Based, int bookType);
+
+// `bookType`'s spellbook array (0 player, 1 pet) and its populated slot
+// count (capped at SPELLBOOK_MAX_SLOTS). Slots at or past the count are not
+// part of the book: the engine's own walks (FUN_004B3A10) stop there.
+const int *BookArray(int bookType);
+int BookCount(int bookType);
+
+// Calls `fn(slot0, spellID)` for each populated slot of `bookType`'s book in
+// slot order (a spell's ranks ascend), until `fn` returns false. Skips 0.
+template <class F> void ForEachBookSpell(int bookType, F fn) {
+    const int *book = BookArray(bookType);
+    const int count = BookCount(bookType);
+    for (int i = 0; i < count; ++i)
+        if (book[i] > 0 && !fn(i, book[i]))
+            return;
+}
+
+// The 1.12 `bookType` string at Lua stack `idx` → the engine bookType above:
+// 1 when it is "pet", case-insensitive and whole (the SStrCmpI test in the
+// engine's FUN_READ_BOOK_SLOT_ARGS); 0 for any other value or no argument.
+int BookTypeArg(void *L, int idx);
 
 // Modern `Enum.SpellBookSpellBank` argument at Lua stack `idx` → the engine
 // bookType above. `1` (Pet) selects the pet book; a missing arg, a
@@ -85,32 +127,60 @@ int FindSpellbookSlot(int spellID, int *outBookType);
 // fallback to the base icon when the active one is 0.
 const char *IconPath(const uint8_t *spellRecord, bool active);
 
-// Resolves a spell NAME to a spellID against the player's (then pet's)
-// spellbook — the same scope retail's `GetSpellInfo(name)` uses. The
-// match is exact and case-sensitive against the current locale's name
-// field (matching retail and ShaguTweaks' `libspell`). When a spell has
-// several ranks in the book, the highest rank is returned (the spellbook
-// arrays list a spell's ranks in ascending order, so the last match
-// wins). Returns 0 for a null/empty name or one the player doesn't know.
-int SpellNameToID(const char *name);
+// The item the spell makes: EffectItemType[0] when effect 0 is CREATE_ITEM,
+// else 0. This is the test 3.3.5's GetTrainerServiceItemLink (0x00596290) and
+// 4.3.4's IsDressableItem (0x008DA910) make. 1.12's GetTradeSkillIcon
+// (0x004FDAE0) reads EffectItemType[0] with no effect test, which holds only
+// for recipes: other spells keep spell-mod class masks there (175 Temp
+// APPLY_AURA spells carry 1, 4, 16, …). For every SPELL_ATTR_TRADESPELL
+// spell in Spell.dbc the two reads agree.
+uint32_t CreatedItemID(const uint8_t *spellRecord);
 
-// Resolves a 0-based UI slot into the recipe's spellID. Used by the
-// tradeskill, craft and trainer windows — they share the same storage shape:
-// `[entriesVar]` is a pointer to a heap-allocated array of recipe-
-// entry pointers, with the entry's first u32 holding the spellID.
+// True when the spell's icon is the placeholder SpellIcon row 1,
+// `Interface\Icons\Temp`.
+bool HasPlaceholderIcon(const uint8_t *spellRecord);
+
+// For a spell with the placeholder icon that makes an item
+// (`CreatedItemID`): that item's icon, the icon the engine's tradeskill
+// list gives the recipe (GetTradeSkillIcon). nullptr for any other spell,
+// and for an item not yet in the item cache, which is then asked for so a
+// later call has its icon. The path lives in a static buffer that the next
+// call overwrites, so push or copy the result at once.
+const char *CreatedItemIconPath(const uint8_t *spellRecord);
+
+// The icon shown for the spell. The spellbook's getter (0x004B3F50) by
+// record: Attack gives the main-hand weapon's icon (or the form's, or
+// Spell-Reset); a ranged auto-repeat spell gives the ranged weapon's icon
+// when one is equipped. Then a placeholder-icon spell that makes an item
+// gives `CreatedItemIconPath`. Every other spell gives
+// `IconPath(record, false)`. The weapon and item paths live in static
+// buffers that the next call overwrites, so push or copy the result at once.
+const char *DisplayIconPath(const uint8_t *spellRecord);
+
+// Resolves a Lua row index (1-based, as a script passes it) into the
+// recipe's spellID. Used by the tradeskill, craft and trainer windows — they
+// share the same storage shape: `[entriesVar]` is a pointer to a
+// heap-allocated array of recipe-entry pointers, with the entry's first u32
+// holding the spellID. Pass `entriesVar` + `countVar` matching the UI
+// surface (`VAR_TRADESKILL_*`, `VAR_CRAFT_*` or `VAR_TRAINER_SERVICE*`).
 //
-// Pass `entriesVar` + `countVar` matching the UI surface
-// (`VAR_TRADESKILL_*`, `VAR_CRAFT_*` or `VAR_TRAINER_SERVICE*`). Returns 0 if the UI is
-// closed, the index is OOR, the entry slot is null, or the entry's
-// spellID is 0.
-int RecipeSlotSpellID(uintptr_t entriesVar, uintptr_t countVar, int slotIndex0);
+// The index follows the engine's row getters' rule: it is truncated, 1 is
+// subtracted and the result is compared unsigned against the count
+// (GetTradeSkillItemLink 0x004FF410: __ftol, dec, `jnc`), so only an index
+// that truncates into [1, count] passes. Compared as a double first:
+// casting NaN or an out-of-range double to an integer is undefined in C++.
+// Returns 0 if the UI is closed, the index is out of range, the entry slot
+// is null, or the entry's spellID is 0.
+int RecipeRowSpellID(uintptr_t entriesVar, uintptr_t countVar, double index1);
 
 // Walks the recipe's reagent itemID array at
 // `spellRecord + OFF_SPELL_REAGENT_ID` and returns the itemID
-// of the Nth (1-based) non-zero reagent. Returns 0 if the spell
-// record is null, the reagent index is < 1, or we hit a 0 slot
-// before reaching N — matching the engine's
-// `Script_GetTradeSkillReagentItemLink` bail behavior.
-int NthRecipeReagentItemID(const uint8_t *spellRecord, int reagentIndex1);
+// of the Nth (1-based) non-zero reagent, N being the Lua number
+// `reagentIndex1` truncated. Returns 0 if the spell record is null, the
+// index does not truncate into [1, SPELL_RECIPE_MAX_REAGENTS], or we hit a
+// 0 slot before reaching N — matching the engine's
+// `Script_GetTradeSkillReagentItemLink` bail behavior. Compared as a double
+// first, as RecipeRowSpellID does.
+int NthRecipeReagentItemID(const uint8_t *spellRecord, double reagentIndex1);
 
 } // namespace Spell::Lookup

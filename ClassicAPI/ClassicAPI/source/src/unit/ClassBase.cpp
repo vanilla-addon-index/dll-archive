@@ -12,6 +12,7 @@
 #include "Offsets.h"
 #include "dbc/Names.h"
 #include "unit/Identity.h"
+#include "object/Resolve.h"
 
 #include <cstdint>
 
@@ -59,9 +60,7 @@ int __fastcall Script_UnitClassBase(void *L) {
         classByte = Game::Read<uint8_t>(Offsets::VAR_PLAYER_CLASS_BYTE);
     } else if (auto *unit =
                    static_cast<const uint8_t *>(Game::ResolveUnitToken(token))) {
-        auto *desc = Game::Read<const uint8_t *>(unit, Offsets::OFF_UNIT_DESCRIPTOR);
-        if (desc != nullptr)
-            classByte = *(desc + Offsets::OFF_UNIT_DESCRIPTOR_CLASS_BYTE);
+        classByte = Unit::Identity::Class(Object::Fields(unit));
     } else {
         // No object held: the NameCache, as UnitClass does. `token` already
         // passed the resolver, so GuidForToken won't raise.

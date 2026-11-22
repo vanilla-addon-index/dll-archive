@@ -32,20 +32,28 @@
 // The timestamp is 4.3.4's: the Unix time the log started plus the
 // milliseconds since, in seconds.
 
+#include "cache/Record.h"
 #include "combatlog/Entry.h"
 
 #include "Game.h"
+#include "combatlog/Deaths.h"
+#include "combatlog/Encounter.h"
 #include "combatlog/File.h"
 #include "combatlog/History.h"
+#include "damagemeter/Live.h"
 #include "Offsets.h"
+#include "event/Callback.h"
 #include "event/Custom.h"
+#include "group/Roster.h"
 #include "guid/Guid.h"
 #include "object/Resolve.h"
 #include "spell/Lookup.h"
 #include "time/Clock.h"
 #include "unit/Focus.h"
 #include "unit/Identity.h"
+#include "unit/RaidTarget.h"
 #include "unit/Power.h"
+#include "unit/Relation.h"
 
 #include <ctime>
 
@@ -111,35 +119,20 @@ constexpr const char *kMissNames[MISS_COUNT] = {
     "EVADE", "IMMUNE", "IMMUNE", "DEFLECT", "ABSORB", "REFLECT",
 };
 
-constexpr const char *kEnvironmentalNames[] = {"FATIGUE", "DROWNING", "FALLING",
-                                               "LAVA",    "SLIME",    "FIRE"};
+// Retail's spelling, in the server's type order. Retail's combat log and
+// death recap string.upper() it before building ACTION_ENVIRONMENTAL_DAMAGE_*;
+// Era's log file writes the same names.
+constexpr const char *kEnvironmentalNames[] = {"Fatigue", "Drowning", "Falling",
+                                               "Lava",    "Slime",    "Fire"};
 
-// Spell.dbc Attributes bits 0x80 and 0x100: the 1.12 combat log's own
-// formatters drop these spells too (benilla-re objectlayer/combatlogmessages).
-constexpr uint32_t kHiddenAttributes = 0x180;
+// The 1.12 combat log's own formatters drop these spells too (benilla-re
+// objectlayer/combatlogmessages).
+constexpr uint32_t kHiddenAttributes =
+    Offsets::SPELL_ATTR_DO_NOT_DISPLAY | Offsets::SPELL_ATTR_DO_NOT_LOG;
 constexpr uint32_t kRangedAttributeEx3 = 0x8000;
 constexpr int kSchoolCount = 7;
 
-// COMBATLOG_OBJECT_* — 4.3.4's GetCombatLogObjectFlags.
-constexpr uint32_t AFFILIATION_MINE = 0x1;
-constexpr uint32_t AFFILIATION_PARTY = 0x2;
-constexpr uint32_t AFFILIATION_RAID = 0x4;
-constexpr uint32_t AFFILIATION_OUTSIDER = 0x8;
-constexpr uint32_t AFFILIATION_MASK = 0xF;
-constexpr uint32_t REACTION_FRIENDLY = 0x10;
-constexpr uint32_t REACTION_NEUTRAL = 0x20;
-constexpr uint32_t REACTION_HOSTILE = 0x40;
-constexpr uint32_t REACTION_MASK = 0xF0;
-constexpr uint32_t CONTROL_PLAYER = 0x100;
-constexpr uint32_t CONTROL_NPC = 0x200;
-constexpr uint32_t TYPE_PLAYER = 0x400;
-constexpr uint32_t TYPE_NPC = 0x800;
-constexpr uint32_t TYPE_PET = 0x1000;
-constexpr uint32_t TYPE_GUARDIAN = 0x2000;
-constexpr uint32_t TYPE_OBJECT = 0x4000;
-constexpr uint32_t TARGET = 0x10000;
-constexpr uint32_t FOCUS = 0x20000;
-constexpr uint32_t NONE = 0x80000000;
+using namespace ObjectFlag;
 
 uint32_t g_startTime = 0;
 uint32_t g_startTimeMs = 0;
@@ -159,73 +152,20 @@ bool IsPlayerGuid(uint64_t guid) {
            ((high & 0xF07FFFFF) != 0 || static_cast<uint32_t>(guid) != 0);
 }
 
-const uint8_t *Fields(const void *object) {
-    return object == nullptr ? nullptr
-                             : Game::Read<const uint8_t *>(object, Offsets::OFF_UNIT_DESCRIPTOR);
-}
-
 uint64_t ReadGuidField(const void *object, int offset) {
-    const uint8_t *fields = Fields(object);
+    const uint8_t *fields = Object::Fields(object);
     return fields == nullptr ? 0 : Game::Read<uint64_t>(fields, offset);
-}
-
-bool InParty(uint64_t guid) {
-    for (int i = 0; i < Offsets::PARTY_MAX_SLOTS; ++i) {
-        const uint64_t member =
-            Game::Read<uint64_t>(Offsets::VAR_PARTY_GUIDS + i * sizeof(uint64_t));
-        if (member != 0 && member == guid)
-            return true;
-    }
-    return false;
-}
-
-bool HasParty() {
-    for (int i = 0; i < Offsets::PARTY_MAX_SLOTS; ++i) {
-        if (Game::Read<uint64_t>(Offsets::VAR_PARTY_GUIDS + i * sizeof(uint64_t)) != 0)
-            return true;
-    }
-    return false;
-}
-
-bool InRaid(uint64_t guid) {
-    for (int i = 0; i < Offsets::RAID_MAX_SLOTS; ++i) {
-        const auto *member =
-            Game::Read<const uint8_t *>(Offsets::VAR_RAID_MEMBER_PTRS + i * sizeof(void *));
-        if (member != nullptr && Game::Read<uint64_t>(member, 0) == guid)
-            return true;
-    }
-    return false;
-}
-
-int Reaction(void *unit, void *other) {
-    using Reaction_t = int(__thiscall *)(void *unit, void *other);
-    return reinterpret_cast<Reaction_t>(static_cast<uintptr_t>(Offsets::FUN_UNIT_REACTION))(
-        unit, other);
 }
 
 uint32_t ObjectFlags(uint64_t guid) {
     if (guid == 0)
         return NONE;
-    const bool inRaid = Game::Read<int>(Offsets::VAR_RAID_MEMBER_COUNT) != 0;
-    const bool inGroup = inRaid || HasParty();
+    const bool inRaid = Group::Roster::RaidCount() != 0;
+    const bool inGroup = inRaid || Group::Roster::PartyCount() != 0;
     const uint64_t player = Unit::Identity::PlayerGuid();
 
-    uint64_t owner = guid;
+    const uint64_t owner = Controller(guid);
     void *unit = Object::ByGuid(Offsets::TYPEMASK_UNIT, guid);
-    if (unit != nullptr) {
-        const uint64_t controller = Unit::Identity::OwnerGuid(unit);
-        if (controller != 0)
-            owner = controller;
-    } else if (void *object = Object::ByGuid(Offsets::TYPEMASK_GAMEOBJECT, guid)) {
-        owner = ReadGuidField(object, Offsets::OFF_GAMEOBJECT_FIELD_CREATED_BY);
-    }
-    // A minion's minion answers to its master's controller (a totem's totem).
-    if (owner != guid && !IsPlayerGuid(owner)) {
-        void *ownerUnit = Object::ByGuid(Offsets::TYPEMASK_UNIT, owner);
-        const uint64_t controller = Unit::Identity::OwnerGuid(ownerUnit);
-        if (controller != 0)
-            owner = controller;
-    }
 
     // 4.3.4's tests read `(high & 0xF0F00000) == 0xF1300000` and the like,
     // which no GUID can pass; the types are the GUID prefixes (Guid::Classify).
@@ -252,7 +192,7 @@ uint32_t ObjectFlags(uint64_t guid) {
         bool hostile = false;
         void *playerUnit = const_cast<uint8_t *>(Unit::Identity::PlayerObject());
         if (unit != nullptr && playerUnit != nullptr) {
-            const int reaction = Reaction(unit, playerUnit);
+            const int reaction = ::Unit::Relation::Reaction(unit, playerUnit);
             if (reaction >= 4) {
                 flags |= REACTION_FRIENDLY;
             } else if (reaction <= 1) {
@@ -261,9 +201,9 @@ uint32_t ObjectFlags(uint64_t guid) {
             }
         }
         if (!hostile && inGroup) {
-            if (InParty(owner))
+            if (Group::Roster::IsPartyMember(owner))
                 flags |= AFFILIATION_PARTY | REACTION_FRIENDLY;
-            else if (inRaid && InRaid(owner))
+            else if (inRaid && Group::Roster::IsRaidMember(owner))
                 flags |= AFFILIATION_RAID | REACTION_FRIENDLY;
         }
         if ((flags & AFFILIATION_MASK) == 0)
@@ -285,64 +225,54 @@ uint32_t ObjectFlags(uint64_t guid) {
 uint32_t RaidFlags(uint64_t guid) {
     if (guid == 0)
         return NONE;
-    if (Game::Read<int>(Offsets::VAR_RAID_MEMBER_COUNT) == 0 && !HasParty())
+    if (Group::Roster::RaidCount() == 0 && Group::Roster::PartyCount() == 0)
         return 0;
-    for (int i = 0; i < 8; ++i) {
-        if (Game::Read<uint64_t>(Offsets::VAR_RAID_TARGET_GUIDS + i * sizeof(uint64_t)) == guid)
-            return 1u << i;
-    }
-    return 0;
+    const int mark = Unit::RaidTarget::MarkOf(guid);
+    return mark != 0 ? 1u << (mark - 1) : 0;
 }
 
-using GetText_t = const char *(__fastcall *)(const char *name, int edx, int gender);
-using CacheRecord_t = const uint8_t *(__thiscall *)(void *cache, uint32_t id, const uint64_t *guid,
-                                                    void *callback, void *userData, char dedup);
-using NameCache_t = const uint8_t *(__thiscall *)(void *cache, uint32_t lo, uint32_t hi,
-                                                  const uint64_t *guid, void *callback,
-                                                  void *userData, char dedup);
 using GameObjectName_t = const char *(__fastcall *)(void *object);
 
 void *QueryDone() { return reinterpret_cast<void *>(Offsets::FUN_COMBAT_LOG_NAME_QUERY_DONE); }
 
-// An item's name from the item cache, asked so a miss sends the query.
+// An item's name from the item cache. A lookup only, as in the namer: its item
+// branch passes a null callback (0x006264E0), so a miss sends no query and the
+// name falls back to UNKNOWNOBJECT. The item is an object in view, and the
+// client has already asked for its record.
 const char *ItemName(uint32_t itemId) {
-    const uint64_t none = 0;
-    const uint8_t *rec = reinterpret_cast<CacheRecord_t>(Offsets::FUN_DBCACHE_ITEMSTATS_GET_RECORD)(
-        reinterpret_cast<void *>(Offsets::VAR_ITEMDB_CACHE), itemId, &none, nullptr, nullptr, 0);
+    const uint8_t *rec = Cache::Record::Peek(Offsets::FUN_DBCACHE_ITEMSTATS_GET_RECORD,
+                                             Offsets::VAR_ITEMDB_CACHE, itemId);
     return rec != nullptr ? Game::Read<const char *>(rec, Offsets::OFF_ITEMSTATS_NAME) : nullptr;
 }
 
 // The combat log namer's steps (0x006264E0): the object's own name (a unit,
 // a game object, an item's record), else a player's from the name cache or a
-// creature's from the creature cache, each asked so a miss sends the query.
+// creature's from the creature cache. Those two pass the namer's query-done
+// callback (0x00626620), so a miss sends the query.
 // The creature's entry is the GUID's (Guid::CreatureEntry): the namer takes
 // the high dword's low word, which is not the entry on this server's GUIDs.
 const char *ObjectName(uint64_t guid) {
     if (void *object = Object::ByGuid(Offsets::TYPEMASK_OBJECT, guid)) {
-        const auto *fields = Game::Read<const uint8_t *>(object, Offsets::OFF_UNIT_GUID_PTR);
-        const uint32_t type =
-            fields != nullptr ? Game::Read<uint32_t>(fields, Offsets::OFF_OBJECT_FIELD_TYPE) : 0;
+        const uint32_t type = ::Object::Type(object);
         if (type & Offsets::TYPEMASK_UNIT)
             return Unit::Identity::NameForUnit(object);
         if (type & Offsets::TYPEMASK_GAMEOBJECT)
             return reinterpret_cast<GameObjectName_t>(Offsets::FUN_GAMEOBJECT_GET_NAME)(object);
         if (type & Offsets::TYPEMASK_ITEM)
-            return ItemName(Game::Read<uint32_t>(fields, Offsets::OFF_OBJECT_FIELD_ENTRY));
+            return ItemName(::Object::Entry(object));
         return nullptr;
     }
     if (Guid::IsPlayer(guid)) {
-        const uint8_t *rec = reinterpret_cast<NameCache_t>(Offsets::FUN_PLAYER_INFO_LOOKUP)(
-            reinterpret_cast<void *>(Offsets::VAR_PLAYER_NAME_CACHE), static_cast<uint32_t>(guid),
-            static_cast<uint32_t>(guid >> 32), &guid, QueryDone(), nullptr, 0);
+        const uint8_t *rec = Cache::Record::GetPlayer(guid, &guid, QueryDone(), nullptr, false);
         return rec != nullptr
                    ? reinterpret_cast<const char *>(rec + Offsets::OFF_PLAYER_INFO_NAME)
                    : nullptr;
     }
     const uint32_t entry = Guid::CreatureEntry(guid);
     if (entry != 0) {
-        const uint8_t *rec = reinterpret_cast<CacheRecord_t>(Offsets::FUN_CREATURE_GET_RECORD)(
-            reinterpret_cast<void *>(Offsets::VAR_CREATURE_CACHE), entry, &guid, QueryDone(),
-            nullptr, 0);
+        const uint8_t *rec =
+            Cache::Record::Get(Offsets::FUN_CREATURE_GET_RECORD, Offsets::VAR_CREATURE_CACHE,
+                               entry, &guid, QueryDone(), nullptr, false);
         return rec != nullptr ? Game::Read<const char *>(rec, 0) : nullptr;
     }
     return nullptr;
@@ -351,7 +281,7 @@ const char *ObjectName(uint64_t guid) {
 void SetName(uint64_t guid, bool &named, std::string &name) {
     const char *n = ObjectName(guid);
     if (n == nullptr || *n == '\0') {
-        n = reinterpret_cast<GetText_t>(Offsets::FUN_FRAMESCRIPT_GET_TEXT)("UNKNOWNOBJECT", -1, 0);
+        n = Game::Lua::GlobalText("UNKNOWNOBJECT");
         if (n == nullptr || *n == '\0')
             n = "UKNOWNOBJECT"; // the namer's own last resort, spelling and all
     }
@@ -366,12 +296,6 @@ void PushNumberOrNil(void *L, int value) {
         Game::Lua::PushNil(L);
 }
 
-void PushFlag(void *L, bool value) {
-    if (value)
-        Game::Lua::PushNumber(L, 1.0);
-    else
-        Game::Lua::PushNil(L);
-}
 
 void PushName(void *L, bool named, const std::string &name) {
     if (named)
@@ -380,13 +304,16 @@ void PushName(void *L, bool named, const std::string &name) {
         Game::Lua::PushNil(L);
 }
 
+// The entry's Unix time in seconds, with the clock's milliseconds.
+double Timestamp(const Entry &e) {
+    return static_cast<double>(e.timeMs - g_startTimeMs) * 0.001 + static_cast<double>(g_startTime);
+}
+
 // CombatLogEntry::PushEvent, the blocks 1.12 fills.
 int Push(void *L, const Entry &e) {
     using namespace Game::Lua;
     char guid[Guid::STRING_SIZE];
-    const double timestamp =
-        static_cast<double>(e.timeMs - g_startTimeMs) * 0.001 + static_cast<double>(g_startTime);
-    PushNumber(L, timestamp);
+    PushNumber(L, Timestamp(e));
     PushString(L, Name(e.event));
     PushBool(L, e.hideCaster);
     PushString(L, Guid::FormatAsString(e.source, guid, sizeof guid));
@@ -402,11 +329,8 @@ int Push(void *L, const Entry &e) {
     if (e.spellPrefix) {
         const uint8_t *spell = SpellRecord(e.spellId);
         PushNumber(L, e.spellId);
-        const char *name = SpellName(spell);
-        if (name != nullptr)
-            PushString(L, name);
-        else
-            PushNil(L);
+        const char *name = Spell::Lookup::Name(spell);
+        PushString(L, name);
         PushNumber(L, spell != nullptr ? SpellSchoolMask(spell) : e.spellSchool);
         count += 3;
     }
@@ -420,7 +344,7 @@ int Push(void *L, const Entry &e) {
     }
     if (e.info & INFO_MISS) {
         PushString(L, MissName(e.v[0]));
-        PushFlag(L, e.offHand);
+        Game::Lua::PushFlag(L, e.offHand);
         count += 2;
     }
     if (e.info & INFO_ENVIRONMENTAL) {
@@ -434,10 +358,10 @@ int Push(void *L, const Entry &e) {
         PushNumberOrNil(L, e.v[5]);
         PushNumberOrNil(L, e.v[6]);
         PushNumberOrNil(L, e.v[4]);
-        PushFlag(L, e.critical);
-        PushFlag(L, e.glancing);
-        PushFlag(L, e.crushing);
-        PushFlag(L, e.offHand);
+        Game::Lua::PushFlag(L, e.critical);
+        Game::Lua::PushFlag(L, e.glancing);
+        Game::Lua::PushFlag(L, e.crushing);
+        Game::Lua::PushFlag(L, e.offHand);
         count += 10;
     }
     if (e.info & INFO_MISS_ABSORBED) {
@@ -456,12 +380,12 @@ int Push(void *L, const Entry &e) {
         PushNumber(L, e.v[0]);
         PushNumber(L, e.v[1]);
         PushNumber(L, e.v[2]);
-        PushFlag(L, e.critical);
+        Game::Lua::PushFlag(L, e.critical);
         count += 4;
     }
     if (e.info & INFO_ENERGIZE) {
         PushNumber(L, e.v[0]);
-        PushNumber(L, e.v[1]);
+        PushNumber(L, Unit::Power::TypeOfSlot(e.v[1]));
         if (e.v[2] < 0)
             PushNil(L);
         else
@@ -470,7 +394,7 @@ int Push(void *L, const Entry &e) {
     }
     if (e.info & INFO_DRAIN) {
         PushNumber(L, e.v[0]);
-        PushNumber(L, e.v[1]);
+        PushNumber(L, Unit::Power::TypeOfSlot(e.v[1]));
         PushNumberOrNil(L, e.v[2]);
         if (e.v[3] < 0)
             PushNil(L);
@@ -481,11 +405,8 @@ int Push(void *L, const Entry &e) {
     if (e.info & INFO_EXTRA_SPELL) {
         const uint8_t *extra = SpellRecord(e.v[0]);
         PushNumber(L, e.v[0]);
-        const char *name = SpellName(extra);
-        if (name != nullptr)
-            PushString(L, name);
-        else
-            PushNil(L);
+        const char *name = Spell::Lookup::Name(extra);
+        PushString(L, name);
         PushNumber(L, SpellSchoolMask(extra));
         count += 3;
     }
@@ -502,7 +423,41 @@ int Push(void *L, const Entry &e) {
         PushNumber(L, e.v[2]);
         ++count;
     }
+    if (e.info & INFO_DEATH) {
+        // recapID, unconsciousOnDeath (a number; Era's log compares it to 1).
+        // 1.12 has no unconscious death.
+        PushNumber(L, e.v[0]);
+        PushNumber(L, 0);
+        count += 2;
+    }
     return count;
+}
+
+// FUN_1414331b0's block for a unit: its GUID (nil, or "" for the target, when
+// there is none), its name when it has one, its flags.
+void SetUnitFields(void *L, const char *guidKey, const char *nameKey, const char *flagsKey,
+                   const char *raidFlagsKey, uint64_t guid, bool named, const std::string &name,
+                   uint32_t flags, uint32_t raidFlags, bool emptyGuid) {
+    using namespace Game::Lua;
+    char buf[Guid::STRING_SIZE];
+    if (guid != 0)
+        SetFieldString(L, guidKey, Guid::FormatAsString(guid, buf, sizeof buf));
+    else if (emptyGuid)
+        SetFieldString(L, guidKey, "");
+    if (named && !name.empty())
+        SetFieldString(L, nameKey, name.c_str());
+    SetFieldNumber(L, flagsKey, flags);
+    SetFieldNumber(L, raidFlagsKey, raidFlags);
+}
+
+// A spell's name and school mask as FUN_1414331b0 pairs them: no name and
+// school 0 when the spell has no record (1.12 keeps both in the one record).
+void SetSpellFields(void *L, const char *nameKey, const char *schoolKey, int spellId) {
+    const uint8_t *spell = SpellRecord(spellId);
+    const char *name = Spell::Lookup::Name(spell);
+    if (name != nullptr)
+        Game::Lua::SetFieldString(L, nameKey, name);
+    Game::Lua::SetFieldNumber(L, schoolKey, spell != nullptr ? SpellSchoolMask(spell) : 0);
 }
 
 const Game::Doc::Field kEventPayload[] = {
@@ -530,8 +485,11 @@ const Event::Custom::AutoReserve _unfiltered{"COMBAT_LOG_EVENT_UNFILTERED", &kUn
 void Send(const Entry &e) {
     const int filtered = _filtered.Slot();
     const int unfiltered = _unfiltered.Slot();
-    const bool toFiltered = Event::Custom::HasListeners(filtered);
-    const bool toUnfiltered = Event::Custom::HasListeners(unfiltered);
+    const bool toFiltered = Event::Custom::HasListeners(filtered) ||
+                            Event::Callback::HasCallbacks(Event::Callback::COMBAT_LOG_EVENT);
+    const bool toUnfiltered =
+        Event::Custom::HasListeners(unfiltered) ||
+        Event::Callback::HasCallbacks(Event::Callback::COMBAT_LOG_EVENT_UNFILTERED);
     if (!toFiltered && !toUnfiltered)
         return;
     void *L = Game::Lua::State();
@@ -541,10 +499,17 @@ void Send(const Entry &e) {
     const int count = Push(L, e);
     const Entry *outer = g_sending; // a handler's own action can log again
     g_sending = &e;
-    if (toFiltered && History::MatchesFilter(e))
+    // Frames first, then the event callbacks, which get only their owner and
+    // read the entry with CombatLogGetCurrentEventInfo (3.80.2 FUN_140bdcab0 /
+    // FUN_140bdcd40, the callbacks' nargs 1).
+    if (toFiltered && History::MatchesFilter(e)) {
         Event::Custom::FireValues(filtered, L, top + 1, count);
-    if (toUnfiltered)
+        Event::Callback::Fire(Event::Callback::COMBAT_LOG_EVENT, L, top + 1, 0);
+    }
+    if (toUnfiltered) {
         Event::Custom::FireValues(unfiltered, L, top + 1, count);
+        Event::Callback::Fire(Event::Callback::COMBAT_LOG_EVENT_UNFILTERED, L, top + 1, 0);
+    }
     g_sending = outer;
     Game::Lua::SetTop(L, top);
 }
@@ -587,21 +552,136 @@ const char *EnvironmentalName(int type) {
 
 int PushEvent(void *L, const Entry &entry) { return Push(L, entry); }
 
-const uint8_t *SpellRecord(int spellId) { return Spell::Lookup::RecordForID(spellId); }
-
-const char *SpellName(const uint8_t *spell) {
-    if (spell == nullptr)
-        return nullptr;
-    const int locale = Game::Read<int>(Offsets::VAR_LOCALE_INDEX);
-    const char *n = Game::Read<const char *>(spell, Offsets::OFF_SPELL_NAMES + locale * 4);
-    return (n == nullptr || *n == '\0') ? nullptr : n;
+void PushTable(void *L, const Entry &e) {
+    using namespace Game::Lua;
+    NewTable(L);
+    SetFieldNumber(L, "timestamp", Timestamp(e));
+    SetFieldString(L, "event", Name(e.event));
+    SetFieldBool(L, "hideCaster", e.hideCaster);
+    SetUnitFields(L, "sourceGUID", "sourceName", "sourceFlags", "sourceRaidFlags", e.source,
+                  e.sourceNamed, e.sourceName, e.sourceFlags, e.sourceRaidFlags, false);
+    SetUnitFields(L, "destGUID", "destName", "destFlags", "destRaidFlags", e.dest, e.destNamed,
+                  e.destName, e.destFlags, e.destRaidFlags, true);
+    if (e.spellId != 0) {
+        SetFieldNumber(L, "spellId", e.spellId);
+        SetSpellFields(L, "spellName", "spellSchool", e.spellId);
+    }
+    if (e.info & INFO_COUNT)
+        SetFieldNumber(L, "value", e.v[0]);
+    if (e.info & INFO_TEXT)
+        SetFieldString(L, "extraAmount", e.text.c_str());
+    if (e.info & INFO_MISS) {
+        SetFieldString(L, "missedReason", MissName(e.v[0]));
+        SetFieldBool(L, "missedOffhand", e.offHand);
+    }
+    if (e.info & INFO_ENVIRONMENTAL)
+        SetFieldString(L, "environmentalType", EnvironmentalName(e.v[0]));
+    if (e.info & INFO_DAMAGE) {
+        SetFieldNumber(L, "amount", e.v[1]);
+        SetFieldNumber(L, "overkill", e.v[2]);
+        SetFieldNumber(L, "school", e.v[3]);
+        if (e.v[5] != 0)
+            SetFieldNumber(L, "resisted", e.v[5]);
+        if (e.v[6] != 0)
+            SetFieldNumber(L, "blocked", e.v[6]);
+        if (e.v[4] != 0)
+            SetFieldNumber(L, "absorbed", e.v[4]);
+        SetFieldBool(L, "critical", e.critical);
+        SetFieldBool(L, "glancing", e.glancing);
+        SetFieldBool(L, "crushing", e.crushing);
+        SetFieldBool(L, "isOffHand", e.offHand);
+    }
+    if (e.info & INFO_MISS_ABSORBED)
+        SetFieldNumber(L, "absorbed", e.v[4]);
+    if (e.info & INFO_MISS_RESISTED)
+        SetFieldNumber(L, "extraResisted", e.v[5]);
+    if (e.info & INFO_MISS_BLOCKED)
+        SetFieldNumber(L, "extraBlocked", e.v[6]);
+    if (e.info & INFO_HEAL) {
+        SetFieldNumber(L, "amount", e.v[0]);
+        SetFieldNumber(L, "overheal", e.v[1]);
+        SetFieldNumber(L, "absorbed", e.v[2]);
+        SetFieldBool(L, "crit", e.critical);
+    }
+    if (e.info & INFO_ENERGIZE) {
+        // 3.80.2's overenergizeAmount has no 4.3.4 value.
+        SetFieldNumber(L, "amount", e.v[0]);
+        SetFieldNumber(L, "powerType", Unit::Power::TypeOfSlot(e.v[1]));
+        SetFieldNumber(L, "overenergizeAmount", 0);
+        if (e.v[2] >= 0)
+            SetFieldNumber(L, "alternatePowerType", e.v[2]);
+    }
+    if (e.info & INFO_DRAIN) {
+        SetFieldNumber(L, "amount", e.v[0]);
+        SetFieldNumber(L, "powerType", Unit::Power::TypeOfSlot(e.v[1]));
+        if (e.v[2] != 0)
+            SetFieldNumber(L, "extraAmount", e.v[2]);
+        if (e.v[3] >= 0)
+            SetFieldNumber(L, "alternatePowerType", e.v[3]);
+    }
+    if (e.info & INFO_EXTRA_SPELL) {
+        SetFieldNumber(L, "extraSpellID", e.v[0]);
+        // 3.80.2 keys the extra spell's name "extraSchoolName".
+        if (SpellRecord(e.v[0]) != nullptr)
+            SetSpellFields(L, "extraSchoolName", "extraSchool", e.v[0]);
+    }
+    if (e.info & INFO_ITEM) {
+        SetFieldNumber(L, "itemId", e.v[0]);
+        if (e.itemNamed)
+            SetFieldString(L, "itemName", e.itemName.c_str());
+    }
+    if (e.info & INFO_AURA_TYPE)
+        SetFieldString(L, "auraType", e.harmful ? "DEBUFF" : "BUFF");
+    if (e.info & INFO_AURA_AMOUNT)
+        SetFieldNumber(L, "amount", e.v[2]);
+    if (e.info & INFO_DEATH) {
+        SetFieldNumber(L, "recapID", e.v[0]);
+        SetFieldNumber(L, "unconscious", 0);
+    }
 }
+
+uint64_t Controller(uint64_t guid) {
+    uint64_t owner = guid;
+    if (void *unit = Object::ByGuid(Offsets::TYPEMASK_UNIT, guid)) {
+        const uint64_t controller = Unit::Identity::OwnerGuid(unit);
+        if (controller != 0)
+            owner = controller;
+    } else if (void *object = Object::ByGuid(Offsets::TYPEMASK_GAMEOBJECT, guid)) {
+        owner = ReadGuidField(object, Offsets::OFF_GAMEOBJECT_FIELD_CREATED_BY);
+    }
+    // A minion's minion answers to its master's controller (a totem's totem).
+    if (owner != guid && !IsPlayerGuid(owner)) {
+        void *ownerUnit = Object::ByGuid(Offsets::TYPEMASK_UNIT, owner);
+        const uint64_t controller = Unit::Identity::OwnerGuid(ownerUnit);
+        if (controller != 0)
+            owner = controller;
+    }
+    return owner;
+}
+
+std::string NameOf(uint64_t guid) {
+    bool named = false;
+    std::string name;
+    SetName(guid, named, name);
+    return name;
+}
+
+const uint8_t *SpellRecord(int spellId) { return Spell::Lookup::RecordForID(spellId); }
 
 bool Hidden(const uint8_t *spell) {
     return spell == nullptr ||
            (Game::Read<uint32_t>(spell, Offsets::OFF_SPELL_RECORD_ATTRIBUTES) & kHiddenAttributes) !=
                0 ||
-           SpellName(spell) == nullptr;
+           Spell::Lookup::Name(spell) == nullptr;
+}
+
+bool LogsAura(const uint8_t *spell) {
+    return !Hidden(spell) &&
+           (Game::Read<uint32_t>(spell, Offsets::OFF_SPELL_RECORD_ATTRIBUTES) & Offsets::SPELL_ATTR_PASSIVE) == 0;
+}
+
+bool LogsAuraStacks(const uint8_t *spell) {
+    return !Hidden(spell) && Game::Read<uint32_t>(spell, Offsets::OFF_SPELL_RECORD_STACK_AMOUNT) > 1;
 }
 
 bool Ranged(const uint8_t *spell) {
@@ -697,8 +777,11 @@ void Queue(Entry &e) {
         g_startTimeMs = e.timeMs;
     }
     History::Record(e);
+    Encounter::Observe(e);
+    DamageMeter::Live::Observe(e);
     File::Write(e);
     Send(e);
+    Deaths::Observe(e);
 }
 
 } // namespace CombatLog

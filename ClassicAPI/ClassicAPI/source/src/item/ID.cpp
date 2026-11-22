@@ -16,19 +16,24 @@
 #include "item/CGItem.h"
 #include "item/ID.h"
 #include "item/Location.h"
+#include "object/Resolve.h"
 
 #include <cstdint>
 
 namespace Item::ID {
 
 int FromCGItem(const uint8_t *item) {
-    if (item == nullptr)
-        return 0;
-    auto *instance = Item::InstanceBlock(item);
-    if (instance == nullptr)
-        return 0;
-    return static_cast<int>(*reinterpret_cast<const uint32_t *>(
-        instance + Offsets::OFF_INSTANCE_BLOCK_ITEM_ID));
+    return static_cast<int>(::Object::Entry(item));
+}
+
+const uint8_t *VisibleEntry(void *player, int slot0) {
+    using GetVisibleItem_t = const uint8_t *(__thiscall *)(void *unit, int slot);
+    return reinterpret_cast<GetVisibleItem_t>(Offsets::FUN_UNIT_GET_VISIBLE_ITEM)(player, slot0);
+}
+
+uint32_t Visible(void *player, int slot0) {
+    const uint8_t *entry = VisibleEntry(player, slot0);
+    return entry != nullptr ? Game::Read<uint32_t>(entry, Offsets::OFF_VISIBLE_ITEM_ITEM_ID) : 0;
 }
 
 static int __fastcall Script_GetItemID(void *L) {

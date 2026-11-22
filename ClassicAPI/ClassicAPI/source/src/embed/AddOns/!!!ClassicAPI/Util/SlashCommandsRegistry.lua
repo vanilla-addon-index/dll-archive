@@ -55,26 +55,20 @@ end
 -- at all, so it becomes the untargeted form of whatever verb ran.
 local NON_UNIT_TARGETS = { none = true, cursor = true };
 
--- `@unit` and `target=unit` accept a character name as well as a unit token
--- (`[target=Feral]`), and the engine's unit functions take only tokens.
--- Resolve once here so every command below hands them something they accept.
--- Returns nil for a name with nobody around to match it.
+-- `@unit` and `target=unit` take a unit token or the name of you, a group
+-- member or one of your pets (`[target=Feral]`), and the unit functions accept
+-- both as they are. They raise for anything else, which becomes nil here.
 local function SecureCmdTargetUnit(target)
 	if ( not target or target == "" or IsUnitToken(target) ) then
 		return target;
 	end
-	-- Keep the non-unit targets out of the by-name search, which matches on
-	-- the START of a name: `@none` would happily find a nearby Nonek.
-	if ( NON_UNIT_TARGETS[strlower(target)] ) then
-		return nil;
-	end
-	return UnitTokenFromName(target);
+	return nil;
 end
 
 -- One target normalization for every verb below: an empty target and `@none`
 -- become nil (no unit), a non-unit target keeps its own name, and anything
--- else has to resolve to a token. Returns `false` for a name with nobody
--- around to match it, which the callers treat as "do nothing".
+-- else has to be a unit the unit functions accept. Returns `false` for one
+-- they don't, which the callers treat as "do nothing".
 local function SecureCmdNormalizeTarget(target)
 	if ( not target or target == "" ) then
 		return nil;
@@ -108,23 +102,14 @@ function SecureCmdUseItem(name, bag, slot, target)
 	if ( not item ) then
 		return;
 	end
-	if ( target == "cursor" ) then
-		-- `@cursor` names a world position, so a ground-target item places
-		-- its effect there. An item with no ground effect is used normally.
-		C_Item.UseAtCursor(item);
-	elseif ( target == "player" ) then
-		-- `@player` drops a ground-target item at your own feet. Only your
-		-- own position is offered this way; aiming one at another unit is
-		-- not something you can do by hand either. An item with no ground
-		-- effect is used on you, as before.
-		C_Item.UseAtUnit(item, "player");
-	else
-		-- Every form goes through one call, so a slot is aimed at `@unit`
-		-- just like a name is. `/use` also always means use: clicking a bag
-		-- slot sells the item at a merchant and repairs it under the repair
-		-- cursor, which a typed command should never do.
-		C_Item.UseItemByName(item, target);
-	end
+	-- Every form goes through one call, as 3.80.2's SecureCmdUseItem ends in
+	-- UseItemByName(name, target): `@cursor` places a ground-target item at
+	-- the cursor, a unit has it placed at its feet, and an item with no ground
+	-- effect is used on the unit. A slot is aimed at `@unit` just like a name
+	-- is. `/use` also always means use: clicking a bag slot sells the item at a
+	-- merchant and repairs it under the repair cursor, which a typed command
+	-- should never do.
+	C_Item.UseItemByName(item, target);
 end
 
 -- Cast one resolved spell at one normalized target. Split out of
@@ -141,18 +126,11 @@ local function SecureCmdPerformSpell(action, noToggle, target)
 			CastSpellByName(action);
 		end
 	elseif ( noToggle ) then
-		-- Same unit rules as below: your own feet take a ground-target
-		-- spell, another unit does not.
-		CastSpellNoToggle(action, target, target == "player");
-	elseif ( target == "player" ) then
-		-- A ground-target spell lands at your own feet; a normal one is
-		-- cast on you.
-		C_Spell.CastAtUnit(action, target, true);
+		CastSpellNoToggle(action, target, true);
 	else
-		-- Any other unit has the spell cast on it, but a ground-target one
-		-- is not placed there: that is aim you do not have by hand. The
-		-- reticle comes up as usual.
-		C_Spell.CastAtUnit(action, target, false);
+		-- As 3.80.2's cast request with an explicit unit: a normal spell is
+		-- cast on the unit, a ground-target one is placed at its position.
+		C_Spell.CastAtUnit(action, target, true);
 	end
 end
 
@@ -188,7 +166,7 @@ local function SecureCmdCast(msg)
 	end
 	target = SecureCmdNormalizeTarget(target);
 	if ( target == false ) then
-		return; -- a named unit with nobody around to match it
+		return; -- a name the unit functions don't take
 	end
 	SecureCmdPerformAction(action, target);
 end
@@ -279,9 +257,10 @@ end
 -- ---------------------------------------------------------------------
 -- Targeting
 --
--- Each verb has one entry that takes a unit token and another that takes a
--- character name, and each errors on the other kind. `SecureCmdOptionParse`
--- hands back either, so pick with `IsUnitToken`.
+-- Each verb has one entry that takes a unit (a token, or the name of you, a
+-- group member or one of your pets) and another that searches by name, and
+-- the unit entry errors on any other name. `SecureCmdOptionParse` hands back
+-- either, so pick with `IsUnitToken`.
 -- ---------------------------------------------------------------------
 
 local function SecureCmdTarget(msg, exactMatch)
@@ -891,7 +870,7 @@ SlashCmdList["CASTSEQUENCE"] = function(msg)
 	end
 	target = SecureCmdNormalizeTarget(target);
 	if ( target == false ) then
-		return; -- a named unit with nobody around to match it
+		return; -- a name the unit functions don't take
 	end
 	ExecuteCastSequence(sequence, target);
 end
@@ -968,7 +947,7 @@ local function SecureCmdCastRandom(msg)
 	end
 	target = SecureCmdNormalizeTarget(target);
 	if ( target == false ) then
-		return; -- a named unit with nobody around to match it
+		return; -- a name the unit functions don't take
 	end
 	local action = ExecuteCastRandom(actions);
 	if ( action and action ~= "" ) then
@@ -1046,6 +1025,15 @@ SlashCmdList["EVENTTRACE"] = function(msg)
 		EventTrace:ProcessChatCommand(msg);
 	end
 end
+
+-- Combat log replay (a ClassicAPI extension): loads on first use.
+SlashCmdList["CLASSICAPI_REPLAY"] = function(msg)
+	UIParentLoadAddOn("ClassicAPI_Replay");
+	if ( IsAddOnLoaded("ClassicAPI_Replay") ) then
+		ClassicAPIReplay_Toggle();
+	end
+end
+SLASH_CLASSICAPI_REPLAY1 = "/replay";
 
 SlashCmdList["TINSPECT"] = function(msg)
 	if ( not LoadDebugTools() ) then

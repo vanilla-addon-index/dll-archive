@@ -110,6 +110,24 @@ inline void SetAnimPosition(void *model, int keyBone, int ms) {
     reinterpret_cast<Fn>(Offsets::FUN_M2MODEL_SET_KEY_BONE_ANIM_TIME)(model, keyBone, ms);
 }
 
+// The key bone's playback speed. Waits for an unloaded instance.
+inline float GetAnimSpeed(void *model, int keyBone) {
+    using Fn = float(__thiscall *)(void *, int);
+    return reinterpret_cast<Fn>(Offsets::FUN_M2MODEL_GET_KEY_BONE_ANIM_SPEED)(model, keyBone);
+}
+
+// Sets the key bone's playback speed, keeping its position.
+inline void SetAnimSpeed(void *model, int keyBone, float speed) {
+    using Fn = void(__thiscall *)(void *, int, float);
+    reinterpret_cast<Fn>(Offsets::FUN_M2MODEL_SET_KEY_BONE_ANIM_SPEED)(model, keyBone, speed);
+}
+
+// Whether the model has the key bone. Waits for an unloaded instance.
+inline bool HasKeyBone(void *model, int keyBone) {
+    using Fn = int(__thiscall *)(void *, int);
+    return reinterpret_cast<Fn>(Offsets::FUN_M2MODEL_HAS_KEY_BONE)(model, keyBone) != 0;
+}
+
 inline void SetAnimDoneCallback(void *model, const void *callback, uint32_t userLow,
                                 uint32_t userHigh) {
     using Fn = void(__thiscall *)(void *, const void *, uint32_t, uint32_t);
@@ -401,6 +419,39 @@ inline void SetLightPosition(void *light, const float *v) {
     reinterpret_cast<void(__thiscall *)(void *, const float *)>(Offsets::FUN_M2LIGHT_SET_POSITION)(light, v);
 }
 
+// ---- a lighting record (M2_LIGHTING_RECORD_SIZE bytes, 16-aligned) ---------------
+
+// Zeroes `record` for the lit sphere {x, y, z, radius}.
+inline void InitLighting(void *record, const float *sphere) {
+    reinterpret_cast<void(__thiscall *)(void *, void *, const float *)>(Offsets::FUN_M2LIGHTING_INIT)(
+        record, nullptr, sphere);
+}
+// Adds the scene's global and grid lights around the record's sphere.
+inline void AddSceneLights(void *scene, void *record) {
+    reinterpret_cast<void(__thiscall *)(void *, void *)>(Offsets::FUN_M2SCENE_ADD_LIGHTS_FOR_POINT)(scene,
+                                                                                                record);
+}
+// Adds one M2 light (skipped when disabled).
+inline void AddLight(void *record, const void *light) {
+    reinterpret_cast<void(__thiscall *)(void *, const void *)>(Offsets::FUN_M2LIGHTING_ADD_LIGHT)(record, light);
+}
+inline void SetLightingFog(void *record, const float *rgb, float start, float end) {
+    reinterpret_cast<void(__thiscall *)(void *, const float *, float, float)>(Offsets::FUN_M2LIGHTING_SET_FOG)(
+        record, rgb, start, end);
+}
+// The model frame's light callback (FUN_SIMPLEMODELFFX_LIGHT_FOG_CB): the
+// frame's fog, then its light, on `record`.
+inline void FrameLightAndFog(void *record, void *frame) {
+    reinterpret_cast<void(__fastcall *)(void *, void *, void *)>(Offsets::FUN_SIMPLEMODELFFX_LIGHT_FOG_CB)(
+        nullptr, record, frame);
+}
+// Commits `record` to the device: its four lights (point lights at their
+// position less `origin`) and its fog states.
+inline void CommitLighting(void *record, const float *origin) {
+    reinterpret_cast<void(__thiscall *)(void *, const float *, int)>(Offsets::FUN_M2LIGHTING_SET_DEVICE_LIGHTS)(
+        record, origin, 1);
+}
+
 // ---- animation classes (Offsets::FUN_IS_*_ANIMATION) -----------------------------
 // The unit's tests of an AnimationData ID. The death test is __stdcall, the
 // others __fastcall.
@@ -419,6 +470,16 @@ inline bool IsThrownAnimation(int anim) { return Detail::AnimTest(Offsets::FUN_I
 inline bool IsEmoteAnimation(int anim) { return Detail::AnimTest(Offsets::FUN_IS_EMOTE_ANIMATION, anim); }
 inline bool IsSpellCastAnimation(int anim) { return Detail::AnimTest(Offsets::FUN_IS_SPELL_CAST_ANIMATION, anim); }
 inline bool IsMoveAnimation(int anim) { return Detail::AnimTest(Offsets::FUN_IS_MOVE_ANIMATION, anim); }
+inline bool IsReadyAnimation(int anim) { return Detail::AnimTest(Offsets::FUN_IS_READY_ANIMATION, anim); }
+inline bool IsWoundAnimation(int anim) { return Detail::AnimTest(Offsets::FUN_IS_WOUND_ANIMATION, anim); }
+inline bool IsUpperBodyAnimation(int anim) { return Detail::AnimTest(Offsets::FUN_IS_UPPER_BODY_ANIMATION, anim); }
+inline bool IsFullBodyAnimation(int anim) { return Detail::AnimTest(Offsets::FUN_IS_FULL_BODY_ANIMATION, anim); }
+inline bool IsSwingAnimation(int anim) { return Detail::AnimTest(Offsets::FUN_IS_SWING_ANIMATION, anim); }
+inline bool IsJumpAnimation(int anim) { return Detail::AnimTest(Offsets::FUN_IS_JUMP_ANIMATION, anim); }
+inline bool IsLandingAnimation(int anim) { return Detail::AnimTest(Offsets::FUN_IS_LANDING_ANIMATION, anim); }
+inline bool IsSpecialAttackAnimation(int anim) {
+    return Detail::AnimTest(Offsets::FUN_IS_SPECIAL_ATTACK_ANIMATION, anim);
+}
 inline bool IsMissileReleaseAnimation(int anim) {
     return Detail::AnimTest(Offsets::FUN_IS_MISSILE_RELEASE_ANIMATION, anim);
 }

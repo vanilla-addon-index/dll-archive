@@ -50,6 +50,8 @@
 #include "dbc/Lookup.h"
 #include "dbc/Names.h"
 #include "map/Area.h"
+#include "map/Instance.h"
+#include "storm/File.h"
 
 #include <cstdint>
 #include <cstdio>
@@ -71,24 +73,7 @@ const uint8_t *MapRecord(int mapID) {
 
 // Localized `Map.dbc` display name ("Eastern Kingdoms", "Deadmines"), or null.
 const char *MapName(int mapID) {
-    const uint8_t *rec = MapRecord(mapID);
-    if (rec == nullptr)
-        return nullptr;
-    const uint32_t locale = Game::Read<uint32_t>(Offsets::VAR_LOCALE_INDEX);
-    const char *name = *reinterpret_cast<const char *const *>(
-        rec + Offsets::OFF_MAP_NAME + locale * 4);
-    if (name == nullptr || name[0] == '\0')
-        return nullptr;
-    return name;
-}
-
-// `Map.dbc` instance type (0 = world map, 1 = dungeon, 2 = raid, 3 = BG).
-// -1 when the map has no row.
-int MapInstanceType(int mapID) {
-    const uint8_t *rec = MapRecord(mapID);
-    if (rec == nullptr)
-        return -1;
-    return Game::Read<int>(rec, Offsets::OFF_MAP_INSTANCE_TYPE);
+    return DBC::LocalizedString(MapRecord(mapID), Offsets::OFF_MAP_NAME);
 }
 
 // The WorldMapArea directory name of a row ("Kalimdor", "World", ""), or null.
@@ -142,8 +127,7 @@ bool PushMapInfo(void *L, int uiMapID) {
                              /*resolveToParent=*/false);
         mapType = kMapTypeZone;
         int continentID = 0;
-        if (Map::Area::RowRect(row, nullptr, nullptr, nullptr, nullptr,
-                               &continentID)) {
+        if (Map::Area::RowRect(row, nullptr, &continentID)) {
             const int contRow = Map::Area::ContinentRowForMapID(continentID);
             if (contRow > 0)
                 parentMapID = -contRow;
@@ -157,11 +141,11 @@ bool PushMapInfo(void *L, int uiMapID) {
         // A continent or instance map: Map.dbc supplies the display name and
         // the type; continents hang off the world map.
         int mapID = 0;
-        Map::Area::RowRect(row, nullptr, nullptr, nullptr, nullptr, &mapID);
+        Map::Area::RowRect(row, nullptr, &mapID);
         name = MapName(mapID);
         if (name == nullptr)
             name = RowName(row); // custom map with no Map.dbc row
-        const int instanceType = MapInstanceType(mapID);
+        const int instanceType = Map::Instance::Type(mapID);
         if (instanceType == 0) {
             mapType = kMapTypeContinent;
             const int worldRow = WorldRow();
@@ -203,8 +187,7 @@ int __fastcall Script_GetMapChildrenInfo(void *L) {
     const bool wantContinents = (row > 0) && IsWorldRow(row);
     int parentMapDbcID = 0;
     const bool wantZones = (row > 0) && uiMapID < 0 && !wantContinents &&
-                           Map::Area::RowRect(row, nullptr, nullptr, nullptr,
-                                              nullptr, &parentMapDbcID);
+                           Map::Area::RowRect(row, nullptr, &parentMapDbcID);
 
     Game::Lua::SetTop(L, 0);
     Game::Lua::NewTable(L);
@@ -225,7 +208,7 @@ int __fastcall Script_GetMapChildrenInfo(void *L) {
         int childID = 0;
         if (wantContinents) {
             // Continent-spanning rows of real world maps, minus the World row.
-            if (areaID != 0 || id == row || MapInstanceType(mapID) != 0)
+            if (areaID != 0 || id == row || Map::Instance::Type(mapID) != 0)
                 continue;
             if (Map::Area::ContinentRowForMapID(mapID) != id)
                 continue; // skip the stray zero-rect duplicate
@@ -265,7 +248,7 @@ int __fastcall Script_GetMapInfoAtPosition(void *L) {
     double mapX = 0.0, mapY = 0.0;
     const bool have =
         row > 0 &&
-        Map::Area::RowRect(row, nullptr, nullptr, nullptr, nullptr, &mapID) &&
+        Map::Area::RowRect(row, nullptr, &mapID) &&
         Map::Area::WorldFromRow(row, px, py, &worldX, &worldY) &&
         Map::Area::ZonePercent(mapID, static_cast<float>(worldX),
                                static_cast<float>(worldY), &areaID, &mapX, &mapY);
@@ -280,10 +263,7 @@ int __fastcall Script_GetMapInfoAtPosition(void *L) {
 constexpr int kWorldMapDetailTiles = 12;
 
 bool FileExists(const char *path) {
-    using FileExists_t = int(__stdcall *)(const char *path, int mode);
-    auto fn = reinterpret_cast<FileExists_t>(
-        static_cast<uintptr_t>(Offsets::FUN_FILE_EXISTS));
-    return fn(path, 1) != 0;
+    return Storm::File::Exists(path);
 }
 
 // Builds tile `n`'s texture path (1-based) for map directory `dir`, without

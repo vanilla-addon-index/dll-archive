@@ -167,8 +167,11 @@ else
   if lib_glfw.found()
     compiler_args += ['-DDXVK_WSI_GLFW']
   endif
-  if (not lib_sdl3.found() and not lib_sdl2.found() and not lib_glfw.found())
-    error('SDL3, SDL2, or GLFW are required to build dxvk-native')
+  if get_option('native_xcb').allowed()
+    compiler_args += ['-DDXVK_WSI_XCB']
+  endif
+  if get_option('native_wayland').allowed()
+    compiler_args += ['-DDXVK_WSI_WAYLAND']
   endif
   
   dxvk_name_prefix = 'dxvk_'

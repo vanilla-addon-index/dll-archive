@@ -25,8 +25,8 @@
 //     vertex alpha), unless an earlier group already did; a frame does this
 //     for every frame and region below it too;
 //   - every update first puts that state back (PreOnAnimUpdate), then the
-//     animations add to it (AddAnimAlpha: a frame's own alpha becomes
-//     change + its drawn alpha; a region's vertex alpha change + its own);
+//     animations set it (SetAnimAlpha: a frame's own alpha, a region's
+//     vertex alpha);
 //   - when the last group with that kind of animation on the region or any
 //     ancestor ends, the stored state goes back (AnimDeactivated).
 // So, as in 4.3.4, GetAlpha returns the animated alpha while it plays.
@@ -49,7 +49,7 @@
 // 1.12's regions have no room for these, so they are kept here, keyed by the
 // region. A frame's own alpha is Frame::Alpha's (3.x's m_alpha), set through
 // the frame's vtable setter as SetAlpha sets it; a region's vertex alpha is the
-// engine's region color (FUN_REGION_GET_COLOR / FUN_FONTSTRING_SET_COLOR).
+// engine's region color (FUN_REGION_GET_COLOR / FUN_REGION_SET_COLOR).
 // The groups update from a co-hook of CSimpleFrame::OnFrameUpdate, which the
 // engine calls for every shown frame after OnUpdate, so a hidden frame's
 // groups wait, as in 4.3.4. Groups die with their frame (Frame::Destruction).
@@ -64,6 +64,10 @@
 #include "frame/Layout.h"
 #include "frame/Alpha.h"
 #include "frame/Destruction.h"
+#include "frame/Region.h"
+#include "texture/Atlas.h"
+#include "texture/CornerStore.h"
+#include "texture/Line.h"
 #include "texture/Transform.h"
 #include "xml/Anchors.h"
 
@@ -98,6 +102,10 @@ struct AnimData {
     float scale = 1.0f;
     float bakedRotation = 0.0f;
     float bakedScale = 1.0f;
+    // A texture's eight coordinates, when a TextureCoordTranslation plays on
+    // it (3.80.2's texcoord save kind).
+    bool hasTexCoords = false;
+    float texCoords[8] = {};
 };
 
 std::unordered_map<void *, State> g_states;
@@ -111,10 +119,6 @@ int g_regionsWithGroups = 0;
 
 using FrameUpdate_t = void(__fastcall *)(void *frame, void *edx, float elapsed);
 using SetFrameAlpha_t = void(__fastcall *)(void *frame, void *edx, uint32_t alpha);
-using GetColor_t = void(__fastcall *)(void *region, void *edx, uint32_t *bgra);
-using SetColor_t = void(__fastcall *)(void *region, void *edx, const uint32_t *bgra);
-using StoreCorners_t = void(__fastcall *)(void *region, void *edx, float *rect);
-using Crop_t = void(__fastcall *)(void *region, void *edx, float *rect);
 using SetStringPos_t = void(__fastcall *)(void *block, const float *position);
 using SizeChanged_t = void(__fastcall *)(void *layout, void *edx, const float *oldRect);
 using InvalidateNode_t = void(__fastcall *)(void *node);
@@ -158,44 +162,20 @@ uint8_t DrawnParentAlpha(void *frame) {
     return parent != nullptr ? Game::Read<uint8_t>(parent, Offsets::OFF_FRAME_ALPHA) : 0xFF;
 }
 
-uint32_t VertexColor(void *region) {
-    uint32_t bgra = 0xFFFFFFFF;
-    reinterpret_cast<GetColor_t>(Offsets::FUN_REGION_GET_COLOR)(region, nullptr, &bgra);
-    return bgra;
-}
+uint32_t VertexColor(void *region) { return Frame::Region::Color(region); }
 
-// An unchanged alpha writes nothing. The setter already does nothing when the
-// one entry it would store is the region's colour, but the getter reads a
-// gradient back as white, and the setter shrinks a gradient's four entries to
-// that one (benilla-re ui/texture, "Setting a vertex colour"). So restoring
-// the stored alpha (PreOnAnimUpdate, AnimDeactivated) on a gradient under an
-// ancestor's alpha group flattened it to white. 3.3.5's and 4.3.4's
+// Frame::Region::SetAlpha writes nothing for an unchanged alpha. Without that,
+// restoring the stored alpha (PreOnAnimUpdate, AnimDeactivated) on a gradient
+// under an ancestor's alpha group flattened it to white. 3.3.5's and 4.3.4's
 // SetVertexColor drop the gradient there too; here only a region that an
 // animation itself fades loses it. The ancestor's fade still reaches the
 // gradient: a frame's alpha change refolds every region's entries (0x77FAC0).
-void SetVertexAlpha(void *region, uint8_t alpha) {
-    const uint32_t color = VertexColor(region);
-    if ((color >> 24) == alpha)
-        return;
-    const uint32_t bgra = (color & 0x00FFFFFF) | (static_cast<uint32_t>(alpha) << 24);
-    reinterpret_cast<SetColor_t>(Offsets::FUN_FONTSTRING_SET_COLOR)(region, nullptr, &bgra);
-}
+void SetVertexAlpha(void *region, uint8_t alpha) { Frame::Region::SetAlpha(region, alpha); }
 
 // ---- The state position animations change --------------------------------------
 
 float *Corners(void *texture) { return Game::Ptr<float>(texture, Offsets::OFF_SIMPLETEXTURE_CORNERS); }
 
-// CSimpleTexture::SetPosition(m_rect, m_positions): the corners from the rect,
-// written the way the texture's layout callback (FUN_TEXTURE_ON_FRAME_SIZE_CHANGED)
-// writes them - cropped when SetTexCoordModifiesRect is on - so the corner
-// store's co-hooks (Texture::Transform) shape them as they do on a layout.
-void StoreTextureCorners(void *texture) {
-    float rect[4];
-    std::memcpy(rect, Game::Ptr<float>(texture, Offsets::OFF_REGION_RECT), sizeof(rect));
-    if (Game::Read<int>(texture, Offsets::OFF_REGION_TEXCOORD_MODIFIES_RECT) != 0)
-        reinterpret_cast<Crop_t>(Offsets::FUN_REGION_TEXCOORD_CROP)(texture, nullptr, rect);
-    reinterpret_cast<StoreCorners_t>(Offsets::FUN_REGION_STORE_CORNERS)(texture, nullptr, rect);
-}
 
 void *StringBlock(void *fontString) { return Game::Read<void *>(fontString, Offsets::OFF_FONTSTRING_TEXT_BLOCK); }
 
@@ -228,7 +208,7 @@ void SetStringPos(void *block, const float position[3]) {
 // CSimpleTexture / CSimpleFontString::StoreAnimPosition.
 void StoreAnimPosition(void *region, AnimData &data) {
     if (IsTexture(region)) {
-        StoreTextureCorners(region);
+        Texture::CornerStore::StoreFromRect(region);
         std::memcpy(data.position, Corners(region), sizeof(data.position));
         data.hasPosition = true;
     } else if (IsFontString(region)) {
@@ -256,7 +236,7 @@ void RebakeIfChanged(void *fontString, const AnimData &data) {
 void ResetPosition(void *region, AnimData &data) {
     data.hasPosition = false;
     if (IsTexture(region)) {
-        StoreTextureCorners(region);
+        Texture::CornerStore::StoreFromRect(region);
     } else if (IsFontString(region)) {
         // 4.3.4 leaves the string where the last update put it until the next
         // layout; it goes back now, as the corners of a texture do.
@@ -272,9 +252,15 @@ void ResetPosition(void *region, AnimData &data) {
 }
 
 // CSimpleFrame / CSimpleRegion::AnimActivated.
-void AnimActivated(void *region, bool alpha, bool position) {
+float *TexCoords(void *texture) { return Game::Ptr<float>(texture, Offsets::OFF_SIMPLETEXTURE_TEXCOORDS); }
+
+void AnimActivated(void *region, bool alpha, bool position, bool texCoords) {
     const bool frame = IsFrame(region);
     AnimData &data = g_data[region]; // AnimData_Init
+    if (texCoords && IsTexture(region)) {
+        data.hasTexCoords = true;
+        std::memcpy(data.texCoords, TexCoords(region), sizeof(data.texCoords));
+    }
     if (alpha) {
         data.hasAlpha = true;
         data.alpha = frame ? OwnAlpha(region) : static_cast<uint8_t>(VertexColor(region) >> 24);
@@ -289,13 +275,17 @@ void AnimActivated(void *region, bool alpha, bool position) {
             StoreAnimPosition(region, data);
     }
     if (frame)
-        ForEachChild(region, [alpha, position](void *child) { AnimActivated(child, alpha, position); });
+        ForEachChild(region, [=](void *child) { AnimActivated(child, alpha, position, texCoords); });
 }
 
 // CSimpleFrame / CSimpleRegion::AnimDeactivated.
-void AnimDeactivated(void *region, bool alpha, bool position) {
+void AnimDeactivated(void *region, bool alpha, bool position, bool texCoords) {
     const bool frame = IsFrame(region);
     AnimData *data = DataOf(region);
+    if (texCoords && data != nullptr && data->hasTexCoords) {
+        std::memcpy(TexCoords(region), data->texCoords, sizeof(data->texCoords));
+        data->hasTexCoords = false;
+    }
     if (alpha) {
         const uint8_t stored = data != nullptr ? data->alpha : 0xFF; // AnimData_GetAlpha
         if (frame) {
@@ -316,7 +306,7 @@ void AnimDeactivated(void *region, bool alpha, bool position) {
             ResetPosition(region, *data);
     }
     if (frame)
-        ForEachChild(region, [alpha, position](void *child) { AnimDeactivated(child, alpha, position); });
+        ForEachChild(region, [=](void *child) { AnimDeactivated(child, alpha, position, texCoords); });
 }
 
 // CScriptRegion::HasActiveAlphaAnim / HasActivePositionAnim: a playing group
@@ -559,6 +549,11 @@ void RegisterLuaFunctions() {
     RegisterClass(Anim::s_scaleClass);
     RegisterClass(Anim::s_rotationClass);
     RegisterClass(Anim::s_pathClass);
+    RegisterClass(Anim::s_vertexColorClass);
+    RegisterClass(Anim::s_flipBookClass);
+    RegisterClass(Anim::s_texCoordClass);
+    RegisterClass(Anim::s_lineTranslationClass);
+    RegisterClass(Anim::s_lineScaleClass);
     RegisterClass(ControlPoint::s_class);
     Game::Lua::RegisterFrameMethods(
         reinterpret_cast<void *>(Offsets::VAR_REGION_METHOD_REGISTRY), kRegionMethods, kRegionDocs);
@@ -584,7 +579,8 @@ void NotifyBegin(void *region, Group *group) {
     const AnimData *data = DataOf(region);
     const bool alpha = !(data != nullptr && data->hasAlpha) && group->HasAlphaAnim();
     const bool position = !(data != nullptr && data->hasPosition) && group->HasPositionAnim();
-    AnimActivated(region, alpha, position);
+    const bool texCoords = !(data != nullptr && data->hasTexCoords) && group->HasTexCoordAnim();
+    AnimActivated(region, alpha, position, texCoords);
     state.playing.push_back(group);
 }
 
@@ -598,7 +594,8 @@ void NotifyEnd(void *region, Group *group) {
                        !HasActiveAnim(region, [](const Group *g) { return g->HasAlphaAnim(); });
     const bool position = data != nullptr && data->hasPosition &&
                           !HasActiveAnim(region, [](const Group *g) { return g->HasPositionAnim(); });
-    AnimDeactivated(region, alpha, position);
+    const bool texCoords = !HasActiveAnim(region, [](const Group *g) { return g->HasTexCoordAnim(); });
+    AnimDeactivated(region, alpha, position, texCoords);
 }
 
 void PreOnAnimUpdate(void *region) {
@@ -612,6 +609,8 @@ void PreOnAnimUpdate(void *region) {
             SetVertexAlpha(region, data->alpha);
         }
     }
+    if (data != nullptr && data->hasTexCoords)
+        std::memcpy(TexCoords(region), data->texCoords, sizeof(data->texCoords));
     if (data != nullptr && data->hasPosition) {
         if (IsTexture(region)) {
             std::memcpy(Corners(region), data->position, sizeof(data->position));
@@ -835,6 +834,154 @@ void FontStringBaked(void *node, void *fontString) {
         Texture::Transform::ScaleRotateFontStringNode(node, data->scale, data->rotation);
     data->bakedRotation = data->rotation;
     data->bakedScale = data->scale;
+}
+
+// ---- The 3.80.2 client's other animation types ------------------------------------
+//
+// Each acts on the animation's target, or the group's region when it has
+// none, through that region's own slot (3.80.2's animatable object +0x80,
+// +0x78, +0x50, +0x48, +0x68). A frame passes texture coordinates and the
+// line animations to everything below it and ignores a vertex colour or a
+// flip book; a region that has no such slot ignores the animation, with no
+// error.
+
+namespace {
+
+// `fn` for `object`, or for every region below it when it is a frame.
+template <typename Fn> void ForEachRegionBelow(void *object, Fn &fn) {
+    if (IsFrame(object))
+        ForEachChild(object, [&fn](void *child) { ForEachRegionBelow(child, fn); });
+    else
+        fn(object);
+}
+
+void *ActedOn(void *region, void *target) { return target != nullptr ? target : region; }
+
+using SetTexCoordCorners_t = void(__fastcall *)(void *texture, void *edx, const float *values);
+
+// The size a flip book's cells are measured against: the atlas's, else the
+// loaded image's. False before the image is loaded.
+bool ImageSize(void *texture, float &width, float &height) {
+    if (const Texture::Atlas::Info *atlas = Texture::Atlas::Current(texture)) {
+        width = atlas->width;
+        height = atlas->height;
+        return width > 0.0f && height > 0.0f;
+    }
+    void *image = Game::Read<void *>(texture, Offsets::OFF_SIMPLETEXTURE_HTEXTURE);
+    const void *device = image != nullptr ? Game::Read<void *>(image, Offsets::OFF_HTEXTURE_DEVICE) : nullptr;
+    if (device == nullptr)
+        return false;
+    width = static_cast<float>(Game::Read<uint32_t>(device, Offsets::OFF_GXTEX_WIDTH));
+    height = static_cast<float>(Game::Read<uint32_t>(device, Offsets::OFF_GXTEX_HEIGHT));
+    return width > 0.0f && height > 0.0f;
+}
+
+} // namespace
+
+void SetAnimVertexColor(void *region, void *target, uint32_t bgra) {
+    void *object = ActedOn(region, target);
+    if (!IsFrame(object))
+        Frame::Region::SetColor(object, bgra);
+}
+
+void SetAnimFlipBookFrame(void *region, void *target, uint32_t rows, uint32_t columns, uint32_t frames,
+                          uint32_t frameWidth, uint32_t frameHeight, float progress) {
+    void *texture = ActedOn(region, target);
+    if (rows == 0 || columns == 0 || IsFrame(texture) || !IsTexture(texture))
+        return;
+    const uint32_t count = frames != 0 ? frames : rows * columns;
+    uint32_t index = static_cast<uint32_t>(static_cast<float>(count) * progress);
+    if (index > count - 1)
+        index = count - 1;
+    float cellWidth = 1.0f / static_cast<float>(columns);
+    float cellHeight = 1.0f / static_cast<float>(rows);
+    float width, height;
+    if (frameWidth != 0 && frameHeight != 0 && ImageSize(texture, width, height)) {
+        cellWidth = static_cast<float>(frameWidth) / width;
+        cellHeight = static_cast<float>(frameHeight) / height;
+    }
+    const float left = static_cast<float>(index % columns) * cellWidth;
+    const float top = static_cast<float>(index / columns) * cellHeight;
+    const float right = left + cellWidth;
+    const float bottom = top + cellHeight;
+    // UL, LL, UR, LR, through the texture's own setter: it stays when the
+    // animation ends, and an atlas maps the cell into its piece.
+    const float corners[8] = {left, top, left, bottom, right, top, right, bottom};
+    reinterpret_cast<SetTexCoordCorners_t>(Offsets::FUN_SIMPLETEXTURE_SET_TEXCOORD_CORNERS)(texture, nullptr, corners);
+    // 3.80.2's setter also replaces the stored copy a texture-coordinate
+    // animation starts from.
+    if (AnimData *data = DataOf(texture); data != nullptr && data->hasTexCoords)
+        std::memcpy(data->texCoords, TexCoords(texture), sizeof(data->texCoords));
+}
+
+void AddAnimTexCoord(void *region, void *target, float u, float v) {
+    auto apply = [u, v](void *texture) {
+        const AnimData *data = DataOf(texture);
+        if (data == nullptr || !data->hasTexCoords || !IsTexture(texture))
+            return;
+        float *coords = TexCoords(texture);
+        for (int i = 0; i < 4; ++i) {
+            coords[i * 2 + 0] += u;
+            coords[i * 2 + 1] += v;
+        }
+    };
+    ForEachRegionBelow(ActedOn(region, target), apply);
+}
+
+void AddAnimLineTranslation(void *region, void *target, float x, float y) {
+    auto apply = [x, y](void *line) {
+        const AnimData *data = DataOf(line);
+        if (data == nullptr || !data->hasPosition || !Texture::Line::Is(line))
+            return;
+        float *c = Corners(line);
+        // 3.80.2's 0x1428D1C60: d = v0 - v2, the line from its end to its
+        // start; the offset goes through (dx, dy; dy, -dx). An exactly
+        // vertical line moves too (3.80.2's multiplies by dx and drops it).
+        float dx = CornerX(c, 0) - CornerX(c, 2);
+        float dy = CornerY(c, 0) - CornerY(c, 2);
+        const float length = std::sqrt(dx * dx + dy * dy);
+        if (!(length > 0.0f))
+            return;
+        dx /= length;
+        dy /= length;
+        const float wx = dx * x + dy * y;
+        const float wy = dy * x - dx * y;
+        for (int i = 0; i < 4; ++i) {
+            c[i * 3 + 0] += wx;
+            c[i * 3 + 1] += wy;
+        }
+    };
+    ForEachRegionBelow(ActedOn(region, target), apply);
+}
+
+void AddAnimLineScale(void *region, void *target, int origin, float offsetX, float offsetY, float x, float y) {
+    auto apply = [=](void *line) {
+        const AnimData *data = DataOf(line);
+        if (data == nullptr || !data->hasPosition || !Texture::Line::Is(line))
+            return;
+        float *c = Corners(line);
+        // 3.80.2's 0x1405AEC80: turn the quad level along the line, scale it
+        // toward the origin found on the level quad, turn it back.
+        const float angle = std::atan2(CornerY(c, 2) - CornerY(c, 0), CornerX(c, 2) - CornerX(c, 0));
+        const float px = CornerX(c, 0), py = CornerY(c, 0);
+        const float cs = std::cos(angle), sn = std::sin(angle);
+        float level[12];
+        for (int i = 0; i < 4; ++i) {
+            const float rx = c[i * 3 + 0] - px, ry = c[i * 3 + 1] - py;
+            level[i * 3 + 0] = rx * cs + ry * sn;
+            level[i * 3 + 1] = -rx * sn + ry * cs;
+            level[i * 3 + 2] = c[i * 3 + 2];
+        }
+        float ox, oy;
+        GetOriginOffset(origin, level, offsetX, offsetY, ox, oy);
+        for (int i = 0; i < 4; ++i) {
+            const float lx = (ox - level[i * 3 + 0]) * x + level[i * 3 + 0];
+            const float ly = (oy - level[i * 3 + 1]) * y + level[i * 3 + 1];
+            c[i * 3 + 0] = lx * cs - ly * sn + px;
+            c[i * 3 + 1] = lx * sn + ly * cs + py;
+        }
+    };
+    ForEachRegionBelow(ActedOn(region, target), apply);
 }
 
 float *TextureBaseCorners(void *texture) {

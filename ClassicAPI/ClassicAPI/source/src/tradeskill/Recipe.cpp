@@ -50,6 +50,7 @@
 #include "object/Resolve.h"
 #include "spell/Description.h"
 #include "spell/Lookup.h"
+#include "spell/SkillLine.h"
 #include "unit/Identity.h"
 
 #include <cstdint>
@@ -59,13 +60,10 @@ namespace TradeSkill::Recipe {
 
 namespace {
 
-using AbilityLookup_t = const uint8_t *(__fastcall *)(char race, char classId,
-                                                      uint32_t spellID);
 
 // A 9-locale string field, in the client's locale; "" for an empty slot.
 const char *LocalizedName(const uint8_t *record, int offset) {
-    const int locale = Game::Read<int>(Offsets::VAR_LOCALE_INDEX);
-    const char *name = Game::Read<const char *>(record, offset + locale * 4);
+    const char *name = DBC::LocalizedString(record, offset);
     return name != nullptr ? name : "";
 }
 
@@ -77,33 +75,19 @@ const uint8_t *PlayerSkillLineFor(int spellID) {
         Object::ByGuid(Offsets::TYPEMASK_PLAYER, Unit::Identity::PlayerGuid()));
     if (player == nullptr)
         return nullptr;
-    auto *desc = Game::Read<const uint8_t *>(player, Offsets::OFF_UNIT_DESCRIPTOR);
-    if (desc == nullptr)
-        return nullptr;
-
-    const uint8_t *ability = reinterpret_cast<AbilityLookup_t>(
-        Offsets::FUN_SKILL_LINE_ABILITY_LOOKUP)(
-        static_cast<char>(desc[Offsets::OFF_UNIT_DESCRIPTOR_RACE_BYTE]),
-        static_cast<char>(desc[Offsets::OFF_UNIT_DESCRIPTOR_CLASS_BYTE]),
-        static_cast<uint32_t>(spellID));
+    const uint8_t *ability =
+        Spell::SkillLine::AbilityForUnit(Object::Fields(player), static_cast<uint32_t>(spellID));
     if (ability == nullptr)
         return nullptr;
     return DBC::Record(Offsets::VAR_SKILL_LINE_RECORDS, Offsets::VAR_SKILL_LINE_COUNT,
                        Game::Read<uint32_t>(ability, Offsets::OFF_SLA_SKILL_ID));
 }
 
-// The recipe spell ID in 1-based row `n`, or 0. The engine truncates,
-// subtracts 1 and compares unsigned against the row count, so only an index
-// that truncates into [1, count] passes. Compared as a double first: casting
-// NaN or an out-of-range value to an integer is undefined in C++. A header
-// row holds -1, which has no Spell.dbc record.
+// The recipe spell ID in 1-based row `n`, or 0. A header row holds -1,
+// which has no Spell.dbc record.
 int RowSpellID(double n) {
-    const uint32_t count = Game::Read<uint32_t>(Offsets::VAR_TRADESKILL_COUNT);
-    if (!(n >= 1.0 && n < static_cast<double>(count) + 1.0))
-        return 0;
-    return Spell::Lookup::RecipeSlotSpellID(Offsets::VAR_TRADESKILL_ENTRIES,
-                                            Offsets::VAR_TRADESKILL_COUNT,
-                                            static_cast<int>(n) - 1);
+    return Spell::Lookup::RecipeRowSpellID(Offsets::VAR_TRADESKILL_ENTRIES,
+                                           Offsets::VAR_TRADESKILL_COUNT, n);
 }
 
 int __fastcall Script_GetTradeSkillRecipeLink(void *L) {

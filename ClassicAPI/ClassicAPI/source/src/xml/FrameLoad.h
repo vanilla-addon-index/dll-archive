@@ -13,6 +13,8 @@
 
 #pragma once
 
+#include "AutoList.h"
+
 #include <cstdint>
 
 // Shared observer for the engine's frame XML loader FUN_XML_FRAME_LOAD
@@ -76,25 +78,19 @@ bool PushWrapper(void *L, void *object);
 
 // parentArray="key": pops the value on top of the stack and appends it to
 // parent[key], where parent is the table at the absolute stack index
-// `parentIdx`; parent[key] is created on first use.
+// `parentIdx`; parent[key] is created on first use, and replaces a value that
+// is not a table. Every access is raw, as 3.80.2's FUN_1405c91b0 does it, so
+// the parent's metamethods (a frame's method lookup) never run.
 void AppendToArray(void *L, int parentIdx, const char *key);
 
 namespace FrameLoad {
 
 using Observer = void (*)(void *object, const void *node, void *status);
 
-struct AutoSubscribe {
-    explicit AutoSubscribe(Observer fn);
-    Observer fn;
-    AutoSubscribe *next;
-};
+using AutoSubscribe = AutoList<struct AutoSubscribeTag, Observer>;
 
 // The same, run BEFORE the engine loads the node (and its inherits).
-struct AutoSubscribeBefore {
-    explicit AutoSubscribeBefore(Observer fn);
-    Observer fn;
-    AutoSubscribeBefore *next;
-};
+using AutoSubscribeBefore = AutoList<struct AutoSubscribeBeforeTag, Observer>;
 
 } // namespace FrameLoad
 

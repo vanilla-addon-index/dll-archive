@@ -50,9 +50,11 @@
 #include "dbc/Lookup.h"
 #include "event/Custom.h"
 #include "spell/Known.h"
+#include "spell/Lookup.h"
 #include "spell/Range.h"
 #include "tick/WorldTick.h"
 #include "unit/Position.h"
+#include "unit/Relation.h"
 
 #include <cstdint>
 
@@ -68,7 +70,6 @@ enum class RangeState { NoCheck, InRange, OutOfRange };
 bool g_enabled[3] = {false, false, false};
 RangeState g_lastState[3] = {RangeState::NoCheck, RangeState::NoCheck, RangeState::NoCheck};
 
-using UnitCanAttack_t = bool(__thiscall *)(void *attacker, void *target);
 using EquippedItemCheck_t = char(__fastcall *)(void *caster, const uint8_t *spellRecord,
                                                char checkAmmo, char report);
 
@@ -101,9 +102,7 @@ int RangedProbeSpellId(void *player) {
         reinterpret_cast<EquippedItemCheck_t>(Offsets::FUN_SPELL_EQUIPPED_ITEM_CHECK);
     int fallback = 0;
     for (const int spellID : kRangedAttackSpells) {
-        const uint8_t *rec = DBC::Record(Offsets::VAR_SPELL_RECORDS,
-                                         Offsets::VAR_SPELL_RECORD_COUNT,
-                                         static_cast<uint32_t>(spellID));
+        const uint8_t *rec = Spell::Lookup::RecordForID(static_cast<int>(spellID));
         if (rec == nullptr || !equipped(player, rec, 0, 0))
             continue;
         if (Spell::Known::IsKnown(static_cast<uint32_t>(spellID)))
@@ -118,13 +117,12 @@ RangeState Evaluate(SwingType type) {
     if (Combat::Swing::AttackTimeMs(type) == 0)
         return RangeState::NoCheck; // no weapon equipped for this swing type
 
-    void *player = Unit::Position::ResolveToken("player");
-    void *target = Unit::Position::ResolveToken("target");
+    void *player = Game::ResolveUnitToken("player");
+    void *target = Game::ResolveUnitToken("target");
     if (player == nullptr || target == nullptr)
         return RangeState::NoCheck; // no current target
 
-    auto canAttack = reinterpret_cast<UnitCanAttack_t>(Offsets::FUN_UNIT_CAN_ATTACK);
-    if (!canAttack(player, target))
+    if (!::Unit::Relation::CanAttack(player, target))
         return RangeState::NoCheck; // target can't be attacked
 
     if (type != RANGED)
@@ -200,10 +198,9 @@ const Event::Custom::AutoReserve _evt{"PLAYER_SWING_RANGE_UPDATE", &kRangeUpdate
 
 // The engine's printf-style event dispatcher has no `%b` and a plain `%d`
 // with `0` pushes the NUMBER 0 (truthy in Lua) -- so each bool picks
-// between `%d`+`1` and `%s`+NULL (tail-jumps to `lua_pushnil`), the same
-// 1/nil idiom `Event::Custom::FireIdSuccess` uses. `isInRange` is only ever
-// true when `checksRange` is also true (see `Evaluate`), so three shapes
-// cover every reachable state.
+// between `%d`+`1` and `%s`+NULL (tail-jumps to `lua_pushnil`), a 1/nil
+// pair. `isInRange` is only ever true when `checksRange` is also true (see
+// `Evaluate`), so three shapes cover every reachable state.
 void FireRangeUpdate(int slot, int type, bool isInRange, bool checksRange) {
     if (isInRange)
         Event::Custom::Fire(slot, "%d%d%d", type, 1, 1);

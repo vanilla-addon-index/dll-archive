@@ -46,11 +46,11 @@
 // How 1.12 maps onto that:
 //
 //   1. Script storage. The Button resolver FUN_BUTTON_SCRIPT_RESOLVER knows only
-//      OnClick (+0x4CC) and OnDoubleClick (+0x4D4). SetScript/GetScript/HookScript
-//      all go through it, and its only contract is "return the address the
-//      script lives at", so for the two names it doesn't know we hand back an
-//      external per-button cell (a button object has no spare 8-byte slot) —
-//      the Tooltip::SetEvents technique.
+//      OnClick (+0x4CC) and OnDoubleClick (+0x4D4), after first asking the base
+//      frame resolver (FUN_FRAME_SCRIPT_RESOLVER, CSimpleFrame::GetScriptByName). PreClick and
+//      PostClick are Frame::ExtraScripts scripts of the Button class, so the
+//      base resolver hands out a per-button cell for them (a button object has
+//      no spare 8-byte slot).
 //
 //   2. PreClick/PostClick firing — a co-hook on FUN_BUTTON_CLICK, the Button
 //      click vmethod. Every Lua-creatable button's click reaches it (Button
@@ -116,65 +116,29 @@
 #include "Game.h"
 #include "Offsets.h"
 #include "baselib/Ascii.h"
+#include "frame/Layout.h"
 #include "frame/MouseRegistration.h"
 #include "frame/RunnerHook.h"
 #include "frame/ScriptArgs.h"
+#include "frame/ExtraScripts.h"
 #include "frame/ScriptSlots.h"
 
 #include <cstdint>
-#include <unordered_map>
+#include <cstdlib>
+#include <cstring>
+#include <unordered_set>
 
 namespace Frame::ClickEvents {
 
 namespace {
 
-enum ScriptKind { SK_PRECLICK = 0, SK_POSTCLICK, SK_COUNT };
+// Only buttons that ever had SetScript("PreClick"/"PostClick", ...) get a cell,
+// so the click detour's lookup is a miss for almost every UI button.
+const Frame::ExtraScripts::Script g_preClick{"preclick", Offsets::VAR_BUTTON_LUA_TYPE_ID};
+const Frame::ExtraScripts::Script g_postClick{"postclick", Offsets::VAR_BUTTON_LUA_TYPE_ID};
 
-// Matched case-insensitively against the resolver's input name.
-constexpr const char *kNamesLower[SK_COUNT] = {"preclick", "postclick"};
-
-// Per-button storage: one 8-byte {handler, context} slot per script kind, plus
-// the re-entry flag for the click bracket. Only buttons that actually had
-// SetScript("PreClick"/"PostClick", …) called get an entry, so the map stays
-// small and the click detour's lookup is a miss for almost every UI button.
-// unordered_map nodes are pointer-stable, so a cell address handed to the
-// engine stays valid until PrepareForReload clears the map (buttons and their
-// handler refs die on /reload).
-struct Cell {
-    uint32_t slot[SK_COUNT][2]; // [kind] = {handler ref, exec context}
-    bool firing;                // this button's click bracket is on the stack
-};
-std::unordered_map<void *, Cell> g_cells;
-
-Cell *CellFor(void *button, bool create) {
-    auto it = g_cells.find(button);
-    if (it != g_cells.end())
-        return &it->second;
-    if (!create)
-        return nullptr;
-    Cell &c = g_cells[button];
-    for (auto &s : c.slot) {
-        s[0] = 0;
-        s[1] = 0;
-    }
-    c.firing = false;
-    return &c;
-}
-
-bool EqualsIgnoreCase(const char *s, const char *literal) {
-    if (s == nullptr)
-        return false;
-    for (;; ++s, ++literal) {
-        unsigned char a = static_cast<unsigned char>(*s);
-        const unsigned char b = static_cast<unsigned char>(*literal);
-        if (a >= 'A' && a <= 'Z')
-            a = static_cast<unsigned char>(a + 32);
-        if (a != b)
-            return false;
-        if (b == 0)
-            return true;
-    }
-}
+// Buttons whose click bracket is on the stack.
+std::unordered_set<const void *> g_bracketing;
 
 // --- clicked button (GetMouseButtonClicked) --------------------------------
 // The innermost bracketed dispatch's button string, null outside one — and
@@ -292,20 +256,6 @@ void RegisterLuaFunctions() {
 
 const Game::ModuleAutoRegister _autoreg{&RegisterLuaFunctions};
 
-// --- Resolver co-hook (Button script-name -> slot) ---------------------
-using Resolver_t = int(__fastcall *)(void *self, void *edx, const char *name);
-Resolver_t g_resolverOriginal = nullptr;
-
-int __fastcall Resolver_h(void *self, void *edx, const char *name) {
-    const int engineSlot = g_resolverOriginal(self, edx, name);
-    if (engineSlot != 0) // a base-frame or existing button script — leave it
-        return engineSlot;
-    for (int k = 0; k < SK_COUNT; ++k)
-        if (EqualsIgnoreCase(name, kNamesLower[k]))
-            return reinterpret_cast<int>(CellFor(self, /*create*/ true)->slot[k]);
-    return 0;
-}
-
 // --- Runner interceptor: GetMouseButtonClicked scope ------------------------
 // Subscribed to `Frame::RunnerHook`, the single shared hook on
 // FUN_FRAME_RUN_SCRIPT_WITH_CONTEXT (MinHook allows one hook per address). This
@@ -323,6 +273,37 @@ bool IsBracketedSlot(void *frame, const uint32_t *slotPtr) {
            slotPtr == at(Offsets::OFF_FRAME_ONMOUSEUP_SLOT);
 }
 
+// The OnMouseUp run in progress, and its `upInside`: the cursor in the
+// frame's hit rect at the release, as 3.80.2's frame OnMouseUp
+// (FUN_14058C2A0) passes it after the button.
+struct MouseUp {
+    void *frame = nullptr;
+    bool inside = false;
+};
+MouseUp g_mouseUp;
+
+using HitTest_t = int(__thiscall *)(void *frame, const float *point);
+
+bool CursorInside(void *frame) {
+    const uint8_t *ctx = Game::Read<uint8_t *>(Offsets::VAR_UI_CONTEXT_PTR);
+    if (ctx == nullptr)
+        return false;
+    const float *mouse = Game::Ptr<float>(ctx, Offsets::OFF_UI_CONTEXT_MOUSE_POSITION);
+    float point[2] = {0.0f, 0.0f};
+    Frame::Layout::NdcToDdc(&point[0], &point[1], mouse[0], mouse[1]);
+    return reinterpret_cast<HitTest_t>(Offsets::FUN_FRAME_HIT_TEST)(frame, point) != 0;
+}
+
+bool UpInside(int handlerRef, void *frame, bool *value) {
+    if (frame == nullptr || frame != g_mouseUp.frame ||
+        Game::Read<int>(frame, Offsets::OFF_FRAME_ONMOUSEUP_SLOT) != handlerRef)
+        return false;
+    *value = g_mouseUp.inside;
+    return true;
+}
+
+static const Frame::ScriptArgs::AutoTrailingBool _upInside{&UpInside};
+
 // Falls through (false) for every fire 3.3.5 doesn't bracket; otherwise runs it
 // inside the clicked-button scope and reports it handled (true). An
 // OnMouseDown / OnMouseUp fire for a button its RegisterForMouse excludes is
@@ -333,16 +314,19 @@ bool OnRun(void *frame, uint32_t *slotPtr, const char *fmt, void *varargs) {
     const char *name = FirstStringArg(fmt, varargs);
     const char *base = reinterpret_cast<const char *>(frame);
     const auto *slot = reinterpret_cast<const char *>(slotPtr);
-    if (slot == base + Offsets::OFF_FRAME_ONMOUSEDOWN_SLOT ||
-        slot == base + Offsets::OFF_FRAME_ONMOUSEUP_SLOT) {
-        const bool down = slot == base + Offsets::OFF_FRAME_ONMOUSEDOWN_SLOT;
-        if (!Frame::MouseRegistration::Accepts(frame, down, name))
+    const bool up = slot == base + Offsets::OFF_FRAME_ONMOUSEUP_SLOT;
+    if (slot == base + Offsets::OFF_FRAME_ONMOUSEDOWN_SLOT || up) {
+        if (!Frame::MouseRegistration::Accepts(frame, !up, name))
             return true;
     }
     const char *saved = g_clickedButton;
+    const MouseUp savedUp = g_mouseUp;
     g_clickedButton = name;
+    if (up)
+        g_mouseUp = MouseUp{frame, CursorInside(frame)};
     Frame::RunnerHook::Original(frame, slotPtr, fmt, varargs);
     g_clickedButton = saved;
+    g_mouseUp = savedUp;
     return true;
 }
 
@@ -354,27 +338,6 @@ using Click_t = void(__fastcall *)(void *self, void *edx, uint32_t mask,
                                    int fromScript);
 Click_t g_clickOriginal = nullptr;
 
-// The engine's variadic script forwarder — the entry FUN_BUTTON_CLICK itself
-// uses for OnClick. __cdecl, so the trailing name is pushed as one 4-byte arg.
-using FireVariadic_t = void(__cdecl *)(void *frame, uint32_t *slotPtr,
-                                       const char *fmt, ...);
-
-// Fire the handler (if any) in `slot` with arg1 = `name`, through the engine's
-// forwarder so the fire takes the identical path to the engine's OnClick fire
-// (exec context stamped from slot[1], hooked runner, ScriptArgs positional
-// args). The runner balances the Lua stack itself; snapshot/restore the top as
-// cheap insurance against any imbalance leaking into the still-running click.
-void FireSlot(void *button, uint32_t *slot, const char *name) {
-    if (slot[0] == 0)
-        return;
-    void *L = Game::Lua::State();
-    const int savedTop = (L != nullptr) ? Game::Lua::GetTop(L) : 0;
-    reinterpret_cast<FireVariadic_t>(Offsets::FUN_FRAME_RUN_SCRIPT_VARIADIC)(
-        button, slot, reinterpret_cast<const char *>(Offsets::VAR_SCRIPT_FMT_S),
-        name);
-    if (L != nullptr)
-        Game::Lua::SetTop(L, savedTop);
-}
 
 // The innermost click in progress, for its OnClick/PreClick/PostClick `down`.
 struct ClickScope {
@@ -387,11 +350,9 @@ bool ClickDown(int handlerRef, void *frame, bool *value) {
     if (frame == nullptr || frame != g_click.button)
         return false;
     bool isClick = Game::Read<int>(frame, Offsets::OFF_BUTTON_ONCLICK_HANDLER) == handlerRef;
-    if (!isClick) {
-        const Cell *cell = CellFor(frame, /*create*/ false);
-        isClick = cell != nullptr &&
-                  (static_cast<int>(cell->slot[SK_PRECLICK][0]) == handlerRef ||
-                   static_cast<int>(cell->slot[SK_POSTCLICK][0]) == handlerRef);
+    for (const Frame::ExtraScripts::Script *script : {&g_preClick, &g_postClick}) {
+        const uint32_t *slot = script->Slot(frame);
+        isClick = isClick || (slot != nullptr && static_cast<int>(slot[0]) == handlerRef);
     }
     if (!isClick)
         return false;
@@ -402,8 +363,8 @@ bool ClickDown(int handlerRef, void *frame, bool *value) {
 const Frame::ScriptArgs::AutoTrailingBool _clickDown{&ClickDown};
 
 void ClickBracket(void *self, void *edx, uint32_t mask, int fromScript) {
-    Cell *cell = CellFor(self, /*create*/ false);
-    if (cell == nullptr || cell->firing) {
+    uint32_t *pre = g_preClick.Slot(self);
+    if ((pre == nullptr && g_postClick.Slot(self) == nullptr) || g_bracketing.count(self) != 0) {
         // No Pre/Post on this button, or a re-entrant click of the same button
         // from inside its own bracket: the engine's click runs untouched (its
         // OnClick fire, if any, is scoped by the runner gate above).
@@ -414,17 +375,13 @@ void ClickBracket(void *self, void *edx, uint32_t mask, int fromScript) {
     const char *name = ButtonNameForMask(mask);
     const char *saved = g_clickedButton;
     g_clickedButton = name;
-    cell->firing = true;
+    g_bracketing.insert(self);
 
-    FireSlot(self, cell->slot[SK_PRECLICK], name);
+    Frame::ScriptSlots::Fire(self, pre, Offsets::VAR_SCRIPT_FMT_S, name);
     g_clickOriginal(self, edx, mask, fromScript); // the engine's click: OnClick iff set
-    // The handlers may have SetScript'd Pre/Post away or re-created the cell's
-    // neighbours; re-resolve rather than trust the pointer across Lua.
-    cell = CellFor(self, /*create*/ false);
-    if (cell != nullptr) {
-        FireSlot(self, cell->slot[SK_POSTCLICK], name);
-        cell->firing = false;
-    }
+    // The handlers may have set PostClick for the first time; look it up after.
+    Frame::ScriptSlots::Fire(self, g_postClick.Slot(self), Offsets::VAR_SCRIPT_FMT_S, name);
+    g_bracketing.erase(self);
 
     g_clickedButton = saved;
 }
@@ -436,11 +393,6 @@ void __fastcall Click_h(void *self, void *edx, uint32_t mask, int fromScript) {
     g_click = saved;
 }
 
-static const Game::HookAutoRegister _resolverHook{
-    Offsets::FUN_BUTTON_SCRIPT_RESOLVER,
-    reinterpret_cast<void *>(&Resolver_h),
-    reinterpret_cast<void **>(&g_resolverOriginal)};
-
 static const Game::HookAutoRegister _clickHook{
     Offsets::FUN_BUTTON_CLICK,
     reinterpret_cast<void *>(&Click_h),
@@ -448,23 +400,7 @@ static const Game::HookAutoRegister _clickHook{
 
 static const Frame::RunnerHook::AutoSubscribe _runnerSub{&OnRun};
 
-void ForEachSlot(const void *frame, Frame::ScriptSlots::Visit visit, void *ctx) {
-    const auto it = g_cells.find(const_cast<void *>(frame));
-    if (it == g_cells.end())
-        return;
-    for (const auto &slot : it->second.slot)
-        visit(slot, ctx);
-}
-
-static const Frame::ScriptSlots::AutoRegister _slots{&ForEachSlot};
-
 } // namespace
-
-void PrepareForReload() {
-    g_cells.clear();
-}
-
-static const Game::ReloadAutoRegister _reloadReg{&PrepareForReload};
 
 const char *CurrentButton() { return g_clickedButton; }
 
@@ -481,11 +417,34 @@ const char *ButtonNameForMask(uint32_t mask) {
     return reinterpret_cast<const char *>(va);
 }
 
+bool ParseButtonName(const char *name, size_t len, uint32_t &mask) {
+    const auto is = [name, len](const char *word) { return Ascii::EqualCI(name, len, word); };
+    mask = 0;
+    if (is("LeftButton") || is("Button1"))
+        mask = 0x01;
+    else if (is("RightButton") || is("Button2"))
+        mask = 0x04;
+    else if (is("MiddleButton") || is("Button3"))
+        mask = 0x02;
+    if (mask != 0)
+        return true;
+    if (len < 7 || len > 8 || !Ascii::EqualCI(name, 6, "Button"))
+        return false;
+    int n = 0;
+    for (size_t i = 6; i < len; ++i) {
+        if (name[i] < '0' || name[i] > '9')
+            return false;
+        n = n * 10 + (name[i] - '0');
+    }
+    if (n < 4 || n > 31 || name[6] == '0')
+        return false;
+    mask = n == 4 ? 0x08 : (n == 5 ? 0x10 : 0);
+    return true;
+}
+
 uint32_t MaskForButtonName(const char *name) {
-    for (uint32_t mask = 0x01; mask <= 0x10; mask <<= 1)
-        if (Ascii::EqualCI(name, ButtonNameForMask(mask)))
-            return mask;
-    return 0;
+    uint32_t mask = 0;
+    return ParseButtonName(name, std::strlen(name), mask) ? mask : 0;
 }
 
 } // namespace Frame::ClickEvents

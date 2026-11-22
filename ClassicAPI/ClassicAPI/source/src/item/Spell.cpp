@@ -41,15 +41,7 @@ namespace Item::Spell {
 namespace {
 
 const char *SpellNameForID(int spellID) {
-    const uint8_t *record = ::Spell::Lookup::RecordForID(spellID);
-    if (record == nullptr)
-        return nullptr;
-    const int locale = *reinterpret_cast<const int *>(
-        static_cast<uintptr_t>(Offsets::VAR_LOCALE_INDEX));
-    auto *const *names = reinterpret_cast<const char *const *>(
-        record + Offsets::OFF_SPELL_NAMES);
-    const char *name = names[locale];
-    return (name != nullptr && name[0] != '\0') ? name : nullptr;
+    return ::Spell::Lookup::Name(::Spell::Lookup::RecordForID(spellID));
 }
 
 // `GetItemSpell(itemID | "item:NNN" | itemLink)` — returns
@@ -91,18 +83,12 @@ int OnUseSpellForArg(void *L) {
 }
 
 int __fastcall Script_IsHelpfulItem(void *L) {
-    if (::Spell::Info::IsHelpful(OnUseSpellForArg(L)))
-        Game::Lua::PushNumber(L, 1.0);
-    else
-        Game::Lua::PushNil(L);
+    Game::Lua::PushFlag(L, ::Spell::Info::IsHelpful(OnUseSpellForArg(L)));
     return 1;
 }
 
 int __fastcall Script_IsHarmfulItem(void *L) {
-    if (::Spell::Info::IsHarmful(OnUseSpellForArg(L)))
-        Game::Lua::PushNumber(L, 1.0);
-    else
-        Game::Lua::PushNil(L);
+    Game::Lua::PushFlag(L, ::Spell::Info::IsHarmful(OnUseSpellForArg(L)));
     return 1;
 }
 

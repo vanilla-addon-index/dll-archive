@@ -26,13 +26,24 @@ uint32_t Flags(uint32_t filter, bool wrapU, bool wrapV);
 // SetTexture's texture flags: the default filter, clamped, one mip level.
 uint32_t DefaultFlags();
 
+// CSimpleTexture::SetTexture (FUN_SIMPLETEXTURE_SET_TEXTURE, `__thiscall(tex,
+// path, wrap, filter, shader)`) with what Lua's texture:SetTexture(file)
+// passes: clamped, the default filter (VAR_TEXTURE_BLEND_DEFAULT), no pixel
+// shader. A null path clears the texture. Goes through the engine's entry, so
+// Texture::Wrap's co-hook sees it. Returns the engine's result.
+uint32_t SetFile(void *texture, const char *path);
+
 // The loaded handle, or nullptr when the file does not load, made with
 // `flags` (SetTexture's own by default). The caller owns one reference and
 // drops it with ReleaseHandle.
 void *LoadByPath(const char *path, uint32_t flags = DefaultFlags());
 
-// Drops one reference on a handle (FUN_HANDLE_RELEASE). Null is a no-op.
-void ReleaseHandle(void *handle);
+// Whether an interface texture of this name would load from a loose file on
+// disk rather than from the game's archives: TextureCreate's file names for
+// it (`X.blp`, then `X.tga`; a .tga name the other way round) resolved as
+// SetTexture opens them (FUN_SFILE_RESOLVE_OPEN with SFILE_OPEN_LOOSE), the
+// first that resolves deciding. False when none resolves.
+bool IsLooseFile(const char *path);
 
 // The handle's device texture (FUN_TEXTURE_GET_RENDERABLE), what a render
 // state binds. The texture is finished loading first, so null means it has

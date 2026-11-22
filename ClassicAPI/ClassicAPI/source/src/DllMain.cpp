@@ -17,12 +17,10 @@
 #include "Offsets.h"
 #include "config/CommandLine.h"
 #include "config/FileSwitch.h"
+#include "debug/Log.h"
 #include "event/Custom.h"
+#include "frame/UnitEvent.h"
 #include "player/NameCache.h"
-#include "text/InlineTexture.h"
-#include "text/InlineTexturePool.h"
-#include "texture/Mask.h"
-#include "texture/Transform.h"
 
 static Game::FrameScript_Initialize_t FrameScript_Initialize_o = nullptr;
 static Game::LoadScriptFunctions_t LoadScriptFunctions_o = nullptr;
@@ -69,14 +67,10 @@ static void __fastcall LoadScriptFunctions_h() {
 static void __stdcall LoadGlueScriptFunctions_h() {
     LoadGlueScriptFunctions_o();
     Game::RunGlueModuleRegistrations();
-    // World→glue teardown destroyed every world fontstring and text node the
-    // inline-icon maps reference; forget them now that the glue UI is booting.
-    // (Glue→world is covered by FrameScript_Initialize_h; the node-free hook
-    // handles individual deaths, but bulk teardown paths may bypass it.)
-    Text::InlineTexture::PrepareForReload();
-    Text::InlineTexturePool::PrepareForReload();
-    Texture::Transform::PrepareForReload();
-    Texture::Mask::PrepareForReload();
+    // World→glue teardown destroyed every world fontstring, text node and
+    // texture; the modules keyed by those pointers forget them now (see
+    // Game::GlueBootAutoRegister).
+    Game::RunGlueBootCleanups();
 }
 
 // Every Lua-side `frame:RegisterEvent(...)` is a chance to claim a slot
@@ -91,6 +85,7 @@ static void __fastcall FrameRegisterEvent_h(void *frame, void *edx,
                                             const char *eventName) {
     Event::Custom::RetryClaims();
     FrameRegisterEvent_o(frame, edx, eventName);
+    Frame::UnitEvent::OnPlainRegister(frame, eventName);
 }
 
 // ---------------------------------------------------------------------------
@@ -130,23 +125,44 @@ static volatile LONG g_initDone = 0;       // 0 until the install has finished
 static volatile LONG g_initResult = 1;     // 0 = success, 1 = failure (until proven)
 static volatile LONG g_mhInitialized = 0;  // MH_Initialize succeeded (gates detach teardown)
 
-static bool CreateAndQueue(uintptr_t offset, void *hook, void **original) {
+// Every install failure leaves the client fully stock (nothing is applied
+// until the final MH_ApplyQueued), so the log line is the only trace of why
+// ClassicAPI is absent. Each names the step and MinHook's status.
+static void LogInstallFailure(const char *step, MH_STATUS status) {
+    Debug::Log::Printf("[install] %s failed: %s. No ClassicAPI hook was enabled.", step,
+                       MH_StatusToString(status));
+}
+
+static bool CreateAndQueue(const char *name, uintptr_t offset, void *hook, void **original) {
     auto *target = reinterpret_cast<LPVOID>(offset);
-    if (MH_CreateHook(target, hook, original) != MH_OK)
+    MH_STATUS status = MH_CreateHook(target, hook, original);
+    if (status != MH_OK) {
+        Debug::Log::Printf("[install] MH_CreateHook(0x%08X) failed: %s, core hook %s. "
+                           "No ClassicAPI hook was enabled.",
+                           static_cast<unsigned>(offset), MH_StatusToString(status), name);
         return false;
+    }
     // Queue only — a single MH_ApplyQueued below applies the whole batch in
     // one thread-freeze.
-    if (MH_QueueEnableHook(target) != MH_OK)
+    status = MH_QueueEnableHook(target);
+    if (status != MH_OK) {
+        Debug::Log::Printf("[install] MH_QueueEnableHook(0x%08X) failed: %s, core hook %s. "
+                           "No ClassicAPI hook was enabled.",
+                           static_cast<unsigned>(offset), MH_StatusToString(status), name);
         return false;
+    }
     return true;
 }
 
 static bool InstallHooks() {
-    if (MH_Initialize() != MH_OK)
+    const MH_STATUS init = MH_Initialize();
+    if (init != MH_OK) {
+        LogInstallFailure("MH_Initialize", init);
         return false;
+    }
     InterlockedExchange(&g_mhInitialized, 1);
 
-    if (!CreateAndQueue(Offsets::FUN_INVALID_FUNCTION_PTR_CHECK,
+    if (!CreateAndQueue("FUN_INVALID_FUNCTION_PTR_CHECK", Offsets::FUN_INVALID_FUNCTION_PTR_CHECK,
                         reinterpret_cast<void *>(InvalidFunctionPtrCheck_h), nullptr))
         return false;
 
@@ -154,19 +170,19 @@ static bool InstallHooks() {
     // RunModuleRegistrations, RunGlueModuleRegistrations, EnableWrites,
     // RetryClaims) tightly coupled to DllMain state, so a declarative
     // HookAutoRegister wouldn't simplify them.
-    if (!CreateAndQueue(Offsets::FUN_FRAME_SCRIPT_INITIALIZE,
+    if (!CreateAndQueue("FUN_FRAME_SCRIPT_INITIALIZE", Offsets::FUN_FRAME_SCRIPT_INITIALIZE,
                         reinterpret_cast<void *>(FrameScript_Initialize_h),
                         reinterpret_cast<void **>(&FrameScript_Initialize_o)))
         return false;
-    if (!CreateAndQueue(Offsets::FUN_LOAD_SCRIPT_FUNCTIONS,
+    if (!CreateAndQueue("FUN_LOAD_SCRIPT_FUNCTIONS", Offsets::FUN_LOAD_SCRIPT_FUNCTIONS,
                         reinterpret_cast<void *>(LoadScriptFunctions_h),
                         reinterpret_cast<void **>(&LoadScriptFunctions_o)))
         return false;
-    if (!CreateAndQueue(Offsets::FUN_LOAD_GLUE_SCRIPT_FUNCTIONS,
+    if (!CreateAndQueue("FUN_LOAD_GLUE_SCRIPT_FUNCTIONS", Offsets::FUN_LOAD_GLUE_SCRIPT_FUNCTIONS,
                         reinterpret_cast<void *>(LoadGlueScriptFunctions_h),
                         reinterpret_cast<void **>(&LoadGlueScriptFunctions_o)))
         return false;
-    if (!CreateAndQueue(Offsets::FUN_FRAME_REGISTER_EVENT,
+    if (!CreateAndQueue("FUN_FRAME_REGISTER_EVENT", Offsets::FUN_FRAME_REGISTER_EVENT,
                         reinterpret_cast<void *>(FrameRegisterEvent_h),
                         reinterpret_cast<void **>(&FrameRegisterEvent_o)))
         return false;
@@ -177,7 +193,12 @@ static bool InstallHooks() {
         return false;
 
     // One thread-freeze that activates every queued hook at once.
-    return MH_ApplyQueued() == MH_OK;
+    const MH_STATUS applied = MH_ApplyQueued();
+    if (applied != MH_OK) {
+        LogInstallFailure("MH_ApplyQueued", applied);
+        return false;
+    }
+    return true;
 }
 
 // Runs InstallHooks exactly once. Returns 0 on success, 1 on failure. If a

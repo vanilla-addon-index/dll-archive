@@ -13,6 +13,7 @@
 
 #include "Game.h"
 #include "Offsets.h"
+#include "cursor/Info.h"
 #include "item/Arg.h"
 #include "item/Cursor.h"
 #include "item/ID.h"
@@ -21,6 +22,7 @@
 #include "item/Swap.h"
 #include "item/TypeInfo.h"
 #include "spell/Known.h"
+#include "unit/Identity.h"
 
 #include <cstdint>
 
@@ -66,10 +68,7 @@ bool IsEquippable(void *L) {
 }
 
 int __fastcall Script_IsEquippableItem(void *L) {
-    if (IsEquippable(L))
-        Game::Lua::PushNumber(L, 1.0);
-    else
-        Game::Lua::PushNil(L);
+    Game::Lua::PushFlag(L, IsEquippable(L));
     return 1;
 }
 
@@ -113,14 +112,12 @@ int __fastcall MatchesClassType(const uint8_t *item, void *ctx) {
 }
 
 int InvTypeForName(const char *type) {
-    using GetText_t = const char *(__fastcall *)(const char *name, int edx, int gender);
     for (int invType = 1; invType <= Offsets::INVTYPE_TABLE_MAX_INDEX; ++invType) {
         const char *key = Item::TypeInfo::InvTypeKey(invType);
         if (key[0] == '\0')
             continue;
         if (Game::StrCmpI(type, key) == 0 ||
-            Game::StrCmpI(type, reinterpret_cast<GetText_t>(
-                                    Offsets::FUN_FRAMESCRIPT_GET_TEXT)(key, -1, 0)) == 0)
+            Game::StrCmpI(type, Item::TypeInfo::InvTypeName(invType)) == 0)
             return invType;
     }
     return 0;
@@ -138,10 +135,7 @@ int __fastcall Script_IsEquippedItemType(void *L) {
             ? Item::Location::Walk(&MatchesInvType, &invType, Offsets::INVMGR_SEARCH_EQUIPMENT)
             : Item::Location::Walk(&MatchesClassType, const_cast<char *>(type),
                                    Offsets::INVMGR_SEARCH_EQUIPMENT);
-    if (item != nullptr)
-        Game::Lua::PushNumber(L, 1.0);
-    else
-        Game::Lua::PushNil(L);
+    Game::Lua::PushFlag(L, item != nullptr);
     return 1;
 }
 
@@ -213,9 +207,7 @@ int __fastcall Script_C_Item_IsEquippedItem(void *L) {
 //
 // The item is resolved AFTER that clear, so a location naming the slot a
 // held item came from resolves to it (its slot reads empty while held) and a
-// name search sees the returned item too. `Script_ClearCursor` is
-// `FUN_00495190(1, 1)` and nothing else — it takes no arguments and reads no
-// Lua stack — so our own arguments survive it.
+// name search sees the returned item too.
 //
 // Returns nothing. Silently no-ops on bad/missing input, an item the player
 // doesn't have, or the engine refusing the swap (combat lockdown,
@@ -228,9 +220,9 @@ int __fastcall Script_C_Item_EquipItemByName(void *L) {
     // FUN_INVENTORY_SWAP's end-of-call cleanup at FUN_00495190(0, 1) clears
     // LOCAL cursor globals but skips the visual-lock-flag clear
     // (`item+0x314 & ~1`) — so a held item would stay visually locked until
-    // a relog refreshed state. ClearCursor's FUN_00495190(1, 1) includes it.
-    reinterpret_cast<int(__fastcall *)(void *)>(
-        Offsets::FUN_SCRIPT_CLEAR_CURSOR)(L);
+    // a relog refreshed state. ClearCursor's FUN_00495190(1, 1) includes it;
+    // Script_ClearCursor (0x004895B0) is that call and nothing else.
+    ::Cursor::Info::Clear();
 
     Item::Location::ByGUIDResult found;
     if (!Item::Location::FindItemArgOrLocation(L, 1, &found)) {
@@ -255,11 +247,11 @@ int __fastcall Script_C_Item_EquipItemByName(void *L) {
     // cursor primitive directly (no Script_PickupContainerItem stack-fake);
     // its empty-cursor guard is satisfied by the ClearCursor above. Bail if
     // the pickup didn't take (locked item / busy cursor) — nothing to equip.
-    if (!Item::Cursor::PickupBagItem(L, found.bagID, found.slotIndex))
+    if (!Item::Cursor::PickupBagItem(found.bagID, found.slotIndex))
         return 0;
 
     using AutoEquipCursor_t = void (__thiscall *)(void *player, int flag);
-    if (auto *player = Game::ResolveUnitToken("player")) {
+    if (auto *player = const_cast<uint8_t *>(Unit::Identity::PlayerObject())) {
         auto equip = reinterpret_cast<AutoEquipCursor_t>(
             Offsets::FUN_AUTO_EQUIP_CURSOR_ITEM);
         equip(player, 0);

@@ -18,6 +18,8 @@
 #include "net/PacketWriter.h"
 #include "time/Clock.h"
 #include "unit/Identity.h"
+#include "unit/Signal.h"
+#include "object/Resolve.h"
 
 #include <cstdint>
 
@@ -68,14 +70,14 @@ void SetRunning(bool running) {
     const bool changed = running || g_running;
     g_running = running;
     if (changed)
-        Event::Custom::Fire(_timerUpdate.Slot(), "%s", "player");
+        Unit::Signal::FirePlayer(_timerUpdate.Slot(), "%s");
 }
 
 using DisplayError_t = void(__cdecl *)(uint32_t id);
 using UnitFn_t = uint32_t(__thiscall *)(void *unit);
 
 uint32_t UnitFlags(const uint8_t *unit) {
-    const auto *fields = Game::Read<const uint8_t *>(unit, Offsets::OFF_UNIT_DESCRIPTOR);
+    const auto *fields = Object::Fields(unit);
     return fields != nullptr ? Game::Read<uint32_t>(fields, Offsets::OFF_UNIT_FIELD_FLAGS) : 0;
 }
 

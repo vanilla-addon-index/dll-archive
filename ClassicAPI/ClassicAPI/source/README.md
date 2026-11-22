@@ -29,8 +29,11 @@ The headline features. The complete per-function reference is in
 | [Event-driven nameplates](docs/API.md#nameplate) | The `C_NamePlate` API, with `NAME_PLATE_UNIT_ADDED` and `NAME_PLATE_UNIT_REMOVED` events. The `nameplateN` unit tokens work with every `UnitX` function and unit event. |
 | [Focus target](docs/API.md#focus) | `FocusUnit` sets a focus unit, `ClearFocus` clears it, and `PLAYER_FOCUS_CHANGED` fires on each change. The `focus` and `focustarget` tokens work with every `UnitX` function and unit event. |
 | [Combat log events](docs/API.md#combat_log_event_unfiltered--combat_log_event-events) | `COMBAT_LOG_EVENT_UNFILTERED` and `CombatLogGetCurrentEventInfo` give each combat event with GUIDs and flags. Damage meters do not need to parse chat text. |
+| [Advanced combat log](docs/API.md#combat-log-file-advancedcombatlogging) | `/combatlog` also writes a log in the layout of the Classic Era combat log, with encounters, the health and position of each unit with `advancedCombatLogging`, and an optional [movement file](docs/API.md#movement-file-advancedcombatloggingmovement). |
+| [Encounter replay](#encounter-replay) | `/replay` plays a recorded log back in 3D: the map, each player in its own gear, each creature, doors and other objects, spell areas on the ground, their moves, casts, auras, health and deaths. [`C_CombatLogReplay`](docs/API.md#combatlogreplay) gives the same data to addons. |
+| [Damage meter](#damage-meter) | The retail damage meter. It shows the damage, healing, interrupts, dispels, damage taken and deaths of your group for each fight, and keeps the last 30 fights. [`C_DamageMeter`](docs/API.md#damagemeter) gives the same totals to addons. |
 | [Modern script handlers](docs/API.md#setmodernscriptargsenable--getmodernscriptargs) | Frame scripts get their values as arguments, for example `OnClick(self, button, down)`. [XML script bodies](docs/API.md#xml-script-bodies-see-self-and-their-arguments) see `self` and their arguments by name. The `this` / `arg1` globals stay set. |
-| [Multi-flavor & conditional TOC](docs/API.md#conditional-and-multi-flavor-toc-loading) | Loads addons that ship one folder for many game versions. This includes `<Name>_ClassicAPI.toc` and `<Name>_Turtle.toc`, version lists in `## Interface:`, and conditions on TOC lines. |
+| [Multi-flavor & conditional TOC](docs/API.md#conditional-and-multi-flavor-toc-loading) | Loads addons that ship one folder for many game versions. This includes `<Name>_ClassicAPI.toc` and `<Name>_Turtle.toc`, version lists in `## Interface:`, and conditions on TOC lines and XML file paths. |
 | [XML attributes](docs/API.md#parentkey-in-xml) | Modern XML works. This includes `parentKey`, `parentArray`, `mixin`, `<KeyValues>`, `inherits` with more than one template, `method` and `function` script handlers, and `intrinsic` frame types. Frames, textures, font strings and other widgets also take many new attributes. |
 | [Menus and dropdowns](docs/API.md#menus-and-dropdowns) | The modern menu system: `MenuUtil.CreateContextMenu` and `DropdownButton` build context menus and dropdowns with the retail API. |
 | Tooltip line cap | Removes the 30-line limit of `GameTooltip` and every other tooltip made from `GameTooltipTemplate`, so long tooltips keep all their lines. |
@@ -53,8 +56,8 @@ In the Frame rows, a name that starts with `:` is a method of the widget that th
 
 | Namespace | Calls |
 |-----------|-------|
-| [Action](docs/API.md#action) | `GetActionInfo`, `IsItemAction`, `IsStackableAction`, `HasBonusActionBar`, `C_ActionBar.EnableActionRangeCheck`, `C_ActionBar.GetSpell`, `C_ActionBar.GetItemActionOnEquipSpellID`, `C_ActionBar.IsStackableAction`, `C_ActionBar.IsMacroActionWithShowTooltip`, `C_ActionBar.FindSpellActionButtons`, `C_ActionBar.HasSpellActionButtons`, `C_ActionBar.IsOnBarOrSpecialBar` |
-| [AddOns](docs/API.md#addons) | `C_AddOns.DoesAddOnExist`, `C_AddOns.GetAddOnInterfaceVersion`, `C_AddOns.GetAddOnLocalTable`, `C_AddOns.GetAddOnName`, `C_AddOns.GetAddOnNotes`, `C_AddOns.GetAddOnOptionalDependencies`, `C_AddOns.GetAddOnSecurity`, `C_AddOns.GetAddOnTitle`, `C_AddOns.IsAddOnLoadable`, `C_AddOns.IsAddOnLoaded`, `C_AddOns.LoadAddOn` |
+| [Action](docs/API.md#action) | `GetActionInfo`, `IsItemAction`, `IsStackableAction`, `HasBonusActionBar`, `C_ActionBar.EnableActionRangeCheck`, `C_ActionBar.GetSpell`, `C_ActionBar.GetActionLossOfControlCooldownDuration`, `C_ActionBar.GetActionLossOfControlCooldownInfo`, `C_ActionBar.GetItemActionOnEquipSpellID`, `C_ActionBar.IsStackableAction`, `C_ActionBar.IsMacroActionWithShowTooltip`, `C_ActionBar.FindSpellActionButtons`, `C_ActionBar.HasSpellActionButtons`, `C_ActionBar.IsOnBarOrSpecialBar` |
+| [AddOns](docs/API.md#addons) | `C_AddOns.DisableAddOn`, `C_AddOns.DisableAllAddOns`, `C_AddOns.DoesAddOnExist`, `C_AddOns.DoesAddOnHaveLoadError`, `C_AddOns.EnableAddOn`, `C_AddOns.EnableAllAddOns`, `C_AddOns.GetAddOnDependencies`, `C_AddOns.GetAddOnEnableState`, `C_AddOns.GetAddOnInfo`, `C_AddOns.GetAddOnInterfaceVersion`, `C_AddOns.GetAddOnLocalTable`, `C_AddOns.GetAddOnMetadata`, `C_AddOns.GetAddOnName`, `C_AddOns.GetAddOnNotes`, `C_AddOns.GetAddOnOptionalDependencies`, `C_AddOns.GetAddOnSecurity`, `C_AddOns.GetAddOnTitle`, `C_AddOns.GetNumAddOns`, `C_AddOns.GetScriptsDisallowedForBeta`, `C_AddOns.IsAddOnDefaultEnabled`, `C_AddOns.IsAddOnLoadable`, `C_AddOns.IsAddOnLoaded`, `C_AddOns.IsAddOnLoadOnDemand`, `C_AddOns.IsAddonVersionCheckEnabled`, `C_AddOns.LoadAddOn`, `C_AddOns.ResetAddOns`, `C_AddOns.ResetDisabledAddOns`, `C_AddOns.SaveAddOns`, `C_AddOns.SetAddonVersionCheck` |
 | [APIDocumentation](docs/API.md#apidocumentation) | `/classicapi` in-game browser, `C_APIDocumentation.GetSystem`, `C_APIDocumentation.GetSystems` |
 | [Animation](docs/API.md#animation) | `region:CreateAnimationGroup`, `region:GetAnimationGroups`, `region:StopAnimating`, `SetMaxAnimFramerate`, `GetMaxAnimFramerate`, `AnimationGroup` and `Animation` / `Alpha` / `Translation` / `Scale` / `Rotation` / `Path` / `ControlPoint` methods |
 | [AuctionHouse](docs/API.md#auctionhouse) | `C_AuctionHouse.PostItem`, `CanCancelAuction` |
@@ -68,37 +71,39 @@ In the Frame rows, a name that starts with `:` is a method of the widget that th
 | [Combat](docs/API.md#combat) | `InCombatLockdown`, `StartAttack`, `StopAttack` |
 | [CombatLog](docs/API.md#combatlog) | `CombatLogGetCurrentEventInfo`, `COMBATLOG_OBJECT_*` (constants) |
 | [Console](docs/API.md#console) | `CalculateStringEditDistance`, `ConsoleAddMessage`, `ConsoleEcho`, `ConsoleExec`, `ConsoleGetAllCommands`, `ConsoleGetColorFromType`, `ConsoleGetFontHeight`, `ConsoleIsActive`, `ConsolePrintAllMatchingCommands`, `SetConsoleKey` |
+| [CurveUtil](docs/API.md#curveutil) | `C_CurveUtil.CreateColorCurve`, `C_CurveUtil.CreateCurve`, `C_CurveUtil.EvaluateColorFromBoolean`, `C_CurveUtil.EvaluateColorValueFromBoolean`, `C_CurveUtil.EvaluateGameCurve` |
 | [CVar](docs/API.md#cvar) | `C_CVar.AreCVarsLoaded`, `C_CVar.DoesCVarExist`, `C_CVar.GetCVar`, `C_CVar.GetCVarBitfield`, `C_CVar.GetCVarBool`, `C_CVar.GetCVarDefault`, `C_CVar.GetCVarInfo`, `C_CVar.RegisterCVar`, `C_CVar.RemoveTempCVar`, `C_CVar.SetCVar`, `C_CVar.SetCVarBitfield`, `C_CVar.SetTempCVar`, `GetCVar`, `GetCVarDefault` |
 | [Cursor](docs/API.md#cursor) | `CursorHasMacro`, `GetCursorInfo` |
 | [Container](docs/API.md#container) | `C_Container.AutoStoreItem`, `C_Container.CalculateTotalNumberOfFreeBagSlots`, `C_Container.GetContainerItemCharges`, `C_Container.GetContainerItemDurability`, `C_Container.GetContainerItemID`, `C_Container.GetContainerItemInfo`, `C_Container.GetContainerItemEquipmentSetInfo`, `C_Container.GetContainerItemQuestInfo`, `C_Container.GetContainerItemRepairCost`, `C_Container.GetContainerFreeSlots`, `C_Container.GetContainerNumFreeSlots`, `C_Container.GetBackpackAutosortDisabled`, `C_Container.GetBankAutosortDisabled`, `C_Container.GetItemCooldown`, `C_Container.GetSortBagsRightToLeft`, `C_Container.HasContainerItem`, `C_Container.IsContainerFiltered`, `C_Container.IsContainerItemOpenable`, `C_Container.MoveItem`, `C_Container.PlayerHasHearthstone`, `C_Container.SetBackpackAutosortDisabled`, `C_Container.SetBagPortraitTexture`, `C_Container.SetBankAutosortDisabled`, `C_Container.SetItemSearch`, `C_Container.SetSortBagsRightToLeft`, `C_Container.SortBags`, `C_Container.SortBankBags`, `C_Container.SwapItems`, `C_Container.UseHearthstone`, `GetItemCooldown`, `SetBagPortraitTexture` |
 | [Creature](docs/API.md#creature) | `C_CreatureInfo.GetCreatureID`, `C_CreatureInfo.GetCreatureInfoByID`, `C_CreatureInfo.RequestLoadCreatureByID`, `C_CreatureInfo.GetRaceInfo`, `C_CreatureInfo.GetClassInfo`, `C_CreatureInfo.GetCreatureFamilyInfo`, `C_CreatureInfo.GetCreatureFamilyIDs`, `C_CreatureInfo.GetFactionInfo`, `C_CreatureInfo.GetCreatureTypeInfo`, `C_CreatureInfo.GetCreatureTypeIDs` |
+| [DamageMeter](docs/API.md#damagemeter) | `C_DamageMeter.GetAvailableCombatSessions`, `C_DamageMeter.GetCombatSessionFromID`, `C_DamageMeter.GetCombatSessionFromType`, `C_DamageMeter.GetCombatSessionSourceFromID`, `C_DamageMeter.GetCombatSessionSourceFromType`, `C_DamageMeter.GetSessionDurationSeconds`, `C_DamageMeter.IsDamageMeterAvailable`, `C_DamageMeter.ResetAllCombatSessions` |
 | [Currency](docs/API.md#currency) | `GetCoinText`, `C_CurrencyInfo.GetCoinText`, `GetCoinTextureString`, `C_CurrencyInfo.GetCoinTextureString`, `Constants.MoneyFormattingConstants` |
-| EncodingUtil | `C_EncodingUtil.CompressString`, `C_EncodingUtil.DecompressString`, `C_EncodingUtil.EncodeBase64`, `C_EncodingUtil.DecodeBase64`, `C_EncodingUtil.EncodeHex`, `C_EncodingUtil.DecodeHex`, `C_EncodingUtil.SerializeJSON`, `C_EncodingUtil.DeserializeJSON`, `C_EncodingUtil.SerializeCBOR`, `C_EncodingUtil.DeserializeCBOR` |
+| EncodingUtil | `C_EncodingUtil.CompressString`, `C_EncodingUtil.DecompressString`, `C_EncodingUtil.EncodeBase64`, `C_EncodingUtil.DecodeBase64`, `C_EncodingUtil.EncodeHex`, `C_EncodingUtil.DecodeHex`, `C_EncodingUtil.SerializeJSON`, `C_EncodingUtil.DeserializeJSON`, `C_EncodingUtil.SerializeCBOR`, `C_EncodingUtil.DeserializeCBOR`, `Constants.EncodingLimits` |
 | [DeathInfo](docs/API.md#deathinfo) | `C_DeathInfo.GetSelfResurrectOptions`, `C_DeathInfo.UseSelfResurrectOption` |
 | [DurationUtil](docs/API.md#durationutil) | `C_DurationUtil.CreateDuration`, `C_DurationUtil.CreateDurationTextBinding` |
 | [EquipmentSet](docs/API.md#equipmentset) | `C_EquipmentSet.CanUseEquipmentSets`, `C_EquipmentSet.ClearIgnoredSlotsForSave`, `C_EquipmentSet.CreateEquipmentSet`, `C_EquipmentSet.DeleteEquipmentSet`, `C_EquipmentSet.EquipmentSetContainsLockedItems`, `C_EquipmentSet.GetEquipmentSetID`, `C_EquipmentSet.GetEquipmentSetIDs`, `C_EquipmentSet.GetEquipmentSetInfo`, `C_EquipmentSet.GetIgnoredSlots`, `C_EquipmentSet.GetItemIDs`, `C_EquipmentSet.GetItemLocations`, `C_EquipmentSet.GetNumEquipmentSets`, `C_EquipmentSet.IgnoreSlotForSave`, `C_EquipmentSet.IsSlotIgnoredForSave`, `C_EquipmentSet.ModifyEquipmentSet`, `C_EquipmentSet.PickupEquipmentSet`, `C_EquipmentSet.SaveEquipmentSet`, `C_EquipmentSet.UnignoreSlotForSave`, `C_EquipmentSet.UseEquipmentSet` |
-| [Events](docs/API.md#events) | `C_EventUtils.IsEventValid`, `GetFramesRegisteredForEvent` |
+| [Events](docs/API.md#events) | `C_EventUtils.IsCallbackEvent`, `C_EventUtils.IsEventValid`, `C_FunctionContainers.CreateCallback`, `GetFramesRegisteredForEvent`, `RegisterEventCallback`, `RegisterUnitEventCallback`, `UnregisterEventCallback`, `UnregisterUnitEventCallback`, `:RegisterEventCallback`, `:RegisterUnitEventCallback` |
 | [Expansion](docs/API.md#expansion) | `ClassicExpansionAtLeast`, `ClassicExpansionAtMost`, `GetAccountExpansionLevel`, `GetClassicExpansionLevel`, `GetExpansionLevel`, `GetMaxPlayerLevel` |
 | [Faction](docs/API.md#faction) | `C_Reputation.GetFactionDataByID`, `C_Reputation.GetFactionDataByIndex`, `C_Reputation.GetFactionStandings`, `C_Reputation.GetLastStandingChange`, `C_Reputation.GetWatchedFactionData`, `C_Reputation.IsFactionActive`, `C_Reputation.IsFactionActiveByID`, `C_Reputation.IsFactionInactive`, `C_Reputation.SetFactionActive`, `C_Reputation.SetFactionActiveByID`, `C_Reputation.SetFactionInactive`, `C_Reputation.SetFactionInactiveByID`, `C_Reputation.SetSelectedFaction`, `C_Reputation.SetSelectedFactionByID`, `C_Reputation.SetWatchedFactionByID`, `C_Reputation.ToggleFactionAtWar`, `C_Reputation.ToggleFactionAtWarByID`, `CollapseAllFactionHeaders`, `ExpandAllFactionHeaders`, `GetFactionIDByIndex`, `GetFactionInfoByID`, `GetFactionParentID` |
 | [Focus](docs/API.md#focus) | `ClearFocus`, `FocusUnit` |
-| [Frame: Region](docs/API.md#regionsetpointpoint-one-argument-form) | `:SetPoint("point")` (one-arg form), `:SetSize` / `:GetSize`, `ignoreRect` on `:GetSize` / `:GetWidth` / `:GetHeight`, `:GetUnscaledWidth` / `:GetUnscaledHeight` / `:GetUnscaledSize`, `:GetRect`, `:GetScaledRect`, `:IsRectValid`, `:GetPointByName`, `:ClearPoint`, `:GetScale` / `:GetEffectiveScale` (on textures and font strings), `:GetDebugName`, `:IsMouseOver`, `:IsDragging`, `:IsProtected` / `:CanChangeProtectedState` |
+| [Frame: Region](docs/API.md#regionsetpointpoint-one-argument-form) | `:SetPoint("point")` (one-arg form), `:SetSize` / `:GetSize`, `ignoreRect` on `:GetSize` / `:GetWidth` / `:GetHeight`, `:GetUnscaledWidth` / `:GetUnscaledHeight` / `:GetUnscaledSize`, `:GetRect`, `:GetScaledRect`, `:IsRectValid`, `:GetPointByName`, `:ClearPoint`, `:GetScale` / `:GetEffectiveScale` (on textures and font strings), `:GetDebugName`, `:GetParentKey` / `:SetParentKey` / `:ClearParentKey`, `:IsMouseOver`, `:IsDragging`, `:IsProtected` / `:CanChangeProtectedState` |
 | [Frame: Frame](docs/API.md#createframeframetype--name-parent-template-id) | `CreateFrame` template lists and `id`, `GetMouseFoci`, `:SetShown`, `:SetClampRectInsets` / `:GetClampRectInsets`, `:SetResizeBounds`, `:SetClipsChildren` / `:DoesClipChildren`, `:GetBoundsRect`, `:GetEffectiveAlpha`, `:SetAlphaGradient` / `:ClearAlphaGradient` / `:HasAlphaGradient`, `:DesaturateHierarchy`, `:HookScript`, `:IsEventRegistered`, `:RegisterUnitEvent`, `:SetPropagateKeyboardInput` / `:GetPropagateKeyboardInput`, `:SetMouseClickEnabled` / `:IsMouseClickEnabled`, `:SetMouseMotionEnabled` / `:IsMouseMotionEnabled`, `:IsMouseMotionFocus`, `:SetPropagateMouseClicks` / `:CanPropagateMouseClicks`, `:SetPropagateMouseMotion` / `:CanPropagateMouseMotion`, `:SetPassThroughButtons`, `:SetDontSavePosition` / `:GetDontSavePosition`, `:SetAttribute`, `:SetAttributeNoHandler`, `:ClearAttribute`, `:GetAttribute`, `:CanChangeAttribute`, `:AllowAttributeChanges` |
 | [Frame: Button](docs/API.md#buttonsetnormalfontobjectfont--buttongetnormalfontobject) | `:SetEnabled`, `:SetFormattedText`, `:SetNormalFontObject` / `:GetNormalFontObject`, `:SetMotionScriptsWhileDisabled` / `:GetMotionScriptsWhileDisabled`, `:RegisterForClicks("AnyUp"/"AnyDown")`, `:RegisterForMouse`, `GetClickFrame` |
 | [Frame: FontString](docs/API.md#fontstringgetstringheight) | `:GetStringHeight`, `:GetUnboundedStringWidth`, `:GetWrappedWidth`, `:GetNumLines`, `:GetLineHeight`, `:GetFontHeight` / `:SetFontHeight` (also on fonts), `:GetFieldSize`, `:IsTruncated`, `:SetMaxLines` / `:GetMaxLines`, `:SetWordWrap` / `:CanWordWrap`, `:SetIndentedWordWrap` / `:GetIndentedWordWrap` (also on fonts, edit boxes, message frames, and SimpleHTML), `:SetFormattedText`, `:SetRotation` / `:GetRotation` |
-| [Frame: Texture](docs/API.md#texturesetrotationangle--cx-cy) | `:SetRotation` / `:GetRotation`, `:SetVertexOffset` / `:GetVertexOffset`, `:SetColorTexture`, `:SetAtlas` / `:GetAtlas`, `:ResetTexCoord`, `:SetSpriteSheetCell`, `:SetTexture` wrap modes, `:SetHorizTile` / `:GetHorizTile`, `:SetVertTile` / `:GetVertTile`, `:SetDesaturation` / `:GetDesaturation`, `IsDesaturateSupported`, `:SetMask`, `frame:CreateMaskTexture`, `:AddMaskTexture` / `:RemoveMaskTexture`, `:GetNumMaskTextures`, `:GetMaskTexture` |
+| [Frame: Texture](docs/API.md#texturesetrotationangle--cx-cy) | `:SetRotation` / `:GetRotation`, `:SetVertexOffset` / `:GetVertexOffset`, `:SetColorTexture`, `:SetAtlas` / `:GetAtlas`, `:ResetTexCoord`, `:SetSpriteSheetCell`, `:SetTexture` wrap modes, `:SetHorizTile` / `:GetHorizTile`, `:SetVertTile` / `:GetVertTile`, `:SetSnapToPixelGrid`, `:SetTexelSnappingBias`, `:SetDesaturation` / `:GetDesaturation`, `IsDesaturateSupported`, `:SetMask`, `frame:CreateMaskTexture`, `:AddMaskTexture` / `:RemoveMaskTexture`, `:GetNumMaskTextures`, `:GetMaskTexture`, `:SetTextureSliceMargins` / `:GetTextureSliceMargins`, `:SetTextureSliceMode` / `:GetTextureSliceMode`, `:ClearTextureSlice` |
 | [Frame: EditBox](docs/API.md#editboxsetcursorpositionposition) | `:SetCursorPosition` / `:GetCursorPosition`, `:GetUTF8CursorPosition`, `:ClearHighlightText`, `:SetHighlightColor` / `:GetHighlightColor`, `:HasFocus`, `GetCurrentKeyBoardFocus`, `:HasText`, `:ClearHistory`, `:Enable` / `:Disable` / `:IsEnabled`, `:SetCountInvisibleLetters` / `:IsCountInvisibleLetters`, `:IsInIMECompositionMode` |
 | [Frame: StatusBar](docs/API.md#statusbarsetreversefillisreversefill--statusbargetreversefill) | `:SetReverseFill` / `:GetReverseFill`, `:SetRotatesTexture` / `:GetRotatesTexture`, `:SetFillStyle` / `:GetFillStyle`, `:SetColorFill`, `:SetStatusBarDesaturated` / `:IsStatusBarDesaturated`, `:SetStatusBarDesaturation` / `:GetStatusBarDesaturation`, `:SetTimerDuration` / `:GetTimerDuration`, `:SetValue` / `:SetMinMaxValues` with `interpolation`, `:GetInterpolatedValue`, `:IsInterpolating`, `:SetToTargetValue` |
 | [Frame: Slider](docs/API.md#sliderenable--sliderdisable--slidersetenabledenabled--sliderisenabled) | `:Enable` / `:Disable` / `:SetEnabled` / `:IsEnabled` |
 | [Frame: Cooldown](docs/API.md#createframecooldown--name-parent-template) | `CreateFrame("Cooldown")`, `:SetCooldown`, `:SetCooldownDuration`, `:SetCooldownFromExpirationTime`, `:Clear`, `:GetCooldownTimes`, `:GetCooldownDuration`, `:GetCooldownDisplayDuration`, `:Pause` / `:Resume`, `:SetPaused` / `:IsPaused`, `:SetReverse` / `:GetReverse`, `:SetDrawEdge` / `:GetDrawEdge`, `:SetDrawSwipe` / `:GetDrawSwipe`, `:SetDrawBling` / `:GetDrawBling`, `:SetSwipeColor`, `:SetEdgeColor`, `:SetSwipeTexture`, `:SetEdgeTexture`, `:SetBlingTexture`, `:SetRotation` / `:GetRotation`, `:SetHideCountdownNumbers` / `:GetHideCountdownNumbers`, `:GetCountdownFontString`, `:SetCountdownAbbrevThreshold` / `:GetCountdownAbbrevThreshold`, `:SetCountdownMillisecondsThreshold` / `:GetCountdownMillisecondsThreshold`, `:SetMinimumCountdownDuration` / `:GetMinimumCountdownDuration`, `OnCooldownDone`, `CooldownFrame_Set`, `CooldownFrame_Clear`, `CooldownFrame_SetDisplayAsPercentage` |
-| [Frame: ModelScene](docs/API.md#modelscene) | `CreateFrame("ModelScene")`, `<ModelScene>` (`drawLayer`, `fogNear`, `fogFar`, `<FogColor>`, `<ViewInsets>`), `:CreateActor`, `:GetNumActors`, `:GetActorAtIndex`, `:SetCameraPosition` / `:GetCameraPosition`, `:SetCameraOrientationByYawPitchRoll`, `:SetCameraOrientationByAxisVectors`, `:GetCameraForward`, `:GetCameraRight`, `:GetCameraUp`, `:SetCameraFieldOfView` / `:GetCameraFieldOfView`, `:SetCameraNearClip` / `:GetCameraNearClip`, `:SetCameraFarClip` / `:GetCameraFarClip`, `:SetViewInsets` / `:GetViewInsets`, `:SetViewTranslation` / `:GetViewTranslation`, `:Project3DPointTo2D`, `"FollowCamera"` (`:SetFollowActor` / `:GetFollowActor`), `:SetLightType` / `:GetLightType`, `:SetLightVisible` / `:IsLightVisible`, `:SetLightDirection` / `:GetLightDirection`, `:SetLightPosition` / `:GetLightPosition`, `:SetLightAmbientColor` / `:GetLightAmbientColor`, `:SetLightDiffuseColor` / `:GetLightDiffuseColor`, `:SetFogColor` / `:GetFogColor`, `:SetFogNear` / `:GetFogNear`, `:SetFogFar` / `:GetFogFar`, `:ClearFog`, `:SetDrawLayer` / `:GetDrawLayer`, `:SetPaused`, `:GetSceneTime`, `:After`, `:NewTimer`, `:NewTicker`, `:SetAllowOverlappedModels` / `:GetAllowOverlappedModels`, `:SetGroundTerrain` / `:GetGroundTerrain`, `:SetWorldModel`, `:SetWorldModelByMapID`, `:ClearWorldModel`, `:SetWorldTerrain`, `:ClearWorldTerrain`, `:SetPlayWorldModelSounds` / `:GetPlayWorldModelSounds`, `:TraceSegment`, `:GetLiquidAtPoint`, `:SweepCollider`, `:SetSoundListenerActor` / `:GetSoundListenerActor`, `:GetActorAtCursor`, `:GetCursorRay`, `:GetActorsInRadius`, `:SetMoveMarker` / `:ClearMoveMarker` / `:GetMoveMarker`, `OnActorEnter` / `OnActorLeave` |
+| [Frame: ModelScene](docs/API.md#modelscene) | `CreateFrame("ModelScene")`, `<ModelScene>` (`drawLayer`, `fogNear`, `fogFar`, `<FogColor>`, `<ViewInsets>`), `:CreateActor`, `:GetNumActors`, `:GetActorAtIndex`, `:SetCameraPosition` / `:GetCameraPosition`, `:SetCameraOrientationByYawPitchRoll`, `:SetCameraOrientationByAxisVectors`, `:GetCameraForward`, `:GetCameraRight`, `:GetCameraUp`, `:SetCameraFieldOfView` / `:GetCameraFieldOfView`, `:SetCameraNearClip` / `:GetCameraNearClip`, `:SetCameraFarClip` / `:GetCameraFarClip`, `:SetViewInsets` / `:GetViewInsets`, `:SetViewTranslation` / `:GetViewTranslation`, `:Project3DPointTo2D`, `"FollowCamera"` (`:SetFollowActor` / `:GetFollowActor`), `:SetLightType` / `:GetLightType`, `:SetLightVisible` / `:IsLightVisible`, `:SetLightDirection` / `:GetLightDirection`, `:SetLightPosition` / `:GetLightPosition`, `:SetLightAmbientColor` / `:GetLightAmbientColor`, `:SetLightDiffuseColor` / `:GetLightDiffuseColor`, `:SetFogColor` / `:GetFogColor`, `:SetFogNear` / `:GetFogNear`, `:SetFogFar` / `:GetFogFar`, `:ClearFog`, `:SetDrawLayer` / `:GetDrawLayer`, `:SetPaused`, `:GetSceneTime`, `:After`, `:NewTimer`, `:NewTicker`, `:SetAllowOverlappedModels` / `:GetAllowOverlappedModels`, `:SetGroundTerrain` / `:GetGroundTerrain`, `:SetWorldModel`, `:SetWorldModelByMapID`, `:ClearWorldModel`, `:SetWorldTerrain`, `:ClearWorldTerrain`, `:SetPlayWorldModelSounds` / `:GetPlayWorldModelSounds`, `:SetWorldTimeOfDay` / `:GetWorldTimeOfDay` / `:ClearWorldTimeOfDay`, `:TraceSegment`, `:GetLiquidAtPoint`, `:SweepCollider`, `:SetSoundListenerActor` / `:GetSoundListenerActor`, `:GetActorAtCursor`, `:GetCursorRay`, `:GetActorsInRadius`, `:SetMoveMarker` / `:ClearMoveMarker` / `:GetMoveMarker`, `OnActorEnter` / `OnActorLeave` |
 | [Frame: ModelSceneActor](docs/API.md#actorsetmodelbycreaturedisplayiddisplayid--useactiveplayercustomizations) | `:SetModelByCreatureDisplayID`, `:SetModelByPath`, `:SetModelByUnit`, `:SetModelByUnitCreatureDisplayID`, `:GetModelUnitGUID`, `:Dress`, `:Undress`, `:UndressSlot`, `:TryOn`, `:DressPlayerSlot`, `:IsSlotAllowed` / `:IsSlotVisible`, `:GetItemTransmogInfo`, `:GetItemTransmogInfoList`, `:SetItemTransmogInfo`, `:SetSheathed` / `:GetSheathed`, `:SetSheathedCategory`, `:UseUnitSheatheCategory`, `:SetAutoDress` / `:GetAutoDress`, `:IsGeoReady`, `:ClearModel`, `:IsLoaded`, `:GetModelPath`, `:SetPosition` / `:GetPosition`, `:SetYaw` / `:GetYaw`, `:SetPitch` / `:GetPitch`, `:SetRoll` / `:GetRoll`, `:SetScale` / `:GetScale`, `:SetUseCenterForOrigin` / `:IsUsingCenterForOrigin`, `:GetActiveBoundingBox`, `:GetMaxBoundingBox`, `:Show` / `:Hide` / `:SetShown` / `:IsShown` / `:IsVisible`, `:SetAlpha` / `:GetAlpha`, `:SetAnimation` / `:GetAnimation`, `:GetAnimationVariation`, `:SetAnimationBlendOperation` / `:GetAnimationBlendOperation`, `:SetPaused` / `:GetPaused`, `:SetSpellVisualKit` / `:GetSpellVisualKit`, `:ApplySpellVisualKit`, `:PlayAnimationKit` / `:StopAnimationKit`, `:AttachToMount`, `:DetachFromMount`, `:CalculateMountScale`, `:GetAttachmentPosition`, `:AttachToActor`, `:DetachFromActor`, `:PlaySpellVisual`, `:StopSpellVisual`, `:PlaySound`, `:SetPlayAnimationSounds` / `:GetPlayAnimationSounds`, `:SetShadowShown` / `:IsShadowShown`, `:SetHighlight` / `:IsHighlighted`, `:SetSelectionCircle` / `:ClearSelectionCircle` / `:GetSelectionCircle`, `:SetNameText` / `:ClearNameText` / `:GetNameText`, `:GetNamePosition`, `:SetMovementEnabled` / `:IsMovementEnabled`, `:StartMovingForward`, `:StartMovingBackward`, `:StopMoving`, `:StartStrafingLeft`, `:StartStrafingRight`, `:StopStrafing`, `:StartTurningLeft`, `:StartTurningRight`, `:StopTurning`, `:Jump`, `:StartPitchingUp`, `:StartPitchingDown`, `:StopPitching`, `:IsFalling`, `:IsSwimming`, `:MoveTo`, `:SetWalking` / `:IsWalking`, `:GetCameraPivotHeight`, `OnLoad`, `OnUpdate`, `OnModelLoading`, `OnModelLoaded`, `OnModelCleared`, `OnAnimFinished`, `OnSpellVisualImpact`, `OnMoveFinished`, `<Actor>` templates |
 | [Frame: ScrollingMessageFrame](docs/API.md#smfsethyperlinksenabledenabled--smfgethyperlinksenabled) | `:SetHyperlinksEnabled` / `:GetHyperlinksEnabled`, `:GetMessageInfo` (with the extra `:AddMessage` values), `:BackFillMessage` (adds a message as the oldest), `:RemoveMessagesByPredicate`, `:SetScrollOffset` / `:GetScrollOffset`, `:GetMaxScrollRange`, `:ScrollByAmount`, `:SetInsertMode` / `:GetInsertMode`, `:AddOnDisplayRefreshedCallback` |
 | [Frame: scripts](docs/API.md#onenable-and-ondisable-scripts) | `OnEnable`, `OnDisable`, `OnMinMaxChanged`, `OnAttributeChanged`, `OnCharComposition`, `OnTextChanged` (`userInput`), `PreClick`, `PostClick`, `SetModernScriptArgs` / `GetModernScriptArgs` |
 | [FriendList](docs/API.md#friendlist) | `AddOrRemoveFriend`, `C_FriendList.GetFriendInfo`, `C_FriendList.GetFriendInfoByIndex`, `C_FriendList.GetNumFriends`, `C_FriendList.GetNumOnlineFriends`, `C_FriendList.GetNumWhoResults`, `C_FriendList.GetWhoInfo`, `C_FriendList.IsFriend`, `C_FriendList.IsIgnored`, `C_FriendList.IsIgnoredByGuid`, `C_FriendList.IsWhoQueryPending`, `C_FriendList.SendWhoQueryByName`, `C_FriendList.SetFriendNotes`, `C_FriendList.SetFriendNotesByIndex` |
 | [GameObject](docs/API.md#gameobject) | `C_GameObjectInfo.GetGameObjectInfoByID`, `C_GameObjectInfo.RequestLoadGameObjectByID`, `ClosestGameObjectPosition` |
 | [Glue](docs/API.md#glue) | `C_Glue.IsOnGlueScreen` |
-| [GameTooltip](docs/API.md#gametooltip) | `GameTooltip:AddSpellByID`, `GameTooltip:AddTexture`, `GameTooltip:GetGameObject`, `GameTooltip:GetItem`, `GameTooltip:GetMinimumWidth`, `GameTooltip:GetOwner`, `GameTooltip:GetPadding`, `GameTooltip:GetSpell`, `GameTooltip:GetUnit`, `GameTooltip:GetUnitGUID`, `GameTooltip:HasGameObject`, `GameTooltip:HasItem`, `GameTooltip:HasSpell`, `GameTooltip:HasUnit`, `GameTooltip:IsEquippedItem`, `GameTooltip:IsUnit`, `GameTooltip:SetAnchorType`, `GameTooltip:SetEquipmentSet`, `GameTooltip:SetFrameStack`, `GameTooltip:SetHyperlink` (full links, `spell:`, `quest:`), `GameTooltip:SetHyperlinkCompareItem`, `GameTooltip:SetInventoryItemByID`, `GameTooltip:SetItemByGUID`, `GameTooltip:SetItemByID`, `GameTooltip:SetSpellByID`, `GameTooltip:SetTalentByID`, `GameTooltip:SetTotem`, `GameTooltip:SetUnitAura`, `OnTooltipSetItem`, `OnTooltipSetSpell`, `OnTooltipSetUnit`, `OnTooltipSetGameObject`, `OnTooltipSetFrameStack` (scripts) |
-| [Gossip](docs/API.md#gossip) | `C_GossipInfo.CloseGossip`, `C_GossipInfo.GetActiveQuests`, `C_GossipInfo.GetAvailableQuests`, `C_GossipInfo.GetNumActiveQuests`, `C_GossipInfo.GetNumAvailableQuests`, `C_GossipInfo.GetNumOptions`, `C_GossipInfo.GetOptions`, `C_GossipInfo.GetPoiForUiMapID`, `C_GossipInfo.GetPoiInfo`, `C_GossipInfo.GetText`, `C_GossipInfo.SelectActiveQuest`, `C_GossipInfo.SelectAvailableQuest`, `C_GossipInfo.SelectOption`, `C_GossipInfo.SelectOptionByIndex`, `GetNumGossipActiveQuests`, `GetNumGossipAvailableQuests`, `GetNumGossipOptions` |
+| [GameTooltip](docs/API.md#gametooltip) | `GameTooltip:AddSpellByID`, `GameTooltip:AddTexture`, `GameTooltip:GetGameObject`, `GameTooltip:GetItem`, `GameTooltip:GetMinimumWidth`, `GameTooltip:GetOwner`, `GameTooltip:GetPadding`, `GameTooltip:GetSpell`, `GameTooltip:GetUnit`, `GameTooltip:GetUnitGUID`, `GameTooltip:HasGameObject`, `GameTooltip:HasItem`, `GameTooltip:HasSpell`, `GameTooltip:HasUnit`, `GameTooltip:IsEquippedItem`, `GameTooltip:IsUnit`, `GameTooltip:SetAnchorType`, `GameTooltip:SetEquipmentSet`, `GameTooltip:SetFrameStack`, `GameTooltip:SetHyperlink` (full links, `spell:`, `quest:`), `GameTooltip:SetHyperlinkCompareItem`, `GameTooltip:SetInventoryItemByID`, `GameTooltip:SetItemByGUID`, `GameTooltip:SetItemByID`, `GameTooltip:SetSpellByID`, `GameTooltip:SetTalentByID`, `GameTooltip:SetTotem`, `GameTooltip:SetUnitAura`, `GameTooltip:SetUnitAuraByAuraInstanceID`, `GameTooltip:SetUnitBuffByAuraInstanceID`, `GameTooltip:SetUnitDebuffByAuraInstanceID`, `OnTooltipSetItem`, `OnTooltipSetSpell`, `OnTooltipSetUnit`, `OnTooltipSetGameObject`, `OnTooltipSetFrameStack` (scripts) |
+| [Gossip](docs/API.md#gossip) | `C_GossipInfo.CloseGossip`, `C_GossipInfo.ForceGossip`, `C_GossipInfo.GetActiveQuests`, `C_GossipInfo.GetAvailableQuests`, `C_GossipInfo.GetCompletedOptionDescriptionString`, `C_GossipInfo.GetCustomGossipDescriptionString`, `C_GossipInfo.GetFriendshipReputation`, `C_GossipInfo.GetFriendshipReputationRanks`, `C_GossipInfo.GetNumActiveQuests`, `C_GossipInfo.GetNumAvailableQuests`, `C_GossipInfo.GetNumOptions`, `C_GossipInfo.GetOptions`, `C_GossipInfo.GetPoiForUiMapID`, `C_GossipInfo.GetPoiInfo`, `C_GossipInfo.GetText`, `C_GossipInfo.SelectActiveQuest`, `C_GossipInfo.SelectAvailableQuest`, `C_GossipInfo.SelectOption`, `C_GossipInfo.SelectOptionByIndex`, `GetNumGossipActiveQuests`, `GetNumGossipAvailableQuests`, `GetNumGossipOptions`, `Enum.GossipOptionStatus` |
 | [Hooks](docs/API.md#hooks) | `hooksecurefunc` |
 | [Input](docs/API.md#input) | `GetCursorDelta`, `GetMouseButtonClicked`, `GetMouseButtonName`, `IsLeftAltKeyDown`, `IsLeftControlKeyDown`, `IsLeftShiftKeyDown`, `IsModifierKeyDown`, `IsMouseButtonDown`, `IsRightAltKeyDown`, `IsRightControlKeyDown`, `IsRightShiftKeyDown` |
 | [Instance](docs/API.md#instance) | `GetInstanceInfo`, `IsActiveBattlefieldArena` |
@@ -106,11 +111,11 @@ In the Frame rows, a name that starts with `:` is a method of the widget that th
 | [Item: info](docs/API.md#getitemclassinfoclassid) | `GetItemClassInfo`, `GetItemSubClassInfo`, `GetItemIcon`, `IsConsumableItem`, `IsCurrentItem`, `IsDressableItem`, `IsEquippedItemType`, `IsHarmfulItem`, `IsHelpfulItem`, `IsUsableItem` |
 | [Item: inventory](docs/API.md#getaverageitemlevel) | `GetAverageItemLevel`, `GetInventoryItemID`, `GetInventoryItemDurability`, `GetInventoryItemRepairCost`, `GetInventoryItemsForSlot`, `IsDualWielding`, `SetInventoryPortraitTexture` |
 | [Item: item IDs](docs/API.md#getitemid--companions-to-the-engines-getitemlink-family) | `GetAuctionItemID`, `GetAuctionSellItemID`, `GetCraftReagentItemID`, `GetInboxItemID`, `GetLootRollItemID`, `GetLootSlotItemID`, `GetMerchantItemID`, `GetQuestItemID`, `GetQuestLogItemID`, `GetTradePlayerItemID`, `GetTradeTargetItemID`, `GetTradeSkillItemID`, `GetTradeSkillReagentItemID` |
-| [Localization](docs/API.md#localization) | `AbbreviateLargeNumbers`, `AbbreviateNumbers`, `BreakUpLargeNumbers`, `C_StringUtil.GetDefaultAbbreviationBreakpoints` |
+| [Localization](docs/API.md#localization) | `AbbreviateLargeNumbers`, `AbbreviateNumbers`, `BreakUpLargeNumbers`, `C_StringUtil.CreateAbbreviatedNumberFormatter`, `C_StringUtil.CreateNumericRuleFormatter`, `C_StringUtil.CreateSecondsFormatter`, `C_StringUtil.GetDefaultAbbreviationBreakpoints` |
 | [Loot](docs/API.md#loot) | `C_Loot.GetNearbyLootableUnits`, `C_Loot.GetLastScanResults`, `C_Loot.IsScanInProgress`, `C_Loot.LootAllCorpses`, `C_Loot.LootUnit`, `C_Loot.LootUnitItem`, `C_Loot.ScanNearbyLoot` |
-| [LootHistory](docs/API.md#loothistory) | `C_LootHistory.GetNumItems`, `C_LootHistory.GetItem`, `C_LootHistory.GetPlayerInfo`, `C_LootHistory.Clear` |
-| [LossOfControl](docs/API.md#lossofcontrol) | `C_LossOfControl.GetActiveLossOfControlData`, `C_LossOfControl.GetActiveLossOfControlDataCount`, `C_LossOfControl.GetSchoolLockout` |
-| [Lua](docs/API.md#lua) | `collectgarbage` (5.1 options), `coroutine.create`, `coroutine.resume`, `coroutine.running`, `coroutine.status`, `coroutine.wrap`, `coroutine.yield`, `CreateFromMixins`, `debuglocals`, `debugstack` (coroutine argument), `difftime`, `GetCallstackHeight`, `GetErrorCallstackHeight`, `gmatch`, `math.cosh`, `math.fmod`, `math.huge`, `math.modf`, `math.sinh`, `math.tanh`, `Mixin`, `newproxy`, `scrub`, `select`, `SetErrorCallstackHeight`, `strbyte` (range args), `strcmputf8i`, `strconcat`, `string.byte` (range args), `string.concat`, `string.format` (two-digit `%n$`), `string.gmatch`, `string.gsub` (table replacement, `%0`), `string.join`, `string.match`, `string.reverse`, `string.split`, `string.trim`, `strjoin`, `strlenutf8`, `strmatch`, `strreplace`, `strrev`, `strsplit`, `strsplittable`, `strtrim`, `table.count`, `table.maxn`, `table.removemulti`, `table.wipe`, `unpack` (range args), `wipe`, `xpcall` (argument forwarding) |
+| [LootHistory](docs/API.md#loothistory) | `C_LootHistory.GetNumItems`, `C_LootHistory.GetItem`, `C_LootHistory.GetPlayerInfo`, `C_LootHistory.SetExpiration`, `C_LootHistory.GetExpiration`, `C_LootHistory.CanMasterLoot`, `C_LootHistory.GiveMasterLoot`, `C_LootHistory.Clear` |
+| [LossOfControl](docs/API.md#lossofcontrol) | `C_LossOfControl.GetActiveLossOfControlData`, `C_LossOfControl.GetActiveLossOfControlDataByUnit`, `C_LossOfControl.GetActiveLossOfControlDataCount`, `C_LossOfControl.GetActiveLossOfControlDataCountByUnit`, `C_LossOfControl.GetActiveLossOfControlDuration`, `C_LossOfControl.GetSchoolLockout`, `Constants.LossOfControlConsts` |
+| [Lua](docs/API.md#lua) | `C_TableUtil.FindIndexedMismatch`, `collectgarbage` (5.1 options), `coroutine.create`, `coroutine.resume`, `coroutine.running`, `coroutine.status`, `coroutine.wrap`, `coroutine.yield`, `CreateFromMixins`, `debuglocals`, `debugstack` (coroutine argument), `difftime`, `GetCallstackHeight`, `GetErrorCallstackHeight`, `gmatch`, `math.cosh`, `math.fmod`, `math.huge`, `math.modf`, `math.sinh`, `math.tanh`, `Mixin`, `newproxy`, `scrub`, `select`, `SetErrorCallstackHeight`, `strbyte` (range args), `strcmputf8i`, `strconcat`, `string.byte` (range args), `string.concat`, `string.format` (two-digit `%n$`), `string.gmatch`, `string.gsub` (table replacement, `%0`), `string.join`, `string.match`, `string.reverse`, `string.split`, `string.trim`, `strjoin`, `strlenutf8`, `strmatch`, `strreplace`, `strrev`, `strsplit`, `strsplittable`, `strtrim`, `table.count`, `table.create`, `table.freeze`, `table.isfrozen`, `table.maxn`, `table.removemulti`, `table.wipe`, `unpack` (range args), `wipe`, `xpcall` (argument forwarding) |
 | [Macros](docs/API.md#macros) | `C_Macro.CreateMacro`, `C_Macro.EditMacro`, `C_Macro.SetMacroDisplay`, `DeleteMacro` / `EditMacro` / `GetMacroInfo` / `PickupMacro` by name, `GetLooseMacroIcons`, `GetLooseMacroItemIcons`, `GetMacroBody`, `GetMacroIcons`, `GetMacroItem`, `GetMacroItemIcons`, `GetMacroSpell`, `GetRunningMacro`, `GetRunningMacroButton`, `RunMacroText`, `SetMacroItem`, `SetMacroSpell`, `StopMacro` |
 | [Mail](docs/API.md#mail) | `GetInboxItemLink`, `GetSendMailItemLink` |
 | [Map](docs/API.md#map) | `C_Map.CanSetUserWaypointOnMap`, `C_Map.ClearUserWaypoint`, `C_Map.GetAreaInfo`, `C_Map.GetAreas`, `C_Map.GetAreaTriggerInfo`, `C_Map.GetAreaTriggers`, `C_Map.GetBestMapForUnit`, `C_Map.GetFallbackWorldMapID`, `C_Map.GetMapAreaIDs`, `C_Map.GetMapArtLayers`, `C_Map.GetMapArtLayerTextures`, `C_Map.GetMapChildrenInfo`, `C_Map.GetMapInfo`, `C_Map.GetMapInfoAtPosition`, `C_Map.GetMapOverlays`, `C_Map.GetMapPosFromWorldPos`, `C_Map.GetMapRectOnMap`, `C_Map.GetMapWorldSize`, `C_Map.GetPlayerMapPosition`, `C_Map.GetUserWaypoint`, `C_Map.GetUserWaypointFromHyperlink`, `C_Map.GetUserWaypointHyperlink`, `C_Map.GetUserWaypointPositionForMap`, `C_Map.GetWorldPosFromMapPos`, `C_Map.HasUserWaypoint`, `C_Map.MapHasArt`, `C_Map.SetUserWaypoint` |
@@ -129,10 +134,11 @@ In the Frame rows, a name that starts with `:` is a method of the widget that th
 | [Quest](docs/API.md#quest) | `C_QuestLog.GetInfo`, `C_QuestLog.GetNumQuestObjectives`, `C_QuestLog.GetQuestDetails`, `C_QuestLog.GetQuestLogTitle`, `C_QuestLog.GetHeaderIndexForQuest`, `C_QuestLog.GetLogIndexForQuestID`, `C_QuestLog.GetQuestIDForLogIndex`, `C_QuestLog.GetTitleForQuestID`, `C_QuestLog.IsOnQuest`, `C_QuestLog.IsQuestDataCachedByID`, `C_QuestLog.IsUnitOnQuest`, `C_QuestLog.RequestLoadQuestByID`, `GetQuestLogCompletionText`, `GetQuestLogLeaderBoardID` (Turtle WoW only: `C_QuestLog.GetAllCompletedQuestIDs`, `C_QuestLog.IsQuestFlaggedCompleted`, `GetQuestsCompleted`, `QueryQuestsCompleted`) |
 | [SettingsUtil](docs/API.md#settingsutil) | `C_SettingsUtil.NotifySettingsLoaded`, `C_SettingsUtil.OpenSettingsPanel` |
 | [Sound](docs/API.md#sound) | `C_Sound.GetRecentSoundFiles`, `C_Sound.GetSoundScaledVolume`, `C_Sound.IsPlaying`, `C_Sound.PlayItemSound`, `C_Sound.PlaySound`, `C_Sound.PlaySoundWithOptions`, `C_Sound.PlayVocalErrorSound`, `MuteSoundFile`, `PlaySound`, `PlaySoundFile`, `StopSound`, `UnmuteSoundFile` |
-| [Spell](docs/API.md#spell) | `C_Spell.CancelSpellByID`, `C_Spell.CastAtCursor`, `C_Spell.CastAtUnit`, `C_Spell.CastingInfo`, `C_Spell.ChannelInfo`, `C_Spell.DoesSpellExist`, `C_Spell.GetSchoolString`, `C_Spell.GetSpellCastCount`, `C_Spell.GetSpellCooldown`, `C_Spell.GetSpellDescription`, `C_Spell.GetSpellDispelType`, `C_Spell.GetSpellEffectInfo`, `C_Spell.GetSpellEffectMechanics`, `C_Spell.GetSpellInfo`, `C_Spell.GetSpellLevelInfo`, `C_Spell.GetSpellLink`, `C_Spell.GetSpellLossOfControlCooldown`, `C_Spell.GetSpellMechanicByID`, `C_Spell.GetSpellName`, `C_Spell.GetSpellPowerCost`, `C_Spell.GetSpellRadius`, `C_Spell.GetSpellReagents`, `C_Spell.GetSpellRequiredTargetLevel`, `C_Spell.GetSpellSubtext`, `C_Spell.GetSpellTexture`, `C_Spell.IsAutoAttackSpell`, `C_Spell.IsCurrentSpell`, `C_Spell.IsNextMeleeSpell`, `C_Spell.IsRangedAutoAttackSpell`, `C_Spell.IsSelfBuff`, `C_Spell.IsSpellHarmful`, `C_Spell.IsSpellHelpful`, `C_Spell.IsSpellInRange`, `C_Spell.IsSpellPassive`, `C_Spell.IsSpellUsable`, `C_Spell.ResetsMeleeSwing`, `C_Spell.SpellHasRange`, `C_Spell.UnitCastingInfo`, `C_Spell.UnitChannelInfo`, `CanDualWield`, `CancelSpellByName`, `CancelUnitBuff`, `CastSpellByID`, `CastSpellNoToggle`, `GetCraftSpellID`, `GetCritChance`, `GetRangedCritChance`, `GetSpellBaseCooldown`, `GetSpellBonusDamage`, `GetSpellBonusHealing`, `GetSpellInfo`, `GetSpellLink`, `GetSpellRadius`, `GetSpellRequiredTargetLevel`, `GetSpellSchool`, `IsAttackSpell`, `IsAutoRepeatSpell`, `IsConsumableSpell`, `IsHarmfulSpell`, `IsHelpfulSpell`, `IsPassiveSpell`, `IsPlayerSpell`, `IsSpellKnown`, `IsUsableSpell`, `SpellHasRange`, `UnitCastingDuration`, `UnitChannelDuration` |
+| [Spell](docs/API.md#spell) | `C_Spell.CancelSpellByID`, `C_Spell.CastAtCursor`, `C_Spell.CastAtUnit`, `C_Spell.CastingInfo`, `C_Spell.ChannelInfo`, `C_Spell.DoesSpellExist`, `C_Spell.GetSchoolString`, `C_Spell.GetSpellCastCount`, `C_Spell.GetSpellCooldown`, `C_Spell.GetSpellDescription`, `C_Spell.GetSpellDispelType`, `C_Spell.GetSpellEffectInfo`, `C_Spell.GetSpellEffectMechanics`, `C_Spell.GetSpellInfo`, `C_Spell.GetSpellLevelInfo`, `C_Spell.GetSpellLink`, `C_Spell.GetSpellLossOfControlCooldown`, `C_Spell.GetSpellLossOfControlCooldownDuration`, `C_Spell.GetSpellLossOfControlCooldownInfo`, `C_Spell.GetSpellMechanicByID`, `C_Spell.GetSpellName`, `C_Spell.GetSpellPowerCost`, `C_Spell.GetSpellRadius`, `C_Spell.GetSpellReagents`, `C_Spell.GetSpellRequiredTargetLevel`, `C_Spell.GetSpellSubtext`, `C_Spell.GetSpellTexture`, `C_Spell.IsAutoAttackSpell`, `C_Spell.IsCurrentSpell`, `C_Spell.IsNextMeleeSpell`, `C_Spell.IsRangedAutoAttackSpell`, `C_Spell.IsSelfBuff`, `C_Spell.IsSpellHarmful`, `C_Spell.IsSpellHelpful`, `C_Spell.IsSpellInRange`, `C_Spell.IsSpellPassive`, `C_Spell.IsSpellReactiveReady`, `C_Spell.IsSpellUsable`, `C_Spell.ResetsMeleeSwing`, `C_Spell.SpellHasRange`, `C_Spell.UnitCastingInfo`, `C_Spell.UnitChannelInfo`, `CanDualWield`, `CancelSpellByName`, `CancelUnitBuff`, `CastSpellByID`, `CastSpellNoToggle`, `GetCraftSpellID`, `GetCritChance`, `GetRangedCritChance`, `GetSpellBaseCooldown`, `GetSpellBonusDamage`, `GetSpellBonusHealing`, `GetSpellInfo`, `GetSpellLink`, `GetSpellLossOfControlCooldown`, `GetSpellRadius`, `GetSpellRequiredTargetLevel`, `GetSpellSchool`, `IsAttackSpell`, `IsAutoRepeatSpell`, `IsConsumableSpell`, `IsHarmfulSpell`, `IsHelpfulSpell`, `IsPassiveSpell`, `IsPlayerSpell`, `IsSpellKnown`, `IsUsableSpell`, `SpellHasRange`, `UnitCastingDuration`, `UnitChannelDuration` |
 | [SpellActivationOverlay](docs/API.md#spellactivationoverlay) | `C_SpellActivationOverlay.IsSpellOverlayed`, `IsSpellOverlayed` |
 | [SpellBook](docs/API.md#spellbook) | `C_SpellBook.ContainsAnyDisenchantSpell`, `C_SpellBook.GetCurrentLevelSpells`, `C_SpellBook.GetNumSpellBookSkillLines`, `C_SpellBook.GetPlayerSpellsByAura`, `C_SpellBook.GetSkillLineIndexByID`, `C_SpellBook.GetSkillLineName`, `C_SpellBook.GetSkillLineRank`, `C_SpellBook.GetSpellBookItemCastCount`, `C_SpellBook.GetSpellBookItemInfo`, `C_SpellBook.GetSpellBookItemLossOfControlCooldownDuration`, `C_SpellBook.GetSpellBookItemLossOfControlCooldownInfo`, `C_SpellBook.GetSpellBookItemSkillLineIndex`, `C_SpellBook.GetSpellBookSkillLineInfo`, `C_SpellBook.GetSpellLevelLearned`, `C_SpellBook.GetSpellSkillLine`, `C_SpellBook.IsAutoAttackSpellBookItem`, `C_SpellBook.IsClassTalentSpellBookItem`, `C_SpellBook.IsRangedAutoAttackSpellBookItem`, `FindSpellBookSlotByID` |
 | [State](docs/API.md#state) | `CancelShapeshiftForm`, `Dismount`, `GetMirrorTimerInfo`, `GetMirrorTimerProgress`, `GetShapeshiftForm`, `GetShapeshiftFormID`, `GetSheathState`, `IsAssistingRitual`, `IsFalling`, `IsIndoors`, `IsInGroup`, `IsInRaid`, `IsLoggedIn`, `IsLoggingOut`, `IsMounted`, `IsOutdoors`, `IsPlayerInWorld`, `IsStealthed`, `IsSwimming` |
+| [StringUtil](docs/API.md#stringutil) | `C_StringUtil.EscapeDecimalNonPrintables`, `C_StringUtil.EscapeLuaFormatString`, `C_StringUtil.EscapeLuaPatterns`, `C_StringUtil.EscapeQuotedCodes`, `C_StringUtil.FloorToNearestString`, `C_StringUtil.RemoveContiguousSpaces`, `C_StringUtil.RoundToNearestString`, `C_StringUtil.StripHyperlinks`, `C_StringUtil.StripTextureMarkupForLooseFiles`, `C_StringUtil.TruncateWhenZero`, `C_StringUtil.WrapString` |
 | [SwingTimer](docs/API.md#swingtimer) | `C_SwingTimer.EnableRangeCheck`, `C_SwingTimer.IsTargetWithinSwingRange` |
 | [System](docs/API.md#system) | `CopyToClipboard`, `FlashClientIcon`, `GetPhysicalScreenSize` |
 | [Talent](docs/API.md#talent) | `GetTalentIDByIndex`, `GetTalentSpellID` |
@@ -145,7 +151,7 @@ In the Frame rows, a name that starts with `:` is a method of the widget that th
 | [TradeSkillUI](docs/API.md#tradeskillui) | `GetTradeSkillListLink`, `GetCraftListLink`, `GetTradeSkillDescription`, `GetTradeSkillRecipeLink`, `IsTradeSkillLinked`, `IsCraftLinked` |
 | [Trainer](docs/API.md#trainer) | `GetTrainerServiceItemLink` |
 | [UIColor](docs/API.md#uicolor) | `C_UIColor.GetColors` |
-| [Unit](docs/API.md#unit) | `CanBeRaidTarget`, `ClosestUnitPosition`, `GetUnitSpeed`, `IsUnitToken`, `SetUnitCursorTexture`, `UnitClassBase`, `UnitCreatedBySpell`, `UnitCreatureFamilyID`, `UnitCreatureID`, `UnitCreatureTypeID`, `UnitDistanceSquared`, `UnitFacing`, `UnitGUID`, `UnitHasIncomingResurrection`, `UnitHealthMissing`, `UnitInLineOfSight`, `UnitInRange`, `UnitIsAFK`, `UnitIsDND`, `UnitIsFeignDeath`, `UnitIsInMyGuild`, `UnitIsMinion`, `UnitIsOtherPlayersPet`, `UnitIsPet`, `UnitIsPossessed`, `UnitOwnerGUID`, `UnitPosition`, `UnitPower`, `UnitPowerMax`, `UnitPowerMissing`, `UnitPowerType`, `UnitRaceBase`, `UnitSelectionColor`, `UnitSelectionType`, `UnitSpellHaste`, `UnitSpellTargetName`, `UnitStandState`, `UnitSubName`, `UnitTokenFromGUID`, `UnitTokenFromName` |
+| [Unit](docs/API.md#unit) | `CanBeRaidTarget`, `ClosestUnitPosition`, `GetUnitSpeed`, `IsUnitToken`, `IsUnitUntargetable`, `SetUnitCursorTexture`, `UnitClassBase`, `UnitCreatedBySpell`, `UnitCreatureFamilyID`, `UnitCreatureID`, `UnitCreatureTypeID`, `UnitDistanceSquared`, `UnitFacing`, `UnitGUID`, `UnitHasIncomingResurrection`, `UnitHealthMissing`, `UnitInLineOfSight`, `UnitInRange`, `UnitIsAFK`, `UnitIsDND`, `UnitIsFeignDeath`, `UnitIsInMyGuild`, `UnitIsMinion`, `UnitIsOtherPlayersPet`, `UnitIsPet`, `UnitIsPossessed`, `UnitOwnerGUID`, `UnitPosition`, `UnitPower`, `UnitPowerMax`, `UnitPowerMissing`, `UnitPowerType`, `UnitRaceBase`, `UnitSelectionColor`, `UnitSelectionType`, `UnitSpellHaste`, `UnitSpellTargetName`, `UnitStandState`, `UnitSubName`, `UnitTokenFromGUID`, `UnitTokenFromName` |
 | [UnitAuras](docs/API.md#unitauras) | `C_UnitAuras.GetAuraDataByAuraInstanceID`, `C_UnitAuras.GetAuraDataByIndex`, `C_UnitAuras.GetAuraDataBySlot`, `C_UnitAuras.GetAuraDataBySpellName`, `C_UnitAuras.GetAuraDispelTypeColor`, `C_UnitAuras.GetAuraSlots`, `C_UnitAuras.GetBuffDataByIndex`, `C_UnitAuras.GetDebuffDataByIndex`, `C_UnitAuras.GetPlayerAuraBySpellID`, `C_UnitAuras.GetUnitAuraBySpellID`, `C_UnitAuras.GetUnitAuras`, `C_UnitAuras.RegisterAuraDurationModifierByTrigger`, `C_UnitAuras.RegisterComboDuration`, `C_UnitAuras.UnitAura`, `C_UnitAuras.UnitAuraBySlot`, `C_UnitAuras.UnitBuff`, `C_UnitAuras.UnitDebuff` |
 | [VoiceChat](docs/API.md#voicechat) | `C_VoiceChat.GetTtsVoices`, `C_VoiceChat.GetRemoteTtsVoices`, `C_VoiceChat.SpeakText`, `C_VoiceChat.StopSpeakingText`, `C_TTSSettings.GetSpeechRate`, `C_TTSSettings.GetSpeechVolume`, `C_TTSSettings.GetSpeechVoiceID`, `C_TTSSettings.GetVoiceOptionName`, `C_TTSSettings.SetSpeechRate`, `C_TTSSettings.SetSpeechVolume`, `C_TTSSettings.SetVoiceOption`, `C_TTSSettings.SetVoiceOptionByName`, `C_TTSSettings.SetDefaultSettings`, `C_TTSSettings.RefreshVoices` |
 | [XMLUtil](docs/API.md#xmlutil) | `C_XMLUtil.DoesTemplateExist`, `C_XMLUtil.GetTemplateInfo`, `C_XMLUtil.GetTemplates` |
@@ -165,7 +171,7 @@ the glue state because GlueXML had no way to reach them otherwise.
 | Group | Calls |
 |-------|-------|
 | [Account](docs/API.md#account) | `SaveAccount`, `DeleteAccount`, `GetSavedAccounts`, `LoginWithSavedAccount` (passwords encrypted in Windows Credential Manager, scoped per realmlist; plaintext never returned to Lua) |
-| [CharacterList](docs/API.md#characterlist) | `GetSavedCharacterOrder`, `SetSavedCharacterOrder` (persist to `WTF\Account\...\ClassicAPI.txt`) |
+| [CharacterList](docs/API.md#characterlist) | `SaveCharacterOrder` (persists to `WTF\Account\...\character-list-order.txt`; the list loads in the saved order) |
 | CVar | `GetCVar`, `SetCVar`, `RegisterCVar`, `GetCVarDefault`, `C_CVar.GetCVarBool`, `C_CVar.SetTempCVar`, `C_CVar.RemoveTempCVar` (storage is process-global — writes from glue are visible in-world and vice versa) |
 | [Glue](docs/API.md#glue) | `C_Glue.IsFirstLoadThisSession`, `C_Glue.IsOnGlueScreen` |
 | [Input](docs/API.md#getcursordelta) | `GetCursorDelta` |
@@ -217,7 +223,9 @@ for what each command does, and
 <details>
 <summary><b>CVars</b> — new settings, set with <code>/console name value</code></summary>
 
-Each setting is saved in `WTF\Config.wtf`. Read and write them with `GetCVar`
+Each setting is saved in `WTF\Config.wtf`, except the
+[character cvars](docs/API.md#character-cvars), which each character keeps in
+its own `config-cache.wtf`. Read and write them with `GetCVar`
 / `SetCVar` or `/console`. Click a group name for the full rules. To change
 these settings, the player cache and the ClassicAPI key bindings in the game,
 open the game menu and click AddOn Options. The Settings window opens on
@@ -228,6 +236,10 @@ its ClassicAPI tab.
 | [Bindings](docs/API.md#actionbuttonusekeydown) | `ActionButtonUseKeyDown` | `0` | `1` uses an action-bar key binding when you press the key. `0` uses it when you release the key. |
 | [Combat](docs/API.md#stopautoattackontargetchange) | `stopAutoAttackOnTargetChange` | `0` | `1` stops melee auto-attack, Auto Shot and wand shots when you change target. |
 | [Combat log](docs/API.md#kept-entries) | `combatLogRetentionTime` | `300` | The number of seconds that the combat log keeps an entry. |
+| | [`advancedCombatLogging`](docs/API.md#combat-log-file-advancedcombatlogging) | `0` | `1` adds the health, power, position and level of units to the combat log file. |
+| | [`advancedCombatLoggingMovement`](docs/API.md#movement-file-advancedcombatloggingmovement) | `0` | `1` writes the movement of all units to a second file while advanced combat logging is on. `/replay` needs this file. |
+| [Damage meter](docs/API.md#damage-meter-cvars-damagemeterenabled-damagemeterresetonnewinstance) | `damageMeterEnabled` | `0` | `1` turns on the damage meter. While it is `0`, the game counts nothing and the meter window does not load. |
+| | `damageMeterResetOnNewInstance` | `0` | `1` clears the damage meter each time you enter a different instance. |
 | [Stand, dismount and form](docs/API.md#stand-dismount-and-form-settings-autostand-autodismount-autounshift) | `autoStand` | `0` | `1` makes you stand up when you cast, loot or open the flight map while you sit. |
 | | `autoDismount` | `0` | `1` makes you dismount when you cast, use an object, loot, attack or open the flight map while you are mounted. |
 | | `autoUnshift` | `0` | `1` makes you leave your form when you cast a spell that cannot be cast in it, use an item, or open the flight map. It also lets you talk to NPCs and use objects in druid forms and Ghost Wolf. |
@@ -244,8 +256,7 @@ its ClassicAPI tab.
 | | `SoftTargetInteractArc` | `0` | Where the object can be: `0` straight ahead of the camera, `1` within 30° of it, `2` any direction. |
 | | `SoftTargetInteractRange` | `10` | Maximum distance in yards. |
 | | `SoftTargetInteractRangeIsHard` | `0` | `1` always applies the range. `0` also picks an object past it that you can use now. |
-| | `SoftTargetIconInteract` | `0` | `1` shows an icon over the soft-interact object. |
-| | `SoftTargetIconGameObject` | `0` | `1` also shows that icon over game objects. |
+| | `SoftTargetIconInteract` | `1` | `1` shows an icon over the soft-interact object. |
 | [Soft enemy / friend](docs/API.md#soft-enemy-and-soft-friend-softenemy--softfriend--anyenemy--anyfriend) | `SoftTargetEnemy` / `SoftTargetFriend` | `1` / `0` | Turns `softenemy` / `softfriend` on: `2` keyboard and mouse, `3` always, `0` / `1` off. |
 | | `SoftTargetEnemyArc` / `SoftTargetFriendArc` | `0` | The same values as `SoftTargetInteractArc`. |
 | | `SoftTargetEnemyRange` / `SoftTargetFriendRange` | `45` | Maximum distance in yards. |
@@ -254,9 +265,13 @@ its ClassicAPI tab.
 | | `SoftTargetForce` | `1` | A loose target follows `softenemy` (`1`) or `softfriend` (`2`). `0` keeps it. |
 | | `SoftTargetIconEnemy` / `SoftTargetIconFriend` | `0` | `1` shows an icon over `softenemy` / `softfriend`. |
 | | `SoftTargetLowPriorityIcons` | `0` | `1` also shows the normal pointer as an icon. |
-| | `SoftTargetNameplateSize` | `19` | Size of all soft-target icons. |
+| | `SoftTargetNameplateSize` | `19` | Size of the soft-target icons on nameplates. |
+| | `SoftTargetWorldtextSize` | `32` | Size in screen pixels of the other soft-target icons. |
+| | `SoftTargetWorldtextNearScale` / `SoftTargetWorldtextNearDist` / `SoftTargetWorldtextFarDist` | `1` / `4` / `40` | A near icon is `NearScale` times larger at `NearDist` yards, and normal size at `FarDist` yards. `1` keeps one size. |
 | [Localization](docs/API.md#breakuplargenumbers-cvar) | `breakUpLargeNumbers` | `1` | `1` puts a separator between each group of three digits in `BreakUpLargeNumbers`. `0` writes no separator. |
 | [Cooldown](docs/API.md#createframecooldown--name-parent-template) | `countdownForCooldowns` | `0` | `1` shows the time left as numbers on cooldown frames. |
+| [Frame rate limits](docs/API.md#frame-rate-limits-usemaxfps-maxfps-usemaxfpsbk-maxfpsbk) | `useMaxFPS` | `0` | `1` limits the frame rate to `maxFPS` (default `120`) while WoW is the active window. |
+| | `useMaxFPSBk` | `0` | `1` limits the frame rate to `maxFPSBk` (default `30`) while another window is active. |
 | `ScriptAnimationUtil` | `ShakeStrengthUI` | `1` | Scales how far `ScriptAnimationUtil.ShakeFrame` moves a frame. `0` turns the shake off. |
 | [NamePlate](docs/API.md#nameplate) | `nameplateNotSelectedAlpha` | `0.5` | Alpha of a non-target default nameplate, `0` to `1`. |
 | | `nameplateSelectedAlpha` | `1` | Alpha of the target's default nameplate, `0` to `1`. |
@@ -292,6 +307,7 @@ when launching with `-console`), not as Lua functions. See the
 |-------|---------|
 | `ACTION_RANGE_CHECK_UPDATE` | `slot, isInRange, checksRange` (slots with `C_ActionBar.EnableActionRangeCheck` on) |
 | `ACTION_USABLE_CHANGED` | `changes` (a `{ slot, usable, noMana }` table for each slot that changed) |
+| `ADDONS_UNLOADING` | `closingClient` ([details](docs/API.md#addons_unloading-event)) |
 | `BAG_NEW_ITEMS_UPDATED` | *(none)* |
 | `BAG_UPDATE_DELAYED` | *(none)* |
 | `CHAT_MSG_*` | adds `lineID, guid` as `arg11, arg12` after the existing ten ([details](docs/API.md#chat_msg_-arguments-lineid-arg11-and-guid-arg12)) |
@@ -299,11 +315,16 @@ when launching with `-console`), not as Lua functions. See the
 | `COMBAT_LOG_EVENT_UNFILTERED` | same as `COMBAT_LOG_EVENT` |
 | `CURSOR_CHANGED` | `isDefault, newCursorType, oldCursorType, oldCursorVirtualID` |
 | `CVAR_UPDATE` | `cvarName, value` — fires for every cvar change ([details](docs/API.md#cvar_update-event-fires-for-every-change)) |
+| `DAMAGE_METER_COMBAT_SESSION_UPDATED` | `type, sessionID` ([details](docs/API.md#damage_meter_combat_session_updated--damage_meter_current_session_updated--damage_meter_reset-events)) |
+| `DAMAGE_METER_CURRENT_SESSION_UPDATED` | *(none)* |
+| `DAMAGE_METER_RESET` | *(none)* |
 | `DYNAMIC_GOSSIP_POI_UPDATED` | *(none)* |
 | `EQUIPMENT_SETS_CHANGED` | *(none)* |
 | `EQUIPMENT_SWAP_PENDING` | `setID` |
 | `EQUIPMENT_SWAP_FINISHED` | `success, setID` |
 | `FACTION_STANDING_CHANGED` | `factionID, newStanding, repGained` |
+| `GROUP_JOINED` | `category, partyGUID` |
+| `GROUP_LEFT` | `category, partyGUID` |
 | `GLOBAL_MOUSE_DOWN` | `button` |
 | `GLOBAL_MOUSE_UP` | `button` |
 | `HEARTHSTONE_BOUND` | *(none)* |
@@ -314,7 +335,7 @@ when launching with `-console`), not as Lua functions. See the
 | `LOOT_HISTORY_ROLL_CHANGED` | `itemIndex, playerIndex` |
 | `LOOT_HISTORY_ROLL_COMPLETE` | `itemIndex` |
 | `LOOT_SCAN_COMPLETED` | *(none)* |
-| `LOSS_OF_CONTROL_ADDED` | `unitToken` (always `"player"`), `eventIndex` |
+| `LOSS_OF_CONTROL_ADDED` | `unitToken` (always `"player"`), `effectIndex` |
 | `LOSS_OF_CONTROL_UPDATE` | `unitToken` (always `"player"`) |
 | `MAP_EXPLORATION_UPDATED` | *(none)* |
 | `MODIFIER_STATE_CHANGED` | `keyName, down` |
@@ -324,10 +345,13 @@ when launching with `-console`), not as Lua functions. See the
 | `PLAYER_AVG_ITEM_LEVEL_READY` | *(none)* |
 | `PLAYER_EQUIPMENT_CHANGED` | `equipmentSlot, hasCurrent` |
 | `PLAYER_FOCUS_CHANGED` | *(none)* |
+| `PLAYER_IN_COMBAT_CHANGED` | `inCombat` |
+| `PLAYER_LEVEL_CHANGED` | `oldLevel, newLevel, real` |
 | `PLAYER_MOUNT_DISPLAY_CHANGED` | *(none)* |
 | `PLAYER_SOFT_ENEMY_CHANGED` | *(none)* |
 | `PLAYER_SOFT_FRIEND_CHANGED` | *(none)* |
 | `PLAYER_SOFT_INTERACT_CHANGED` | `oldTarget, newTarget` |
+| `PLAYER_SOFT_TARGET_INTERACTION` | *(none)* |
 | `PLAYER_STARTED_LOOKING` | *(none)* |
 | `PLAYER_STOPPED_LOOKING` | *(none)* |
 | `PLAYER_STARTED_MOVING` | *(none)* |
@@ -406,6 +430,8 @@ when launching with `-console`), not as Lua functions. See the
 | Item class | `Enum.ItemClass.{Consumable,Container,Weapon,Gem,Armor,Reagent,Projectile,Tradegoods,ItemEnhancement,Recipe,Quiver,Questitem,Key,Miscellaneous,…}` (0–19) |
 | Item quality | `Enum.ItemQuality.{Poor,Common,Uncommon,Rare,Epic,Legendary,Artifact}` (0–6) |
 | Cursor type | `Enum.UICursorType.{Default,Item,Money,Spell,PetAction,Merchant,Macro,Pet,…}` (0–20; this client yields 0–5, 7 and 9) |
+| Damage meter | `Enum.DamageMeterType`, `Enum.DamageMeterSessionType`, `Enum.DamageMeterSourceDisplayType`, `Enum.DamageMeterStyle`, `Enum.DamageMeterVisibility`, `Enum.DamageMeterNumbers` |
+| Texture slice mode | `Enum.UITextureSliceMode.{Stretched,Tiled}` (0–1) |
 | Spellbook bank | `Enum.SpellBookSpellBank.{Player,Pet}` (0–1) |
 | Spellbook item type | `Enum.SpellBookItemType.{None,Spell,FutureSpell,PetAction,Flyout}` (0–4; 1.12 only yields `Spell`/`PetAction`) |
 | Player swing type | `Enum.PlayerSwingType.{MainHand,OffHand,Ranged}` (0–2) |
@@ -418,13 +444,14 @@ when launching with `-console`), not as Lua functions. See the
 </details>
 
 <details>
-<summary><b>Unit tokens</b> — <code>nameplateN</code>, <code>focus</code>, <code>markN</code>, <code>softinteract</code>, <code>softenemy</code>, <code>softfriend</code>, <code>anyinteract</code>, <code>anyenemy</code>, <code>anyfriend</code></summary>
+<summary><b>Unit tokens</b> — <code>nameplateN</code>, <code>focus</code>, <code>markN</code>, <code>bossN</code>, <code>softinteract</code>, <code>softenemy</code>, <code>softfriend</code>, <code>anyinteract</code>, <code>anyenemy</code>, <code>anyfriend</code></summary>
 
 | Token | Resolves to |
 |-------|-------------|
 | `nameplate1`..`nameplateN` | Unit behind the Nth visible nameplate, in creation-order. Works with every `UnitX` function — `UnitName`, `UnitGUID`, `UnitClass`, `UnitHealth`, etc. Suffix chains (`nameplate1target`, `nameplate1targettarget`) compose. See [NamePlate / Unit tokens](docs/API.md#unit-tokens-nameplaten). |
 | `focus` / `focustarget` | Sticky target set via [`FocusUnit`](docs/API.md#focusunitunit), cleared via [`ClearFocus`](docs/API.md#clearfocus). Same `UnitX` coverage as `nameplateN`. Fires [`PLAYER_FOCUS_CHANGED`](docs/API.md#player_focus_changed-event) on transition. See [Focus](docs/API.md#focus). |
 | `mark1`..`mark8` | Unit currently wearing the Nth raid-target marker (`mark1` = star … `mark8` = skull). Same `UnitX` coverage as `nameplateN`, and fires unit events (`UNIT_HEALTH`, `UNIT_AURA`, …) with `arg1 == "markN"`. `UnitExists("markN")` is `false` when the marker is unset, out of range, or on a non-unit. Suffix chains (`mark1target`) compose. See [Unit tokens (`markN`)](docs/API.md#unit-tokens-markn). |
+| `boss1`..`boss5` | The world bosses of the encounter your group fights now, in the order they joined the fight. A boss keeps its token until the encounter ends, also after it dies. Fires unit events with `arg1 == "bossN"`, and [`INSTANCE_ENCOUNTER_ENGAGE_UNIT`](docs/API.md#instance_encounter_engage_unit-event) when a boss gets or loses its token. Suffix chains (`boss1target`) compose. See [Unit tokens (`bossN`)](docs/API.md#unit-tokens-bossn). |
 | `softinteract` / `anyinteract` / `anyleftinteract` | The object that the Interact Key uses. `softinteract` is the nearest object in front of you that you can interact with. `anyinteract` is your target when you can interact with it, else `softinteract`. Both can be a game object or a corpse, which only `UnitGUID` reads. See [Soft interact](docs/API.md#soft-interact-softinteract--anyinteract). |
 | `softenemy` / `softfriend` / `anyenemy` / `anyfriend` | The nearest enemy and the nearest friendly unit, or your target when it qualifies. `anyenemy` and `anyfriend` use your target first. See [Soft enemy and soft friend](docs/API.md#soft-enemy-and-soft-friend-softenemy--softfriend--anyenemy--anyfriend). |
 
@@ -469,8 +496,8 @@ Download the prebuilt `ClassicAPI.dll` from the
 3. Add `ClassicAPI.dll` to `dlls.txt`.
 4. Launch the game with `VanillaFixes.exe`.
 
-The `!!!ClassicAPI`, `ClassicAPI_DebugTools` and `ClassicAPI_EventTrace`
-addons are *inside* the DLL. You do not download or install them. The
+The `!!!ClassicAPI`, `ClassicAPI_DebugTools`, `ClassicAPI_EventTrace` and
+`ClassicAPI_Replay` addons are *inside* the DLL. You do not download or install them. The
 `src/embed/AddOns/` folder in this repository is source code for the DLL.
 Do not copy it into your game.
 
@@ -483,7 +510,8 @@ functions but that consumer code still expects to find as globals —
 `CallbackRegistryMixin`, `EventRegistry`, `ColorMixin` + `CreateColor`,
 `Item` / `ItemLocation`, `MathUtil`(`Lerp` / `Clamp` / `CreateCounter`),
 `TableUtil` (`tCompare`, `MergeTable`, `SafePack`, etc.), `EventUtil`
-(`ContinueOnAddOnLoaded` and more), `FormattingUtil` (`GetMoneyString`,
+(`ContinueOnAddOnLoaded` and more), `Event` (`Event.RegisterCallback`,
+`Event.RegisterUnitCallback`), `FormattingUtil` (`GetMoneyString`,
 `FormatLargeNumber` and more), `FrameUtil`, `DataProvider`, `CircularBuffer`,
 `EasingUtil`, `ScriptAnimationUtil`, `Interpolator`, `EnumUtil`, `StringUtil`, `AnchorUtil`,
 `GridLayoutUtil`, the layout frame templates (`VerticalLayoutFrame`,
@@ -554,6 +582,52 @@ that you use one of its commands:
 | `/tinspect [expr]` (or `/tins`) | Opens a table inspector on the result of `expr`. With no table, it opens on the frame under the cursor. The window shows the anchors and the fields of the table, grouped by type. You can edit numbers, strings and booleans, filter the lines, and open a child table or frame. |
 | `/profiler` (or `/prof`) | Opens the profiler. The profiler shows the Lua memory, the allocations and the CPU time of each addon, frame, event and global function. `/profiler widget` shows a small window with the Lua memory, the frame rate and the addons that use the most. `/profiler reset` sets the counters to zero. CPU times need `scriptProfile` `1`. `/profiler profile on` sets it and reloads the UI. |
 
+## Encounter replay
+
+`/replay` opens a window that plays back a combat log in 3D. To record a
+log for it, turn on advanced combat logging and its movement file (game
+menu, AddOn Options, Network category), then use `/combatlog`. The
+[CombatLogReplay](docs/API.md#combatlogreplay) section of the reference
+describes the files and the functions behind the window.
+
+The replay window also shows a damage meter. It counts the fight up to the
+time of the replay, so it changes as the replay plays.
+
+## Damage meter
+
+ClassicAPI contains a backport of the retail damage meter
+(`Blizzard_DamageMeter`), with the name `ClassicAPI_DamageMeter`. The DLL
+contains the addon, so you do not install it.
+
+To turn the meter on:
+
+1. Open the game menu and click **AddOn Options**.
+2. Select the **Advanced** category.
+3. Select **Enable Damage Meter**.
+4. To clear the meter each time you enter a different instance, also select
+   **Auto Reset Damage Meter**.
+
+The meter starts a session for each fight. A fight against a world boss is
+one session from the pull to the kill or the wipe, also when you die before
+the end. Other fights last while you or a member of your group near you is
+in combat. The meter keeps the last 30 sessions. It counts only what your
+client sees, so a member of your group that is far away can show less than
+the real amount.
+
+In the window:
+
+- The menu at the top changes what the window shows, for example damage
+  done, healing done, interrupts or deaths.
+- The session menu shows the current session, all sessions together
+  (**Overall**), or one earlier session.
+- Click a row to see the spells of that unit.
+- The gear button opens the settings menu. Click **Unlock Window**, then
+  drag the window or its corner to move or resize it. The menu also has
+  **Create New Window**, the style, the number format and when the window
+  shows.
+
+Absorbs and avoidable damage taken are always empty on this client.
+
 ## Building
 
 Requires CMake (3.10+) and an MSVC toolchain that can target 32-bit Windows.
@@ -561,7 +635,7 @@ WoW.exe is x86, so the DLL must be built as Win32; an x64 build will not
 load.
 
 ```powershell
-git submodule update --init --recursive   # fetches MinHook, picojson, tinycbor
+git submodule update --init --recursive   # fetches MinHook, unordered_dense, rapidjson
 cmake -B build -A Win32
 cmake --build build --config Release
 ```

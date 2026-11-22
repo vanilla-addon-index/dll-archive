@@ -13,7 +13,8 @@
 
 // The four-element totem bar (`GetTotemInfo`, `GetTotemTimeLeft`,
 // `TargetTotem`, `GameTooltip:SetTotem`, `PLAYER_TOTEM_UPDATE`), backported
-// to 3.3.5 parity. 3.3.5 keeps `CGGameUI::m_totems[4]` — {guid, name,
+// to 3.3.5 parity, plus the `totem1`..`totem4` unit tokens (a ClassicAPI
+// extension — no client names its totems as units) over the same GUIDs. 3.3.5 keeps `CGGameUI::m_totems[4]` — {guid, name,
 // duration, startTime, icon} per slot — filled by SMSG_TOTEM_CREATED and
 // emptied by `CGGameUI::DestroyTotem` when the totem's unit object is
 // disabled. Vanilla has neither the packet nor the array (no 1.12 server
@@ -47,6 +48,8 @@
 // empties every slot without an event (3.3.5 `CGGameUI::EnterWorld`, skipped
 // on a UI reload — the local player survives a reload, so we key on it).
 
+#include "Tracker.h"
+
 #include "Game.h"
 #include "Offsets.h"
 #include "duration/Object.h"
@@ -59,20 +62,21 @@
 #include "tick/WorldTick.h"
 #include "tooltip/Lines.h"
 #include "time/Clock.h"
+#include "totem/Owner.h"
 #include "ui/ColorData.h"
 #include "unit/Identity.h"
+#include "unit/TokenEvents.h"
 
 #include <cstdint>
+#include <cstdio>
 
 namespace Totem::Tracker {
 
 namespace {
 
-// SUMMON_TOTEM_SLOT1..4 spell effects (verified against Spell.dbc: Searing
-// 87/Fire, Stoneskin 88/Earth, Healing Stream 89/Water, Windfury 90/Air).
-constexpr int kEffectSummonTotemSlot1 = 87;
-constexpr int kEffectSummonTotemSlot4 = 90;
-constexpr int kSlots = 4;
+constexpr int kEffectSummonTotemSlot1 = Offsets::SPELL_EFFECT_SUMMON_TOTEM_SLOT1;
+constexpr int kEffectSummonTotemSlot4 = Offsets::SPELL_EFFECT_SUMMON_TOTEM_SLOT4;
+constexpr int kSlots = kSlotCount;
 
 
 // Re-scan the object manager for totem existence at most this often.
@@ -97,9 +101,8 @@ uint32_t g_lastScanMs = 0;
 // spell's `Totem[0]` field — the required TOOL the spell lists (Earth
 // Totem, Fire Totem, …), NOT a consumed reagent, and NOT hardcoded. Filled
 // from the player's spellbook on SPELLS_CHANGED and refreshed at cast; 0 =
-// not yet resolved. `g_spellsChangedId` caches the event id.
+// not yet resolved.
 uint32_t g_toolItem[kSlots] = {};
-int g_spellsChangedId = -1;
 
 using Time::Clock::NowMs;
 
@@ -126,15 +129,10 @@ void ScanTools() {
     if (!anyUnknown)
         return;
 
-    auto *book = reinterpret_cast<const int32_t *>(
-        static_cast<uintptr_t>(Offsets::VAR_PLAYER_SPELLBOOK));
-    for (int slot = 0; slot < Offsets::SPELLBOOK_MAX_SLOTS; ++slot) {
-        const int spellID = book[slot];
-        if (spellID <= 0)
-            continue;
+    Spell::Lookup::ForEachBookSpell(0, [](int, int spellID) {
         const uint8_t *rec = Spell::Lookup::RecordForID(spellID);
         if (rec == nullptr)
-            continue;
+            return true;
         const auto *eff = Game::Ptr<const int32_t>(rec, Offsets::OFF_SPELL_RECORD_EFFECT);
         for (int i = 0; i < Offsets::SPELL_RECORD_EFFECT_COUNT; ++i) {
             const int e = eff[i];
@@ -145,37 +143,22 @@ void ScanTools() {
                 g_toolItem[s] = TotemToolItem(rec);
             break;
         }
-    }
+        return true;
+    });
 }
 
 // Re-resolve tool items whenever the player's spells (re)load.
 // SPELLS_CHANGED is a no-arg event through the same dispatcher
-// Event::SignalHook owns, so we observe it there (never suppress — return
-// false). By the time it fires the spellbook is populated, so the scan
-// sees the totems.
-bool OnSignal(int eventID) {
-    if (g_spellsChangedId < 0)
-        g_spellsChangedId = Event::Custom::LookupByName("SPELLS_CHANGED");
-    if (eventID == g_spellsChangedId)
-        ScanTools();
-    return false;
-}
-
-const Event::SignalHook::AutoSubscribe _spellsChanged{&OnSignal};
+// Event::SignalHook owns, so we observe it there. By the time it fires the
+// spellbook is populated, so the scan sees the totems.
+const Event::SignalHook::AutoObserve _spellsChanged{Offsets::EVENT_SPELLS_CHANGED, &ScanTools};
 
 uint32_t SpellDurationMs(const uint8_t *rec) {
-    using GetDuration_t = int(__fastcall *)(const uint8_t *rec, int pet,
-                                            char skipMod);
-    const int ms = reinterpret_cast<GetDuration_t>(
-        static_cast<uintptr_t>(Offsets::FUN_GET_SPELL_DURATION))(rec, 0, 0);
+    const int ms = Spell::Lookup::DurationMs(rec, /*applyMods*/ true);
     return ms > 0 ? static_cast<uint32_t>(ms) : 0;
 }
 
 // ---- the totem creature: find it, then follow it --------------------------
-
-using EnumCallback_t = int(__fastcall *)(void *ctx, void *unusedEdx,
-                                         uint64_t guid);
-using EnumVisibleObjects_t = int(__fastcall *)(EnumCallback_t cb, void *ctx);
 
 struct ScanCtx {
     uint64_t playerGuid;
@@ -184,36 +167,21 @@ struct ScanCtx {
     uint64_t found[kSlots];
 };
 
-int __fastcall ScanCallback(ScanCtx *ctx, void * /*unusedEdx*/, uint64_t guid) {
+// Records `guid` in the first slot still looking for its entry, when it is
+// OUR totem. The entry is a GUID bit-read, so most objects never resolve.
+void MatchCreature(ScanCtx &ctx, uint64_t guid) {
     if (!Guid::IsCreature(guid))
-        return 1;
+        return;
     const uint32_t entry = static_cast<uint32_t>((guid >> 24) & 0xFFFFFFu);
     if (entry == 0)
-        return 1;
-    int match = -1;
+        return;
     for (int s = 0; s < kSlots; ++s) {
-        if (ctx->entries[s] == entry && ctx->found[s] == 0 &&
-            ctx->stale[s] != guid) {
-            match = s;
-            break;
+        if (ctx.entries[s] == entry && ctx.found[s] == 0 && ctx.stale[s] != guid) {
+            if (Totem::Owner::OfTotem(guid) == ctx.playerGuid)
+                ctx.found[s] = guid;
+            return;
         }
     }
-    if (match < 0)
-        return 1;
-
-    // Confirm it's OUR totem: resolve + check CreatedBy == player.
-    void *obj = Object::ByGuid(Offsets::TYPEMASK_UNIT, guid, nullptr, 0);
-    if (obj == nullptr)
-        return 1;
-    auto *desc = Game::Read<const uint8_t *>(
-        obj, Offsets::OFF_UNIT_DESCRIPTOR);
-    if (desc == nullptr)
-        return 1;
-    const uint64_t createdBy = Game::Read<uint64_t>(
-        desc, Offsets::OFF_UNIT_FIELD_CREATEDBY);
-    if (createdBy == ctx->playerGuid)
-        ctx->found[match] = guid;
-    return 1; // keep scanning — other slots may match other creatures
 }
 
 // PLAYER_TOTEM_UPDATE(totemSlot 1-4) — a TBC event absent from vanilla's
@@ -232,7 +200,6 @@ const Game::Doc::Event kTotemUpdateDoc{
     "away.",
     kTotemUpdatePayload};
 const Event::Custom::AutoReserve _totemUpdate{kPlayerTotemUpdate, &kTotemUpdateDoc};
-int g_totemUpdateId = -1;
 uint8_t g_dirtyMask = 0;
 
 void MarkDirty(int slotIdx) {
@@ -242,27 +209,30 @@ void MarkDirty(int slotIdx) {
 void FireDirty() {
     if (g_dirtyMask == 0)
         return;
-    if (g_totemUpdateId < 0)
-        g_totemUpdateId = Event::Custom::LookupByName(kPlayerTotemUpdate);
-    if (g_totemUpdateId < 0)
+    // Read at fire time: a /reload re-claims the reservation's slot.
+    const int slot = _totemUpdate.Slot();
+    if (slot < 0)
         return; // slot not claimed yet — keep dirty, retry next tick
     for (int s = 0; s < kSlots; ++s)
         if (g_dirtyMask & (1u << s))
-            Event::Custom::Fire(g_totemUpdateId, "%d", s + 1);
+            Event::Custom::Fire(slot, "%d", s + 1);
     g_dirtyMask = 0;
 }
 
-// 3.3.5 `CGGameUI::DestroyTotem` minus the CMSG_TOTEM_DESTROYED send.
+// 3.3.5 `CGGameUI::DestroyTotem` minus the CMSG_TOTEM_DESTROYED send. The
+// creature (if still around) loses its `totemN` token.
 void Destroy(int slotIdx) {
+    const uint64_t guid = g_slots[slotIdx].guid;
     g_slots[slotIdx] = Slot{};
     MarkDirty(slotIdx);
+    Unit::TokenEvents::Refresh(guid);
 }
 
 void OnTick() {
     // Out of the world: empty every slot without an event, as 3.3.5's
     // EnterWorld does. The object-manager reads below deref the manager
     // unconditionally, so nothing else runs either.
-    if (Game::Read<void *volatile>(Offsets::VAR_LOCAL_PLAYER_PTR) == nullptr) {
+    if (!Object::RegistryReady()) {
         for (Slot &t : g_slots)
             t = Slot{};
         g_dirtyMask = 0;
@@ -307,9 +277,11 @@ void OnTick() {
                 }
             }
 
-            auto Enum = reinterpret_cast<EnumVisibleObjects_t>(
-                Offsets::FUN_CLNT_OBJ_MGR_ENUM_VISIBLE_OBJECTS);
-            Enum(reinterpret_cast<EnumCallback_t>(&ScanCallback), &ctx);
+            // Keep scanning after a match: other slots may match other creatures.
+            Object::ForEachVisible([&](uint64_t guid) {
+                MatchCreature(ctx, guid);
+                return true;
+            });
 
             for (int s = 0; s < kSlots; ++s) {
                 if (ctx.found[s] == 0)
@@ -319,6 +291,7 @@ void OnTick() {
                 void *obj = Object::ByGuid(Offsets::TYPEMASK_UNIT, t.guid, nullptr, 0);
                 t.name = obj != nullptr ? Unit::Identity::NameForUnit(obj) : nullptr;
                 MarkDirty(s);
+                Unit::TokenEvents::Refresh(t.guid); // gains its `totemN` token
             }
         }
     }
@@ -327,29 +300,6 @@ void OnTick() {
 }
 
 const Tick::WorldTick::AutoSubscribe _tick{&OnTick};
-
-// SpellIcon.dbc path for an icon ID (records indexed by ID; path at +4).
-const char *IconPath(int iconID) {
-    if (iconID <= 0)
-        return nullptr;
-    const int count = Game::Read<int>(Offsets::VAR_SPELL_ICON_COUNT);
-    if (iconID > count)
-        return nullptr;
-    auto *const *records = Game::Read<const uint8_t *const *>(
-        Offsets::VAR_SPELL_ICON_RECORDS);
-    if (records == nullptr || records[iconID] == nullptr)
-        return nullptr;
-    return *reinterpret_cast<const char *const *>(records[iconID] + 4);
-}
-
-// Pushes `s`, or nil for nullptr — Lua 5.1's `lua_pushstring(NULL)`, which
-// 3.3.5 relies on for an unresolved name or icon.
-void PushStringOrNil(void *L, const char *s) {
-    if (s != nullptr)
-        Game::Lua::PushString(L, s);
-    else
-        Game::Lua::PushNil(L);
-}
 
 // Reads the 1-based slot argument the way 3.3.5's totem scripts do: a usage
 // error when it isn't a number, a range error outside 1-4. Returns the
@@ -385,10 +335,10 @@ int __fastcall Script_GetTotemInfo(void *L) {
     const Slot &t = g_slots[slot];
     if (t.active) {
         Game::Lua::PushBool(L, true);
-        PushStringOrNil(L, t.name);
+        Game::Lua::PushString(L, t.name);
         Game::Lua::PushNumber(L, static_cast<double>(t.startMs / 1000));
         Game::Lua::PushNumber(L, static_cast<double>(t.durationMs / 1000));
-        PushStringOrNil(L, t.icon);
+        Game::Lua::PushString(L, t.icon);
         Game::Lua::PushNumber(L, 1.0);
         Game::Lua::PushNumber(L, static_cast<double>(t.spellID));
         return 7;
@@ -425,19 +375,22 @@ int __fastcall Script_GetTotemTimeLeft(void *L) {
 }
 
 // `GetTotemDuration(slot)` → a new duration object for the slot's active
-// totem, from its spawn to its expiry in GetTime() seconds (unrounded, unlike
-// GetTotemInfo's whole seconds), or a zero one when none: retail's return is
-// never nil.
+// totem, its duration from its spawn (unrounded, unlike GetTotemInfo's whole
+// seconds), or nothing: with no totem, and for a slot out of range without an
+// error (3.80.2's reader FUN_140a6bf10 and its body; 2.5 returns nothing for
+// an empty slot too). The rate is 1: 1.12 has no per-totem haste.
 int __fastcall Script_GetTotemDuration(void *L) {
-    const int slot = CheckSlot(L, "Usage: GetTotemDuration(slot)");
-    if (slot < 0)
+    if (!Game::Lua::IsNumber(L, 1)) {
+        Game::Lua::Error(L, "Usage: local duration = GetTotemDuration(slot)");
         return 0;
-    const Slot &t = g_slots[slot];
-    if (t.active)
-        Duration::Object::PushFromStart(L, static_cast<double>(t.startMs) * 0.001,
-                                        static_cast<double>(t.durationMs) * 0.001);
-    else
-        Duration::Object::PushFromStart(L, 0.0, 0.0);
+    }
+    const double slot = Game::Lua::ToNumber(L, 1) - 1.0;
+    if (!(slot >= 0.0 && slot < kSlots))
+        return 0;
+    const Slot &t = g_slots[static_cast<int>(slot)];
+    if (!t.active)
+        return 0;
+    Duration::Object::PushFromStart(L, t.startMs, t.durationMs);
     return 1;
 }
 
@@ -501,20 +454,17 @@ int __fastcall Script_GameTooltipSetTotem(void *L) {
     Tooltip::Lines::Add(self, t.name != nullptr ? t.name : "", kNameColor);
 
     const uint32_t msLeft = SpawnTimeLeft(t);
-    const int savedTop = Game::Lua::GetTop(L);
+    char timeText[256];
     if (msLeft < 60000) {
-        Game::Lua::PushLocalizedFormatInt(L, "SPELL_TIME_REMAINING_SEC",
-                                          "%d Sec",
-                                          static_cast<int>(msLeft / 1000));
+        std::snprintf(timeText, sizeof(timeText),
+                      Game::Lua::GlobalTextOr("SPELL_TIME_REMAINING_SEC", "%d Sec"),
+                      static_cast<int>(msLeft / 1000));
     } else {
         const int minutes = static_cast<int>((msLeft - 1) / 60000 + 1); // ceil
-        Game::Lua::PushLocalizedFormatInt(L, "SPELL_TIME_REMAINING_MIN",
-                                          "%d Min", minutes);
+        std::snprintf(timeText, sizeof(timeText),
+                      Game::Lua::GlobalTextOr("SPELL_TIME_REMAINING_MIN", "%d Min"), minutes);
     }
-    const char *timeText = Game::Lua::ToString(L, -1);
-    if (timeText != nullptr)
-        Tooltip::Lines::Add(self, timeText, kTimeColor);
-    Game::Lua::SetTop(L, savedTop);
+    Tooltip::Lines::Add(self, timeText, kTimeColor);
 
     // Show ourselves — self is still at Lua stack index 1, which is what
     // Script_Show reads.
@@ -593,6 +543,13 @@ const Game::ModuleAutoRegister _autoreg{&RegisterLuaFunctions};
 
 } // namespace
 
+uint64_t GetGUIDBySlot(int slot) {
+    if (slot < 1 || slot > kSlots)
+        return 0;
+    const Slot &t = g_slots[slot - 1];
+    return t.active ? t.guid : 0;
+}
+
 void OnPlayerSpellGo(uint32_t spellID) {
     if (spellID == 0)
         return;
@@ -616,10 +573,11 @@ void OnPlayerSpellGo(uint32_t spellID) {
         t.spellID = spellID;
         t.entry = static_cast<uint32_t>(misc[i]);
         t.staleGuid = previous;
-        t.icon = IconPath(Game::Read<int>(rec, Offsets::OFF_SPELL_RECORD_ICON_ID));
+        t.icon = Spell::Lookup::IconPath(rec, false);
         t.startMs = NowMs();
         t.durationMs = SpellDurationMs(rec);
         MarkDirty(idx); // totem dropped → PLAYER_TOTEM_UPDATE (fired next tick)
+        Unit::TokenEvents::Refresh(previous); // the replaced totem loses `totemN`
         // The cast spell IS a totem of this element, so it names the slot's
         // tool item directly — capture it (covers the slot even before the
         // spellbook scan runs).

@@ -97,6 +97,7 @@
 #include "model/M2.h"
 #include "model/VisualKit.h"
 #include "sound/Play.h"
+#include "spell/Lookup.h"
 
 #include <cmath>
 #include <cstdint>
@@ -152,7 +153,6 @@ namespace {
 // The release events, '$CSL', '$CSR', '$CST'.
 constexpr uint32_t kReleaseEvents[] = {0x4C534324, 0x52534324, 0x54534324};
 constexpr int kAnimStand = 0;
-constexpr int kAnimCombatWound = 9;
 constexpr int kAnimInFlight = 144;
 constexpr float kReleaseTimeoutSec = 2.0f; // 0x0060A814
 constexpr float kMaxSpeed = 100.0f;        // 0x0080C854
@@ -191,7 +191,8 @@ bool ChainLoaded(void *model) {
 // The world's kit player on a unit, for a model: the effects (looping into
 // `effects`, or once and owned by the model), the animation and the sound.
 // A lasting kit (`loop`) records the animation it made the caster's loop,
-// and a sound with the kit-loop bit loops in it until the kit ends.
+// and a sound with the kit-loop bit loops in it until the kit ends. A wound
+// animation plays as the unit's wound (PlayUnitSpellVisualKit 0x0060F3AD).
 void PlayKit(Actor &actor, const uint8_t *kit, std::vector<void *> *effects, SpellCast::KitLoop *loop) {
     if (kit == nullptr || actor.model == nullptr)
         return;
@@ -199,7 +200,9 @@ void PlayKit(Actor &actor, const uint8_t *kit, std::vector<void *> *effects, Spe
     Model::VisualKit::Apply(actor.SceneFrame(), actor.model, kit, !lasting, effects);
     Shakes::PlayKit(actor, kit);
     const int anim = KitAnimation(kit);
-    if (anim >= 0) {
+    if (M2::IsWoundAnimation(anim)) {
+        actor.PlayWoundAnimation(false);
+    } else if (anim >= 0) {
         actor.PlayKitAnimation(anim, lasting);
         if (lasting)
             loop->animation = anim;
@@ -207,9 +210,9 @@ void PlayKit(Actor &actor, const uint8_t *kit, std::vector<void *> *effects, Spe
     const int sound = Game::Read<int32_t>(kit, Offsets::OFF_SPELLVISUALKIT_SOUND);
     if (lasting && Sounds::KitLoops(sound)) {
         loop->soundID = sound;
-        loop->sound = Sounds::Loop(actor.SceneFrame(), sound, actor.position);
+        loop->sound = Sounds::Loop(actor.SceneFrame(), sound, actor.Origin().p);
     } else {
-        Sounds::Play(actor.SceneFrame(), sound, actor.position);
+        Sounds::Play(actor.SceneFrame(), sound, actor.Origin().p);
     }
 }
 
@@ -369,7 +372,7 @@ bool CastsRanged(const Actor &actor) {
         if (cast.phase == SpellCast::Phase::Flight)
             continue;
         const uint8_t *spell =
-            DBC::Record(Offsets::VAR_SPELL_RECORDS, Offsets::VAR_SPELL_RECORD_COUNT, cast.spellID);
+            Spell::Lookup::RecordForID(static_cast<int>(cast.spellID));
         if (spell != nullptr && IsRanged(spell))
             return true;
     }
@@ -489,21 +492,40 @@ void Aim(SpellCast &cast) {
     }
     float box[6];
     M2::GetBoundingBox(target->model, box);
-    cast.destination[0] = target->position[0];
-    cast.destination[1] = target->position[1];
-    cast.destination[2] = target->position[2] + box[5] * target->scale * kAimHeight;
+    const Actor::Point origin = target->Origin();
+    cast.destination[0] = origin.p[0];
+    cast.destination[1] = origin.p[1];
+    cast.destination[2] = origin.p[2] + box[5] * target->scale * kAimHeight;
+}
+
+// GetSpellHostility (0x006EA280): 2 for a harmful spell.
+bool IsHarmful(uint32_t spellID) {
+    using Hostility_t = int(__fastcall *)(const uint8_t *record, void *edx);
+    const auto *spell = Spell::Lookup::RecordForID(static_cast<int>(spellID));
+    return spell != nullptr &&
+           reinterpret_cast<Hostility_t>(Offsets::FUN_SPELL_HOSTILITY)(spell, nullptr) == Offsets::SPELL_HOSTILITY_HARMFUL;
 }
 
 // The spell reaches its target: the caster's OnSpellVisualImpact (queued),
-// the wound animation, then the impact kit once.
+// then the target's side. A missile's arrival (CMissile::ArriveHit
+// 0x0061DC50) plays the wound, then the impact kit. An instant impact
+// (PlaySpellImpactOnUnit 0x006E8CB0, PlaySpellImpactsOnHits 0x006E8BF0)
+// plays the impact kit, then the wound for a harmful spell; without an
+// impact kit it plays neither.
 void Impact(Actor &caster, SpellCast &cast, bool missileHit) {
     caster.spellImpacts.push_back({cast.id, cast.spellID, cast.target});
     Actor *target = cast.target;
     if (target == nullptr || target->model == nullptr)
         return;
-    if (missileHit)
-        target->PlayKitAnimation(kAnimCombatWound, false);
-    PlayKit(*target, Kit(cast.visual, Offsets::OFF_SPELLVISUAL_IMPACT_KIT), nullptr, nullptr);
+    const uint8_t *kit = Kit(cast.visual, Offsets::OFF_SPELLVISUAL_IMPACT_KIT);
+    if (missileHit) {
+        target->PlayWoundAnimation(false);
+        PlayKit(*target, kit, nullptr, nullptr);
+    } else if (kit != nullptr) {
+        PlayKit(*target, kit, nullptr, nullptr);
+        if (IsHarmful(cast.spellID))
+            target->PlayWoundAnimation(false);
+    }
 }
 
 // StickInUnit (0x0061E7C0), from ArriveHit (0x0061DC50): a missile shot from
@@ -566,8 +588,8 @@ void __stdcall OnEffectEvent(uint32_t tag, uint32_t data, const float *point, ui
     if (tag == Offsets::M2_EVENT_TAG_SND && point != nullptr) {
         const float where[3] = {point[0], point[1], point[2]};
         Sounds::Play(caster->SceneFrame(), static_cast<int32_t>(data), where);
-    } else if (tag == kHIT && caster->model != nullptr) {
-        caster->PlayKitAnimation(kAnimCombatWound, false);
+    } else if (tag == kHIT) {
+        caster->PlayWoundAnimation(false);
     }
 }
 
@@ -630,7 +652,7 @@ void HandPoint(Actor &caster, float (&point)[3]) {
         }
     }
     for (int i = 0; i < 3; ++i)
-        point[i] = caster.position[i];
+        point[i] = caster.Origin().p[i];
 }
 
 // CMissile::Launch: aims, fits the speed to the time spent queued, plays
@@ -701,8 +723,7 @@ void StartCast(Actor &caster, SpellCast &cast) {
     PlayKit(caster, Kit(cast.visual, Offsets::OFF_SPELLVISUAL_CAST_KIT), nullptr, nullptr);
     if (cast.target != nullptr)
         Chains::Start(caster, *cast.target, cast.visual, Kit(cast.visual, Offsets::OFF_SPELLVISUAL_CAST_KIT));
-    const auto *spell = DBC::Record(Offsets::VAR_SPELL_RECORDS, Offsets::VAR_SPELL_RECORD_COUNT,
-                                    cast.spellID);
+    const auto *spell = Spell::Lookup::RecordForID(static_cast<int>(cast.spellID));
     cast.speed = spell != nullptr ? Game::Read<float>(spell, Offsets::OFF_SPELL_RECORD_SPEED) : 0.0f;
     const bool missile = (Game::Read<uint32_t>(cast.visual, Offsets::OFF_SPELLVISUAL_HAS_MISSILE) != 0 ||
                           cast.ammoDisplay != 0) &&
@@ -917,10 +938,9 @@ void AddCastsMade(Actor &caster) {
 // the caster.
 uint32_t Begin(Actor &caster, uint32_t spellID, Actor *target, const float *point, int castTimeMs, int channelMs,
                const std::vector<Actor *> &others) {
-    using GetCastTime_t = int(__fastcall *)(int spellID, int pet, int allowNegative);
     static uint32_t s_lastCastID = 0;
     const uint8_t *spell =
-        DBC::Record(Offsets::VAR_SPELL_RECORDS, Offsets::VAR_SPELL_RECORD_COUNT, spellID);
+        Spell::Lookup::RecordForID(static_cast<int>(spellID));
     if (spell == nullptr || caster.model == nullptr)
         return 0;
     uint8_t visual[Offsets::SPELL_VISUAL_SIZE];
@@ -929,8 +949,7 @@ uint32_t Begin(Actor &caster, uint32_t spellID, Actor *target, const float *poin
     // A new cast ends the precast of one still preparing.
     Stop(caster, false);
     if (castTimeMs < 0)
-        castTimeMs = reinterpret_cast<GetCastTime_t>(Offsets::FUN_GET_CAST_TIME)(
-            static_cast<int>(spellID), 0, 0);
+        castTimeMs = Spell::Lookup::CastTimeMs(static_cast<int>(spellID), false, false);
     SpellCast cast;
     if (++s_lastCastID == 0) // the IDs start again from 1 after 2^32 casts
         s_lastCastID = 1;
@@ -956,9 +975,8 @@ uint32_t Begin(Actor &caster, uint32_t spellID, Actor *target, const float *poin
     // A channeled spell channels after its cast, for the time given, else its
     // duration (forever for an endless one).
     if ((Game::Read<uint32_t>(spell, Offsets::OFF_SPELL_RECORD_ATTRIBUTES_EX) & Offsets::SPELL_ATTR_EX_CHANNELED) != 0) {
-        using GetDuration_t = int(__fastcall *)(const void *spell, int pet, int unmodified);
-        cast.channelMs = channelMs >= 0 ? channelMs
-                                        : reinterpret_cast<GetDuration_t>(Offsets::FUN_GET_SPELL_DURATION)(spell, 0, 1);
+        cast.channelMs =
+            channelMs >= 0 ? channelMs : Spell::Lookup::DurationMs(spell, /*applyMods*/ false);
         if (cast.channelMs == 0)
             cast.channelMs = 1; // a channel with no time still shows for a frame
     }
@@ -1010,7 +1028,7 @@ void Update(Actor &caster, float elapsedSec) {
     // The world has no pause; a paused scene (or caster) holds its missiles
     // still and silences their flight, which starts again when the pause
     // ends, as a hidden scene's does when it shows again.
-    const bool held = IsPaused(caster.SceneFrame()) || caster.paused || caster.globalPaused;
+    const bool held = caster.paused || caster.globalPaused;
     for (SpellCast &cast : caster.spellCasts) {
         for (SpellCast::KitLoop *loop : {&cast.precastLoop, &cast.channelLoop}) {
             if (loop->soundID == 0)
@@ -1021,7 +1039,7 @@ void Update(Actor &caster, float elapsedSec) {
                     loop->sound = nullptr;
                 }
             } else if (loop->sound == nullptr) {
-                loop->sound = Sounds::Loop(caster.SceneFrame(), loop->soundID, caster.position);
+                loop->sound = Sounds::Loop(caster.SceneFrame(), loop->soundID, caster.Origin().p);
             }
         }
         if (cast.phase != SpellCast::Phase::Flight)
@@ -1087,8 +1105,8 @@ void Place(Actor &caster) {
     const float axisZ[3] = {0.0f, 0.0f, 1.0f};
     const float scales[3] = {1.0f, 1.0f, 1.0f};
     for (SpellCast &cast : caster.spellCasts) {
-        Sounds::Move(caster.SceneFrame(), cast.precastLoop.sound, caster.position);
-        Sounds::Move(caster.SceneFrame(), cast.channelLoop.sound, caster.position);
+        Sounds::Move(caster.SceneFrame(), cast.precastLoop.sound, caster.Origin().p);
+        Sounds::Move(caster.SceneFrame(), cast.channelLoop.sound, caster.Origin().p);
         if (cast.phase != SpellCast::Phase::Flight)
             continue;
         const float dx = cast.destination[0] - cast.position[0];

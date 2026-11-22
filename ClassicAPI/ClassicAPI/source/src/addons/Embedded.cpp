@@ -15,10 +15,11 @@
 // this module makes the engine think they do — without writing anything
 // to the filesystem. The addons are `Manifest::kAddons` (the `ADDONS`
 // list in CMakeLists.txt): `!!!ClassicAPI`, which loads at login, and
-// `ClassicAPI_DebugTools` and `ClassicAPI_EventTrace`, which are
-// `## LoadOnDemand` behind the `/dump` / `/fstack` / `/etrace` stubs in
-// `!!!ClassicAPI` — retail's chat-frame + Blizzard_DebugTools /
-// Blizzard_EventTrace split. (The `Blizzard_` name is not
+// `ClassicAPI_DebugTools`, `ClassicAPI_EventTrace`, `ClassicAPI_Replay` and
+// `ClassicAPI_DamageMeter`, which are `## LoadOnDemand` behind the `/dump` /
+// `/fstack` / `/etrace` / `/replay` stubs and the `damageMeterEnabled` cvar in
+// `!!!ClassicAPI` — retail's chat-frame +
+// Blizzard_DebugTools / Blizzard_EventTrace split. (The `Blizzard_` name is not
 // available to us: the engine moves loose `Interface\AddOns\Blizzard*`
 // folders aside at startup, `MoveAsideLooseInterface`, and refuses a
 // `Blizzard_*` TOC without a signature.)
@@ -69,7 +70,7 @@
 #include "Game.h"
 #include "Offsets.h"
 #include "addons/Embedded.h"
-#include "addons/EngineIO.h"
+#include "storm/File.h"
 #include "addons/FlavorBindings.h"
 #include "addons/FlavorToc.h"
 #include "addons/Registry.h"
@@ -149,11 +150,11 @@ Embed::Bytes LookupEmbedded(const char *relPath) {
     return Embed::File(file->resourceId, file->index);
 }
 
-// Engine file I/O + Storm allocator — see addons/EngineIO.h for the shapes and
+// Engine file I/O + Storm allocator — see storm/File.h for the shapes and
 // the __stdcall / ESP-drift hazard. A buffer we SMemAlloc here is freed cleanly
 // by the caller's standard SMemFree in turn.
-using AddOns::EngineIO::FileExistsFn;
-using AddOns::EngineIO::FileReadFn;
+using FileExistsFn = Storm::File::ExistsFn;
+using FileReadFn = Storm::File::ReadFn;
 
 // The trampolines to the original FUN_FILE_READ / FUN_FILE_EXISTS (installed
 // by the co-hooks below).
@@ -345,9 +346,8 @@ int __stdcall FileRead_h(int unused, const char *path, void **outBuf,
     const int addon = MatchAddonPath(path, &relPath);
     if (addon < 0) {
         // Not an embedded addon. If this is a base-TOC read for a multi-flavor
-        // addon that ships only `<Name>_Turtle.toc` / `_ClassicAPI.toc`, serve
-        // that in place of the missing `<Name>.toc` so it registers and loads
-        // (see addons/FlavorToc.h).
+        // addon that ships a flavor TOC (`<Name>_ClassicAPI.toc`, ...), serve
+        // that in place of `<Name>.toc` (see addons/FlavorToc.h).
         int result;
         if (AddOns::FlavorToc::TryHandle(unused, path, outBuf, outSize,
                                          extraBytes, flag1, flag2, FileRead_o)) {
@@ -355,8 +355,8 @@ int __stdcall FileRead_h(int unused, const char *path, void **outBuf,
         } else if (AddOns::FlavorBindings::TryHandle(unused, path, outBuf, outSize,
                                                      extraBytes, flag1, flag2,
                                                      FileRead_o)) {
-            // Flavor-specific addon keybindings: serve `Bindings_Turtle.xml` /
-            // `Bindings_ClassicAPI.xml` for a `…\AddOns\<Name>\Bindings.xml`
+            // Flavor-specific addon keybindings: serve `Bindings_ClassicAPI.xml`
+            // (...) for a `…\AddOns\<Name>\Bindings.xml`
             // read (see addons/FlavorBindings.h). The paired exists-check
             // co-hook lives in that module.
             result = 1;
@@ -364,12 +364,13 @@ int __stdcall FileRead_h(int unused, const char *path, void **outBuf,
             result = FileRead_o(unused, path, outBuf, outSize, extraBytes,
                                 flag1, flag2);
         }
-        // Per-line TOC directives: evaluate `[Condition]` and expand
-        // `[Variable]` tokens on this addon TOC's file lines so the load
-        // pass sees clean paths (see addons/TocRewrite.h). No-op unless
-        // `path` is an addon `.toc` that actually contains directives.
-        if (result != 0)
-            AddOns::TocRewrite::Transform(path, outBuf, outSize);
+        // TOC directives: evaluate `[Condition]` and expand `[Variable]`
+        // tokens on this addon TOC's lines, and reduce `## Interface:` to one
+        // value, so the engine's parsers see processed lines (see
+        // addons/TocRewrite.h). No-op unless `path` is an addon `.toc`. A TOC
+        // that must count as missing (OnlyBetaAndPTR) fails the read.
+        if (result != 0 && !AddOns::TocRewrite::Transform(path, outBuf, outSize))
+            result = 0;
         return result;
     }
 
@@ -377,8 +378,8 @@ int __stdcall FileRead_h(int unused, const char *path, void **outBuf,
     // installed addon's, whichever source serves it.
     const int result = ReadAddonFile(addon, relPath, unused, path, outBuf, outSize,
                                      extraBytes, flag1, flag2);
-    if (result != 0)
-        AddOns::TocRewrite::Transform(path, outBuf, outSize);
+    if (result != 0 && !AddOns::TocRewrite::Transform(path, outBuf, outSize))
+        return 0;
     return result;
 }
 
@@ -453,18 +454,18 @@ void __cdecl AddonScan_h() {
 // `FUN_ADDON_ENABLE_RESOLVE` — per-character enable resolver. We
 // co-hook it to force-enable the embedded addons regardless of
 // DefaultState or any stale WTF disable-override, so hiding them from
-// the addon list can never leave one stuck off. Returns 2 ("enabled for
-// all"); the load-pass gate only tests `!= 0`. Every other addon falls
+// the addon list can never leave one stuck off. Returns 2 ("all
+// enabled"); the load check only tests `!= 0`. Every other addon falls
 // through to the original untouched. See the Offsets.h note for the ABI.
 using AddonEnableResolve_t =
-    uint32_t(__fastcall *)(const char *name, const char *account, char resolveAll);
+    uint32_t(__fastcall *)(const char *name, const char *character, char fallback);
 AddonEnableResolve_t AddonEnableResolve_o = nullptr;
 
-uint32_t __fastcall AddonEnableResolve_h(const char *name, const char *account,
-                                         char resolveAll) {
+uint32_t __fastcall AddonEnableResolve_h(const char *name, const char *character,
+                                         char fallback) {
     if (name != nullptr && IndexOfAddon(name) >= 0)
         return 2;
-    return AddonEnableResolve_o(name, account, resolveAll);
+    return AddonEnableResolve_o(name, character, fallback);
 }
 
 const Game::HookAutoRegister _hookFileRead{

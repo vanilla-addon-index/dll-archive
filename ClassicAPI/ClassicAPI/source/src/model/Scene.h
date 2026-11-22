@@ -15,12 +15,15 @@
 
 #include "Offsets.h"
 #include "animation/Object.h"
+#include "model/DisplayInfo.h"
 #include "model/Outfit.h"
+#include "model/Portrait.h"
 #include "model/SceneContact.h"
 #include "model/TryOn.h"
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -167,6 +170,12 @@ struct AuraVisual {
     // playing at the actor (null while the scene is paused or hidden).
     int loopSoundID = 0;
     void *loopSound = nullptr;
+    // The kit's animation speed procedure (kind 11, AddAnimSpeedEffect
+    // 0x006201D0) while shown: the speed it gave the mount's bone 0, the
+    // body's key bone 4 and bone 0, and the speeds it replaced there.
+    bool setsSpeed = false;
+    float speed = 1.0f;
+    float savedSpeeds[3] = {1.0f, 1.0f, 1.0f};
 };
 
 // The area kit of a spell's ground area while it runs: the shard emitter
@@ -204,12 +213,25 @@ class Actor : public Animation::Object {
     void Place();
     // The scene frame's alpha changed.
     void ApplyAlpha();
+    // 3.80.2's desaturation (0x14194A9F0): clamped to 0..1, kept on the actor
+    // and given to its model, now and on each new model.
+    void SetDesaturation(float amount);
 
-    // Shows `model` (one reference, which the actor takes over), or nothing.
     // Clears the model (OnModelCleared), then releases any model that script
-    // set: the caller's new model wins.
+    // set.
     void Vacate();
-    void SetModel(void *model, const char *path, const uint8_t *dressRecord);
+    // Lets the model go with no script, as 3.80.2's SetModel (0x1419497D0)
+    // replaces one: OnModelCleared is ClearModel's alone.
+    void Release();
+    // OnModelLoaded's work once the model (and its dress) has loaded, then the
+    // script: from SetModel at once for a model that has already loaded, as
+    // 3.80.2's SetModel runs its handler (0x14194A570), else from the update
+    // walk. True when it ran.
+    bool FinishLoad();
+    // A model dressed by a CreatureDisplayInfoExtra record, or by a player
+    // body, once it has loaded.
+    void SetModel(void *model, const char *path, const uint8_t *dressRecord,
+                  const Model::DisplayInfo::Body *body = nullptr);
     // Shows a copy of the unit's model, dressed and armed per autoDress,
     // sheathed and hideWeapons; false (and no model) when it has none.
     bool SetUnitModel(uint64_t guid);
@@ -222,6 +244,9 @@ class Actor : public Animation::Object {
     void DrawRanged();
     // Leaves sheathe state 2: the ranged weapon leaves the hand.
     void SheatheRanged();
+    // A held lane on a hand (inventory slot 16 or 17) or the ranged slot
+    // (18), as a unit's virtual item: once the model has loaded.
+    void HoldItem(int invSlot, const Outfit::HeldLane &lane, const void *display);
     // Whether the hand lanes hang at their sheath points: sheathed, or the
     // ranged weapon drawn.
     bool MeleeSheathed() const { return sheathed || rangedDrawn; }
@@ -229,6 +254,12 @@ class Actor : public Animation::Object {
     // and the item's record is cached; returns the ItemTryOnReason.
     int TryOnItem(const Model::TryOn::Request &request);
     void ClearModel();
+    // SetPaused, the actor's and the scene's: holds or releases the
+    // animation; with affectsGlobalPause the global pause flag follows too.
+    void Pause(bool paused, bool affectsGlobalPause);
+    // TakeActor: the actor hangs from `scene` now. The caller has cleared
+    // its model and moved it between the scenes' lists.
+    void MoveToScene(void *scene) { parent = scene; }
     void PlayAnimation();
     // Shows the kit (0 for none) on the model, replacing the one shown.
     void SetSpellVisualKit(uint32_t kitID, bool oneShot);
@@ -238,6 +269,9 @@ class Actor : public Animation::Object {
     void *model = nullptr;
     std::string modelPath;
     const uint8_t *dressRecord = nullptr; // CreatureDisplayInfoExtra, until dressed
+    std::optional<Model::DisplayInfo::Body> body; // a player body, until dressed
+    // Whether the model has a character component, or gets one once loaded.
+    bool Dresses() const { return dresser != nullptr || dressRecord != nullptr || body.has_value(); }
     float displayScale = 1.0f; // a creature display's CreatureModelScale, else 1
     // The CreatureDisplayInfo the model shows (a creature display's, or the
     // unit's UNIT_FIELD_DISPLAYID), for its sound data; 0 for a model file.
@@ -249,6 +283,11 @@ class Actor : public Animation::Object {
     const uint8_t *areaEffect = nullptr;
     float areaRadius = 0.0f;
     const uint8_t *areaVisual = nullptr; // the spell's SpellVisual row
+    // SetGameObjectState (model/SceneGameObject.cpp): the animation state a
+    // game object's handler plays (family A's +0x10, 0 to 12; -1 for none)
+    // and when it began on the scene clock.
+    int gameObjectAnim = -1;
+    uint32_t gameObjectAnimStartMs = 0;
     // The area's kit, and its shards, which play out after the area goes.
     AreaEmitter areaEmitter;
     std::vector<std::unique_ptr<AreaShard>> areaShards;
@@ -290,6 +329,14 @@ class Actor : public Animation::Object {
     // The character component dressing the model: a display's dress, or the
     // clone of a unit's.
     void *dresser = nullptr;
+    // SetPortraitTexture: the actor's portrait, and whether it waits for a
+    // bake. A new model marks it, as a unit's new model marks its portrait
+    // dirty (0x00607E0F).
+    Model::Portrait::Live *portrait = nullptr;
+    bool portraitDirty = false;
+    // Bakes the portrait once the model is ready, as BakePortrait waits for
+    // a unit (0x00524F60): dressed, and ready to draw.
+    void BakePortrait();
     // A unit's model (SetModelByUnit): the unit and what the copy holds.
     uint64_t unitGuid = 0;
     // The unit's race splash (ChrRaces +0x34, the unit's +0xB18), played as
@@ -317,6 +364,12 @@ class Actor : public Animation::Object {
     uint32_t sheatheCategory[2] = {};
     uint8_t ownSheathe[2] = {};
     bool useUnitSheatheCategory = false; // UseUnitSheatheCategory
+    // The transmog flags (Set/GetUseTransmogSkin, ...Choices,
+    // ...ObeyHideInTransmogFlag), stored only: 1.12 has no transmog
+    // collection.
+    bool useTransmogSkin = false;
+    bool useTransmogChoices = false;
+    bool obeyHideInTransmogFlag = false;
     // The ammo tried on (an INVTYPE_AMMO item, as a player equips it): its
     // ItemDisplayInfo id, 0 for none.
     uint32_t ammoDisplay = 0;
@@ -329,6 +382,13 @@ class Actor : public Animation::Object {
     // unit's).
     bool armorReady = true;
     std::vector<Model::TryOn::Request> pendingTryOns; // waiting for the model or the record
+    // SetHeldItem calls waiting for the model to load, in order.
+    struct HeldRequest {
+        int invSlot;
+        Outfit::HeldLane lane;
+        const void *display;
+    };
+    std::vector<HeldRequest> pendingHeld;
     bool loaded = false; // OnModelLoaded has run for the model
     bool animFinished = false;
 
@@ -353,16 +413,36 @@ class Actor : public Animation::Object {
     // The yaw the model is drawn at: the body facing while the mover is on.
     float ShownYaw() const { return mover != nullptr ? facings.body : yaw; }
 
+    // SetPosition's position, in the actor's scale: the model stands at
+    // Origin(), the scale times it, as 3.80.2 places it (0x141949C00).
     float position[3] = {0.0f, 0.0f, 0.0f};
     float yaw = 0.0f, pitch = 0.0f, roll = 0.0f;
-    float scale = 1.0f;
+    float scale = 1.0f; // at least 0.01 (SetScale 0x140C5A1E0)
+    struct Point {
+        float p[3];
+    };
+    // Where the model stands in the scene.
+    Point Origin() const { return {{position[0] * scale, position[1] * scale, position[2] * scale}}; }
+    // Stands the actor at a scene point (the mover's): the position over the
+    // scale.
+    void StandAt(const float (&point)[3]) {
+        for (int i = 0; i < 3; ++i)
+            position[i] = point[i] / scale;
+    }
     float alpha = 1.0f;
+    float desaturation = 0.0f;
     bool shown = true;
     // FadeOut: the world's fade of a removed object's model, on the scene
     // clock from fadeStartMs; the actor hides when it ends.
     bool fadingOut = false;
     uint32_t fadeStartMs = 0;
     bool useCenterForOrigin[3] = {false, false, false};
+    // The active box's centre, taken once when the model loads (0x14194A570
+    // keeps it at +0x1B0; SetAnimation does not move it).
+    float originCentre[3] = {0.0f, 0.0f, 0.0f};
+    // SetPreferModelCollisionBounds (+0x1BD bit 0): the active box is the
+    // model's collision box, when it has one.
+    bool preferModelCollisionBounds = false;
     uint32_t animation = 0;
     int variation = -1;
     float animSpeed = 1.0f;
@@ -402,6 +482,59 @@ class Actor : public Animation::Object {
     void PlayKitAnimation(int anim, bool loops);
     // The animation the body plays: a spell kit's, else the script's.
     int CurrentAnimation() const { return kitAnimation >= 0 ? kitAnimation : static_cast<int>(animation); }
+    // The unit state a reaction reads, as the script sets it (ClassicAPI
+    // extensions): the creature the actor stands for (SetCreatureID, 0 for
+    // none), whose creature record's type flags can keep wounds and parries
+    // off; whether it swings at a target (SetAttacking, the unit's attack
+    // target +0xC48); whether it moves or rides (SetMoving, for an actor the
+    // script moves; the mover's own flags count as well).
+    uint32_t creatureID = 0;
+    bool attacking = false;
+    bool moving = false;
+    // CGUnit_C::PlayWoundAnimation (0x0060EA70): CombatCritical for a
+    // critical, CombatWound while attacking, else StandWound; on the upper
+    // body while the actor attacks, moves or rides, unless its body plays a
+    // ready stance. Nothing for a dead actor, an unloaded model, a creature
+    // whose type flags keep wounds off, an actor an aura's animation speed
+    // holds, or a model without the sequence. A missile's arrival, a harmful
+    // spell's impact, an effect's $HIT and a one-shot kit's wound animation
+    // all play it.
+    void PlayWoundAnimation(bool critical);
+    // CGUnit_C::PlayParryAnimation (0x0060EC00): the parry of the main
+    // hand's weapon subclass (none without a weapon), through
+    // PlayUnitAnimation. Kept off as the wound is.
+    void PlayParryAnimation();
+    // CGUnit_C::PlayAnimation (0x005FE2F0) for a one-shot request (a swing, a
+    // parry, a dodge, a block): a swing over a swing doubles the playing one
+    // and waits for its end; else the request goes to the upper body or the
+    // whole body by the unit's routing, at speed 0 while an aura's animation
+    // speed holds the actor. Nothing for a dead actor or an unloaded model.
+    void PlayUnitAnimation(uint32_t anim);
+    // A seated rider (AttachToMount, AttachToActor): the model hangs on
+    // another actor's, which stands for the unit's mount model (+0xDC).
+    bool Seated() const;
+    // The result of the swing the actor plays, as SMSG_ATTACKERSTATEUPDATE
+    // (0x006255B0) leaves it on the attacker (+0xD70, the victim state
+    // +0xE14, the hit info +0xD80) for its swing animation's events to show
+    // on the victim (OnCombatModelEvent 0x006247D0): $CPP the avoid pose,
+    // then $CAH or $AH0..$AH3 the wound. The results are the victim states
+    // the events read.
+    enum class SwingResult : uint8_t { Hit, Miss, Dodge, Parry, Block, Evade, Immune, Deflect, Other };
+    struct PendingSwing {
+        bool pending = false;
+        Actor *victim = nullptr; // null when not in the scene; actors live as long as their scene
+        SwingResult result = SwingResult::Other;
+        bool critical = false;
+    } pendingSwing;
+    // The swing a swing over a swing left waiting (+0xD60), -1 for none: it
+    // plays when the playing swing's track ends.
+    int queuedSwing = -1;
+    // The 0x14A handler on the attacker (0x006255B0): a swing not yet shown
+    // is dropped (the world only floats its text), the new result waits on
+    // the actor, and PlaySwingAnimation (0x006246A0) plays the swing of the
+    // main hand's weapon, or of the off hand's. `victim` may be null (the
+    // victim is not in the scene). Nothing for a dead actor.
+    void PlaySwing(Actor *victim, SwingResult result, bool critical, bool offHand);
     // A release event of the model this frame ($CSL / $CSR / $CST, or $BWR
     // from the bow or rifle release point), and its point.
     bool releaseEvent = false;
@@ -532,9 +665,18 @@ void Show(Actor &actor);
 void Drop(Actor &actor);
 // The tint and alpha of the auras shown, after a kit reset the model's.
 void ApplyColors(Actor &actor);
-// The animation the newest aura shown pins while the actor stands (a state
-// kit's, ApplyEffectAnimation 0x005FDE80), or -1.
-int PinnedAnimation(const Actor &actor);
+// What the auras shown make of an animation the actor plays
+// (ApplyEffectAnimation 0x005FDE80), newest first: an animation speed
+// procedure holds it (it plays at speed 0); else a state kit's animation
+// pins it in place of the request while the actor is not `moving`.
+struct EffectAnimation {
+    int pinned = -1;
+    bool frozen = false;
+};
+EffectAnimation Effect(const Actor &actor, bool moving);
+// An aura shown sets the actor's animation speed (the wound's walk of the
+// unit's effects for flag 0x4, 0x0060EAB6).
+bool SetsSpeed(const Actor &actor);
 // From the actor's update, link and place: the world effects' light,
 // visibility and placement, and the loop sounds' place and pause.
 void Update(Actor &actor, float elapsedSec);
@@ -564,6 +706,23 @@ void Drop(Actor &actor);
 // at the next update.
 void Silence(Actor &actor);
 } // namespace Areas
+
+// A game object's open, close and destroy animations (model/SceneGameObject.cpp),
+// as a family A handler plays them on the world's game object.
+namespace GameObjects {
+// The model path of a GameObjectDisplayInfo row, as CGGameObject_C's
+// GetDisplayModelPath (0x005F8090) reads it; null for none.
+const char *ModelPath(uint32_t displayID);
+// GAMEOBJECT_STATE `state` (0 active, 1 ready, 2 alternative) comes in. With
+// `previous`, the state it left, it plays the moving animation first.
+void SetState(Actor &actor, uint32_t state, int previous);
+// Plays the actor's state again: from SetState, and once its model loads,
+// which picks the fallbacks for animations the model lacks.
+void Play(Actor &actor);
+// The animation ended: a moving state goes on to its end state. False for a
+// state that only plays again.
+bool FollowOn(Actor &actor);
+} // namespace GameObjects
 
 // The unit's movement animations (model/SceneLocomotion.cpp): an actor with
 // the mover on picks and plays them as the client's unit does from its own
@@ -619,7 +778,9 @@ namespace Terrain {
 struct Land;
 } // namespace Terrain
 
-// The scene's WMO (SetWorldModel; model/SceneWorld.cpp).
+// The scene's WMOs (SetWorldModel and the terrain's tiles;
+// model/SceneWorld.cpp). The scene holds one set, made with its first WMO
+// and freed with its last.
 namespace World {
 struct Backdrop;
 // The scene's view volume in scene space (the device's view moved by -eye
@@ -631,29 +792,65 @@ struct ViewVolume {
     alignas(16) uint8_t bytes[Offsets::FRUSTUM_VOLUME_SIZE] = {};
 };
 void BuildViewVolume(ViewVolume &volume, const float (&eye)[3]);
+// The world's frustum stack: a push copies the top (the volume form then
+// stores `volume` on it), a pop restores the one below.
+inline void PushFrustum() { reinterpret_cast<void(__cdecl *)()>(Offsets::FUN_FRUSTUM_PUSH)(); }
+inline void PushFrustum(const ViewVolume &volume) {
+    PushFrustum();
+    reinterpret_cast<void(__thiscall *)(const void *)>(Offsets::FUN_FRUSTUM_STORE)(volume.bytes);
+}
+inline void PopFrustum() { reinterpret_cast<void(__cdecl *)()>(Offsets::FUN_FRUSTUM_POP)(); }
+// Whether the volume on top of the stack rejects a sphere (0x00682EF0).
+inline bool SphereCulled(const float (&centre)[3], float radius) {
+    return reinterpret_cast<uint32_t(__thiscall *)(const float *, float)>(Offsets::FUN_FRUSTUM_IS_SPHERE_CULLED)(
+               centre, radius) != 0;
+}
 // Whether `path` names a WMO (ends in ".wmo"), which only the scene shows.
 bool IsWmoPath(const char *path);
-// Null when the engine cannot read `path` safely: it is not a WMO, a file
-// does not open, the root's chunks are not in the engine's order or it has
-// more groups than the engine holds.
+// SetWorldModel's WMO in `set`, replacing the one it had; the tiles' stay.
+// False, with no WMO of its own, when the engine cannot read `path` safely:
+// it is not a WMO, a file does not open, the root's chunks are not in the
+// engine's order or it has more groups than the engine holds.
 // `mapID` is the map whose light the outdoor water takes (Light.dbc at the
-// scene's camera), or kNoMap for the world's light where the player is.
+// scene's camera), or kNoMap for the world's light where the player is (the
+// tiles' map, when the set has tiles).
 constexpr uint32_t kNoMap = 0xFFFFFFFFu;
-Backdrop *Load(const char *path, const float (&placement)[16], uint32_t doodadSet, uint32_t mapID);
-// The single WMO of a WMO-only map at the map's own placement; null for any
-// other map.
-Backdrop *LoadMap(uint32_t mapID);
+bool SetModel(Backdrop *&set, const char *path, const float (&placement)[16], uint32_t doodadSet, uint32_t mapID);
+// The same with the single WMO of a WMO-only map at the map's own placement;
+// false for any other map.
+bool SetMapModel(Backdrop *&set, uint32_t mapID);
+// CMap::LoadWdt's read (0x00694760) through MAIN: the map's directory and,
+// for each tile (row x 64 + column), whether the map has its ADT. False when
+// the map has no directory or its WDT does not read.
+bool MapTiles(uint32_t mapID, std::string &directory, std::vector<bool> &listed);
+void ClearModel(Backdrop *&set);
+// An ADT's MODF entry and its MWMO name.
+struct TileDef {
+    std::string path;
+    uint8_t entry[Offsets::MODF_SIZE];
+};
+// The terrain tiles' WMOs in `set`, one per unique id, placed as the world
+// places a tile's: the ones it had and `defs` still names stay, the others
+// go, and new ones join in the order given.
+void SetTileObjects(Backdrop *&set, const std::vector<TileDef> &defs, uint32_t mapID);
 // SetWorldModel's placement: at `position`, turned by `yaw` about z.
 void Placement(const float (&position)[3], float yaw, float (&out)[16]);
 void Free(Backdrop *backdrop);
-// From the scene's update, before the scene advances: makes the doodads of
-// each group parsed since, puts the ready ones on the animate list and
-// moves their sounds with the camera, and moves the camera's WMO fog (the
-// MFOG records near the camera, faded in and out as the world fades them).
-// `sounds` is SetPlayWorldModelSounds.
-void Update(Backdrop &backdrop, void *frame, bool sounds, float elapsed);
+// From the scene's update, before the scene advances: loads the groups near
+// the camera and makes the doodads of each group parsed since, puts the
+// ready ones on the animate list and moves their sounds with the camera, and
+// moves the camera's WMO fog (the MFOG records near the camera, faded in and
+// out as the world fades them). `sounds` is SetPlayWorldModelSounds; the
+// terrain, when the scene has one, can take the camera's claim from a WMO.
+void Update(Backdrop &backdrop, const Terrain::Land *terrain, void *frame, bool sounds, float elapsed);
 // Drops the doodads' loop sounds (the scene hid).
 void Silence(Backdrop &backdrop);
+// From the paint, with the view volume on the frustum stack, before the
+// animate pass: the walk's doodad def cull (0x00683700) over the WMOs'
+// doodads the update showed. One whose sphere the volume rejects leaves the
+// animate list, so it is neither animated nor drawn, unless its centre is
+// near the camera, which keeps it animated.
+void CullDoodads(Backdrop &backdrop, const float (&eye)[3]);
 // From the paint, in place of its depth clear: the world's frame clear and,
 // with the camera outside the WMO's interior groups and dry, the world's sky
 // (the dome, the sun and moons, the stars, the clouds and the skyboxes) in
@@ -673,7 +870,8 @@ void DrawLiquids(Backdrop &backdrop, void *frame, const float (&eye)[3]);
 // (CameraEnvironment 0x006809C0): the claimed group's, else the scene's
 // liquid at the camera's probe point.
 uint32_t CameraLiquid(const Backdrop &backdrop);
-// The map whose light the backdrop takes, or kNoMap.
+// The map whose light the WMOs take: SetWorldModel's, else the tiles', or
+// kNoMap.
 uint32_t MapOf(const Backdrop &backdrop);
 // How the world lights a unit that stands in a WMO, kept per actor: the
 // colour of the face under it, or the sun, and the WMO's lights near it.
@@ -745,16 +943,21 @@ struct Props;
 Props *NewProps();
 void FreeProps(Props *props);
 // PlaceDoodadDef (0x00694BC0) for a 36-byte MDDF entry, then
-// CreateDoodadModel; returns the prop's index.
+// CreateDoodadModel, once per unique id: a later add of the same id holds
+// the prop once more. Returns the unique id.
 uint32_t AddProp(Props &props, void *frame, const char *path, const uint8_t *entry);
+// Lets go of one hold; the last frees the prop.
+void ReleaseProp(Props &props, uint32_t unique);
 // From the scene's update: bounds, fade, the animate list and sounds.
 void UpdateProps(Props &props, void *frame, bool sounds);
 void SilenceProps(Props &props);
+// CullDoodads for the map's own doodads.
+void CullProps(Props &props, const float (&eye)[3]);
 // One box query: BeginPropQuery once, then AddPropFacets for each prop a
 // gathered chunk holds (a prop two chunks hold gives its facets once). False
 // while the prop's model is loading.
 void BeginPropQuery(Props &props);
-bool AddPropFacets(Props &props, uint32_t prop, const float (&box)[6], std::vector<Contact::Facet> &out);
+bool AddPropFacets(Props &props, uint32_t unique, const float (&box)[6], std::vector<Contact::Facet> &out);
 // How far below the eye the camera's liquid probe is (0x006809E2): the
 // lowest of the eye and the four near corners of the view volume, from the
 // paint (the device's view and projection).
@@ -801,16 +1004,49 @@ class LiquidFog {
     void *frame_ = nullptr;
     uint32_t saved_[4] = {}; // the fog's flags, colour, near and far
 };
+// While it lives, a scene with its own time of day (SetWorldTimeOfDay,
+// `timeOfDay` not negative) is lit as the world is lit at that time: the
+// light state's time of day is the scene's, so the map's light, the sky, the
+// sun, the moons and the stars take it; the frame's light is the world's sun
+// (CWorld::UpdateSkyAndFog 0x0066FF60) from map `mapID`'s light at `eye`;
+// and, dry, the frame's fog is that light's (BuildSceneFog 0x006CEE30;
+// LiquidFog's under a liquid). The world's time and the scene's own light
+// and fog again after. Nothing changes for a negative time, for kNoMap or
+// for a map without a light.
+class Daylight {
+  public:
+    Daylight(void *frame, uint32_t mapID, uint32_t cameraLiquid, const float (&eye)[3], float farClip,
+             float timeOfDay);
+    ~Daylight();
+    Daylight(const Daylight &) = delete;
+    Daylight &operator=(const Daylight &) = delete;
+
+  private:
+    bool timed_ = false;
+    float worldTime_ = 0.0f;
+    void *frame_ = nullptr; // whose light (and fog, `fogged_`) it swapped
+    bool fogged_ = false;
+    uint8_t light_[Offsets::M2LIGHT_SIZE] = {};
+    uint32_t fog_[4] = {}; // the fog's flags, colour, near and far
+};
 } // namespace World
 
 // The scene's terrain (SetWorldTerrain; model/SceneTerrain.cpp).
 namespace Terrain {
 struct Land;
-// The chunks of map `mapID`'s ADT tiles within `radius` of (x, y), in map
-// coordinates; null when the map has no directory or no chunk in reach
-// opens and reads.
-Land *Load(void *frame, uint32_t mapID, float x, float y, float radius);
+// Map `mapID`'s terrain, with no chunk yet; null when the map has no WDT
+// tile (a WMO-only map) or no directory.
+Land *Open(uint32_t mapID);
 void Free(Land *land);
+// From the scene's update, first: the world's map update over the scene's
+// chunks (0x00698390), around the scene's camera as the world's frame runs
+// it around its own (0x0066FD50). The windows of CWorld::PrepareAreaOfInterest
+// (0x00672730) from `eye` and `farClip`; the tile load pass (0x006985D0):
+// each chunk of the inner window built now, of the outer ring while less
+// than 5 ms have passed; the unload (0x006984F0, 0x006C1F70): the chunks and
+// tiles past the outer window. True when a chunk with map object references
+// came or went (MapObjects changed).
+bool Stream(Land &land, void *frame, const float (&eye)[3], float farClip);
 // From the paint, after the animate pass and before the WMO: the chunks the
 // scene's view shows, as the world's chunk pass draws them. `farClip` is the
 // scene's, the fog end of a scene without fog.
@@ -827,6 +1063,9 @@ void DrawWater(Land &land, void *frame, const float (&eye)[3], const World::View
 void Update(Land &land, void *frame, bool sounds);
 // Drops the doodads' loop sounds (the scene hid).
 void Silence(Land &land);
+// From the paint, with the view volume on the frustum stack: the chunks'
+// doodads culled as World::CullDoodads culls a WMO's.
+void CullProps(Land &land, const float (&eye)[3]);
 // The world box test's terrain leg for a decal (TestTerrainBox 0x006AD4E0):
 // the triangles of the chunks' cells in `box` (scene space) into the
 // client's triangle batches, one per chunk (TestChunkTriangles 0x006AD7E0).
@@ -840,6 +1079,11 @@ bool GroundEffect(const Land &land, const float (&point)[3], int32_t &terrainTyp
 uint32_t Serial(const Land &land);
 // The terrain's map.
 uint32_t MapOf(const Land &land);
+// The WMOs the chunks name (CMapChunk::LoadReferences' map object leg
+// 0x006B00F0): each chunk's MCRF map object indices, in chunk order, as MODF
+// entries with their MWMO names. A WMO several chunks name comes once per
+// chunk; SetTileObjects keeps the first.
+std::vector<World::TileDef> MapObjects(const Land &land);
 // The area id of the chunk under a point (0x0069B120), 0 without one.
 uint32_t AreaAt(const Land &land, const float (&point)[3]);
 // The world's box query's terrain leg (0x006AA8B0, GatherChunkFacets
@@ -936,10 +1180,13 @@ const float *LightAmbient(void *sceneFrame);
 
 // The scene clock in milliseconds (the M2 scene's): the actors' movement runs
 // on it as a unit's runs on the OS clock, so it stops while the scene is
-// paused or hidden, with the animations.
+// hidden, with the animations.
 uint32_t ClockMs(void *sceneFrame);
-// Whether SetPaused holds the scene.
-bool IsPaused(void *sceneFrame);
+// Whether the scene's fog falls inside what it draws: its fog starts before
+// its far clip. Its fog is always on (3.80.2 has no fog switch), so a scene
+// whose fog starts past the far clip, as it does by default and after
+// ClearFog, fogs nothing.
+bool HasFog(void *sceneFrame);
 // The radius the actor's ground-target reticle draws at: its own, or the
 // world's default for 0 (Offsets::RETICLE_DEFAULT_RADIUS).
 float GroundReticleRadius(const Actor &actor);
@@ -984,10 +1231,16 @@ int GroundTerrain(void *sceneFrame);
 // Registers the actor class in the current Lua state.
 void RegisterActorClass();
 
-// The methods' argument checks, for the frame and its actors. True when the
-// `count` arguments from `first` are numbers; else the engine's usage error,
-// "Usage: <owner>:<usage>".
-bool NumberArgs(void *L, int first, int count, const char *owner, const char *usage);
+// Whether the value at `idx` is a ModelScene frame, or a ModelSceneActor; no
+// error either way.
+bool IsSceneFrame(void *L, int idx);
+bool IsActor(void *L, int idx);
+
+// The methods' number check, for the frame and its actors, as 3.80.2's
+// vector reader (0x140A90E70) makes it: true when the `count` arguments from
+// `first` are numbers (lua_isnumber, no finite test); else luaL_argerror at the
+// first one that is not, with `usage` (a whole "Usage: self:..." string).
+bool NumberArgs(void *L, int first, int count, const char *usage);
 float FloatArg(void *L, int index);
 
 } // namespace Model::Scene

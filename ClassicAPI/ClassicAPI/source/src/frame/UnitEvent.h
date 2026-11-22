@@ -13,10 +13,30 @@
 
 #pragma once
 
+#include "AutoList.h"
+
 #include <string>
 #include <vector>
 
 namespace Frame::UnitEvent {
+
+// The unit-token table RegisterUnitEvent takes its units from, as the 3.80.2
+// client keeps it: true with the table's (lowercase) name for `s` when `s` is a
+// token, matched without regard to case.
+bool CanonicalUnitToken(const char *s, std::string *out);
+
+// The unit-event list's spelling of `eventName` (matched without regard to
+// case), or null when it is no unit event: the events RegisterUnitEvent takes
+// units for.
+const char *CanonicalUnitEvent(const char *eventName);
+
+// Told after a frame's registrations shrink: `eventName` for
+// Frame::UnregisterEvent (the name as the caller gave it), nullptr for
+// Frame::UnregisterAllEvents. This module owns those two hooks (one MinHook per
+// address) and fans out. Declare a file-scope
+//   static const Frame::UnitEvent::AutoUnregister _sub{&OnUnregister};
+using UnregisterListener = void (*)(void *frame, const char *eventName);
+using AutoUnregister = AutoList<struct AutoUnregisterTag, UnregisterListener>;
 
 // The RegisterUnitEvent filter for one fire whose first argument is the
 // string `arg1`: false when `frame` registered `eventName` (the event-table
@@ -25,6 +45,11 @@ namespace Frame::UnitEvent {
 // a dispatcher of our own that walks the subscriber chain itself
 // (Event::Custom::FireValues) asks here for each frame.
 bool Accepts(const void *frame, const char *eventName, const char *arg1);
+
+// A plain `Frame::RegisterEvent(frame, eventName)` just ran (DllMain's hook):
+// the registration goes plain, as 3.80.2's listener add overwrites the unit
+// list. RegisterUnitEvent's own call into the engine is ignored.
+void OnPlainRegister(const void *frame, const char *eventName);
 
 // The units `frame` gave RegisterUnitEvent for `eventName` (the event-table
 // entry's own name), or nullptr for a plain registration. Valid until the

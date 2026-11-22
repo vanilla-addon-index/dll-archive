@@ -105,6 +105,7 @@
 #include "dbc/Lookup.h"
 #include "spell/Cancel.h"
 #include "unit/Identity.h"
+#include "object/Resolve.h"
 
 #include <cstdint>
 #include <initializer_list>
@@ -169,22 +170,17 @@ struct Pending {
 };
 Pending g_pending{};
 
-const uint8_t *Fields(const void *unit) {
-    return *reinterpret_cast<const uint8_t *const *>(
-        static_cast<const uint8_t *>(unit) + Offsets::OFF_UNIT_DESCRIPTOR);
-}
-
 bool IsActivePlayer(const void *unit) {
     return unit != nullptr && unit == Unit::Identity::PlayerObject();
 }
 
 bool OnTaxi(const void *unit) {
-    return (Game::Read<uint32_t>(Fields(unit), Offsets::OFF_UNIT_FIELD_FLAGS) &
+    return (Game::Read<uint32_t>(Object::Fields(unit), Offsets::OFF_UNIT_FIELD_FLAGS) &
             Offsets::UNIT_FLAG_TAXI_FLIGHT) != 0;
 }
 
 int Form(const void *unit) {
-    return (Game::Read<uint32_t>(Fields(unit), Offsets::OFF_UNIT_FIELD_BYTES_1) >> 16) & 0xFF;
+    return (Game::Read<uint32_t>(Object::Fields(unit), Offsets::OFF_UNIT_FIELD_BYTES_1) >> 16) & 0xFF;
 }
 
 // The unit's SpellShapeshiftForm row's flags; a form with no row reads as 0.
@@ -253,7 +249,7 @@ int StandState(const void *unit) {
 }
 
 int MountDisplay(const void *unit) {
-    return Game::Read<int>(Fields(unit), Offsets::OFF_UNIT_FIELD_MOUNTDISPLAYID);
+    return Game::Read<int>(Object::Fields(unit), Offsets::OFF_UNIT_FIELD_MOUNTDISPLAYID);
 }
 
 // 4.3.4's pairing at every site: the state holds and its CanAuto* allows
@@ -446,7 +442,7 @@ __declspec(naked) void ItemFormRefusalThunk() {
 // so the form stays.
 void __fastcall ItemToggleCancel(int spellId) {
     g_itemUnshift = false;
-    reinterpret_cast<void(__fastcall *)(int)>(Offsets::FUN_CANCEL_AURA_SEND)(spellId);
+    Spell::Cancel::SendCancel(spellId);
 }
 
 // Before the bind-on-use test: 4.3.4 CGItem_C::Use's form cancel.
@@ -508,7 +504,7 @@ __declspec(naked) void StartAttackPassedThunk() {
 // stand, dismount and form cancel for a map with more than one node.
 void __fastcall TaxiMapOpenedTutorial(int id, int arg) {
     reinterpret_cast<TriggerTutorial_t>(Offsets::FUN_TRIGGER_TUTORIAL)(id, arg);
-    if (Game::Read<int>(static_cast<uintptr_t>(Offsets::VAR_TAXI_MAP_NODE_COUNT)) <= 1)
+    if (Game::Read<int>(static_cast<uintptr_t>(Offsets::VAR_TAXI_NODE_COUNT)) <= 1)
         return;
     const void *player = Unit::Identity::PlayerObject();
     if (player == nullptr)
@@ -533,7 +529,7 @@ void __fastcall PrepareObjectUse(const void *handler) {
         Game::Read<const uint8_t *>(handler, Offsets::OFF_GAMEOBJECT_HANDLER_OBJECT);
     if (AutoDismounts(player) &&
         !reinterpret_cast<UsableMounted_t>(Offsets::FUN_GAMEOBJECT_USABLE_MOUNTED)(
-            object + Offsets::OFF_GAMEOBJECT_DESCRIPTOR))
+            object + Offsets::OFF_OBJECT_FIELDS))
         Dismount();
     if (UnshiftsForInteraction(player))
         CancelForm(player);

@@ -11,13 +11,18 @@
 // You should have received a copy of the GNU General Public License along with
 // ClassicAPI. If not, see <https://www.gnu.org/licenses/>.
 
+#include "cache/Record.h"
+#include "group/Roster.h"
+#include "storm/List.h"
 #include "unit/Identity.h"
 
 #include "Game.h"
 #include "Offsets.h"
+#include "glue/EnterWorld.h"
 #include "guid/Guid.h"
 #include "nameplate/Walk.h"
 #include "object/Resolve.h"
+#include "unit/Boss.h"
 #include "unit/TokenEvents.h"
 
 #include <cstdint>
@@ -36,7 +41,7 @@ using FindUnitByName_t = uint64_t(__fastcall *)(const char *name, uint32_t typeM
 static constexpr uint32_t kMaxDistanceFltMax = 0x7F7FFFFF;
 
 // The selected character's GUID, captured at the glue "Enter World" click
-// (the FUN_GLUE_ENTER_WORLD co-hook below) — i.e. before the engine has
+// (the Glue::EnterWorld subscriber below) — i.e. before the engine has
 // created the in-world player object whose +0xC0 holds the live GUID.
 // `PlayerGuid()` serves this as a fallback during the early-login window so
 // `UnitGUID("player")` answers from addon-load time instead of returning nil
@@ -46,28 +51,11 @@ static constexpr uint32_t kMaxDistanceFltMax = 0x7F7FFFFF;
 // once that's populated.
 static uint64_t g_charSelectGuid = 0;
 
-// `FUN_GLUE_ENTER_WORLD` is `void(void)` (no args). Co-hook it to snapshot the
-// selected character's GUID once the entry is committed.
-using EnterWorld_t = void(__cdecl *)();
-static EnterWorld_t g_origEnterWorld = nullptr;
-
-static void __cdecl EnterWorld_h() {
-    g_origEnterWorld();
-    // Only on a genuine commit — the rename / char-locked bail paths return
-    // before the worker sets the state code to "entering world".
-    if (Game::Read<int>(Offsets::VAR_GLUE_LOGIN_INPROGRESS) !=
-        Offsets::GLUE_STATE_ENTERING_WORLD)
-        return;
-    const uintptr_t charStruct =
-        Game::Read<uintptr_t>(Offsets::VAR_GLUE_SELECTED_CHAR);
-    if (charStruct != 0)
-        g_charSelectGuid = *reinterpret_cast<const uint64_t *>(
-            charStruct + Offsets::OFF_GLUE_CHAR_GUID);
+static void OnEnterWorld(const uint8_t *character) {
+    g_charSelectGuid = Game::Read<uint64_t>(character, Offsets::OFF_GLUE_CHAR_GUID);
 }
 
-static const Game::HookAutoRegister _enterWorldHook{
-    Offsets::FUN_GLUE_ENTER_WORLD, reinterpret_cast<void *>(&EnterWorld_h),
-    reinterpret_cast<void **>(&g_origEnterWorld)};
+static const Glue::EnterWorld::AutoSubscribe _enterWorld{&OnEnterWorld};
 
 // FUN_TOKEN_TO_GUID's `"player"` path resolves the GUID by looking the
 // local player up in the engine's object manager: it calls FUN_00468550
@@ -129,30 +117,41 @@ const uint8_t *PlayerDescriptor() {
     const uint8_t *player = PlayerObject();
     if (player == nullptr)
         return nullptr;
-    return Game::Read<const uint8_t *>(player, Offsets::OFF_UNIT_DESCRIPTOR);
+    return Object::Fields(player);
 }
 
-uint64_t GuidForObject(const void *unitObject) {
-    if (unitObject == nullptr)
-        return 0;
-    const auto *unit = static_cast<const uint8_t *>(unitObject);
-    const uint8_t *block =
-        Game::Read<const uint8_t *>(unit, Offsets::OFF_UNIT_GUID_PTR);
-    if (block == nullptr)
-        return 0;
-    return *reinterpret_cast<const uint64_t *>(block);
+uint8_t Race(const uint8_t *fields) {
+    return fields != nullptr ? Game::Read<uint8_t>(fields, Offsets::OFF_UNIT_DESCRIPTOR_RACE_BYTE)
+                             : 0;
 }
+
+uint8_t Class(const uint8_t *fields) {
+    return fields != nullptr ? Game::Read<uint8_t>(fields, Offsets::OFF_UNIT_DESCRIPTOR_CLASS_BYTE)
+                             : 0;
+}
+
+uint8_t Sex(const uint8_t *fields) {
+    return fields != nullptr ? Game::Read<uint8_t>(fields, Offsets::OFF_UNIT_DESCRIPTOR_SEX_BYTE)
+                             : 0;
+}
+
 
 uint64_t OwnerGuid(const void *unitObject) {
     if (unitObject == nullptr)
         return 0;
-    auto *desc = Game::Read<const uint8_t *>(unitObject, Offsets::OFF_UNIT_DESCRIPTOR);
+    auto *desc = Object::Fields(unitObject);
     if (desc == nullptr)
         return 0;
     const uint64_t charmer = Game::Read<uint64_t>(desc, Offsets::OFF_UNIT_FIELD_CHARMEDBY);
     if (charmer != 0)
         return charmer;
     return Game::Read<uint64_t>(desc, Offsets::OFF_UNIT_FIELD_CREATEDBY);
+}
+
+uint32_t CreatedBySpell(const void *unitObject) {
+    const uint8_t *desc = Object::Fields(unitObject);
+    return desc != nullptr ? Game::Read<uint32_t>(desc, Offsets::OFF_UNIT_FIELD_CREATED_BY_SPELL)
+                           : 0;
 }
 
 bool IsPlayerToken(const char *token) {
@@ -175,19 +174,9 @@ uint64_t GuidForToken(const char *token) {
 const uint8_t *PlayerInfoRecord(uint64_t guid) {
     if (guid == 0)
         return nullptr;
-    // Peek the engine's player-info NameCache: a NULL callback means "look up
-    // only, don't fire a query" (see the FUN_PLAYER_INFO_LOOKUP note in
-    // Offsets.h). Returns the entry data block for a cached GUID, else null.
-    using Lookup_t = const uint8_t *(__thiscall *)(void *cache, uint32_t lo,
-                                                   uint32_t hi, void *cookie,
-                                                   void *cb, void *ud, char flag);
-    auto fn = reinterpret_cast<Lookup_t>(
-        static_cast<uintptr_t>(Offsets::FUN_PLAYER_INFO_LOOKUP));
-    uint32_t cookie[2] = {0, 0};
-    return fn(reinterpret_cast<void *>(
-                  static_cast<uintptr_t>(Offsets::VAR_PLAYER_NAME_CACHE)),
-              static_cast<uint32_t>(guid), static_cast<uint32_t>(guid >> 32),
-              cookie, nullptr, nullptr, 0);
+    // A null callback only looks up: it never sends a query.
+    const uint64_t owner = 0;
+    return Cache::Record::GetPlayer(guid, &owner, nullptr, nullptr, false);
 }
 
 const char *NameForGuid(uint64_t guid) {
@@ -212,7 +201,7 @@ void ForEachCachedPlayer(CachedPlayerVisitor visit, void *context) {
         static_cast<uintptr_t>(Offsets::VAR_PLAYER_NAME_CACHE));
     const auto linkOffset = Game::Read<uintptr_t>(cache, Offsets::OFF_NAME_CACHE_LINK_OFFSET);
     for (auto node = Game::Read<uintptr_t>(cache, Offsets::OFF_NAME_CACHE_FIRST_NODE);
-         node != 0 && (node & 1) == 0;
+         Storm::IsNode(node);
          node = Game::Read<uintptr_t>(node + linkOffset + 4)) { // TSLink {prev, next}
         const auto guid = Game::Read<uint64_t>(node + Offsets::OFF_NAME_CACHE_NODE_GUID);
         const uint8_t *rec = PlayerInfoRecord(guid);
@@ -244,9 +233,8 @@ void ForEachCachedPlayer(CachedPlayerVisitor visit, void *context) {
 // live, which is why earlier versions of `UnitGUID` returned nil
 // for `"party1"` when the member was on a different continent.
 //
-// Invalid tokens (arbitrary strings that aren't unit IDs) raise a
-// Lua error via the engine's `"Unknown unit name: %s"` path — same
-// as `Script_UnitName` and other engine unit-token consumers.
+// A string that is no unit token answers nil, as in `Script_UnitName` and
+// the other engine unit-token consumers (unit/TokenExtensions.cpp).
 static int __fastcall Script_UnitGUID(void *L) {
     if (!Game::Lua::IsString(L, 1)) {
         Game::Lua::Error(L, "Usage: UnitGUID(\"unit\")");
@@ -269,17 +257,16 @@ static int __fastcall Script_UnitGUID(void *L) {
 // GUID, return the first unit token currently mapped to that GUID, or
 // nil if none of the known tokens point at it.
 //
-// The search walks the modern retail token order with post-vanilla
-// tokens dropped (no `vehicle`, `arenaN`, `arenapetN`, `bossN` — those
-// post-date 1.12 and `FUN_TOKEN_TO_GUID` would raise "Unknown unit name"
-// for them). `nameplateN`, `focus` and the soft targets are included — we
-// hook the token resolver so the engine recognizes them (see
-// `unit/TokenExtensions.cpp`, `unit/Focus.cpp`, `target/SoftInteract.cpp`
-// and `target/SoftUnit.cpp`). Order matches retail with the dropped
-// tokens skipped in place:
+// The search walks the 3.80.2 client's order (0x141B8FE70) with the
+// tokens 1.12 has no units for dropped (no `vehicle`, `arenaN`,
+// `arenapetN`). `nameplateN`, `bossN`, `focus` and the soft targets are
+// included — we hook the token resolver so the engine recognizes them (see
+// `unit/TokenExtensions.cpp`, `unit/Boss.cpp`, `unit/Focus.cpp`,
+// `target/SoftInteract.cpp` and `target/SoftUnit.cpp`). Order matches
+// 3.80.2 with the dropped tokens skipped in place:
 //
 //   player → pet → party1..4 → partypet1..4 → raid1..40
-//          → raidpet1..40 → nameplate1..N → target → focus
+//          → raidpet1..40 → nameplate1..N → boss1..5 → target → focus
 //          → npc → mouseover → softenemy → softfriend → softinteract
 //
 // `markN` is not in retail's list, so it is never returned here.
@@ -319,16 +306,8 @@ const char *TokenFromGUID(uint64_t target, char *buf, size_t bufSize) {
     // Party count = number of non-zero GUIDs in the 4-slot party
     // GUID array. Same walk `Script_GetNumPartyMembers` does
     // internally (`FUN_004E86D0`), inlined here.
-    const auto *partyGuids = reinterpret_cast<const uint64_t *>(
-        static_cast<uintptr_t>(Offsets::VAR_PARTY_GUIDS));
-    int partyCount = 0;
-    for (int i = 0; i < Offsets::PARTY_MAX_SLOTS; ++i) {
-        if (partyGuids[i] != 0)
-            ++partyCount;
-    }
-    int raidCount = Game::Read<int>(Offsets::VAR_RAID_MEMBER_COUNT);
-    if (raidCount > Offsets::RAID_MAX_SLOTS)
-        raidCount = Offsets::RAID_MAX_SLOTS;
+    const int partyCount = Group::Roster::PartyCount();
+    const int raidCount = Group::Roster::RaidCount();
 
     for (int i = 1; i <= partyCount; ++i) {
         std::snprintf(buf, bufSize, "party%d", i);
@@ -360,6 +339,11 @@ const char *TokenFromGUID(uint64_t target, char *buf, size_t bufSize) {
         }
     }
 
+    if (const int boss = Unit::Boss::IndexOf(target); boss != 0) {
+        std::snprintf(buf, bufSize, "boss%d", boss);
+        return buf;
+    }
+
     if (check("target")) return set("target");
     if (check("focus")) return set("focus");
     if (check("npc")) return set("npc");
@@ -369,6 +353,33 @@ const char *TokenFromGUID(uint64_t target, char *buf, size_t bufSize) {
     if (check("softinteract")) return set("softinteract");
 
     return nullptr;
+}
+
+// A token's place in the 3.80.2 client's unit-event list (0x141B90E10):
+// player, pet, party / partypet, raid / raidpet, nameplate, boss, target,
+// targettarget, focus, focustarget, npc, softenemy, softfriend, softinteract;
+// then ClassicAPI's pettarget, markN and totemN. Prefixes are tested longest
+// first.
+static int TokenRank(const char *t) {
+    static const struct {
+        const char *name;
+        bool prefix;
+    } kOrder[] = {
+        {"player", false},    {"pet", false},          {"partypet", true},   {"party", true},
+        {"raidpet", true},    {"raid", true},          {"nameplate", true},  {"boss", true},
+        {"target", false},    {"targettarget", false}, {"focus", false},     {"focustarget", false},
+        {"npc", false},       {"softenemy", false},    {"softfriend", false},
+        {"softinteract", false}, {"pettarget", false}, {"mark", true},       {"totem", true},
+    };
+    // party and partypet (raid and raidpet) share a place.
+    static const int kRank[] = {0, 1, 2, 2, 3, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+    for (size_t i = 0; i < sizeof kOrder / sizeof kOrder[0]; ++i) {
+        const size_t len = std::strlen(kOrder[i].name);
+        if (kOrder[i].prefix ? std::strncmp(t, kOrder[i].name, len) == 0
+                             : std::strcmp(t, kOrder[i].name) == 0)
+            return kRank[i];
+    }
+    return 17;
 }
 
 int TokensForGUID(uint64_t guid, char (*out)[32], int maxTokens) {
@@ -396,6 +407,9 @@ int TokensForGUID(uint64_t guid, char (*out)[32], int maxTokens) {
             // addons expect; echoing the GUID we were handed is noise.
             if (tok[0] == '0' && (tok[1] == 'x' || tok[1] == 'X'))
                 continue;
+            // The 3.80.2 client fires no unit event for mouseover.
+            if (std::strcmp(tok, "mouseover") == 0)
+                continue;
             std::snprintf(out[n], 32, "%s", tok);
             ++n;
         }
@@ -403,7 +417,19 @@ int TokensForGUID(uint64_t guid, char (*out)[32], int maxTokens) {
 
     // ClassicAPI's tokens, which the engine's map can't produce: the same
     // list the engine's unit events reach.
-    return n + Unit::TokenEvents::TokensOf(guid, out + n, maxTokens - n);
+    n += Unit::TokenEvents::TokensOf(guid, out + n, maxTokens - n);
+
+    // Into 3.80.2's order; a stable insertion sort (a unit has few tokens).
+    for (int i = 1; i < n; ++i) {
+        char row[32];
+        std::memcpy(row, out[i], sizeof row);
+        const int rank = TokenRank(row);
+        int j = i;
+        for (; j > 0 && TokenRank(out[j - 1]) > rank; --j)
+            std::memcpy(out[j], out[j - 1], sizeof row);
+        std::memcpy(out[j], row, sizeof row);
+    }
+    return n;
 }
 
 static int __fastcall Script_UnitTokenFromGUID(void *L) {
@@ -433,10 +459,10 @@ uint64_t FindGuidByName(const char *name, uint32_t typeMask, bool exact, int mod
 
 // `UnitTokenFromName(name [, exactMatch])` -> unit token, or nothing.
 //
-// The macro `@unit` / `target=unit` piece accepts a character name as well
-// as a unit token, but nothing in 1.12 turns a name into something the
-// `Unit*` functions accept. This runs the engine's own by-name search — the
-// one behind `TargetByName` — and reports the winner as a token.
+// The unit functions take the name of you, a group member or one of your
+// pets directly (unit/TokenExtensions.cpp), but not anyone else's. This runs
+// the engine's own by-name search — the one behind `TargetByName`, over every
+// unit nearby — and reports the winner as something they accept.
 //
 // Prefers a standard token (`party1`, `target`, …) so callers get the
 // stable, readable form, and falls back to the GUID literal for a unit no

@@ -30,16 +30,14 @@ int __fastcall Script_GetTradeSkillItemID(void *L) {
         Game::Lua::Error(L, "Usage: GetTradeSkillItemID(index)");
         return 0;
     }
-    const int index = static_cast<int>(Game::Lua::ToNumber(L, 1)) - 1;
-
-    const int spellID = Spell::Lookup::RecipeSlotSpellID(
-        Offsets::VAR_TRADESKILL_ENTRIES, Offsets::VAR_TRADESKILL_COUNT, index);
+    const int spellID = Spell::Lookup::RecipeRowSpellID(
+        Offsets::VAR_TRADESKILL_ENTRIES, Offsets::VAR_TRADESKILL_COUNT, Game::Lua::ToNumber(L, 1));
     const uint8_t *record = Spell::Lookup::RecordForID(spellID);
     if (record == nullptr)
         return 0;
 
     const int itemID = static_cast<int>(*reinterpret_cast<const uint32_t *>(
-        record + Offsets::OFF_SPELL_RECORD_CREATED_ITEM));
+        record + Offsets::OFF_SPELL_RECORD_EFFECT_ITEM_TYPE));
     if (itemID == 0)
         return 0;
 

@@ -55,11 +55,15 @@
 #include "Offsets.h"
 #include "baselib/Ascii.h"
 #include "frame/Destruction.h"
+#include "frame/Layout.h"
 #include "statusbar/Display.h"
+#include "texture/Atlas.h"
+#include "texture/CornerStore.h"
 #include "texture/Wrap.h"
 #include "xml/FrameLoad.h"
 #include "xml/TypeLoad.h"
 
+#include <cmath>
 #include <cstdint>
 #include <unordered_map>
 
@@ -97,8 +101,6 @@ struct State {
 std::unordered_map<const void *, State> g_state;
 
 using Update_t = void(__fastcall *)(void *bar, void *edx, float elapsed);
-using SetPoint_t = void(__thiscall *)(void *anchor, int point, void *relative, int relativePoint, float x,
-                                      float y, int doResize);
 using SetTexCoordRect_t = void(__thiscall *)(void *texture, const float *rect);
 using SetTexCoordCorners_t = void(__thiscall *)(void *texture, const float *corners);
 using GetFillFraction_t = float(__fastcall *)(void *bar, void *edx);
@@ -119,13 +121,21 @@ void BarSize(void *bar, float &width, float &height) {
 }
 
 // The bar's own GetFillFraction (4.3.4's GetAnimValue, which a timer or an
-// ease answers), with StandardNoRangeFill's full bar for an empty range. A
-// timed bar's range is 0..0, so the style never overrides a timer.
+// ease answers), with StandardNoRangeFill's full bar for a range under 0.001
+// or a zero timer (3.80.2's FUN_1428ccd90).
 float FillFraction(void *bar, int fillStyle) {
-    const float min = Game::Read<float>(bar, Offsets::OFF_VALUE_MIN);
-    const float max = Game::Read<float>(bar, Offsets::OFF_STATUSBAR_MAX);
-    if (fillStyle == kStandardNoRangeFill && !(max - min > 0.0f) && (min != 0.0f || max != 0.0f))
-        return 1.0f;
+    if (fillStyle == kStandardNoRangeFill) {
+        bool zero = false;
+        if (StatusBar::Display::HasTimer(bar, zero)) {
+            if (zero)
+                return 1.0f;
+        } else {
+            const float min = Game::Read<float>(bar, Offsets::OFF_VALUE_MIN);
+            const float max = Game::Read<float>(bar, Offsets::OFF_STATUSBAR_MAX);
+            if (std::fabs(max - min) < 0.001f)
+                return 1.0f;
+        }
+    }
     return reinterpret_cast<GetFillFraction_t>(Game::Read<uintptr_t>(
         *static_cast<void **>(bar), Offsets::OFF_VMT_STATUSBAR_GET_FILL_FRACTION))(bar, nullptr);
 }
@@ -134,20 +144,38 @@ float FillFraction(void *bar, int fillStyle) {
 void Uncrop(void *texture) { Game::Ref<int>(texture, Offsets::OFF_REGION_TEXCOORD_MODIFIES_RECT) = 0; }
 
 void SetPoint(void *texture, int point, void *bar, float x, float y) {
-    reinterpret_cast<SetPoint_t>(Offsets::FUN_REGION_SET_POINT)(
-        Game::Ptr<uint8_t>(texture, Offsets::OFF_REGION_ANCHOR), point,
-        Game::Ptr<uint8_t>(bar, Offsets::OFF_REGION_ANCHOR), point, x, y, 1);
+    Frame::Layout::SetPoint(texture, point, Frame::Layout::Of(bar), point, x, y);
+}
+
+// The coordinates below are in the image's own space. A bar texture that
+// shows an atlas (texture:SetAtlas, `<BarTexture atlas=...>`) is one sprite of
+// a sheet, so they are mapped into that sprite, as retail's fill crops within
+// it; written as they are, the fill would show the whole sheet.
+void SetCorners(void *texture, const float corners[8]) { // UL, LL, UR, LR
+    float c[8];
+    for (int i = 0; i < 8; ++i)
+        c[i] = corners[i];
+    Texture::Atlas::ToFile(texture, c);
+    reinterpret_cast<SetTexCoordCorners_t>(Offsets::FUN_SIMPLETEXTURE_SET_TEXCOORD_CORNERS)(texture, c);
+}
+
+void SetRect(void *texture, float top, float left, float bottom, float right) {
+    if (Texture::Atlas::Shows(texture)) {
+        const float corners[8] = {left, top, left, bottom, right, top, right, bottom};
+        SetCorners(texture, corners);
+        return;
+    }
+    const float rect[4] = {top, left, bottom, right};
+    reinterpret_cast<SetTexCoordRect_t>(Offsets::FUN_SIMPLETEXTURE_SET_TEXCOORD)(texture, rect);
 }
 
 // The image's full coordinates, as 4.3.4's SetRotatesTexture sets them.
 void SetFullTexCoord(void *texture, bool rotates) {
     if (rotates) {
         const float corners[8] = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
-        reinterpret_cast<SetTexCoordCorners_t>(Offsets::FUN_SIMPLETEXTURE_SET_TEXCOORD_CORNERS)(texture,
-                                                                                                corners);
+        SetCorners(texture, corners);
     } else {
-        const float rect[4] = {0.0f, 0.0f, 1.0f, 1.0f}; // top, left, bottom, right
-        reinterpret_cast<SetTexCoordRect_t>(Offsets::FUN_SIMPLETEXTURE_SET_TEXCOORD)(texture, rect);
+        SetRect(texture, 0.0f, 0.0f, 1.0f, 1.0f);
     }
 }
 
@@ -173,22 +201,18 @@ void LayOut(void *bar, State &state, bool tiled) {
     if (IsVertical(bar)) {
         if (!tiled && state.rotatesTexture) {
             const float corners[8] = {t1, 0.0f, t0, 0.0f, t1, 1.0f, t0, 1.0f}; // UL, LL, UR, LR
-            reinterpret_cast<SetTexCoordCorners_t>(Offsets::FUN_SIMPLETEXTURE_SET_TEXCOORD_CORNERS)(texture,
-                                                                                                    corners);
+            SetCorners(texture, corners);
         } else if (!tiled) {
-            const float rect[4] = {1.0f - t1, 0.0f, 1.0f - t0, 1.0f};
-            reinterpret_cast<SetTexCoordRect_t>(Offsets::FUN_SIMPLETEXTURE_SET_TEXCOORD)(texture, rect);
+            SetRect(texture, 1.0f - t1, 0.0f, 1.0f - t0, 1.0f);
         }
         bottom = s0 * height;
         top = -((1.0f - s1) * height);
     } else {
         if (!tiled && state.rotatesTexture) {
             const float corners[8] = {0.0f, 1.0f - t0, 1.0f, 1.0f - t0, 0.0f, 1.0f - t1, 1.0f, 1.0f - t1};
-            reinterpret_cast<SetTexCoordCorners_t>(Offsets::FUN_SIMPLETEXTURE_SET_TEXCOORD_CORNERS)(texture,
-                                                                                                    corners);
+            SetCorners(texture, corners);
         } else if (!tiled) {
-            const float rect[4] = {0.0f, t0, 1.0f, t1};
-            reinterpret_cast<SetTexCoordRect_t>(Offsets::FUN_SIMPLETEXTURE_SET_TEXCOORD)(texture, rect);
+            SetRect(texture, 0.0f, t0, 1.0f, t1);
         }
         left = s0 * width;
         right = -((1.0f - s1) * width);
@@ -198,6 +222,18 @@ void LayOut(void *bar, State &state, bool tiled) {
     SetPoint(texture, Offsets::FRAMEPOINT_TOPRIGHT, bar, right, top);
     SetPoint(texture, Offsets::FRAMEPOINT_BOTTOMLEFT, bar, left, bottom);
     SetPoint(texture, Offsets::FRAMEPOINT_BOTTOMRIGHT, bar, right, bottom);
+    // The drawn quad (FUN_REGION_STORE_CORNERS, texture +0xD4) is written
+    // from the rect only when the rect changes, cropped by the coordinates'
+    // span while 1.12's crop flag is on - which InstallBarTexture sets and
+    // Uncrop clears only in this update. A quad written in between (a layout
+    // after the bar was made, before its first update) stays cropped while
+    // the anchors above repeat the ones it has: an atlas bar's span is the
+    // sprite's share of its sheet, so a full bar drew as a sliver of itself.
+    // Writing it now from the resolved rect, uncropped, is what the layout
+    // callback writes; a rect still pending is written again when it lands.
+    float rect[4];
+    if (Frame::Layout::GetRect(texture, rect))
+        Texture::CornerStore::StoreFromRect(texture);
     state.laidOut = true;
     state.width = width;
     state.height = height;

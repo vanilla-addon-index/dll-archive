@@ -4110,7 +4110,6 @@ Each entry still needs the usual check of how the engine does it before building
 ### From later clients (retail docs only — contract, no decomp)
 
 Likely worth it (small, ported code uses them):
-- Object: `GetParentKey` / `SetParentKey` / `ClearParentKey`, `GetDebugName`.
 - Region: `SetIgnoreParentAlpha` / `IsIgnoringParentAlpha` (4.3.4 has it
   internally: its texture XML load calls `SetIgnoreParentAlpha` from
   `m_regionFlags 0x10/0x20`, `CSimpleRender.cpp`),
@@ -4237,6 +4236,245 @@ definitions do not shadow ours in a 1.12 workspace.
 
 Two layers. The replay needs the log first.
 
+**Progress (2026-11-16).** Steps 1-3 DONE and checked in game:
+`combatlog/File.cpp` writes Era's v9 lines (header on open and each world
+entry, Era stamp, retail GUID strings, Name-Realm, ST/AOE tag, overkill -1,
+power type 27, death `0`), and with `advancedCombatLogging` on (Settings >
+Network) Era's advanced block plus SWING_DAMAGE_LANDED. Every finished cast
+logs SPELL_CAST_SUCCESS. ZONE_CHANGE follows each header and each new zone.
+ENCOUNTER_START/END come from world-boss rank (`combatlog/Encounter.cpp`;
+creature ID as encounterID, no table), with COMBATANT_INFO per group member
+after each start (`combatlog/Combatant.cpp`; stats and talents for the
+player only, all buffs instead of Era's curated list). The rules and the
+Era-log evidence are in those files' comments. Not yet seen in game:
+energize and drain lines. EMOTE (2026-11-17, `combatlog/Emote.cpp`): MoP
+Classic's line for CHAT_MSG_RAID_BOSS_EMOTE only (DBM and AzerothCore
+checked against 22,495 MoP lines); Era writes none. MAP_CHANGE (2026-11-17,
+`combatlog/MapChange.cpp`, checked in game): Era's line from its 1.15.9
+UiMap/UiMapAssignment data; the rule reproduces all 14 Era logs. The header's
+ZONE_CHANGE after a map change now writes "UNKNOWN AREA", as Era does, not
+the last map's zone. Era lines still missing: SPELL_ABSORBED.
+
+Step 4 DONE (2026-11-16): `combatlog/Movement.cpp` writes
+`Logs\WoWMovementLog-<combat log's MMDDYY_HHMMSS>.txt` behind
+`advancedCombatLoggingMovement` (Settings > Network, under advanced
+logging, default off): UNIT_MOVE (relayed player moves, the player's own
+sends, TELEPORT_ACK), UNIT_SPEED, MONSTER_MOVE / MONSTER_STOP, and a
+header with the map. Formats are in the file's comment. Checked in game:
+own and another player's moves, creature paths, creature speeds (about 7
+lines/s in Stormwind). Not yet seen: MONSTER_STOP, transport moves,
+teleports, forced speed changes.
+
+Replay layer 0 DONE (2026-11-16, checked in game in Stormwind: stand-state
+and mount changes, player gear, guard weapons decode as `HeldLane`s):
+`combatlog/UnitInfo.cpp` writes UNIT_INFO (place, display, native and
+mount display, scale, BYTES_1/BYTES_2, a creature's held items),
+PLAYER_INFO (race, class, sex, skin, face, hair, facial hair, PLAYER_FLAGS,
+19 visible items with the enchant whose glow shows) and UNIT_GONE to the
+movement file (MOVEMENT_LOG_VERSION 2). Each frame it compares the units in
+view with their last lines. The fields are the ones
+`CGUnit_C::BuildCharacterComponent` (0x005FB200) builds a model from. This
+closes the "unit that never moves has no position" gap. Not logged: the
+path a unit is on when it comes into view (its next move is logged).
+
+**Replay plan (scoped 2026-11-16).** In game, on ModelScene, as an
+embedded load-on-demand addon. Layers:
+- L0 record the look (above).
+- L1 a reader in the DLL. BUILT (2026-11-16): `src/replay/` (Line,
+  Catalog, Load, Recording, Api) and `C_CombatLogReplay` (GetLogs,
+  GetEncounters, LoadReplay for any time range, GetReplayInfo, GetUnits,
+  GetUnitPosition, GetUnitLook, two events). Reads run on a worker thread.
+  Movement file v4 adds the status clock to UNIT_MOVE and the unit's five
+  speeds to UNIT_INFO. Player timing: stamps AND clocks are bunched (only
+  ever late); positions are exact, so each moving stretch is timed by
+  distance over the speed `CMovement::GetCurrentSpeed` (0x007C4C90) picks
+  (ground distance: 6.99-7.01 yd/s at run 7), or by fallTime in the air,
+  and anchored by its soonest move; a long stretch corrects a stale client
+  speed from its clocks. Checked offline on a 2-minute Stormwind log: step
+  durations / clock steps median 0.998 (p5 0.93, p95 1.04). Not yet: HP,
+  auras and events (L4 needs them); spline facing type 3 uses the target's
+  place only at the path's end. All of the API checked in game
+  (2026-11-16).
+- L2 viewer v1. DONE (2026-11-16): embedded load-on-demand addon
+  `ClassicAPI_Replay` (`/replay`): log and encounter menus, the map's WMO
+  or its terrain around the units' median place, an actor per unit while
+  in view (mounts seated with AttachToMount, walk/run by speed, the stand
+  state's animation), play/pause/speed/timeline, click a unit to follow
+  it. Checked in game on a Stormwind log: players show as white bare
+  race models (L3) and stand on the missing city WMO (L5).
+- L3 player models. DONE (2026-11-16): `C_CombatLogReplay.GetUnitAppearances`
+  (each body a player had, items as ItemTransmogInfo, hidden helm/cloak
+  left off as ApplyEquipmentDisplay 0x005ED700 does) and the actor
+  extension `SetModelByCharacterAppearance` (the race/sex display from
+  ChrRaces, dressed by a component built as BuildCharacterComponent's
+  player branch 0x005FB200 builds one). The viewer dresses a player in its
+  own display once per appearance and sheathes by its sheath state.
+  Checked in game on a Stormwind log. Jumps and falls follow the client's
+  arc (Recording.cpp, Unit::Fall from the move's fall time and speed).
+- L4 combat: cast visuals and missiles, auras, swings, deaths, health bars,
+  an event feed. First half DONE (2026-11-16): the reader keeps the
+  stretch's combat lines (`GetEvents`, casts paired start to end), aura
+  spans (`GetUnitAuras`) and deaths (`GetUnitLook` isDead; a corpse's own
+  death spell within 1 s is not a revival, a corpse leaving view ends the
+  death); the viewer plays casts (precast for the logged time), missiles,
+  auras, swings and deaths forward, sets the state on a jump, and hides a
+  dead unit's name. Checked offline on a Stratholme log. Second half
+  DONE (2026-11-16, not yet seen in game): health bars from the advanced
+  blocks (`GetUnitHealth`; a player's in percent), a feed of the log's
+  lines in the client's 1.12 GlobalStrings words (`GetEvents` amount,
+  critical, missType), and swings by the main hand's weapon as 0x006246A0
+  picks them (`GetUnitWeapons`). Off-hand swings play the main hand's:
+  Era's damage lines carry no off-hand flag.
+- L5 follow camera, unit list, raids built on terrain. Click-to-follow is
+  L2's. Unit list DONE (2026-11-16, not yet seen in game): beside the
+  scene, players first in class colors, grey when dead, faded out of view,
+  unnamed last; click to follow. A unit the log never names (122 of 221
+  in a Stormwind log, all creatures seen only in the movement file) takes
+  the client's cached name, and an uncached creature is requested
+  (RequestLoadCreatureByID) and renamed on CREATURE_DATA_LOAD_RESULT.
+  Raids: SetWorldTerrain places the tiles' WMOs, so
+  BWL/ZG/AQ/Naxx take the terrain path. ZG checked 2026-11-16: the
+  played side rendered, but a fixed disc of ground left parts of the
+  instance bare. The scene's terrain now streams around its camera with
+  the world's windows (SetWorldTerrain(mapID); docs/notes/model-scene.md
+  "Streaming"), not yet seen in game.
+- Navigation (2026-11-16, not yet seen in game): each player's death is a
+  mark on the timeline (`GetUnitDeaths`; hover names it, a click goes 5 s
+  before and follows the player), and a feed line is a `replay:<time>`
+  link whose click goes to its event; a jump refills the feed with the
+  lines of the last 12 s.
+- Units (2026-11-16, not yet seen in game): MOVEMENT_LOG_VERSION 5 adds
+  the guild tabard emblem to PLAYER_INFO (GetGuildEmblem 0x006D6D20, no
+  query); the actor's tabard takes it as ApplyTabard does (0x0047A610 on
+  a display with flag +0x24 bit 0). Creatures hold their logged virtual
+  items (`actor:SetHeldItem`, `GetUnitHeldItem`) and every unit takes the
+  log's sheath state (`actor:SetSheatheState`, 2 = ranged in hand).
+- Reactions and missing casts (2026-11-17, checked in game): a
+  SPELL_CAST_START's visual flies to its success's destination
+  (castTargetIndex; before, a cast-time bolt had no target, so no missile).
+  Casts only in UNIT_CAST (Opening 3366, creature channels with no success
+  line) are casts in the reader and play their visual at the UNIT_STATE
+  target. UNIT_STATE gains the attack target (+0xC48). Wounds (2026-11-17,
+  not yet seen in game): one actor-side PlayWoundAnimation (0x0060EA70)
+  for swings, missile arrivals (ArriveHit 0x0061DC50), harmful instant
+  impacts (0x006E8CB0/0x006E8BF0), effect $HIT and one-shot kits whose
+  animation is a wound (0x0060F3AD); actor:SetCreatureID honors creature
+  type flag 0x8 for wounds and PlayParryAnimation (0x0060EC00, from the
+  main-hand lane); the viewer sets SetAttacking/SetMoving per frame. Swing
+  timing (2026-11-17, not yet seen in game): actor:SetPendingSwing keeps a
+  swing's result on the attacker (the mount of a rider) as
+  SMSG_ATTACKERSTATEUPDATE (0x006255B0) does; its swing animation's $CPP
+  plays the parry/dodge/block pose and $CAH/$AH0..3 the wound
+  (OnCombatModelEvent 0x006247D0); an attacker out of view wounds at once
+  (PlayOneShotAnimation is gone). Open items closed (2026-11-17, not yet
+  seen in game): actor:PlaySwing replaces SetPendingSwing and plays the
+  swing itself (PlaySwingAnimation 0x006246A0, off hand from the miss
+  line's isOffHand); Actor::PlayUnitAnimation mirrors CGUnit_C::PlayAnimation
+  (0x005FE2F0) for one-shot requests: mask rules, overrides, mounted
+  routing (seated riders swing on the upper body), the swing-over-swing
+  fast path (2x, +0xD60 played at the body track's end by the attacking
+  leg 0x005FD360); $CAH slows a missed/dodged/evaded swing to 0.5; the
+  +0xB4 flag 0x4 is AddAnimSpeedEffect (kit procedure kind 11, state kits
+  only: Freezing Trap, Ice Block, Ice Tomb, Frost Blast, Petrify...), now
+  held by aura visuals and gating the wound; the viewer shows the ready
+  stance (0x005FCDC0) while attacking. Left out: hand-overs/demotion of
+  move/ready requests, stand state (vtable +0xA4), the swim pose 41.
+- Game objects and ground areas (2026-11-17, recorder + reader + API; not yet
+  seen in game): ObjectInfo.cpp writes GAMEOBJECT_INFO (owner, display, type,
+  state, flags, place, GAMEOBJECT_ROTATION quaternion, scale, record name) on
+  view and on any change but place, DYNAMICOBJECT_INFO (caster, spell, bytes,
+  radius, place) on view, OBJECT_GONE. Reader + GetGameObjects /
+  GetGameObjectInfo (quaternion as actor yaw/pitch/roll, Z-Y-X; the order is
+  not yet checked against a tilted object) / GetGroundAreas. Lines seen in a
+  Stratholme log (door open/close, Blizzard 10187). Viewer (not yet seen in
+  game): actor:SetModelByGameObjectDisplayID (display row +0x04, WMO paths
+  refused) and actor:SetGameObjectState (model/SceneGameObject.cpp: the
+  0x005F3CB0 moving/end states, 0x008607E4 anims, 0x005F3930 fallbacks);
+  Replay.lua ApplyObjects / ApplyAreas. Open: check the tilted Stratholme
+  signs for the pitch/roll order; WMO game objects and transports (types
+  11/14/15: the model is the world entity's WMO, and a transport's place
+  moves but writes no line).
+- Unit state (2026-11-17, seen in a Stormwind log; pet names added after it):
+  the per-frame walk also writes UNIT_NAME (name / pet name / creature
+  cache), UNIT_STATE (target, owner,
+  UNIT_FIELD_FLAGS, level, faction template), UNIT_POWER (health and own
+  power) and UNIT_AURAS (all 48 slots, polarity from Aura::Data::IsSlotHarmful,
+  stacks), each on change. UNIT_AURAS since 2026-11-17: on view, then only
+  for a change the combat log does not write (CombatLog::LogsAura /
+  LogsAuraStacks; a death's losses); the reader merges the lines with the
+  SPELL_AURA_ lines (Loader::BuildAuras). Simulated on the 011328 log:
+  276 of 748 lines dropped, merged auras equal at all 748. The reader prefers them: GetUnitHealth exact,
+  GetUnitAuras complete (source from the combat log when it saw the apply),
+  names for units the combat log never names; new GetUnitPower and
+  GetUnitState. Unit frame + reactions (2026-11-17, seen in game):
+  crowd control needs no flag pose, since no base-pick resolver
+  (0x005FD8B0's ten) reads UNIT_FIELD_FLAGS; a stun's pose is its aura's
+  state kit, which the viewer already pins. The followed unit shows in a
+  1.12 TargetFrame copy (Replay.xml UnitFrame: portrait by display, name,
+  level, health and power in ManaBarColor, 5 buffs / 16 debuffs in
+  TargetDebuffButton_Update's rows, target of target, click follows it).
+  MOVEMENT_LOG_VERSION 6: UNIT_STATE adds UNIT_DYNAMIC_FLAGS, the reaction
+  toward the recording player (0x006061E0) and the basic selection type
+  (unit/SelectionColor.cpp); GetUnitState returns reaction and
+  isTapDenied, new GetUnitSelectionColor. Overhead health bars take the
+  nameplate color (0x007CBAA0), the frame's name background
+  TargetFrame_CheckFaction's. Left out: the level's difficulty color and
+  skull (recorder-relative, 0x007CBB40 / 0x007CBD50), elite art. Portraits come from the unit's actor
+  (actor:SetPortraitTexture: Model::Portrait::Live, BakePortrait's copy
+  of the live model behind its compositor + IsReady(0,1) gate, re-baked in
+  place when the actor's model changes); before a unit has an actor, a
+  player shows the client's stand-in for a player it does not hold
+  (0x00525BA0: TemporaryPortrait-<sex>-<race>);
+  SetPortraitTextureFromCreatureDisplayID of a race display with no Extra
+  row draws an undressed (black-skinned) model, checked with a bake readout.
+  Aura timers: GetUnitAuras gives expirationTime once a span's end is a
+  removal (not the unit leaving view) and duration from its last renewal
+  (applied, refresh, a dose that adds stacks), drawn as a cooldown sweep;
+  isHidden for a spell that fails 0x00519860, a spell this client lacks
+  shows the question mark. Feed: class-coloured unit links that follow,
+  spell links into the window's own ItemRefTooltip copy (rank text, spell
+  ID line), no fading. A replay opens at its first frame with units
+  (GetReplayInfo firstUnitTime). Playback bar: hover time + line, mouse
+  wheel / arrow keys step 1 s (10 with Shift), back / forward 10 s.
+- Cast bars (2026-11-16, not yet seen in game): the movement file's
+  UNIT_CAST (UnitInfo.cpp) writes each unit's cast spell (CGUnit +0xC8C,
+  cleared by ClearCastingSpell 0x0060D040) with SMSG_SPELL_START's cast
+  time, and its channel spell (+0x228), when they change. The reader's
+  `GetUnitCast` pairs SPELL_CAST_START with its success or failure, a
+  SPELL_INTERRUPT of it, or an interrupt spell's success on the caster as
+  it stopped (the server logs no SPELL_INTERRUPT for one that also deals
+  damage: Kick, Pummel) (the bar names the interrupter with retail's
+  SPELL_INTERRUPTED_BY) or the caster's UNIT_DIED; a start with none of
+  these stops where UNIT_CAST does (interrupted when before its end), and a
+  channel runs from its SPELL_CAST_SUCCESS until +0x228 clears. The viewer
+  shows retail's Classic cast bar colors over the unit, stops an
+  interrupted cast's visual and gives a channel's visual its logged length.
+- Time of day DONE (2026-11-17, f35c02ad; not yet seen in game): the
+  movement file's GAME_TIME line (the clock's day phase 0x00643A70 and its
+  scale, after each header and when the clock leaves the last line's
+  pace); C_CombatLogReplay.GetTimeOfDay; ModelScene:SetWorldTimeOfDay sets
+  the light state's time of day while the scene draws, lights the frame as
+  the world's sun (0x0066FF60: sun direction 0x006D3A10, ambient band 1,
+  diffuse band 0, specular band 9), takes the map light's fog when dry, and
+  the sky pass re-places the bodies and stars (0x006D3B80, 0x006D1B50).
+  Open: the frame light's direction space (assumed scene = map axes); not
+  mirrored: the underwater tint, the storm blend, the clouds (the world's).
+- Guild DONE (2026-11-17, a774620a; not yet seen in game): PLAYER_INFO ends
+  with GetGuildInfo's rank, guild name and masked rank name; the recorder
+  queries the guild cache (0x00560E30, with a callback) for an unknown
+  guild. C_CombatLogReplay.GetUnitGuild; the tooltip's guild line as the
+  3.3.5 / 4.3.4 builders add it.
+- Pets under their owners (2026-11-17, not yet seen in game): GetUnits'
+  petOwnerIndex is the player that owned the unit in its first UNIT_STATE
+  (a pet, guardian or totem comes into view owned; a creature charmed later
+  is first seen unowned); the unit list puts each pet under its owner,
+  indented.
+Maps (probe 2026-11-16, `SetWorldModelByMapID`): only Onyxia 249 and MC
+409 are single WMOs. BWL 469, ZG 309, AQ 509/531 and Naxx 533 need
+terrain plus the WMOs placed on tiles (MODF). DONE (2026-11-16):
+`SetWorldTerrain` places its tiles' MODF WMOs in the scene's WMO set
+(Stormwind checked in game in /replay); the raids not checked yet.
+
 **Layer 1: advanced combat logging (the `advancedCombatLogging` cvar).**
 Our combat log file (`combatlog/File.cpp`) writes 4.3.4's PackEvent line.
 Classic Era (1.15.7) writes `COMBAT_LOG_VERSION,9,ADVANCED_LOG_ENABLED,1,
@@ -4248,13 +4486,25 @@ Observed (2026-11-12, BWL log `WoWCombatLog-052425_204021.txt`):
   offset. Our SLogWrite stamp has neither.
 - Advanced block, inserted after the spell prefix on damage / heal /
   cast-success / energize / swing lines:
-  `infoGUID, ownerGUID, curHP, maxHP, 0,0,0,0,0, -1, 0,0,0, X, Y, 0,
-  facing, level`.
-  In Era, the attack power / spell power / armor / absorb slots, the power
-  slots (`-1,0,0,0`) and uiMapID (`0`) are EMPTY. Era fills only what a
-  client can know, so a 1.12 DLL can match it almost field for field
-  (HP from descriptors, position and facing from movement info, level).
-  Era writes player HP as a percent (`93,100`) and creature HP as raw values.
+  `infoGUID, ownerGUID, curHP, maxHP, AP, SP, armor, absorb, 0,
+  powerType, curPower, maxPower, powerCost, X, Y, uiMapID, facing,
+  level`. Slot order verified (2026-11-16) against MoP Classic 5.5.4
+  (`_classic_\Logs\WoWCombatLog-062026_123941.txt`, same
+  COMBAT_LOG_VERSION 9), which fills them. Example: a warrior
+  `100,100,34760,111,32368,0,0,1,0,1000,0`. The slot after absorb is 0
+  in every line of both logs.
+  In Era, AP / SP / armor / absorb and the power slots (`-1,0,0,0`) are
+  EMPTY (the client's expansion-0 rule, docs/notes/advanced-combat-log-3802.md).
+  uiMapID is 0 only in raids: the open-world lines carry the player's map
+  (fixed 2026-11-19). Era fills only what a client can know, so a
+  1.12 DLL can match it almost field for field (HP from descriptors,
+  position and facing from movement info).
+  Era and MoP write player HP as a percent (`93,100`) and creature HP as
+  raw values.
+- The last slot is NOT always the level. For players it is the item level
+  (Era BWL raiders show 62 to 68 at level 60; MoP players show 518 to
+  543). For creatures it is the level (62, 90, 1). The player ilvl can be
+  computed from the visible items plus the item cache.
 - The info unit depends on the event: SPELL_DAMAGE → the DEST,
   SWING_DAMAGE → the source, SWING_DAMAGE_LANDED → the dest. Map each
   subevent from the log before coding. Do not guess.
@@ -4262,16 +4512,126 @@ Observed (2026-11-12, BWL log `WoWCombatLog-052425_204021.txt`):
   `ENCOUNTER_START,610,"Razorgore the Untamed",9,40,469,2`,
   `ENCOUNTER_END,…,1` and `COMBATANT_INFO` (stats, talents, gear, auras).
   Encounter IDs come from a DBC that 1.12 does not have, so how to detect
-  an engage is OPEN. COMBATANT_INFO is possible only for players we can
-  inspect.
+  an engage is OPEN.
+- COMBATANT_INFO needs no inspect. In 1.12, CMSG_INSPECT carries no data:
+  the server replies SMSG_INSPECT with the GUID only, and the client
+  handler `0x5E7D70` discards it. The 10-yard rule is the client's
+  `CanReadUnitInventory` (`0x4944A0`) gate on the stock getters. The data
+  itself is broadcast for every visible player (tortoise
+  `Player.cpp` `updateVisualBits`, around line 5150):
+  - Gear: 19 visible-item blocks (entry, PERM + TEMP enchant, random
+    property + suffix), read through `FUN_UNIT_GET_VISIBLE_ITEM` with no
+    range gate (as `GetInventoryItemID` does). This fills Era's
+    `[(itemID, ilvl, (enchants), (), ())…]`. ilvl needs the item record,
+    so an uncached item needs a query first. The engine's visible-item
+    watcher `0x5DEE30` runs for any player, so the log can write gear
+    changes without polling.
+  - Auras, HP, level, power and max power.
+  - Not sent for other players: stats, armor, attack/spell power and
+    talents. Those COMBATANT_INFO fields can be filled for the local
+    player only; write 0 / `()` for everyone else.
+- DECIDED (2026-11-16): fill the advanced block's power slots, as MoP
+  Classic does and Era does not. Verified 2026-11-16:
+  - Who: in the MoP log, the slots are filled for 50,571 player info
+    blocks and empty for 9. They are empty for all 92,057 creature,
+    2,347 pet and 5,278 vehicle blocks. In the Era log they are empty
+    everywhere. So fill them for players only.
+  - Values: MoP writes the stored value, not the display value. Rage
+    is `0..1000`, stored in tenths, as 1.12 stores it. So write the
+    descriptor value without `Unit::Power::DisplayDivisor`.
+  - Reads: powerType from `OFF_UNIT_DESCRIPTOR_POWER_TYPE_BYTE` (+0x7B),
+    current/max from `OFF_UNIT_FIELD_POWER1` (+0x44) /
+    `OFF_UNIT_FIELD_MAXPOWER1` (+0x5C) + type*4. These are the same reads
+    as the engine's `UnitPowerType` / `UnitMana` / `UnitManaMax`
+    (benilla-re `ui/party.md`). Tortoise sends POWER1..5 and
+    MAXPOWER1..5 to every viewer (`updateVisualBits`).
+  - powerCost: MoP fills it (3000 for Power Word: Fortitude, 0 for a
+    proc). Write 0 until a 1.12 source is verified.
 - If the format matches Era, existing classic log parsers may read
   Turtle logs. Not checked.
 
 **Layer 2: replay in a ModelScene.** Density from the same log
 (Razorgore, 398 s, 57 units): median 150 position samples per unit, about
 one every 2.6 s, and at most about 2 per second. That is enough for a
-Warcraft Logs-style replay and too coarse for a smooth 3D one. OPEN: add
-a client-side position sampler (a ClassicAPI-only line type or a separate
-recording), or interpolate as WCL does. The viewer needs map geometry:
-there is already a WMO backdrop (ModelScene) and the `feat/scene-terrain`
-branch.
+Warcraft Logs-style replay and too coarse for a smooth 3D one. The viewer
+needs map geometry: there is already a WMO backdrop (ModelScene) and the
+`feat/scene-terrain` branch.
+
+DECIDED (2026-11-16): positions stay at retail frequency by default (only
+the advanced block's X/Y). High-frequency movement is opt-in:
+- Setting: retail puts `advancedCombatLogging` in a Network category
+  (`_forever_` `Blizzard_SettingsDefinitions_Shared/Network.lua`, a
+  `Settings.SetupCVarCheckbox`). Our Settings backport has no Network
+  category yet. Port it with that checkbox, and add a ClassicAPI
+  extension checkbox under it for movement logging. Make it a child of
+  the advanced checkbox, enabled only while advanced logging is on.
+  Default off.
+- Do not sample positions at a fixed rate. That only records the client's
+  own prediction between messages. Log the messages the client receives,
+  through `Net::PacketDispatch` subscribers (no new hook):
+  - `SMSG_MONSTER_MOVE` 0xDD / `_TRANSPORT` 0x2AE (`0x6018F0`): one line
+    per path, with the points, duration, spline flags and facing. A replay
+    then has creature positions at any time, not just near samples.
+  - The 30 relayed player moves (`0x603BB0`: start, stop, strafe, jump,
+    turn, heartbeat every 500 ms while moving): one line each with the
+    time, flags, position and facing.
+  - Speed changes (`0x603C10` spline speeds, `0x603F90` forced changes),
+    because player prediction needs the current speed.
+  - The local player's own moves are sends, not receives: use
+    `Net::SendObserver`.
+  benilla-re `objectlayer/unitmovement.md` has all the handlers.
+- Write a separate file next to the combat log, with the same timestamp
+  format, so the main log stays Era-compatible. (Unchecked whether Era
+  parsers skip unknown line types.)
+- Size, measured on Era logs: 115-164 MB per 40-player night
+  (BWL+MC+Ony), gzip about 12:1. Movement, NOT measured: an estimated
+  50-100 lines/s, 45-90 MB per night. Nobody can test a raid right now.
+  Measure the real rate with an opcode counter once someone can.
+
+## 111. Damage meter (C_DamageMeter + Blizzard_DamageMeter) — built 2026-11-17, not seen in game
+
+Built, unverified in game:
+- `src/damagemeter/`: totals (Totals), retail table builders (Tables),
+  live front end (Live: the `damageMeterEnabled` and
+  `damageMeterResetOnNewInstance` cvars, sessions, the three events),
+  `C_DamageMeter` (Api), the six enums (Enums). Nothing is collected while
+  `damageMeterEnabled` is off. Sessions: an encounter (combatlog/Encounter)
+  is one session named after the boss; otherwise a session lasts while the
+  group in view is in combat. 30 kept, oldest first (retail, probed).
+- `PLAYER_IN_COMBAT_CHANGED` (src/unit/InCombatChanged.cpp), on the engine's
+  PLAYER_REGEN_DISABLED/ENABLED signals.
+- `ClassicAPI_DamageMeter`: Blizzard_DamageMeter ported, load-on-demand,
+  loaded by !!!ClassicAPI only while the cvar is on. Edit Mode replaced by
+  `DamageMeterSystem` (preset defaults, move/resize when unlocked,
+  Style/Numbers/Visibility in the settings menu). Settings > Advanced has
+  the two checkboxes.
+- Replay: `C_CombatLogReplay.GetDamageMeterSession` /
+  `GetDamageMeterSessionSource` (replay/Meter.cpp, one session from the
+  first group-vs-hostile hit); a session window in /replay
+  (ClassicAPI_Replay/Meter.lua).
+
+Open:
+- Art (2026-11-17, not seen in game): the 42 atlases are embedded as two
+  built-in sheets (src/embed/Textures/Interface/DamageMeter/), cut from
+  _forever_\BlizzardInterfaceArt at the _forever_ build's
+  UiTextureAtlasMember rects (1.60.1.70959 CSVs in Downloads; Ketho's live
+  AtlasInfo does not match that art). Seen in game 2026-11-18: bars fill
+  (StatusBar::Fill maps atlas coordinates, rewrites the quad uncropped), and
+  texture slicing (src/texture/Slice.cpp, retail's SetTextureSliceMargins
+  family, atlas slice data from wago UiTextureAtlasElementSliceData) draws
+  the source window's common-dropdown-bg as a nine-slice. Tiled slice mode
+  now repeats the edges and centre at the image's pixel scale, one quad per
+  repeat, the last one cropped (built 2026-11-18, not seen in game: check
+  ui-hud-cooldownmanager-bar-bg). Margins that overlap (the header bar's
+  T14 + B22 on 28 px, the bar shadow's T10 + B10 on 14 px) keep each side's
+  full margin in the image and shrink only the drawn sizes, as a retail
+  screenshot of the header bar shows (not seen in game here yet).
+- GROUP_JOINED / GROUP_LEFT (group/Membership.cpp, on the roster signals)
+  and PLAYER_LEVEL_CHANGED (unit/LevelChanged.cpp, on the player's
+  UNIT_LEVEL broadcast) added 2026-11-18; not yet seen in game.
+- Not applied: text scale (1.12 FontStrings have no SetTextScale); the
+  Edit Mode sliders (size, bar height, padding, opacity, background, text
+  size, spec icon, class colour) keep the preset values.
+- Our choices where retail's rule is C-side: session boundaries and names,
+  creatures grouped by creature ID, Expired = sessions dropped since reset,
+  interrupts/dispels listed under the stopped/removed spell.

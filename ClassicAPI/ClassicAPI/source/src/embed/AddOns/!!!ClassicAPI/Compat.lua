@@ -8,6 +8,16 @@ end
 C_Container.GetContainerNumSlots = GetContainerNumSlots
 C_Container.PickupContainerItem = PickupContainerItem
 
+-- The addon list already leaves out Blizzard's addons, as 3.80.2's does, and
+-- ResetDisabledAddOns already rereads the current character's AddOns.txt.
+C_AddOns.GetNumAddOns = GetNumAddOns
+C_AddOns.ResetDisabledAddOns = ResetDisabledAddOns
+
+-- 3.80.2 answers false always.
+function C_AddOns.GetScriptsDisallowedForBeta()
+    return false
+end
+
 C_CVar.GetCVar = GetCVar
 C_CVar.GetCVarDefault = GetCVarDefault
 C_CVar.RegisterCVar = RegisterCVar
@@ -52,23 +62,71 @@ function C_AutoComplete.GetAutoCompleteRealms()
     return {}
 end
 
--- C_ModelInfo's getters come from the DLL. Retail's active-scene bookkeeping
--- "does nothing in public clients" (its own documentation).
-function C_ModelInfo.AddActiveModelScene(modelSceneFrame, modelSceneID)
+-- C_GossipInfo's window functions come from the DLL. This client has no
+-- forced gossip, no option descriptions and no friendship factions. The
+-- friendship answers are the ones the Classic client gives for a faction
+-- without a friendship record.
+function C_GossipInfo.ForceGossip()
+    return false
 end
 
-function C_ModelInfo.AddActiveModelSceneActor(modelSceneFrameActor, modelSceneActorID)
+function C_GossipInfo.GetCompletedOptionDescriptionString()
+    return nil
 end
 
-function C_ModelInfo.ClearActiveModelScene(modelSceneFrame)
+function C_GossipInfo.GetCustomGossipDescriptionString()
+    return nil
 end
 
-function C_ModelInfo.ClearActiveModelSceneActor(modelSceneFrameActor)
+function C_GossipInfo.GetFriendshipReputation(friendshipFactionID)
+    local id = tonumber(friendshipFactionID)
+    if not id then
+        error("Usage: local reputationInfo = C_GossipInfo.GetFriendshipReputation(friendshipFactionID)", 2)
+    end
+    if id <= 0 then
+        return
+    end
+    return {
+        friendshipFactionID = 0,
+        standing = 0,
+        maxRep = 0,
+        text = "",
+        texture = 0,
+        reaction = "",
+        reactionThreshold = 0,
+    }
+end
+
+function C_GossipInfo.GetFriendshipReputationRanks(friendshipFactionID)
+    if not tonumber(friendshipFactionID) then
+        error("Usage: local rankInfo = C_GossipInfo.GetFriendshipReputationRanks(friendshipFactionID)", 2)
+    end
+    return { currentLevel = 0, maxLevel = 0 }
+end
+
+-- C_LootHistory's store comes from the DLL. This client rolls no master-loot
+-- items, so no history item can be given out by the master looter.
+function C_LootHistory.CanMasterLoot(itemIdx, playerIdx)
+    if not tonumber(itemIdx) or not tonumber(playerIdx) then
+        error("Usage: CanMasterLoot(itemIdx, playerIdx)", 2)
+    end
+end
+
+function C_LootHistory.GiveMasterLoot(itemIdx, playerIdx)
+    if not tonumber(itemIdx) or not tonumber(playerIdx) then
+        error("Usage: GiveMasterLoot(itemIdx, playerIdx)", 2)
+    end
 end
 
 -- This client has no alternate player forms.
 function C_PlayerInfo.GetAlternateFormInfo()
     return false, false
+end
+
+-- 3.80.2 tests the mirror-image unit flag (UNIT_FLAG2_MIRROR_IMAGE). This
+-- client has no such flag and no mirror image.
+function C_PlayerInfo.IsMirrorImage()
+    return false
 end
 
 -- Retail marks the settings added in the current version as new. Nothing in
@@ -78,4 +136,10 @@ function IsNewSettingInCurrentVersion(variable)
 end
 
 function MarkNewSettingAsSeen(variable)
+end
+
+-- Classic clients before Wrath answer true: combo points stay on the player
+-- in a vehicle. This client has no vehicles.
+function UnitIgnoresVehicleComboPoints(unit)
+    return true
 end

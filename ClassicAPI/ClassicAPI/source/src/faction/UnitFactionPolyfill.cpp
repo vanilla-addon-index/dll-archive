@@ -58,6 +58,7 @@
 #include "Offsets.h"
 #include "dbc/Lookup.h"
 #include "event/Custom.h"
+#include "unit/Signal.h"
 
 #include <cstdint>
 #include <cstring>
@@ -68,19 +69,8 @@ namespace {
 
 // Helpers ────────────────────────────────────────────────────────────
 
-// `UNIT_FACTION`'s event-table slot. The engine's `RebuildEventTable`
-// preserves slot order across reloads and other DLLs claim only NULL
-// gaps, so this is stable once resolved. Lazy-init on first fire.
-int s_unitFactionSlot = -1;
-
 void FireUnitFactionPlayer() {
-    if (s_unitFactionSlot < 0)
-        s_unitFactionSlot = Event::Custom::LookupByName("UNIT_FACTION");
-    if (s_unitFactionSlot < 0)
-        return;
-    using FireEventFn_t = void(__cdecl *)(int eventID, const char *format, ...);
-    auto fire = reinterpret_cast<FireEventFn_t>(Offsets::FUN_FIRE_EVENT);
-    fire(s_unitFactionSlot, "%s", "player");
+    Unit::Signal::FirePlayer(Offsets::EVENT_UNIT_FACTION, "%s");
 }
 
 uint8_t ReadRepSlotFlags(int repListID) {

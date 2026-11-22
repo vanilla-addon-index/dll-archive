@@ -16,24 +16,13 @@
 #include "guid/Guid.h"
 #include "item/CGItem.h"
 #include "item/Location.h"
+#include "object/Resolve.h"
 
 #include <cstdint>
 
 namespace Item::GUID {
 
 namespace {
-
-// Reads a CGItem's per-instance 64-bit GUID (instance block at +0x08 →
-// GUID qword at +0x00). Returns 0 if the item or block is null.
-uint64_t ReadItemGuid(const uint8_t *cgItem) {
-    if (cgItem == nullptr)
-        return 0;
-    auto *instance = Item::InstanceBlock(cgItem);
-    if (instance == nullptr)
-        return 0;
-    return *reinterpret_cast<const uint64_t *>(
-        instance + Offsets::OFF_INSTANCE_BLOCK_GUID);
-}
 
 } // namespace
 
@@ -58,7 +47,7 @@ static int __fastcall Script_C_Item_GetItemGUID(void *L) {
     const uint8_t *item = Item::Location::Resolve(L, 1);
     if (item == nullptr)
         return 0;
-    const uint64_t guid = ReadItemGuid(item);
+    const uint64_t guid = ::Object::Guid(item);
     if (guid == 0)
         return 0;
 
@@ -95,15 +84,15 @@ static int __fastcall Script_C_Item_IsItemGUIDInInventory(void *L) {
     // Equipped slots 1..19.
     for (int slot = 1; slot <= 19 && !found; ++slot) {
         const uint8_t *item = Item::Location::ResolveEquipmentSlot(slot);
-        if (item != nullptr && ReadItemGuid(item) == target)
+        if (item != nullptr && ::Object::Guid(item) == target)
             found = true;
     }
     // Bags 0..4 (backpack + equipped bags).
     for (int bag = 0; bag <= 4 && !found; ++bag) {
         const int slots = Item::Location::GetBagSlotCount(bag);
         for (int slot = 1; slot <= slots; ++slot) {
-            const uint8_t *item = Item::Location::ResolveBag(L, bag, slot);
-            if (item != nullptr && ReadItemGuid(item) == target) {
+            const uint8_t *item = Item::Location::ResolveBag(bag, slot);
+            if (item != nullptr && ::Object::Guid(item) == target) {
                 found = true;
                 break;
             }

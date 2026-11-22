@@ -29,6 +29,9 @@
 #include "Game.h"
 #include "Offsets.h"
 #include "debug/Log.h"
+#include "frame/Region.h"
+#include "frame/RegionDestruction.h"
+#include "texture/Slice.h"
 #include "texture/Wrap.h"
 #include "xml/FrameLoad.h"
 #include "xml/TypeLoad.h"
@@ -44,8 +47,6 @@ namespace Texture::Atlas {
 namespace {
 
 using ScriptFn_t = int(__fastcall *)(void *L);
-
-int CallScript(uintptr_t fn, void *L) { return reinterpret_cast<ScriptFn_t>(fn)(L); }
 
 std::string Lower(const char *s) {
     std::string out;
@@ -83,6 +84,13 @@ std::map<std::string, Info> &Registry() {
             info.tilesHorizontally = e.tilesHorizontally;
             info.tilesVertically = e.tilesVertically;
             info.transposed = e.transposed;
+            info.sliced = e.slice.left != 0 || e.slice.top != 0 || e.slice.right != 0 ||
+                          e.slice.bottom != 0;
+            info.sliceLeft = e.slice.left;
+            info.sliceTop = e.slice.top;
+            info.sliceRight = e.slice.right;
+            info.sliceBottom = e.slice.bottom;
+            info.sliceMode = e.slice.mode;
             registry[Lower(e.name)] = info;
         }
     }
@@ -106,6 +114,9 @@ constexpr float kIdentityCoords[8] = {0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 
 
 struct Applied {
     std::string name;
+    // The registry entry, which stays valid for the life of the process
+    // (Find); a re-registration rewrites it in place.
+    const Info *info = nullptr;
     void *hTexture = nullptr;
     // What the addon last asked SetTexCoord for, in SPRITE space. A region has
     // exactly one set of coordinates in the engine and the atlas rect occupies
@@ -159,7 +170,7 @@ ScriptFn_t g_getTexCoordOriginal = nullptr;
 int WriteTexCoord(void *L) {
     return g_setTexCoordOriginal != nullptr
                ? g_setTexCoordOriginal(L)
-               : CallScript(Offsets::FUN_SCRIPT_TEXTURE_SET_TEXCOORD, L);
+               : Game::Lua::CallScript(Offsets::FUN_SCRIPT_TEXTURE_SET_TEXCOORD, L);
 }
 
 // Pushes (self, 8 corners) and writes them straight through.
@@ -195,6 +206,16 @@ int __fastcall Script_GetAtlasInfo(void *L) {
     Game::Lua::SetFieldNumber(L, "bottomTexCoord", info->bottom);
     Game::Lua::SetFieldBool(L, "tilesHorizontally", info->tilesHorizontally);
     Game::Lua::SetFieldBool(L, "tilesVertically", info->tilesVertically);
+    if (info->sliced) {
+        Game::Lua::PushString(L, "sliceData");
+        Game::Lua::NewTable(L);
+        Game::Lua::SetFieldNumber(L, "marginLeft", info->sliceLeft);
+        Game::Lua::SetFieldNumber(L, "marginTop", info->sliceTop);
+        Game::Lua::SetFieldNumber(L, "marginRight", info->sliceRight);
+        Game::Lua::SetFieldNumber(L, "marginBottom", info->sliceBottom);
+        Game::Lua::SetFieldNumber(L, "sliceMode", info->sliceMode);
+        Game::Lua::SetTable(L, -3);
+    }
     // `filename` carries the texture. `file` is a fileDataID, and 1.12 has no
     // such id space at all, so it is left absent rather than filled with a value
     // that would not resolve — both fields are optional in the contract.
@@ -291,11 +312,44 @@ int __fastcall Script_RegisterAtlas(void *L) {
 
 // --- texture:SetAtlas / GetAtlas -------------------------------------------
 
+// The coordinates SetAtlas keeps, in sprite space: what the addon last asked
+// for. A texture showing an atlas has them on record. Any other texture holds
+// them in the engine; on a tiled axis there, Texture::Tile has replaced each
+// non-zero value with its repeat count, and 4.3.4 allows only 0 and 1 on a
+// tiled axis, so a non-zero value is read back as 1.
+void KeptCoords(void *region, float user[8]) {
+    if (const Applied *entry = LiveEntry(region)) {
+        for (int i = 0; i < 8; ++i)
+            user[i] = entry->user[i];
+        return;
+    }
+    const float *coords = Game::Ptr<float>(region, Offsets::OFF_SIMPLETEXTURE_TEXCOORDS);
+    bool tileH, tileV;
+    Texture::Wrap::Tiles(region, tileH, tileV);
+    for (int i = 0; i < 4; ++i) {
+        const float x = coords[i * 2], y = coords[i * 2 + 1];
+        user[i * 2] = (tileH && x != 0.0f) ? 1.0f : x;
+        user[i * 2 + 1] = (tileV && y != 0.0f) ? 1.0f : y;
+    }
+}
+
 // `texture:SetAtlas(atlas [, useAtlasSize, filterMode, resetTexCoords,
 //                   wrapModeHorizontal, wrapModeVertical])`
-// The trailing arguments are accepted and ignored: 1.12 texture regions have no
-// filter or wrap mode to set, and dropping them silently is what lets modern call
-// sites pass through unchanged.
+//
+// Retail keeps the texture's coordinates and applies them inside the new
+// sprite unless resetTexCoords is true: NineSlice sets a piece's mirrored
+// coordinates before its atlas ("Change texture coordinates before applying
+// atlas"), and code that reuses pooled textures passes true to drop a flip an
+// earlier use set (Blizzard_OrderHallTalents.lua).
+//
+// It also re-applies the atlas's own wrap mode (Blizzard_LegacyChallengeButton
+// .lua: "SetAtlas re-applies the atlas wrap mode, clearing the tiling set in
+// XML"), so the tile flags become the atlas's tiling (Texture::Wrap::
+// ForAtlas) on each axis where it can repeat (Repeats).
+//
+// filterMode and the wrap mode arguments are accepted and ignored: 1.12 texture
+// regions have no filter to set, and dropping them silently is what lets modern
+// call sites pass through unchanged.
 int __fastcall Script_SetAtlas(void *L) {
     void *region = Game::Lua::ResolveTexture(L);
     if (region == nullptr)
@@ -310,6 +364,7 @@ int __fastcall Script_SetAtlas(void *L) {
 
     const char *name = Game::Lua::ToString(L, 2);
     const bool useAtlasSize = Game::Lua::ToBoolean(L, 3) != 0;
+    const bool resetTexCoords = Game::Lua::ToBoolean(L, 5) != 0;
 
     const Info *info = Find(name);
     if (info == nullptr) {
@@ -322,35 +377,46 @@ int __fastcall Script_SetAtlas(void *L) {
         return 0;
     }
 
-    // Retail's SetAtlas re-applies the atlas's own wrap mode, which clears
-    // tiling the texture had. An atlas never tiles here (the built-in ones are
-    // parts of their files), so that leaves it clamped.
-    Texture::Wrap::Clear(region);
+    Applied applied;
+    applied.name = info->name;
+    applied.info = info;
+    if (resetTexCoords) {
+        for (int i = 0; i < 8; ++i)
+            applied.user[i] = kIdentityCoords[i];
+    } else {
+        KeptCoords(region, applied.user);
+    }
+
+    // The atlas's wrap goes in before the file loads, so the load takes it.
+    Texture::Wrap::ForAtlas(region, Repeats(*info, 0), Repeats(*info, 1));
 
     // Reshaping the stack for each delegated handler leaves `info` untouched — it
     // points into the registry, which none of these calls can reach.
     Game::Lua::SetTop(L, 1); // (self)
     Game::Lua::PushString(L, info->file.c_str());
-    CallScript(Offsets::FUN_SCRIPT_TEXTURE_SET_TEXTURE, L);
+    Game::Lua::CallScript(Offsets::FUN_SCRIPT_TEXTURE_SET_TEXTURE, L);
+    Texture::Wrap::Settle(region);
 
-    // Identity in sprite space is the atlas's whole rectangle in file space.
+    // On record before the coordinates are written, so Texture::Tile counts
+    // them against the atlas.
+    applied.hTexture = RegionTexture(region);
+    g_applied[region] = applied;
+
     float corners[8];
-    Compose(*info, kIdentityCoords, corners);
+    Compose(*info, applied.user, corners);
     WriteCorners(L, corners);
 
     if (useAtlasSize && info->width > 0.0f && info->height > 0.0f) {
         Game::Lua::SetTop(L, 1); // (self)
         Game::Lua::PushNumber(L, info->width);
-        CallScript(Offsets::FUN_SCRIPT_REGION_SETWIDTH, L);
+        Game::Lua::CallScript(Offsets::FUN_SCRIPT_REGION_SETWIDTH, L);
         Game::Lua::SetTop(L, 1); // (self)
         Game::Lua::PushNumber(L, info->height);
-        CallScript(Offsets::FUN_SCRIPT_REGION_SETHEIGHT, L);
+        Game::Lua::CallScript(Offsets::FUN_SCRIPT_REGION_SETHEIGHT, L);
     }
 
-    Applied applied;
-    applied.name = info->name;
-    applied.hTexture = RegionTexture(region);
-    g_applied[region] = applied;
+    // Retail's SetAtlas loads the atlas's slice data along with its rect.
+    Texture::Slice::ApplyAtlas(region, *info);
 
     Game::Lua::SetTop(L, 0);
     return 0;
@@ -535,7 +601,9 @@ const Game::Doc::Field kSetAtlasArgs[] = {
     Game::Doc::Opt("useAtlasSize", "bool", "false",
                    "True also resizes the texture to the art's own size."),
     Game::Doc::Opt("filterMode", "FilterMode", nullptr, "Ignored."),
-    Game::Doc::Opt("resetTexCoords", "bool", nullptr, "Ignored."),
+    Game::Doc::Opt("resetTexCoords", "bool", "false",
+                   "True shows the whole atlas. Otherwise the texture's texture "
+                   "coordinates stay and select part of the atlas."),
     Game::Doc::Opt("wrapModeHorizontal", "cstring", nullptr, "Ignored."),
     Game::Doc::Opt("wrapModeVertical", "cstring", nullptr, "Ignored."),
 };
@@ -563,10 +631,21 @@ const Game::Doc::Field kAtlasInfoFields[] = {
     Game::Doc::Req("bottomTexCoord", "number"),
     Game::Doc::Req("tilesHorizontally", "bool"),
     Game::Doc::Req("tilesVertically", "bool"),
+    Game::Doc::Opt("sliceData", "UITextureSliceData", nullptr,
+                   "Set only for an atlas that draws as a nine-slice."),
     Game::Doc::Opt("file", "fileID", nullptr, "Never set; the texture is named by filename."),
     Game::Doc::Opt("filename", "string", nullptr, "Path of the texture that holds the art."),
 };
 const Game::Doc::Structure kAtlasInfo{"AtlasInfo", "Texture", kAtlasInfoFields};
+
+const Game::Doc::Field kSliceDataFields[] = {
+    Game::Doc::Req("marginLeft", "number", "In the art's pixels."),
+    Game::Doc::Req("marginTop", "number"),
+    Game::Doc::Req("marginRight", "number"),
+    Game::Doc::Req("marginBottom", "number"),
+    Game::Doc::Req("sliceMode", "UITextureSliceMode"),
+};
+const Game::Doc::Structure kSliceData{"UITextureSliceData", "UITextureConstants", kSliceDataFields};
 
 const Game::Doc::Field kAtlasArgs[] = {
     Game::Doc::Req("atlas", "textureAtlas"),
@@ -665,9 +744,36 @@ void RegisterLuaFunctions() {
 const Game::ModuleAutoRegister _autoreg{&RegisterLuaFunctions};
 const Game::ReloadAutoRegister _reloadReg{&PrepareForReload};
 
+// The pool can hand a destroyed region's address to a new one.
+void OnRegionDestroyed(void *region) { g_applied.erase(region); }
+
+const Frame::RegionDestruction::AutoSubscribe _destructionSub{&OnRegionDestroyed};
+
+// A <Color> under an atlas texture tints the atlas, as 4.3.4's loader tints a
+// texture that already has its image (SetVertexColor) and retail tints an atlas
+// (FlatPanelBackgroundTemplate's corners, which PortraitFrameFlatBaseMixin
+// re-tints with SetVertexColor). 1.12's loader turned the colour into a solid
+// image before the atlas replaced it, so the colour goes on here, after.
+// An `alpha` attribute keeps its alpha byte: Xml::NativeSetters sets it as
+// the colour's alpha, before or after this.
+void TintFromColor(void *object, const void *node, void *status) {
+    const void *colorNode = nullptr;
+    for (const void *c = Xml::FirstChild(node); c != nullptr; c = Xml::NextSibling(c))
+        if (Xml::TagIs(c, "Color"))
+            colorNode = c;
+    if (colorNode == nullptr)
+        return;
+    uint32_t bgra = 0;
+    Xml::ReadColor(colorNode, bgra, status);
+    const char *alpha = Xml::Attr(node, "alpha");
+    if (alpha != nullptr && *alpha != '\0')
+        bgra = (bgra & 0x00FFFFFFu) | (Frame::Region::Color(object) & 0xFF000000u);
+    Frame::Region::SetColor(object, bgra);
+}
+
 // The XML `<Texture atlas="name" useAtlasSize="true">`: texture:SetAtlas(name,
 // useAtlasSize), run as its own Lua call so the loader's stack is left alone.
-void OnTextureNode(void *object, const void *node, void * /*status*/) {
+void OnTextureNode(void *object, const void *node, void *status) {
     const char *name = Xml::Attr(node, "atlas");
     void *L = Game::Lua::State();
     if (name == nullptr || *name == '\0' || L == nullptr)
@@ -680,6 +786,8 @@ void OnTextureNode(void *object, const void *node, void * /*status*/) {
     Game::Lua::PushBool(L, useSize != nullptr && Game::StringToFlag(useSize));
     Game::Lua::PCall(L, 3, 0, 0);
     Game::Lua::SetTop(L, top);
+    if (Shows(object))
+        TintFromColor(object, node, status);
 }
 
 const Xml::TypeLoad::AutoSubscribe _xmlSub{Xml::TypeLoad::TEXTURE, &OnTextureNode};
@@ -687,6 +795,48 @@ const Xml::TypeLoad::AutoSubscribe _xmlSub{Xml::TypeLoad::TEXTURE, &OnTextureNod
 } // namespace
 
 bool Shows(void *region) { return LiveEntry(region) != nullptr; }
+
+bool ToFile(void *region, float corners[8]) {
+    const Applied *entry = LiveEntry(region);
+    const Info *info = entry != nullptr ? Find(entry->name.c_str()) : nullptr;
+    if (info == nullptr)
+        return false;
+    float out[8];
+    Compose(*info, corners, out);
+    for (int i = 0; i < 8; ++i)
+        corners[i] = out[i];
+    return true;
+}
+
+bool ToSprite(void *region, float corners[8]) {
+    const Info *info = Current(region);
+    if (info == nullptr)
+        return false;
+    const float width = info->right - info->left;
+    const float height = info->bottom - info->top;
+    if (width == 0.0f || height == 0.0f)
+        return false;
+    for (int i = 0; i < 4; ++i) {
+        const float x = (corners[i * 2] - info->left) / width;
+        const float y = (corners[i * 2 + 1] - info->top) / height;
+        corners[i * 2] = info->transposed ? y : x;
+        corners[i * 2 + 1] = info->transposed ? x : y;
+    }
+    return true;
+}
+
+const Info *Current(void *region) {
+    const Applied *entry = LiveEntry(region);
+    return entry != nullptr ? entry->info : nullptr;
+}
+
+bool Repeats(const Info &info, int axis) {
+    if (info.transposed)
+        return false;
+    if (axis == 0)
+        return info.tilesHorizontally && info.left == 0.0f && info.right == 1.0f;
+    return info.tilesVertically && info.top == 0.0f && info.bottom == 1.0f;
+}
 
 const Info *Find(const char *name) {
     if (name == nullptr || *name == '\0')

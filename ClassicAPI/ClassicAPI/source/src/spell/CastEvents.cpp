@@ -16,11 +16,11 @@
 #include "Game.h"
 #include "Offsets.h"
 #include "event/Custom.h"
-#include "net/PacketReader.h"
-#include "net/SendObserver.h"
+#include "spell/CastPacket.h"
 #include "spell/Lookup.h"
 #include "time/Clock.h"
 #include "unit/Identity.h"
+#include "unit/Signal.h"
 
 #include <cstdio>
 #include <cstdint>
@@ -123,13 +123,9 @@ const Event::Custom::AutoReserve kInterruptible{"UNIT_SPELLCAST_INTERRUPTIBLE", 
 const Event::Custom::AutoReserve kNotInterruptible{"UNIT_SPELLCAST_NOT_INTERRUPTIBLE",
                                                    &kNotInterruptibleDoc};
 
-// SpellCastTargets mask bit for a unit target (a packed GUID follows).
-constexpr uint16_t kTargetFlagUnit = 0x0002;
-
-const char *LocalizedField(const uint8_t *rec, int fieldOffset) {
-    const int locale = Game::Read<int>(Offsets::VAR_LOCALE_INDEX);
-    return Game::Read<const char *>(rec, fieldOffset + locale * 4);
-}
+// The event formats take `%s`, and a NULL `%s` corrupts every argument after
+// it, so an empty name or rank goes out as "".
+const char *OrEmpty(const char *s) { return s != nullptr ? s : ""; }
 
 // Cast UID for a REAL (Type-3) cast — player and remote alike. Per the retail
 // spell-cast-GUID spec (warcraft.wiki.gg/wiki/GUID#Cast) for non-local-only
@@ -171,16 +167,17 @@ void BuildCastGuid(char *out, size_t n, int type, int spellID, int castUID) {
 void Fire(const Event::Custom::AutoReserve &event, int spellID, int guidNum,
           int type = 3) {
     const int slot = event.Slot();
-    if (!Event::Custom::HasListeners(slot))
+    if (!Unit::Signal::HasListeners(slot, Unit::Identity::PlayerGuid()))
         return;
     const uint8_t *rec = Spell::Lookup::RecordForID(spellID);
     if (rec == nullptr)
         return;
     char castGuid[48];
     BuildCastGuid(castGuid, sizeof(castGuid), type, spellID, guidNum);
-    Event::Custom::Fire(slot, "%s%s%d%s%s", "player", castGuid, spellID,
-                        LocalizedField(rec, Offsets::OFF_SPELL_NAMES),
-                        LocalizedField(rec, Offsets::OFF_SPELL_RECORD_RANK));
+    const char *name = OrEmpty(Spell::Lookup::Name(rec));
+    const char *rank = OrEmpty(Spell::Lookup::Rank(rec));
+    Unit::Signal::FirePlayer(slot, "%s%s%d%s%s", static_cast<const char *>(castGuid), spellID,
+                             name, rank);
 }
 
 // SENT is the one event whose shape differs from the rest, matching modern:
@@ -189,16 +186,18 @@ void Fire(const Event::Custom::AutoReserve &event, int spellID, int guidNum,
 // the cast packet, or "" for self / no-target casts.
 void FireSent(int spellID, int guidNum, const char *target) {
     const int slot = kSent.Slot();
-    if (!Event::Custom::HasListeners(slot))
+    if (!Unit::Signal::HasListeners(slot, Unit::Identity::PlayerGuid()))
         return;
     const uint8_t *rec = Spell::Lookup::RecordForID(spellID);
     if (rec == nullptr)
         return;
     char castGuid[48];
     BuildCastGuid(castGuid, sizeof(castGuid), /*type=*/3, spellID, guidNum);
-    Event::Custom::Fire(slot, "%s%s%s%d%s%s", "player", target ? target : "",
-                        castGuid, spellID, LocalizedField(rec, Offsets::OFF_SPELL_NAMES),
-                        LocalizedField(rec, Offsets::OFF_SPELL_RECORD_RANK));
+    const char *to = target ? target : "";
+    const char *name = OrEmpty(Spell::Lookup::Name(rec));
+    const char *rank = OrEmpty(Spell::Lookup::Rank(rec));
+    Unit::Signal::FirePlayer(slot, "%s%s%s%d%s%s", to, static_cast<const char *>(castGuid),
+                             spellID, name, rank);
 }
 
 // Fire a RETICLE event `(unitTarget, castGUID, spellID, spellName, rank)`.
@@ -211,14 +210,14 @@ void FireSent(int spellID, int guidNum, const char *target) {
 // rank are our usual extension tail.
 void FireReticle(const Event::Custom::AutoReserve &event, int spellID) {
     const int slot = event.Slot();
-    if (!Event::Custom::HasListeners(slot))
+    if (!Unit::Signal::HasListeners(slot, Unit::Identity::PlayerGuid()))
         return;
     const uint8_t *rec = Spell::Lookup::RecordForID(spellID);
     if (rec == nullptr)
         return;
-    Event::Custom::Fire(slot, "%s%s%d%s%s", "player", "", spellID,
-                        LocalizedField(rec, Offsets::OFF_SPELL_NAMES),
-                        LocalizedField(rec, Offsets::OFF_SPELL_RECORD_RANK));
+    const char *name = OrEmpty(Spell::Lookup::Name(rec));
+    const char *rank = OrEmpty(Spell::Lookup::Rank(rec));
+    Unit::Signal::FirePlayer(slot, "%s%s%d%s%s", "", spellID, name, rank);
 }
 
 // spellID whose reticle we last reported active (0 = no reticle up).
@@ -413,67 +412,52 @@ const Game::HookAutoRegister _failedHook{
     reinterpret_cast<void **>(&g_origSpellFailed)};
 
 // ---- UNIT_SPELLCAST_SENT (CMSG_CAST_SPELL leaving the client) ----------
-// Watch outgoing sends via the shared observer (no funnel hook of our own).
+// The decoded send from Spell::CastPacket (no funnel hook of our own).
 // This is the earliest point in a cast's life: mint the castGUID here and
 // stash it pending so the matching START / SUCCEEDED / FAILED reuse it.
-void OnSend(uint32_t opcode, Net::CDataStore *packet) {
-    if (opcode != Offsets::OP_CMSG_CAST_SPELL)
-        return;
-    const int spellID = static_cast<int>(Net::Read<uint32_t>(packet));
-    if (spellID == 0)
-        return;
+void OnSend(const Spell::CastPacket::Sent &s) {
+    const int spellID = static_cast<int>(s.spellId);
     // If this is the spell whose reticle is up, the player just PLACED it —
     // the reticle will clear by placement, not cancel, so suppress its
     // RETICLE_CLEAR (retail fires CLEAR only on a real cancel).
     if (s_reticleSpell != 0 && spellID == s_reticleSpell)
         s_reticlePlaced = true;
-    // CMSG_CAST_SPELL body after spellId is SpellCastTargets: targetMask
-    // (u16), then a packed unit GUID when the UNIT flag is set (self /
-    // no-target casts carry none). Resolve that GUID to a unit token for
-    // SENT's `target` arg. Layout confirmed against the server's
-    // SpellCastTargets::read (tortoise-wow).
+    // SENT's `target` arg: the unit target's token (self / no-target casts
+    // carry none).
     char target[64];
     target[0] = '\0';
-    const uint16_t mask = Net::Read<uint16_t>(packet);
-    if (mask & kTargetFlagUnit) {
-        const uint64_t targetGuid = Net::ReadPackedGuid(packet);
-        if (targetGuid != 0)
-            Unit::Identity::TokenFromGUID(targetGuid, target, sizeof(target));
-    }
+    if ((s.targets.mask & Offsets::SPELL_TARGET_FLAG_UNIT) && s.targets.object != 0)
+        Unit::Identity::TokenFromGUID(s.targets.object, target, sizeof(target));
     const int guid = MakeCastUID(); // real cast (Type 3) → time-based UID
     g_pendingGuid = guid;
     g_pendingSpell = spellID;
     FireSent(spellID, guid, target);
 }
 
-const Net::SendObserver::AutoSubscribe _sendSub{&OnSend};
+const Spell::CastPacket::AutoSent _sendSub{&OnSend};
 
 // ---- Remote (non-player) unit cast events ------------------------------
 
-// Fire `eventName` for EVERY unit token currently mapping to `casterGuid`.
-// The listener gate + DBC name/rank lookup + castGUID build happen once, then
-// the payload is fanned out per token (`target` / `focus` / `nameplateN` /
-// `party` / `raid` / `mouseover`). Same `(unit, castGUID, spellID, spellName,
+// Fire `eventName` for EVERY unit token currently mapping to `casterGuid`,
+// and for the frames that registered its GUID (Unit::Signal). The listener
+// gate + DBC name/rank lookup + castGUID build happen once, then the payload
+// is fanned out per token (`target` / `focus` / `nameplateN` / `party` /
+// `raid`). Same `(unit, castGUID, spellID, spellName,
 // rank)` shape as the player events, just with a non-"player" unit.
 void FireRemote(const Event::Custom::AutoReserve &event, uint64_t casterGuid,
                 int spellID, int guidNum) {
     const int slot = event.Slot();
-    if (!Event::Custom::HasListeners(slot))
+    if (!Unit::Signal::HasListeners(slot, casterGuid))
         return;
     const uint8_t *rec = Spell::Lookup::RecordForID(spellID);
     if (rec == nullptr)
         return;
-    char tokens[16][32];
-    const int n = Unit::Identity::TokensForGUID(casterGuid, tokens, 16);
-    if (n == 0)
-        return;
     char castGuid[48];
     BuildCastGuid(castGuid, sizeof(castGuid), /*type=*/3, spellID, guidNum);
-    const char *name = LocalizedField(rec, Offsets::OFF_SPELL_NAMES);
-    const char *rank = LocalizedField(rec, Offsets::OFF_SPELL_RECORD_RANK);
-    for (int i = 0; i < n; ++i)
-        Event::Custom::Fire(slot, "%s%s%d%s%s", tokens[i], castGuid, spellID,
-                            name, rank);
+    const char *name = OrEmpty(Spell::Lookup::Name(rec));
+    const char *rank = OrEmpty(Spell::Lookup::Rank(rec));
+    Unit::Signal::Fire(casterGuid, slot, "%s%s%d%s%s", static_cast<const char *>(castGuid),
+                       spellID, name, rank);
 }
 
 // One tracked cast per remote caster (a unit can't cast two at once), fired
@@ -682,19 +666,16 @@ void OnPlayerChannelUpdate(int spellID) {
 }
 
 bool InterruptibleWatched() {
-    return Event::Custom::HasListeners(kInterruptible.Slot()) ||
-           Event::Custom::HasListeners(kNotInterruptible.Slot());
+    return Unit::Signal::HasListeners(kInterruptible.Slot()) ||
+           Unit::Signal::HasListeners(kNotInterruptible.Slot());
 }
 
 void OnInterruptibleChanged(uint64_t casterGuid, bool notInterruptible) {
     const int slot = (notInterruptible ? kNotInterruptible : kInterruptible).Slot();
-    if (casterGuid == 0 || !Event::Custom::HasListeners(slot))
+    if (casterGuid == 0)
         return;
     // Every token naming the unit, as 4.3.4's Script_SendUnitSignal does.
-    char tokens[16][32];
-    const int n = Unit::Identity::TokensForGUID(casterGuid, tokens, 16);
-    for (int i = 0; i < n; ++i)
-        Event::Custom::Fire(slot, "%s", tokens[i]);
+    Unit::Signal::Fire(casterGuid, slot, "%s");
 }
 
 // ---- Remote unit entry points ------------------------------------------

@@ -39,20 +39,15 @@ the plaintext never crosses back.
 
 ### Character sort order — per-realm WTF persistence
 
-Persistence is keyed by character *name*, not by server-assigned charID. Slots
-renumber every time a character is added or deleted, so name is the only
-stable identifier.
-
 | Binding | Purpose |
 |---|---|
-| `GetSavedCharacterOrder(realm)` | Reads a `\|`-separated name string for the current realm. |
-| `SetSavedCharacterOrder(realm, names)` | Writes it back. |
+| `SaveCharacterOrder(translationTable)` | Saves the on-screen order: entry `i` is the charID shown at position `i`. |
 
-On every `CHARACTER_LIST_UPDATE` the code loads the saved string, resolves
-each name to the current charID, drops names the server no longer knows about
-(deletions), appends any characters not in the saved list (creations), and
-re-saves. That means the on-disk order self-cleans without a hook in the
-delete path.
+After each move the code calls `SaveCharacterOrder`. ClassicAPI saves the
+order by character GUID, so renames keep their place, and the client loads
+the list in that order the next time it arrives. `CHARACTER_LIST_UPDATE`
+therefore starts from an identity translation table. Deleted characters drop
+out of the order and new characters show after the saved ones.
 
 ## Releases
 

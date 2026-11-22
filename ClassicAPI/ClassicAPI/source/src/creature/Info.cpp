@@ -53,6 +53,7 @@
 #include "Game.h"
 #include "Offsets.h"
 #include "cache/QueryLoad.h"
+#include "cache/Record.h"
 #include "creature/Info.h"
 #include "dbc/Lookup.h"
 #include "dbc/Names.h"
@@ -66,12 +67,11 @@ namespace {
 
 // Completion event for RequestLoadCreatureByID. Reserved at static-init
 // so the engine allocates it in its event table; fired (creatureID,
-// success) by the Cache::QueryLoad dispatcher.
+// success) by OnLoadDone when Cache::QueryLoad reports the load.
 constexpr const char *kCreatureDataLoadResult = "CREATURE_DATA_LOAD_RESULT";
 const Game::Doc::Field kLoadResultPayload[] = {
     Game::Doc::Req("creatureID", "number"),
-    Game::Doc::Opt("success", "number", nullptr,
-                   "1 when the data loaded, nil when the server did not send it."),
+    Game::Doc::Req("success", "bool", "False when the server did not send the data."),
 };
 const Game::Doc::Event kLoadResultDoc{
     "CreatureInfo",
@@ -80,18 +80,15 @@ const Game::Doc::Event kLoadResultDoc{
     kLoadResultPayload};
 const Event::Custom::AutoReserve _reserveLoadResult{kCreatureDataLoadResult, &kLoadResultDoc};
 
-// Generic cache `_GetRecord`. With callback=nullptr it only peeks the
-// hash table (no network query) and returns the data block (entry+0x18)
-// if the creature is loaded, else nullptr.
-using GetCacheRecord_t = const uint8_t *(__thiscall *)(void *cache, uint32_t id,
-                                                       const uint64_t *guid, void *callback,
-                                                       void *userData, char dedup);
+void OnLoadDone(uint32_t creatureID, bool success, int /*requests*/, bool /*implicit*/) {
+    Event::Custom::FireIdSuccess(_reserveLoadResult.Slot(), static_cast<int>(creatureID), success);
+}
+const Cache::QueryLoad::Client _queryClient{Cache::QueryLoad::KIND_CREATURE, &OnLoadDone};
 
+// The loaded record (the entry's data block at +0x18), else nullptr.
 const uint8_t *PeekCreature(uint32_t creatureID) {
-    auto fn = reinterpret_cast<GetCacheRecord_t>(Offsets::FUN_CREATURE_GET_RECORD);
-    auto *cache = reinterpret_cast<void *>(Offsets::VAR_CREATURE_CACHE);
-    const uint64_t zeroGuid = 0;
-    return fn(cache, creatureID, &zeroGuid, nullptr, nullptr, 0);
+    return Cache::Record::Peek(Offsets::FUN_CREATURE_GET_RECORD, Offsets::VAR_CREATURE_CACHE,
+                               creatureID);
 }
 
 int __fastcall Script_GetCreatureInfoByID(void *L) {
@@ -129,8 +126,7 @@ int __fastcall Script_GetCreatureInfoByID(void *L) {
 // fetch for an uncached creature: issues SMSG_CREATURE_QUERY and fires
 // `CREATURE_DATA_LOAD_RESULT(creatureID, success)` when the response
 // lands (or on timeout). Fires success synchronously if already cached.
-// Returns true if the request was accepted (false for bad input or a
-// full pending set) — mirrors C_Item.RequestLoadItemData(ByID).
+// Returns true if the request was accepted (false for bad input).
 int __fastcall Script_RequestLoadCreatureByID(void *L) {
     if (!Game::Lua::IsNumber(L, 1)) {
         Game::Lua::PushBool(L, false);
@@ -450,35 +446,35 @@ void RegisterLuaFunctions() {
                                      &Script_GetCreatureTypeInfo, &kGetCreatureTypeInfo);
     Game::Lua::RegisterTableFunction("C_CreatureInfo", "GetCreatureTypeIDs",
                                      &Script_GetCreatureTypeIDs, &kGetCreatureTypeIDs);
-    Cache::QueryLoad::Register(reinterpret_cast<void *>(Offsets::VAR_CREATURE_CACHE),
-                               &_reserveLoadResult, Offsets::FUN_CREATURE_GET_RECORD);
 }
 
 const Game::ModuleAutoRegister _autoreg{&RegisterLuaFunctions};
 
 } // namespace
 
-bool FactionGroupForRace(int raceID, const char **english, const char **localized) {
+uint32_t FactionMaskForRace(int raceID) {
     if (raceID <= 0)
-        return false;
-
+        return 0;
     const uint8_t *crRec = DBC::Record(Offsets::VAR_CHRRACES_RECORDS,
                                        Offsets::VAR_CHRRACES_COUNT,
                                        static_cast<uint32_t>(raceID));
     if (crRec == nullptr)
-        return false; // unknown race
-    const int ftId = Game::Read<int>(
-        crRec, Offsets::OFF_CHRRACES_FACTION_TEMPLATE);
+        return 0; // unknown race
+    const int ftId = Game::Read<int>(crRec, Offsets::OFF_CHRRACES_FACTION_TEMPLATE);
     if (ftId <= 0)
-        return false;
-
+        return 0;
     const uint8_t *ftRec = DBC::Record(Offsets::VAR_FACTIONTEMPLATE_RECORDS,
                                        Offsets::VAR_FACTIONTEMPLATE_COUNT,
                                        static_cast<uint32_t>(ftId));
     if (ftRec == nullptr)
+        return 0;
+    return Game::Read<uint32_t>(ftRec, Offsets::OFF_FACTIONTEMPLATE_GROUP_MASK);
+}
+
+bool FactionGroupForRace(int raceID, const char **english, const char **localized) {
+    const uint32_t mask = FactionMaskForRace(raceID);
+    if (mask == 0)
         return false;
-    const uint32_t mask = Game::Read<uint32_t>(
-        ftRec, Offsets::OFF_FACTIONTEMPLATE_GROUP_MASK);
 
     // FactionGroup is stored contiguously (records-base + i*stride), not as a
     // pointer array — iterate by hand rather than via DBC::Record.
@@ -486,7 +482,6 @@ bool FactionGroupForRace(int raceID, const char **english, const char **localize
         Offsets::VAR_FACTIONGROUP_RECORDS);
     const int fgCount =
         Game::Read<int>(Offsets::VAR_FACTIONGROUP_COUNT);
-    const int locale = Game::Read<int>(Offsets::VAR_LOCALE_INDEX);
     if (fgBase == nullptr)
         return false;
 
@@ -496,9 +491,8 @@ bool FactionGroupForRace(int raceID, const char **english, const char **localize
             row, Offsets::OFF_FACTIONGROUP_BIT);
         if ((mask & (1u << (bit & 0x1F))) == 0)
             continue;
-        const char *loc = Game::Read<const char *>(
-            row, Offsets::OFF_FACTIONGROUP_NAMES + locale * 4);
-        if (loc == nullptr || *loc == '\0')
+        const char *loc = DBC::LocalizedString(row, Offsets::OFF_FACTIONGROUP_NAMES);
+        if (loc == nullptr)
             continue; // "Player" / "Monster" have empty localized names
         *english = Game::Read<const char *>(
             row, Offsets::OFF_FACTIONGROUP_ENGLISH);
@@ -513,8 +507,7 @@ const uint8_t *CacheRecord(uint32_t creatureID) {
 }
 
 bool RequestLoad(uint32_t creatureID) {
-    return Cache::QueryLoad::RequestLoad(reinterpret_cast<void *>(Offsets::VAR_CREATURE_CACHE),
-                                         creatureID);
+    return Cache::QueryLoad::Track(Cache::QueryLoad::KIND_CREATURE, creatureID, true);
 }
 
 } // namespace Creature::Info

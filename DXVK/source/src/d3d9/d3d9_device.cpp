@@ -6172,15 +6172,6 @@ namespace dxvk {
   }
 
 
-  void D3D9DeviceEx::EndFrame() {
-    D3D9DeviceLock lock = LockDevice();
-
-    EmitCs<false>([] (DxvkContext* ctx) {
-      ctx->endFrame();
-    });
-  }
-
-
   template <uint32_t Index>
   inline void D3D9DeviceEx::UpdateAnyColorWrites() {
     // Writes to a render target have been enabled => check for hazards
@@ -6553,17 +6544,11 @@ namespace dxvk {
     } else {
       auto& rs = m_state.renderStates;
 
-      bool scale = rs[D3DRS_POINTSCALEENABLE] && !UseProgrammableVS();
-      bool sprite = rs[D3DRS_POINTSPRITEENABLE];
+      bool enableScale = rs[D3DRS_POINTSCALEENABLE] && !UseProgrammableVS()
+        && !m_state.vertexDecl->TestFlag(D3D9VertexDeclFlag::HasPositionT);
+      bool enableSprite = rs[D3DRS_POINTSPRITEENABLE];
 
-      if (scale) {
-        // Only enable scaling with perspective projection since we
-        // otherwise can't compute meaningful eye vectors
-        auto [wNear, wFar] = ComputeWNearFar();
-        scale = wNear != 1.0f || wFar != 1.0f;
-      }
-
-      if (scale && m_dirty.test(D3D9DeviceDirtyFlag::PointScale)) {
+      if (enableScale && m_dirty.test(D3D9DeviceDirtyFlag::PointScale)) {
         m_dirty.clr(D3D9DeviceDirtyFlag::PointScale);
         m_dirty.set(D3D9DeviceDirtyFlag::PushDataFfvs);
 
@@ -6574,8 +6559,8 @@ namespace dxvk {
       }
 
       bool dirty = false;
-      dirty |= m_specData.setPointScale(scale);
-      dirty |= m_specData.setPointSprite(sprite);
+      dirty |= m_specData.setPointScale(enableScale);
+      dirty |= m_specData.setPointSprite(enableSprite);
 
       if (dirty)
         m_dirty.set(D3D9DeviceDirtyFlag::SpecializationEntries);

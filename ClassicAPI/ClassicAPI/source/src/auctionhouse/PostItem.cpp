@@ -60,7 +60,10 @@
 #include "item/Location.h"
 #include "item/Record.h"
 #include "item/Swap.h"
+#include "object/Resolve.h"
 #include "tick/WorldTick.h"
+#include "time/Clock.h"
+#include "item/BagFamily.h"
 
 #include <cstdint>
 
@@ -89,10 +92,11 @@ const Event::Custom::AutoReserve _evtStart{"AUCTION_MULTISELL_START", &kStartDoc
 const Event::Custom::AutoReserve _evtUpdate{"AUCTION_MULTISELL_UPDATE", &kUpdateDoc};
 const Event::Custom::AutoReserve _evtFailure{"AUCTION_MULTISELL_FAILURE", &kFailureDoc};
 
-// Generous per-step abort bound. A split or a post is one server round-trip
-// (~tens of frames); 600 frames (~10s at 60fps) means "something's wrong"
-// (disconnect, server refusal we can't see) rather than normal latency.
-constexpr int kMaxWaitTicks = 600;
+// Generous per-step abort bound. A split or a post is one server round-trip;
+// 10 s without the answer means "something's wrong" (disconnect, a server
+// refusal we can't see) rather than latency. Wall time, not frames, so the
+// bound holds at any frame rate.
+constexpr uint32_t kStepTimeoutMs = 10000;
 
 enum class Phase { Idle, SplitWait, PostWait };
 
@@ -107,25 +111,12 @@ struct Job {
     Phase phase;
     int workBag, workSlot; // slot currently being split-into / posted-from
     uint64_t postGuid;     // GUID we posted — detect it leaving bags
-    int waitTicks;
+    uint32_t deadlineMs; // the current step's abort time (Time::Clock)
 };
 Job g_job{};
 
 // --- small CGItem / cache readers ---------------------------------------
 
-int CGItemCount(const uint8_t *item) {
-    auto *desc = Item::ObjectFields(item);
-    if (desc == nullptr)
-        return 0;
-    return Game::Read<int>(desc, Offsets::OFF_DESCRIPTOR_STACK_COUNT);
-}
-
-uint64_t CGItemGuid(const uint8_t *item) {
-    auto *inst = Item::InstanceBlock(item);
-    if (inst == nullptr)
-        return 0;
-    return Game::Read<uint64_t>(inst, Offsets::OFF_INSTANCE_BLOCK_GUID);
-}
 
 struct SlotInfo {
     const uint8_t *item; // null = empty slot
@@ -136,13 +127,13 @@ struct SlotInfo {
 
 SlotInfo ReadSlot(void *L, int bag, int slot) {
     SlotInfo r{nullptr, 0, 0, 0};
-    const uint8_t *item = Item::Location::ResolveBag(L, bag, slot);
+    const uint8_t *item = Item::Location::ResolveBag(bag, slot);
     if (item == nullptr)
         return r;
     r.item = item;
     r.itemID = Item::ID::FromCGItem(item);
-    r.count = CGItemCount(item);
-    r.guid = CGItemGuid(item);
+    r.count = static_cast<int>(Item::StackCount(item));
+    r.guid = ::Object::Guid(item);
     return r;
 }
 
@@ -173,8 +164,7 @@ void PostStack(void *L, uint64_t guid) {
     Game::Lua::PushNumber(L, static_cast<double>(g_job.bid));
     Game::Lua::PushNumber(L, static_cast<double>(g_job.buyout));
     Game::Lua::PushNumber(L, static_cast<double>(g_job.runTime));
-    auto fn = reinterpret_cast<Game::Lua::CFunction>(Offsets::FUN_SCRIPT_START_AUCTION);
-    fn(L);
+    Game::Lua::CallScript(Offsets::FUN_SCRIPT_START_AUCTION, L);
     Game::Lua::SetTop(L, 0);
 }
 
@@ -192,11 +182,13 @@ bool BagIsGeneral(int bag) {
     const int id = Item::ID::FromCGItem(bagItem);
     if (id == 0)
         return false;
+    // An uncached bag's family is unknown, so it is not trusted as general.
     const uint8_t *rec = Item::PeekRecord(static_cast<uint32_t>(id));
     if (rec == nullptr)
         return false;
-    return Game::Read<uint32_t>(
-               rec, Offsets::OFF_ITEMSTATS_BAG_FAMILY) == 0;
+    // BitmaskForRecord, not the raw field: a vanilla quiver or soul bag leaves
+    // the field empty, and would otherwise read as general-purpose.
+    return Item::BagFamily::BitmaskForRecord(rec) == 0;
 }
 
 bool FindFreeGeneralSlot(void *L, int *outBag, int *outSlot) {
@@ -205,7 +197,7 @@ bool FindFreeGeneralSlot(void *L, int *outBag, int *outSlot) {
             continue;
         const int n = Item::Location::GetBagSlotCount(bag);
         for (int slot = 1; slot <= n; ++slot) {
-            if (Item::Location::ResolveBag(L, bag, slot) == nullptr) {
+            if (Item::Location::ResolveBag(bag, slot) == nullptr) {
                 *outBag = bag;
                 *outSlot = slot;
                 return true;
@@ -257,14 +249,14 @@ void Tick() {
             g_job.postGuid = s.guid;
             PostStack(L, s.guid);
             g_job.phase = Phase::PostWait;
-            g_job.waitTicks = 0;
+            g_job.deadlineMs = Time::Clock::NowMs() + kStepTimeoutMs;
         } else {
             int fb = 0, fs = 0;
             if (!FindFreeGeneralSlot(L, &fb, &fs)) {
                 Finish(false); // no room to materialize the stack
                 break;
             }
-            if (!Item::Swap::MoveCount(L, g_job.srcBag, g_job.srcSlot, fb, fs,
+            if (!Item::Swap::MoveCount(g_job.srcBag, g_job.srcSlot, fb, fs,
                                        g_job.quantity)) {
                 Finish(false);
                 break;
@@ -272,7 +264,7 @@ void Tick() {
             g_job.workBag = fb;
             g_job.workSlot = fs;
             g_job.phase = Phase::SplitWait;
-            g_job.waitTicks = 0;
+            g_job.deadlineMs = Time::Clock::NowMs() + kStepTimeoutMs;
         }
         break;
     }
@@ -282,8 +274,8 @@ void Tick() {
             g_job.postGuid = w.guid;
             PostStack(L, w.guid);
             g_job.phase = Phase::PostWait;
-            g_job.waitTicks = 0;
-        } else if (++g_job.waitTicks > kMaxWaitTicks) {
+            g_job.deadlineMs = Time::Clock::NowMs() + kStepTimeoutMs;
+        } else if (Time::Clock::Reached(g_job.deadlineMs)) {
             Finish(false);
         }
         break;
@@ -296,8 +288,8 @@ void Tick() {
             Event::Custom::Fire(_evtUpdate.Slot(), "%d%d",
                                 g_job.postedStacks, g_job.totalStacks);
             g_job.phase = Phase::Idle;
-            g_job.waitTicks = 0;
-        } else if (++g_job.waitTicks > kMaxWaitTicks) {
+            g_job.deadlineMs = Time::Clock::NowMs() + kStepTimeoutMs;
+        } else if (Time::Clock::Reached(g_job.deadlineMs)) {
             Finish(false);
         }
         break;

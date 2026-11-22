@@ -51,7 +51,6 @@
 #include "baselib/Ascii.h"
 #include "frame/Destruction.h"
 #include "frame/MouseInput.h"
-#include "ui/FrameObject.h"
 #include "xml/FrameLoad.h"
 
 #include <algorithm>
@@ -68,6 +67,9 @@ using Enter_t = void(__thiscall *)(void *frame);
 using Leave_t = void(__thiscall *)(void *frame, int removal);
 
 std::unordered_set<void *> g_propagates;
+// `propagateMouseInputMask="Motion"`: never propagates motion (3.80.2's
+// +0x123 bit 0x10).
+std::unordered_set<void *> g_suppressed;
 
 // The motion focus, top-first; its first frame is the context's +0x7C.
 std::vector<void *> g_list;
@@ -82,7 +84,7 @@ bool Contains(const std::vector<void *> &list, const void *frame) {
     return std::find(list.begin(), list.end(), frame) != list.end();
 }
 
-bool Propagates(void *frame) { return g_propagates.count(frame) != 0; }
+bool Propagates(void *frame) { return g_propagates.count(frame) != 0 && g_suppressed.count(frame) == 0; }
 
 uint8_t *Context() { return Game::Read<uint8_t *>(Offsets::VAR_UI_CONTEXT_PTR); }
 
@@ -175,6 +177,7 @@ void ContinueWalk(uint8_t *ctx, void *primary, const void *event, std::vector<vo
 }
 
 void __stdcall CommitPass(uint8_t *ctx, void *primary, const void *event) {
+    Frame::MouseInput::ProbePressed(event);
     Sync(ctx);
     std::vector<void *> list;
     if (primary != nullptr) {
@@ -269,6 +272,7 @@ const uint8_t kRemovalFocus[] = {0x3B, 0x78, 0x7C, 0x75, 0x1F, 0x89, 0x70, 0x7C,
 
 void OnFrameDestroyed(void *frame) {
     g_propagates.erase(frame);
+    g_suppressed.erase(frame);
     g_list.erase(std::remove(g_list.begin(), g_list.end(), frame), g_list.end());
     for (std::vector<void *> *pending : g_pending)
         std::replace(pending->begin(), pending->end(), frame, static_cast<void *>(nullptr));
@@ -276,31 +280,38 @@ void OnFrameDestroyed(void *frame) {
 
 const Frame::Destruction::AutoSubscribe _destructionSub{&OnFrameDestroyed};
 
+// The flag alone: the focus changes at the next pass (3.80.2's setter
+// 0x140A9EA00 asks for no re-pick).
 void SetPropagates(void *frame, bool on) {
-    if (on == Propagates(frame))
-        return;
     if (on)
         g_propagates.insert(frame);
     else
         g_propagates.erase(frame);
-    if (uint8_t *ctx = Context())
-        Game::Ref<int>(ctx, Offsets::OFF_UI_CONTEXT_REPICK) = 1;
 }
 
-// `propagateMouseInput="Motion"` or `"Both"`; Frame::MouseInput reads the
-// click half.
+// `propagateMouseInput="Motion"` or `"Both"`, and `propagateMouseInputMask`,
+// which keeps motion from propagating; Frame::MouseInput reads the click
+// half.
 void OnFrameNode(void *object, const void *node, void * /*status*/) {
     const char *value = Xml::Attr(node, "propagateMouseInput");
     if (Ascii::EqualCI(value, "Motion") || Ascii::EqualCI(value, "Both"))
         SetPropagates(object, true);
+    const char *mask = Xml::Attr(node, "propagateMouseInputMask");
+    if (Ascii::EqualCI(mask, "Motion") || Ascii::EqualCI(mask, "Both"))
+        g_suppressed.insert(object);
 }
 
 const Xml::FrameLoad::AutoSubscribe _xmlSub{&OnFrameNode};
 
+// The argument is required, as in 3.80.2.
 int __fastcall Script_SetPropagateMouseMotion(void *L) {
     void *frame = Game::Lua::ResolveFrame(L);
     if (frame == nullptr)
         return 0;
+    if (Game::Lua::Type(L, 2) <= Game::Lua::TYPE_NIL) {
+        Game::Lua::Error(L, "Usage: self:SetPropagateMouseMotion(propagate)");
+        return 0;
+    }
     SetPropagates(frame, Game::Lua::ToFlag(L, 2));
     return 0;
 }
@@ -333,7 +344,7 @@ int __fastcall Script_GetMouseFoci(void *L) {
     Sync(ctx);
     for (size_t i = 0; i < g_list.size(); ++i) {
         Game::Lua::PushNumber(L, static_cast<double>(i + 1));
-        UI::FrameObject::Push(L, g_list[i]);
+        Game::Lua::PushObject(L, g_list[i]);
         Game::Lua::RawSet(L, 1);
     }
     return 1;
@@ -392,5 +403,10 @@ const Game::ModuleAutoRegister _autoreg{&RegisterLuaFunctions};
 void *Notifying() { return g_notifying; }
 
 bool IsFocus(void *frame) { return Contains(g_list, frame); }
+
+void Drop(void *frame) {
+    if (uint8_t *ctx = Context())
+        Remove(ctx, frame);
+}
 
 } // namespace Frame::MotionFocus

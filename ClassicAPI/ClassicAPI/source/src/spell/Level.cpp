@@ -15,6 +15,7 @@
 #include "Offsets.h"
 #include "spell/Lookup.h"
 #include "talent/SpellSet.h"
+#include "unit/Identity.h"
 
 #include <cstdint>
 #include <unordered_set>
@@ -22,18 +23,6 @@
 namespace Spell::Level {
 
 namespace {
-
-// Reads the local player's descriptor — same pattern as
-// Unit::Combat::Script_InCombatLockdown. Returns nullptr at login
-// screen / character select / loading transition where the
-// CGPlayer doesn't exist yet.
-const uint8_t *PlayerDescriptor() {
-    auto *player = static_cast<const uint8_t *>(Game::ResolveUnitToken("player"));
-    if (player == nullptr)
-        return nullptr;
-    return Game::Read<const uint8_t *>(
-        player, Offsets::OFF_UNIT_DESCRIPTOR);
-}
 
 // Looks up the `BaseLevel` field of a Spell.dbc record. Returns 0
 // for invalid spellIDs or records the engine doesn't have cached.
@@ -65,7 +54,6 @@ int SpellBaseLevel(int spellID) {
 // race/class, 1 = profession, 0 = trainer-taught), not a Spell.dbc bit;
 // this feature deliberately reports the broader "trainable at level" set,
 // so it applies no learnOnGetSkill filter.
-constexpr uint32_t SPELL_ATTR_HIDDEN_CLIENTSIDE = 0x80;
 
 bool SpellHiddenFromSpellbook(int spellID) {
     const uint8_t *record = Spell::Lookup::RecordForID(spellID);
@@ -73,7 +61,7 @@ bool SpellHiddenFromSpellbook(int spellID) {
         return false;
     const uint32_t attributes = Game::Read<uint32_t>(
         record, Offsets::OFF_SPELL_RECORD_ATTRIBUTES);
-    return (attributes & SPELL_ATTR_HIDDEN_CLIENTSIDE) != 0;
+    return (attributes & Offsets::SPELL_ATTR_DO_NOT_DISPLAY) != 0;
 }
 
 // ---- Target-level gate for ranked beneficial auras ----------------------
@@ -90,13 +78,6 @@ bool SpellHiddenFromSpellbook(int spellID) {
 // (The explicit MinTargetLevel / MaxTargetLevel fields the server also
 // checks are NOT in the 1.12 client's Spell.dbc — server-only columns — so
 // the spellLevel rule is the only client-readable target-level mechanism.)
-
-constexpr uint32_t SPELL_EFFECT_APPLY_AREA_AURA_PARTY = 35;
-
-int LocaleIndex() {
-    return Game::Read<int>(
-        static_cast<uintptr_t>(Offsets::VAR_LOCALE_INDEX));
-}
 
 // The friendly-target IDs the server's SelectAuraRankForLevel treats as
 // "positive" for rank selection: IsExplicitPositiveTarget (21/35/45/57/61)
@@ -129,9 +110,7 @@ bool IsPositiveRankTarget(uint32_t t) {
 // single-rank buffs (Power Infusion / Innervate / Blessing of Kings, all
 // empty Rank and un-gated) vs ranked ones (Divine Spirit / Fortitude).
 bool HasRankString(const uint8_t *record) {
-    const char *rank = Game::Read<const char *>(
-        record, Offsets::OFF_SPELL_RECORD_RANK + LocaleIndex() * 4);
-    return rank != nullptr && *rank != '\0';
+    return Spell::Lookup::Rank(record) != nullptr;
 }
 
 // Minimum target level required to apply this exact spell (rank), or 0 if
@@ -152,10 +131,10 @@ int RequiredTargetLevel(const uint8_t *record) {
     auto *targetA =
         Game::Ptr<const uint32_t>(record, Offsets::OFF_SPELL_RECORD_EFFECT_IMPLICIT_TARGET_A);
     bool positiveAura = false;
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < Offsets::SPELL_RECORD_EFFECT_COUNT; ++i) {
         if ((effect[i] == Offsets::SPELL_EFFECT_APPLY_AURA &&
              IsPositiveRankTarget(targetA[i])) ||
-            effect[i] == SPELL_EFFECT_APPLY_AREA_AURA_PARTY) {
+            effect[i] == Offsets::SPELL_EFFECT_APPLY_AREA_AURA_PARTY) {
             positiveAura = true;
             break;
         }
@@ -262,12 +241,12 @@ int __fastcall Script_GetCurrentLevelSpells(void *L) {
     Game::Lua::SetTop(L, 0);
     Game::Lua::NewTable(L);
 
-    auto *desc = PlayerDescriptor();
+    auto *desc = Unit::Identity::PlayerDescriptor();
     if (desc == nullptr)
         return 1;
 
-    const uint8_t classByte = *(desc + Offsets::OFF_UNIT_DESCRIPTOR_CLASS_BYTE);
-    const uint8_t raceByte = *(desc + Offsets::OFF_UNIT_DESCRIPTOR_RACE_BYTE);
+    const uint8_t classByte = Unit::Identity::Class(desc);
+    const uint8_t raceByte = Unit::Identity::Race(desc);
     const int32_t playerLevel = Game::Read<int32_t>(
         desc, Offsets::OFF_UNIT_FIELD_LEVEL);
     if (classByte == 0 || raceByte == 0 || playerLevel <= 0)

@@ -23,8 +23,6 @@ namespace FontString::Layout {
 
 namespace {
 
-// FUN_HANDLE_RELEASE — DecRef a ref-counted handle. __fastcall(handle).
-using HandleRelease_t = void(__fastcall *)(void *handle);
 
 } // namespace
 
@@ -33,11 +31,17 @@ void Invalidate(void *fs) {
     Game::Ref<float>(fs, Offsets::OFF_FONTSTRING_HEIGHT_CACHE) = 0.0f;
     void *block = Game::Read<void *>(fs, Offsets::OFF_FONTSTRING_TEXT_BLOCK);
     if (block != nullptr) {
-        reinterpret_cast<HandleRelease_t>(Offsets::FUN_HANDLE_RELEASE)(block);
+        Game::ReleaseHandle(block);
         Game::Ref<void *>(fs, Offsets::OFF_FONTSTRING_TEXT_BLOCK) = nullptr;
     }
     Game::Ref<uint32_t>(fs, Offsets::OFF_FONTSTRING_DIRTY_FLAGS) &= ~1u;
     Frame::Layout::Resize(fs, false);
+}
+
+float FontHeight(void *fontString, bool calculated) {
+    using FontHeight_t = float(__thiscall *)(void *fs, int calculated);
+    return reinterpret_cast<FontHeight_t>(Offsets::FUN_FONTSTRING_FONT_HEIGHT)(fontString,
+                                                                               calculated ? 1 : 0);
 }
 
 } // namespace FontString::Layout

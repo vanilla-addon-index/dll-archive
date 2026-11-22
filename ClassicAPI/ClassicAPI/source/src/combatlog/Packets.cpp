@@ -65,12 +65,12 @@ namespace CombatLog::Packets {
 namespace {
 
 using Net::CDataStore;
+using Net::Overrun;
 using Net::Read;
 using Net::ReadPackedGuid;
 
 constexpr uint32_t SMSG_SPELLHEALLOG = 0x150;
 constexpr uint32_t SMSG_SPELLENERGIZELOG = 0x151;
-constexpr uint32_t SMSG_ATTACKERSTATEUPDATE = 0x14a;
 constexpr uint32_t SMSG_ENVIRONMENTALDAMAGELOG = 0x1fc;
 constexpr uint32_t SMSG_PROCRESIST = 0x260;
 constexpr uint32_t SMSG_PERIODICAURALOG = 0x24e;
@@ -79,7 +79,6 @@ constexpr uint32_t SMSG_SPELLNONMELEEDAMAGELOG = 0x250;
 constexpr uint32_t SMSG_SPELLORDAMAGE_IMMUNE = 0x263;
 
 // 1.12 melee hit info (the swing line's own tests, 0x00629B60 / 0x00629D30).
-constexpr uint32_t HITINFO_LEFTSWING = 0x4;
 constexpr uint32_t HITINFO_MISS = 0x10;
 constexpr uint32_t HITINFO_ABSORB = 0x20;
 constexpr uint32_t HITINFO_RESIST = 0x40;
@@ -114,12 +113,10 @@ constexpr uint32_t AURA_PERIODIC_DAMAGE_PERCENT = 89;
 
 constexpr int kMaxDamageParts = 5;
 
-bool Overrun(const CDataStore *p) { return p->m_read > p->m_size; }
-
 void *Unit(uint64_t guid) { return Object::ByGuid(Offsets::TYPEMASK_UNIT, guid); }
 
 bool PlayerControlled(const void *unit) {
-    const auto *fields = Game::Read<const uint8_t *>(unit, Offsets::OFF_UNIT_DESCRIPTOR);
+    const auto *fields = Object::Fields(unit);
     return fields != nullptr && (Game::Read<uint32_t>(fields, Offsets::OFF_UNIT_FIELD_FLAGS) &
                                  Offsets::UNIT_FLAG_PLAYER_CONTROLLED) != 0;
 }
@@ -150,13 +147,21 @@ Predicted g_predicted[kPredictedMax];
 // damage would read as overkill, so such a unit gets none.
 constexpr int kHiddenMaxHealth = 100;
 
+// The exception to "a changed field is a fresh snapshot" is the kill: the
+// server deals the damage, which kills, before it sends the damage message
+// (tortoise Unit::AttackerStateUpdate: DealMeleeDamage, then
+// SendAttackStateUpdate — "in sniffs", as on the original servers), so the
+// field reads 0 when the killing blow's message arrives. A drop to 0 while the
+// messages left the unit alive keeps that health for the killing blow.
 Predicted &PredictedFor(uint64_t guid, int health, uint32_t now) {
     Predicted *oldest = &g_predicted[0];
     for (Predicted &p : g_predicted) {
         if (p.guid == guid) {
-            if (p.health != health || Time::Clock::Elapsed(p.stampMs, now) > kPredictedStaleMs) {
+            const bool stale = Time::Clock::Elapsed(p.stampMs, now) > kPredictedStaleMs;
+            if (p.health != health || stale) {
+                const int predicted = p.health + p.delta;
+                p.delta = (health == 0 && !stale && predicted > 0) ? predicted : 0;
                 p.health = health;
-                p.delta = 0;
             }
             p.stampMs = now;
             return p;
@@ -173,7 +178,7 @@ Predicted &PredictedFor(uint64_t guid, int health, uint32_t now) {
 bool PredictedHealth(uint64_t guid, int *health, int *max, Predicted **entry) {
     const void *unit = Unit(guid);
     const auto *fields =
-        unit != nullptr ? Game::Read<const uint8_t *>(unit, Offsets::OFF_UNIT_DESCRIPTOR) : nullptr;
+        unit != nullptr ? Object::Fields(unit) : nullptr;
     if (fields == nullptr)
         return false;
     *max = Game::Read<int>(fields, Offsets::OFF_UNIT_FIELD_MAXHEALTH);
@@ -185,16 +190,29 @@ bool PredictedHealth(uint64_t guid, int *health, int *max, Predicted **entry) {
     return true;
 }
 
-// The damage past the target's health, counting the damage for the tick's
-// later messages.
-int Overkill(uint64_t dest, int damage) {
+// The damage suffix's amount and overkill — the damage past the target's
+// health, counting the damage for the tick's later messages — and the
+// target's health before the hit, as 3.80.2's damage builder (FUN_14143b030)
+// reads it before it predicts the hit (the death recap's currentHP). A target
+// whose health is hidden keeps its field's value there and has no overkill.
+void SetDamage(Entry &e, uint64_t dest, int damage) {
+    e.v[1] = damage;
+    e.v[2] = 0;
     int health, max;
     Predicted *p;
-    if (damage <= 0 || !PredictedHealth(dest, &health, &max, &p))
-        return 0;
+    if (!PredictedHealth(dest, &health, &max, &p)) {
+        const void *unit = Unit(dest);
+        const auto *fields = unit != nullptr ? Object::Fields(unit) : nullptr;
+        e.currentHP =
+            fields != nullptr ? Game::Read<int>(fields, Offsets::OFF_UNIT_FIELD_HEALTH) : 0;
+        return;
+    }
+    e.currentHP = health > 0 ? health : 0;
+    if (damage <= 0)
+        return;
     const int overkill = damage > health ? damage - health : 0;
     p->delta -= damage - overkill;
-    return overkill;
+    e.v[2] = overkill;
 }
 
 // The heal past the health the target is missing, counting the heal for the
@@ -216,8 +234,7 @@ void SendDamage(uint64_t source, uint64_t dest, int event, const uint8_t *spell,
                 bool glancing, bool crushing, bool offHand) {
     Entry e = Begin(source, dest, event, spell);
     e.info |= INFO_DAMAGE;
-    e.v[1] = damage;
-    e.v[2] = Overkill(dest, damage);
+    SetDamage(e, dest, damage);
     e.v[3] = static_cast<int>(schoolMask);
     e.v[4] = absorbed;
     e.v[5] = resisted;
@@ -335,7 +352,7 @@ void AttackerState(CDataStore *p) {
     if (Unit(attacker) == nullptr && (victimUnit == nullptr || !PlayerControlled(victimUnit)))
         return;
 
-    const bool offHand = (hitInfo & HITINFO_LEFTSWING) != 0;
+    const bool offHand = (hitInfo & Offsets::HITINFO_LEFTSWING) != 0;
     if ((state == VICTIMSTATE_NORMAL || state == VICTIMSTATE_BLOCKS) && damage != 0) {
         SendDamage(attacker, victim, SWING_DAMAGE, nullptr, damage, SchoolMask(school), resisted,
                    blocked, absorbed, (hitInfo & HITINFO_CRITICAL) != 0,
@@ -524,8 +541,7 @@ void DamageShield(CDataStore *p) {
     e.spellPrefix = true;
     e.spellSchool = SchoolMask(school);
     e.info |= INFO_DAMAGE;
-    e.v[1] = damage;
-    e.v[2] = Overkill(victim, damage);
+    SetDamage(e, victim, damage);
     e.v[3] = static_cast<int>(SchoolMask(school));
     Queue(e);
 }
@@ -545,8 +561,7 @@ void EnvironmentalDamage(CDataStore *p) {
     Entry e = Begin(0, victim, ENVIRONMENTAL_DAMAGE, nullptr);
     e.info |= INFO_ENVIRONMENTAL | INFO_DAMAGE;
     e.v[0] = static_cast<int>(type);
-    e.v[1] = damage;
-    e.v[2] = Overkill(victim, damage);
+    SetDamage(e, victim, damage);
     e.v[3] = static_cast<int>(SchoolMask(type < 6 ? kSchools[type] : 0));
     e.v[4] = absorbed;
     e.v[5] = resisted;
@@ -589,7 +604,7 @@ void SpellOrDamageImmune(CDataStore *p) {
 
 void OnPacket(uint32_t opcode, CDataStore *p) {
     switch (opcode) {
-    case SMSG_ATTACKERSTATEUPDATE:
+    case Offsets::SMSG_ATTACKERSTATEUPDATE:
         AttackerState(p);
         break;
     case SMSG_SPELLNONMELEEDAMAGELOG:

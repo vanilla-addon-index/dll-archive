@@ -26,6 +26,8 @@
 #include "../object/Resolve.h"
 #include "../tick/WorldTick.h"
 #include "Request.h"
+#include "loot/Window.h"
+#include "unit/Identity.h"
 
 #include <cstdint>
 
@@ -39,15 +41,6 @@ enum class State {
     Idle,
     WaitingOpen,
 };
-
-// `FUN_005E1AD0` is `__stdcall(uint8_t)`, not `__fastcall` — the
-// callee reads its arg at `[ebp+8]` (stack) and ends with `ret 4`.
-// Mis-declaring as `__fastcall` makes MSVC skip the push but the
-// callee still `ret 4`'s, drifting the caller's ESP by 4 bytes per
-// call and corrupting the surrounding frame. The first symptom is a
-// crash several frames later on an unrelated vtable lookup —
-// exactly the EIP=0x00000A70-style faults we saw before this fix.
-using SendLootItem_t = void(__stdcall *)(uint8_t slotByte);
 
 State s_state = State::Idle;
 uint64_t s_targetGuid = 0;
@@ -68,13 +61,9 @@ uint64_t ReadLootTargetGuid() {
 // completes).
 int FindWireSlotForItemID(uint32_t itemID) {
     for (int slot = 0; slot < Offsets::LOOT_MAX_SLOTS; ++slot) {
-        auto *entry = reinterpret_cast<const uint8_t *>(
-            Offsets::VAR_LOOT_SLOTS + slot * Offsets::LOOT_SLOT_STRIDE);
-        const uint32_t id = *reinterpret_cast<const uint32_t *>(entry);
-        if (id == 0)
-            continue;
-        if (id == itemID)
-            return static_cast<int>(*(entry + Offsets::OFF_LOOT_SLOT_WIRE_INDEX));
+        Window::Slot row;
+        if (Window::ReadSlot(slot, &row) && row.itemID == itemID)
+            return row.wireIndex;
     }
     return -1;
 }
@@ -83,8 +72,7 @@ bool TakeItem(uint32_t itemID) {
     const int slotByte = FindWireSlotForItemID(itemID);
     if (slotByte < 0)
         return false;
-    auto Send = reinterpret_cast<SendLootItem_t>(Offsets::FUN_CMSG_LOOT_ITEM);
-    Send(static_cast<uint8_t>(slotByte));
+    Window::SendLootItem(static_cast<uint8_t>(slotByte));
     return true;
 }
 
@@ -107,7 +95,7 @@ void OnTick() {
         if (s_ticksSinceTransition >= kStepTimeoutTicks) {
             // Never opened — release a request the server never
             // answered, or it blocks all looting (see Request.h).
-            if (void *player = Game::ResolveUnitToken("player"))
+            if (void *player = const_cast<uint8_t *>(Unit::Identity::PlayerObject()))
                 Request::ReleaseIfUnanswered(player, s_targetGuid);
             Reset();
         }
@@ -156,7 +144,7 @@ int __fastcall Script_LootUnitItem(void *L) {
         Game::Lua::PushBool(L, false);
         return 1;
     }
-    if (*reinterpret_cast<void *volatile *>(Offsets::VAR_LOCAL_PLAYER_PTR) == nullptr) {
+    if (!Object::RegistryReady()) {
         Game::Lua::PushBool(L, false);
         return 1;
     }
@@ -169,7 +157,7 @@ int __fastcall Script_LootUnitItem(void *L) {
         return 1;
     }
 
-    void *player = Game::ResolveUnitToken("player");
+    void *player = const_cast<uint8_t *>(Unit::Identity::PlayerObject());
     if (player == nullptr) {
         Game::Lua::PushBool(L, false);
         return 1;

@@ -44,6 +44,7 @@
 // so it needs no translation.
 
 #include "Game.h"
+#include "baselib/Ascii.h"
 #include "console/Registry.h"
 
 namespace Console::Commands {
@@ -55,28 +56,6 @@ namespace {
 constexpr int kCommandTypeCvar = 0;
 constexpr int kCommandTypeCommand = 1;
 
-char Lower(char c) { return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c; }
-
-bool StartsWithIgnoreCase(const char *name, const char *prefix) {
-    for (size_t i = 0; prefix[i] != '\0'; ++i) {
-        if (name[i] == '\0' || Lower(name[i]) != Lower(prefix[i]))
-            return false;
-    }
-    return true;
-}
-
-void SetStringField(void *L, const char *key, const char *value) {
-    Game::Lua::PushString(L, key);
-    Game::Lua::PushString(L, value != nullptr ? value : "");
-    Game::Lua::SetTable(L, -3);
-}
-
-void SetIntField(void *L, const char *key, int value) {
-    Game::Lua::PushString(L, key);
-    Game::Lua::PushNumber(L, static_cast<double>(value));
-    Game::Lua::SetTable(L, -3);
-}
-
 // `ConsoleGetAllCommands() -> ConsoleCommandInfo[]`
 int __fastcall Script_GetAllCommands(void *L) {
     Game::Lua::SetTop(L, 0);
@@ -86,13 +65,13 @@ int __fastcall Script_GetAllCommands(void *L) {
     Console::Registry::ForEach([&](const Console::Registry::Command &command) {
         Game::Lua::PushNumber(L, ++count);
         Game::Lua::NewTable(L);
-        SetStringField(L, "command", command.name);
-        SetStringField(L, "help", command.help);
-        SetIntField(L, "category", command.category);
-        SetIntField(L, "commandType",
+        Game::Lua::SetFieldString(L, "command", command.name);
+        Game::Lua::SetFieldString(L, "help", command.help);
+        Game::Lua::SetFieldNumber(L, "category", command.category);
+        Game::Lua::SetFieldNumber(L, "commandType",
                     command.IsCvar() ? kCommandTypeCvar : kCommandTypeCommand);
-        SetStringField(L, "scriptContents", "");
-        SetStringField(L, "scriptParameters", "");
+        Game::Lua::SetFieldString(L, "scriptContents", "");
+        Game::Lua::SetFieldString(L, "scriptParameters", "");
         Game::Lua::SetTable(L, -3);
     });
     return 1;
@@ -137,7 +116,7 @@ int __fastcall Script_ConsolePrintAllMatchingCommands(void *L) {
         return 0;
 
     Console::Registry::ForEach([&](const Console::Registry::Command &command) {
-        if (StartsWithIgnoreCase(command.name, prefix))
+        if (Ascii::StartsWithCI(command.name, prefix))
             Game::Console::Write(command.name);
     });
     return 0;

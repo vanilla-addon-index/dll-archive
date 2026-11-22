@@ -60,6 +60,7 @@
 
 #include "Game.h"
 #include "Offsets.h"
+#include "frame/Layout.h"
 
 #include <cstdint>
 #include <cstring>
@@ -69,10 +70,6 @@ namespace Tooltip::Layout {
 namespace {
 
 using ResetPosition_t = void(__fastcall *)(void *tooltip, void *edx, int force);
-using ClearAllPoints_t = void(__fastcall *)(void *layout);
-using SetPoint_t = void(__thiscall *)(void *anchor, int point, void *relAnchor, int relPoint,
-                                      float x, float y, int flag);
-using Script_t = int(__fastcall *)(void *L);
 
 ResetPosition_t g_resetPositionOriginal = nullptr;
 
@@ -122,15 +119,13 @@ void __fastcall ResetPosition_h(void *self, void *edx, int force) {
         return;
     }
 
-    void *layout = tooltip + Offsets::OFF_FRAME_LAYOUT_SUBOBJECT;
-    reinterpret_cast<ClearAllPoints_t>(Offsets::FUN_LAYOUT_CLEAR_ALL_POINTS)(layout);
+    Frame::Layout::ClearAllPoints(tooltip);
 
     const bool top = type == Offsets::TOOLTIP_ANCHOR_TOP;
-    reinterpret_cast<SetPoint_t>(Offsets::FUN_REGION_SET_POINT)(
-        layout, top ? Offsets::FRAMEPOINT_BOTTOM : Offsets::FRAMEPOINT_TOP, owner,
-        top ? Offsets::FRAMEPOINT_TOP : Offsets::FRAMEPOINT_BOTTOM,
-        Game::Read<float>(tooltip, Offsets::OFF_TOOLTIP_OFFSET_X),
-        Game::Read<float>(tooltip, Offsets::OFF_TOOLTIP_OFFSET_Y), 1);
+    Frame::Layout::SetPoint(tooltip, top ? Offsets::FRAMEPOINT_BOTTOM : Offsets::FRAMEPOINT_TOP,
+                            owner, top ? Offsets::FRAMEPOINT_TOP : Offsets::FRAMEPOINT_BOTTOM,
+                            Game::Read<float>(tooltip, Offsets::OFF_TOOLTIP_OFFSET_X),
+                            Game::Read<float>(tooltip, Offsets::OFF_TOOLTIP_OFFSET_Y));
 }
 
 const Game::HookAutoRegister _resetPositionHook{
@@ -176,18 +171,17 @@ int __fastcall Script_GameTooltipSetAnchorType(void *L) {
 // offsets, and positions nothing), then the real code and a position pass. Any
 // other call goes to the engine untouched, so its errors stay its own.
 int __fastcall Script_GameTooltipSetOwner(void *L) {
-    const auto engine = reinterpret_cast<Script_t>(Offsets::FUN_SCRIPT_GAMETOOLTIP_SET_OWNER);
     const int code =
         Game::Lua::IsString(L, 3) ? FindAnchor(Game::Lua::ToString(L, 3)) : -1;
     void *self = IsAddedAnchor(code) ? Game::Lua::ResolveTooltip(L, 1, /*raiseError*/ false)
                                      : nullptr;
     if (self == nullptr)
-        return engine(L);
+        return Game::Lua::CallScript(Offsets::FUN_SCRIPT_GAMETOOLTIP_SET_OWNER, L);
 
     Game::Lua::Remove(L, 3);
     Game::Lua::PushString(L, "ANCHOR_NONE");
     Game::Lua::Insert(L, 3);
-    const int n = engine(L);
+    const int n = Game::Lua::CallScript(Offsets::FUN_SCRIPT_GAMETOOLTIP_SET_OWNER, L);
 
     auto *tooltip = static_cast<uint8_t *>(self);
     if (Game::Read<uintptr_t>(tooltip, Offsets::OFF_TOOLTIP_OWNER) != 0) {
@@ -210,7 +204,7 @@ int __fastcall Script_GameTooltipGetAnchorType(void *L) {
             return 1;
         }
     }
-    return reinterpret_cast<Script_t>(Offsets::FUN_SCRIPT_GAMETOOLTIP_GET_ANCHOR_TYPE)(L);
+    return Game::Lua::CallScript(Offsets::FUN_SCRIPT_GAMETOOLTIP_GET_ANCHOR_TYPE, L);
 }
 
 // The width `SetMinimumWidth` set, and the second value 4.3.4 returns for its

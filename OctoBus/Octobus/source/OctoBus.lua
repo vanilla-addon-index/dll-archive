@@ -652,11 +652,19 @@ local OB_OK, OB_ERR = pcall(function ()
   -- mark in front of a time: "" = seen since the current server restart (accurate),
   -- "~" = an estimate (corrected from the restart time, or never seen), "?" = not seen
   -- since a restart and not corrected (may be off by minutes)
-  local function Mark(r)
-    if Stale(r) then return "|cffffaa33?|r" end
+  local function TimingMark(r, otherEnd)
+    if Stale(r) then return "?" end
     local e = r.entry
-    if DB.corrected[e] or not DB.seenAt[e] then return "|cff888888~|r" end
-    if Flipped(r) and not FarKnown(r) then return "|cff888888~|r" end
+    if DB.corrected[e] or not DB.seenAt[e] or (otherEnd and not FarKnown(r)) then
+      return "~"
+    end
+    return ""
+  end
+
+  local function Mark(r)
+    local mark = TimingMark(r, Flipped(r))
+    if mark == "?" then return "|cffffaa33?|r" end
+    if mark == "~" then return "|cff888888~|r" end
     return ""
   end
 
@@ -1393,9 +1401,9 @@ local OB_OK, OB_ERR = pcall(function ()
   end
   ApplyLook()
 
-  -- returns state ("docked" / "wait" / nil), seconds (may be nil if unknown)
-  local function Status(r)
-    if Flipped(r) then return Predict(r, true) end
+  -- Returns state and seconds at the requested dock. Seconds can be unknown.
+  local function Status(r, otherEnd)
+    if otherEnd then return Predict(r, true) end
     local ps, psecs = Predict(r)
     local live = seenState[r.entry]
     if live then
@@ -1442,7 +1450,7 @@ local OB_OK, OB_ERR = pcall(function ()
       return RowName(r), "fly", fly, mark .. "|cffaaaaaafly|r " .. color .. FormatTime(fly) ..
         "|r |cff777777sails " .. FormatTime(sail) .. "|r"
     end
-    local state, secs = Status(r)
+    local state, secs = Status(r, Flipped(r))
     local est = Mark(r)
     local nm = RowName(r)
     if state == "docked" then
@@ -1669,7 +1677,7 @@ local OB_OK, OB_ERR = pcall(function ()
           end
         end
       elseif Visible(r) then
-        local state, secs = Status(r)
+        local state, secs = Status(r, Flipped(r))
         if state == "wait" and secs then
           if Watched(r) then
             if CFG.alert > 0 and secs <= CFG.alert then
@@ -2107,8 +2115,22 @@ local OB_OK, OB_ERR = pcall(function ()
     end
   end
 
-  -- for the settings window (OctoBusOptions.lua)
+  -- Read the specified dock independently of the timer window and its filters.
+  local function GetDockTimer(entry, otherEnd)
+    for i = 1, table.getn(ROUTES) do
+      local r = ROUTES[i]
+      if r.entry == entry then
+        local state, seconds = Status(r, otherEnd)
+        if state then return state, seconds, TimingMark(r, otherEnd) end
+        return nil
+      end
+    end
+    return nil
+  end
+
+  -- Settings controls and the read-only dock timer API.
   OctoBus = {
+    GetDockTimer = GetDockTimer,
     cfg = CFG,
     ApplyLook = function() ApplyLook() Refresh() end,
     Refresh = function() Refresh() end,

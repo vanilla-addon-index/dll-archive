@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.6-oevg.5-test (19 November 2026)
+
+- Expose a read-only dock countdown for optional Atlas-CFM world map labels.
+
 ## 1.3.6-oevg.4 (12 November 2026)
 
 - Hotfix (14 November 2026): Tint the settings title plate with the active ShaguTweaks UI recolor.
