@@ -1,0 +1,9 @@
+{
+  "id": "982",
+  "tag": "v3.0.4",
+  "name": "OctoWoW Manager 3.0.4",
+  "body": "- **Addon management** now lives outside the manager. I use and recommend Dusk’s [GitAddonsManager](https://octowow.st/git/Dusk/GitAddonsManager/releases) to install and update your addons. Companion addons can still ship with client mods.\r\n- **Game Settings** adds switches for Cross-Faction Res Fix, automatic WDB clearing, unlimited addon script memory, and the Bluemoon Patch. Auto-loot and background sound controls are disabled when SuperWoW is detected.\r\n- **Client Mods** groups recommended, optional, and custom DLLs. Each managed mod shows its description, installed version, and source version where available. Use **Check DLL Updates** to compare your installed DLLs with their sources.\r\n- **Recommended and optional DLLs** include DucielPerf in the recommended set, MarcelineVQ’s WeirdUtils v0.7.0, and optional AuctionQueryThrottle, Lexara112, and OctoLogin. The recommended nampower build (`4.6.1 99d8d36 brues-code fix`) ships with the manager. Other catalog DLLs download when you apply changes.\r\n- **Custom Patches** groups the new visual and audio catalog by category, with file names, install status, and source credits. Visual patches include the official OctoWoW Patch-O and options for nights, skies, water, fog, and herbs. Audio patches include NoErrorSounds, FishPing, Warlock Muted Demons, and the bundled **Mute Billy** patch. You can still add your own `.mpq` files.",
+  "published": "2026-11-24T16:11:52Z",
+  "prerelease": false,
+  "url": "https://octowow.st/git/OEVG/OctoWoW-Manager/releases/tag/v3.0.4"
+}

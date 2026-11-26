@@ -1,0 +1,714 @@
+{
+  "upstream": "https://octowow.st/git/OEVG/OctoWoW-Manager",
+  "source": {
+    "kind": "repository",
+    "host": "octowow.st",
+    "owner": "OEVG",
+    "repo": "OctoWoW-Manager",
+    "name": "OctoWoW-Manager",
+    "url": "https://octowow.st/git/OEVG/OctoWoW-Manager",
+    "api": "https://octowow.st/git/api/v1/repos/OEVG/OctoWoW-Manager"
+  },
+  "commit": "f6b96c8bb029ad0db9120803c748a14cabc0f34e",
+  "sourceFiles": {
+    ".gitattributes.upstream": {
+      "sha256": "c384ed8d784f15c839ef9c43198a6a95bba94d2440631a854a650dcf2e60721e",
+      "bytes": 137
+    },
+    ".github/workflows/build.yml": {
+      "sha256": "ca6eb67d1a1080f47a9ae56ae505f0c84c90d3ddb5813de1fc062060109239af",
+      "bytes": 3760
+    },
+    ".gitignore.upstream": {
+      "sha256": "738051210a3dbcfe16eb75e3be1608ab6cdd16df87c16f9e1e1830f79a8c8c1f",
+      "bytes": 65
+    },
+    "CHANGELOG.md": {
+      "sha256": "0837aee7d0cf0e78b80859d316a598d0b1a738281fcfc4f065238090e325bba8",
+      "bytes": 5222
+    },
+    "DESIGN.md": {
+      "sha256": "3e60150d19b3f118340eac525cef28897b11e281ec03467074805bf5cccfd55b",
+      "bytes": 14007
+    },
+    "docs/addons-comparison.md": {
+      "sha256": "7d3cb4f4a955654c965bb48f24818ad5e2dfa8a0045cee4fe0a611c31da863a1",
+      "bytes": 2947
+    },
+    "docs/overnight-summary.md": {
+      "sha256": "3109c5b0dded6c4ad5fc1c8c850e2faa8a1e236c458e9c7b466e5aa6bc38958c",
+      "bytes": 5444
+    },
+    "docs/releases/3.0.1.md": {
+      "sha256": "5df1c8cdc8b17c6104275da6d44b050911bf8726e8a599e99168bb3468ba47ab",
+      "bytes": 2097
+    },
+    "docs/releases/3.0.2.md": {
+      "sha256": "2493db1c8f573816674cdecb4648ad9b93dba65f8da3384344bebf72193694dc",
+      "bytes": 2115
+    },
+    "docs/releases/3.0.3.md": {
+      "sha256": "6a7c41c88ca56a595c07cc1a74d9e79356ced1ffa4669e5d4b9243f937202e66",
+      "bytes": 1866
+    },
+    "docs/screenshots/client-mods-optional.png": {
+      "sha256": "4bcaa9666aa2f8c21cb0fbf950d0fad799507ea723ebce4de6cad2f43f0f9fa8",
+      "bytes": 255968
+    },
+    "docs/screenshots/client-mods-recommended.png": {
+      "sha256": "c1115705e30b55cb208bd9d700eb799bf2a6c3e4a11977a636354338c6059275",
+      "bytes": 272750
+    },
+    "docs/screenshots/custom-patches-audio.png": {
+      "sha256": "bea9137929ea67cefa168c162f9f8b1973033d6c878ebb6672195126ee78adbf",
+      "bytes": 259702
+    },
+    "docs/screenshots/custom-patches-visual.png": {
+      "sha256": "87459217d9aca5b93880693df0a93cbab2eff83fc229ede3d9cf05b5f594adfb",
+      "bytes": 255924
+    },
+    "docs/screenshots/game-settings.png": {
+      "sha256": "1893291f58b5f61456f408e788ee9d0636a54190b5666363ee89b7405922ca4d",
+      "bytes": 246912
+    },
+    "docs/updater-comparison.md": {
+      "sha256": "d13b4d056fcc8b8286f180b089c1179f95ac87a3d7a4f6342c8a370887659017",
+      "bytes": 9652
+    },
+    "index.html": {
+      "sha256": "3d47e739b9b8eabd15c94cf2e8b208cd2db10453a1bda2755eb6be4968cbb4ea",
+      "bytes": 288
+    },
+    "LICENSE": {
+      "sha256": "db49b21d4f023f30f218a6bf0e08b3c790398035dacd653611bd96415362db29",
+      "bytes": 34570
+    },
+    "package-lock.json": {
+      "sha256": "22d2c13888450f3005cbf34199614ca76b38a6bf6006dfe3e81385ad58ce6e1e",
+      "bytes": 90453
+    },
+    "package.json": {
+      "sha256": "75c42e3ca98ee2fd5b66a73c2146b7f70a8815d85551134579a7d84583c8d741",
+      "bytes": 778
+    },
+    "README.md": {
+      "sha256": "c7b3f8e0dd4cc076f86d68eb2d8d025772fee69d66b895f64569480685a3ba4d",
+      "bytes": 4903
+    },
+    "run-dev.bat": {
+      "sha256": "8b5cb2cad78e4a0cd6252f06d0e85c0e33128bba98c755ea7fafb19172708a29",
+      "bytes": 378
+    },
+    "src/App.tsx": {
+      "sha256": "323136b96fc63b206f7434114ede0c1b1a5d27a54cd7c02514339f31061970e9",
+      "bytes": 3634
+    },
+    "src/assets/logo.ico": {
+      "sha256": "d3af0dbfb73c7ae8fdb886849c11568ae56ac7f659014934a52ed07d100f0f95",
+      "bytes": 266169
+    },
+    "src/components/CreditsPanel.tsx": {
+      "sha256": "b44e33a94ef384856f71eee79e17e090fe16232b926dee759100c1752e02cea6",
+      "bytes": 1441
+    },
+    "src/components/JobBar.tsx": {
+      "sha256": "70aa061e06b0b8ac86f0b1361c08163355f4f1642ec8ebf9512e9f82a73c7138",
+      "bytes": 2450
+    },
+    "src/components/Sidebar.tsx": {
+      "sha256": "14eb1ffa5427727697162fa905d6fa3324e1450ab6c6e68fc0c95d8bd9d38024",
+      "bytes": 6176
+    },
+    "src/components/TitleBar.tsx": {
+      "sha256": "dd71bec3c9af9e9502f810ee781b3830260b64f81e628b9686d7991170128a6b",
+      "bytes": 1227
+    },
+    "src/components/ui.tsx": {
+      "sha256": "7524431006af097e3068188b3e4f23aa45bac1713b5484f98607bde09caf2445",
+      "bytes": 8724
+    },
+    "src/index.css": {
+      "sha256": "75a27dd111b5314ab3edbab7cb3bfbd16f8fd733cc3327927f626c9d07f06155",
+      "bytes": 3395
+    },
+    "src/lib/client.ts": {
+      "sha256": "4dfc2e6327131c58c052fbd532cfa2c613523f5c4581bbbbdde064c536cced0d",
+      "bytes": 1055
+    },
+    "src/lib/devCatalog.ts": {
+      "sha256": "82d0fc8cc1fb371c2de81feb6654d2650ce0f07b358803f4e9ac973839920055",
+      "bytes": 2757
+    },
+    "src/lib/devMock.ts": {
+      "sha256": "80767710a5a4dbd79e8f0a9e1943bb360b5fe949bab52b0d65d9cd5852a7cff9",
+      "bytes": 11486
+    },
+    "src/lib/devMods.ts": {
+      "sha256": "0f27483c85a1661d76e8b9d13c2cee7f9079cfd8da24cac9950b89e493c54178",
+      "bytes": 2939
+    },
+    "src/lib/dialog.tsx": {
+      "sha256": "11716c30e5efe7c484ff88fd788ff0af8fc71e66d9153dab8ab8fd0d4c377ee1",
+      "bytes": 2802
+    },
+    "src/lib/ipc.ts": {
+      "sha256": "7516797b74daa35714104889cc0e2b24c93d22071b43947a098e8d01e92d5fad",
+      "bytes": 7560
+    },
+    "src/lib/jobs.tsx": {
+      "sha256": "686ec7eff9e3dc72f308220e7623b6a8d3e0cd0265d46d8fb2010ef2f871f70e",
+      "bytes": 1718
+    },
+    "src/lib/settings.tsx": {
+      "sha256": "48a841b4287acfa510293311253316025c6b8eea7a43a715e28d8baad3ac60b4",
+      "bytes": 1735
+    },
+    "src/lib/toast.tsx": {
+      "sha256": "e49b4f463568118c818098b708d23c4ba9b5821b2fb86fb8517e508669043835",
+      "bytes": 1605
+    },
+    "src/main.tsx": {
+      "sha256": "8b61290964599c6f26b55c2d5c5a1ea1f12020f5e03f82027727c18012533cd7",
+      "bytes": 942
+    },
+    "src/pages/Addons.tsx": {
+      "sha256": "4f27b2b3aa85174391a2d111465cc9ce558f78c1f509cef1856a0f9ce70a1895",
+      "bytes": 18524
+    },
+    "src/pages/ClientTweaks.tsx": {
+      "sha256": "c02fbd5f24cd986d369b3d6af1c01954556e52d40e30e38c93ccb411cb61bfac",
+      "bytes": 11504
+    },
+    "src/pages/GameMods.tsx": {
+      "sha256": "3711caa9518f6345b07ee7b9909a23262fd899e6fc757dbcf5d921dc6ee92758",
+      "bytes": 14280
+    },
+    "src/pages/GameSettings.tsx": {
+      "sha256": "18261f751384fd8d2bb3f8b0f0244afef62b8bdd65226c8f17b4ab28f742711f",
+      "bytes": 13348
+    },
+    "src/pages/GameUpdates.tsx": {
+      "sha256": "5a9fca86f7e49696b6df3f2d49d42c1b917460f3217d76f56a8b2ae126afc997",
+      "bytes": 11240
+    },
+    "src/vite-env.d.ts": {
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+      "bytes": 38
+    },
+    "src-tauri/assets/mute-billy.mpq": {
+      "sha256": "710ea8f0a11caf7b52f040f3c3d92df2ea33798f7263b0568601c3f1188a614f",
+      "bytes": 2006
+    },
+    "src-tauri/build.rs": {
+      "sha256": "487059eaf8a947b80f20a9aacac038a5047b2ad69d2401b827376c67d6fe847f",
+      "bytes": 39
+    },
+    "src-tauri/bundled-plugin-versions.json": {
+      "sha256": "7181a0ffd330522e57308a739a1637f6d2c7e269dadd69fbc6bf5318366ff338",
+      "bytes": 53
+    },
+    "src-tauri/capabilities/default.json": {
+      "sha256": "d97eee459af65708dc53961b7b9766eb86c2b6040aa88d5218a357f8a0f27385",
+      "bytes": 357
+    },
+    "src-tauri/Cargo.lock": {
+      "sha256": "5829edd74492198ad051ec4a0081d03683dd28f3f653e6965b3dc96ca391b84c",
+      "bytes": 165002
+    },
+    "src-tauri/Cargo.toml": {
+      "sha256": "dc303e85431be8d8251d951da3f3a9e45e62c96a4883c8e7286933a72b581e04",
+      "bytes": 1240
+    },
+    "src-tauri/icons/128x128.png": {
+      "sha256": "ee250fa15f0242b5b2680f395121215beb330849b2b1f2e9014266018b37a18e",
+      "bytes": 33666
+    },
+    "src-tauri/icons/128x128@2x.png": {
+      "sha256": "3e9c124daee267210c5f7a59eef83ed55422bb0c8a3d8408fcf9c2bcbbe58d9d",
+      "bytes": 101546
+    },
+    "src-tauri/icons/32x32.png": {
+      "sha256": "eb20ca14c56ba3367d20b7b4e03ea99ccb0d89f4ab234a2f35ab50dd9b738336",
+      "bytes": 3201
+    },
+    "src-tauri/icons/icon.icns": {
+      "sha256": "ec5cbe42221305fc38465ef9133aa504898049623994379c2b9e1f434d0c6898",
+      "bytes": 1700267
+    },
+    "src-tauri/icons/icon.ico": {
+      "sha256": "d3af0dbfb73c7ae8fdb886849c11568ae56ac7f659014934a52ed07d100f0f95",
+      "bytes": 266169
+    },
+    "src-tauri/icons/icon.png": {
+      "sha256": "90c2f2cdd967ec762f544240f9e4521243e60d15b33bfe0602c9969fcfb6ecab",
+      "bytes": 304950
+    },
+    "src-tauri/payload/Data/Interface/GlueXML/AutoLogin.lua": {
+      "sha256": "9923310627d5cc0be96002af8e43458c24494cf068061aebe2271eed6e8cc486",
+      "bytes": 33815
+    },
+    "src-tauri/payload/Data/Interface/GlueXML/AutoLogin.xml": {
+      "sha256": "3ccea1f9453174c5d1e1e0d97ea71b911c4b17bc0b9f722b2c0cddefcebdd888",
+      "bytes": 7525
+    },
+    "src-tauri/payload/Data/Interface/GlueXML/GlueXML.toc": {
+      "sha256": "3036eb499979a92ad2409a02399966dc2205cbda04066fc98b5276fb98e2997a",
+      "bytes": 409
+    },
+    "src-tauri/payload/DXVK_AMD/d3d9.dll": {
+      "sha256": "3d6b529dc4f7f55639aad580e81b2939ab1489cdbb9f1550dce74e41656bbf5b",
+      "bytes": 4284430
+    },
+    "src-tauri/payload/DXVK_Standard/d3d9.dll": {
+      "sha256": "0349923a6618f2383451c170a0f24d9c8f328392179aca71826a853655982405",
+      "bytes": 4452366
+    },
+    "src-tauri/payload/dxvk.conf": {
+      "sha256": "acba21bf22e14e2861974aedd3be6ba96211eff8e089deaf1a088f9141b6db21",
+      "bytes": 3891
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/helper.lua": {
+      "sha256": "ab959f0c06406c16e337ba18360ffa6c5a6abdd14a6d84f726d473657e1518f5",
+      "bytes": 33706
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/img.png": {
+      "sha256": "291ae52aa2d9a703bf34a95085ca1377669fc2f30904c0ed2cfa8f8b79500d52",
+      "bytes": 18926
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/libs/AceAddon-2.0/AceAddon-2.0.lua": {
+      "sha256": "6561a1a96465f5276c784989a2c989e21b1b8f666391fccf4b64ab87a0a63d54",
+      "bytes": 34783
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/libs/AceConsole-2.0/AceConsole-2.0.lua": {
+      "sha256": "e79a393e9ec88e1f2618e4768dd61b8c81e09fb9457b97f00266cdb9d652f1b0",
+      "bytes": 67656
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/libs/AceDB-2.0/AceDB-2.0.lua": {
+      "sha256": "a57404bbff9dab8d53ff5e1752219a8c8e7042c0ebcb2edd6b5a7eaf8b9d39c8",
+      "bytes": 45257
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/libs/AceDebug-2.0/AceDebug-2.0.lua": {
+      "sha256": "2b2eea5d384b15264cce5883a170815f558ccadb72b0343d9dcbf0a3cbd2baac",
+      "bytes": 8049
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/libs/AceEvent-2.0/AceEvent-2.0.lua": {
+      "sha256": "1a2c79dd8db1f2fcf290297bdb5e731b013f94eef4cbc1e7213872ea60e90b43",
+      "bytes": 28954
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/libs/AceHook-2.1/AceHook-2.1.lua": {
+      "sha256": "1a837a24dd8af5b4ee51011fe99e8fde7e39b1af3ba908535a4cb445174eb79e",
+      "bytes": 16946
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/libs/AceLibrary/AceLibrary.lua": {
+      "sha256": "09cfc0b69a0feb644fa1a9e5fc6715a4e76e0b2f6c7c04a3a0ea693d633770cd",
+      "bytes": 23114
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/libs/AceLocale-2.2/AceLocale-2.2.lua": {
+      "sha256": "f751df94f961870d2e35818a6f5774f7441786958ee6fd8adf227479f896a385",
+      "bytes": 15957
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/libs/AceModuleCore-2.0/AceModuleCore-2.0.lua": {
+      "sha256": "a3de67878b122a9f6c937462b9641f7a029b55605107f2db03953fe7a1d412ff",
+      "bytes": 13981
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/libs/AceOO-2.0/AceOO-2.0.lua": {
+      "sha256": "0447ac520cae9b5f9544f9619c23a89c0e192bc7891763e2a0269a5d664f79df",
+      "bytes": 30469
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/libs/Dewdrop/Dewdrop-2.0.lua": {
+      "sha256": "c51aa331b91d1bc7f8023f8c02814a0556e39a39d392f5029b06bf0aee266664",
+      "bytes": 82495
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/libs/FuBarPlugin/FuBarPlugin-2.0.lua": {
+      "sha256": "9102d327901e72e0523f7d21c989c32cd698a7b6d66e5cb0bf5cdff3eef5f73b",
+      "bytes": 44995
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/libs/Tablet/Tablet-2.0.lua": {
+      "sha256": "2456e593be577cdd8340cd0edc1fce94926a1f9e7dee7f26798bf8b3128dbf06",
+      "bytes": 83748
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/Localization.lua": {
+      "sha256": "b09941a3d613871e39d074aa76c0174aa834a68c1f272259f04555aabc9fff21",
+      "bytes": 30612
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/NampowerSettings.toc": {
+      "sha256": "09496e19aa3eed644fa3c46e5080d716e6abe5a7f4ce7d1ad843efce4b6634fd",
+      "bytes": 953
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/README.md": {
+      "sha256": "0fe4f0926262b2daef4c6e035bdebbf58e04179a7b2a83e4f7be777d5e953d7b",
+      "bytes": 978
+    },
+    "src-tauri/payload/Interface/Addons/nampowersettings/settings.lua": {
+      "sha256": "625bad674a820070f1bc956d7bc5f031a5feecbf47c4cb67d4555f975057b758",
+      "bytes": 41282
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/.gitignore.upstream": {
+      "sha256": "0a44bd2b8e7c35cfad385b8f440c3ec6ebcf8bd10248cf5925d2ceacc92f8078",
+      "bytes": 7
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/Bindings.xml": {
+      "sha256": "3c8ea9a331b47a5eb7925ce53726f01728ffd74630731f5473d905206256a7aa",
+      "bytes": 662
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/GUIDE.md": {
+      "sha256": "8fa207bebc622b49a46030ca247265228ebce37b67484430d0c1ae7f855ba72b",
+      "bytes": 4529
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/img.png": {
+      "sha256": "518e8935376214eb314a42d7e366894d57417e27fa42dd05b78d304893b9a7b4",
+      "bytes": 118988
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/libs/AceAddon-2.0/AceAddon-2.0.lua": {
+      "sha256": "6561a1a96465f5276c784989a2c989e21b1b8f666391fccf4b64ab87a0a63d54",
+      "bytes": 34783
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/libs/AceConsole-2.0/AceConsole-2.0.lua": {
+      "sha256": "e79a393e9ec88e1f2618e4768dd61b8c81e09fb9457b97f00266cdb9d652f1b0",
+      "bytes": 67656
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/libs/AceDB-2.0/AceDB-2.0.lua": {
+      "sha256": "a57404bbff9dab8d53ff5e1752219a8c8e7042c0ebcb2edd6b5a7eaf8b9d39c8",
+      "bytes": 45257
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/libs/AceDebug-2.0/AceDebug-2.0.lua": {
+      "sha256": "2b2eea5d384b15264cce5883a170815f558ccadb72b0343d9dcbf0a3cbd2baac",
+      "bytes": 8049
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/libs/AceEvent-2.0/AceEvent-2.0.lua": {
+      "sha256": "1a2c79dd8db1f2fcf290297bdb5e731b013f94eef4cbc1e7213872ea60e90b43",
+      "bytes": 28954
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/libs/AceHook-2.1/AceHook-2.1.lua": {
+      "sha256": "1a837a24dd8af5b4ee51011fe99e8fde7e39b1af3ba908535a4cb445174eb79e",
+      "bytes": 16946
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/libs/AceLibrary/AceLibrary.lua": {
+      "sha256": "09cfc0b69a0feb644fa1a9e5fc6715a4e76e0b2f6c7c04a3a0ea693d633770cd",
+      "bytes": 23114
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/libs/AceLocale-2.2/AceLocale-2.2.lua": {
+      "sha256": "f751df94f961870d2e35818a6f5774f7441786958ee6fd8adf227479f896a385",
+      "bytes": 15957
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/libs/AceModuleCore-2.0/AceModuleCore-2.0.lua": {
+      "sha256": "a3de67878b122a9f6c937462b9641f7a029b55605107f2db03953fe7a1d412ff",
+      "bytes": 13981
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/libs/AceOO-2.0/AceOO-2.0.lua": {
+      "sha256": "0447ac520cae9b5f9544f9619c23a89c0e192bc7891763e2a0269a5d664f79df",
+      "bytes": 30469
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/libs/Dewdrop/Dewdrop-2.0.lua": {
+      "sha256": "c51aa331b91d1bc7f8023f8c02814a0556e39a39d392f5029b06bf0aee266664",
+      "bytes": 82495
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/libs/FuBarPlugin/FuBarPlugin-2.0.lua": {
+      "sha256": "9102d327901e72e0523f7d21c989c32cd698a7b6d66e5cb0bf5cdff3eef5f73b",
+      "bytes": 44995
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/libs/Tablet/Tablet-2.0.lua": {
+      "sha256": "2456e593be577cdd8340cd0edc1fce94926a1f9e7dee7f26798bf8b3128dbf06",
+      "bytes": 83748
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/PerfBoostSettings.toc": {
+      "sha256": "726ecac89a11dcc27bc664bb1d4a4c4bdc40149937ced1e41aee52a38023a533",
+      "bytes": 709
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/README.md": {
+      "sha256": "2c7ed6d766cd31231ba18c57c8a3abcfcd7a69c8d78e329d773becf791b77f68",
+      "bytes": 6235
+    },
+    "src-tauri/payload/Interface/Addons/perfboostsettings/settings.lua": {
+      "sha256": "edaa96846f43ff5a70f55110bb101bb34d0d74e42e759ea2715e0cbd6a6f436c",
+      "bytes": 31496
+    },
+    "src-tauri/payload/Interface/Addons/SuperAPI/libs/AceAddon-2.0/AceAddon-2.0.lua": {
+      "sha256": "6561a1a96465f5276c784989a2c989e21b1b8f666391fccf4b64ab87a0a63d54",
+      "bytes": 34783
+    },
+    "src-tauri/payload/Interface/Addons/SuperAPI/libs/AceConsole-2.0/AceConsole-2.0.lua": {
+      "sha256": "e79a393e9ec88e1f2618e4768dd61b8c81e09fb9457b97f00266cdb9d652f1b0",
+      "bytes": 67656
+    },
+    "src-tauri/payload/Interface/Addons/SuperAPI/libs/AceDB-2.0/AceDB-2.0.lua": {
+      "sha256": "a57404bbff9dab8d53ff5e1752219a8c8e7042c0ebcb2edd6b5a7eaf8b9d39c8",
+      "bytes": 45257
+    },
+    "src-tauri/payload/Interface/Addons/SuperAPI/libs/AceDebug-2.0/AceDebug-2.0.lua": {
+      "sha256": "2b2eea5d384b15264cce5883a170815f558ccadb72b0343d9dcbf0a3cbd2baac",
+      "bytes": 8049
+    },
+    "src-tauri/payload/Interface/Addons/SuperAPI/libs/AceEvent-2.0/AceEvent-2.0.lua": {
+      "sha256": "1a2c79dd8db1f2fcf290297bdb5e731b013f94eef4cbc1e7213872ea60e90b43",
+      "bytes": 28954
+    },
+    "src-tauri/payload/Interface/Addons/SuperAPI/libs/AceHook-2.1/AceHook-2.1.lua": {
+      "sha256": "1a837a24dd8af5b4ee51011fe99e8fde7e39b1af3ba908535a4cb445174eb79e",
+      "bytes": 16946
+    },
+    "src-tauri/payload/Interface/Addons/SuperAPI/libs/AceLibrary/AceLibrary.lua": {
+      "sha256": "09cfc0b69a0feb644fa1a9e5fc6715a4e76e0b2f6c7c04a3a0ea693d633770cd",
+      "bytes": 23114
+    },
+    "src-tauri/payload/Interface/Addons/SuperAPI/libs/AceLocale-2.2/AceLocale-2.2.lua": {
+      "sha256": "f751df94f961870d2e35818a6f5774f7441786958ee6fd8adf227479f896a385",
+      "bytes": 15957
+    },
+    "src-tauri/payload/Interface/Addons/SuperAPI/libs/AceModuleCore-2.0/AceModuleCore-2.0.lua": {
+      "sha256": "a3de67878b122a9f6c937462b9641f7a029b55605107f2db03953fe7a1d412ff",
+      "bytes": 13981
+    },
+    "src-tauri/payload/Interface/Addons/SuperAPI/libs/AceOO-2.0/AceOO-2.0.lua": {
+      "sha256": "0447ac520cae9b5f9544f9619c23a89c0e192bc7891763e2a0269a5d664f79df",
+      "bytes": 30469
+    },
+    "src-tauri/payload/Interface/Addons/SuperAPI/libs/Dewdrop/Dewdrop-2.0.lua": {
+      "sha256": "c51aa331b91d1bc7f8023f8c02814a0556e39a39d392f5029b06bf0aee266664",
+      "bytes": 82495
+    },
+    "src-tauri/payload/Interface/Addons/SuperAPI/libs/FuBarPlugin/FuBarPlugin-2.0.lua": {
+      "sha256": "9102d327901e72e0523f7d21c989c32cd698a7b6d66e5cb0bf5cdff3eef5f73b",
+      "bytes": 44995
+    },
+    "src-tauri/payload/Interface/Addons/SuperAPI/libs/Tablet/Tablet-2.0.lua": {
+      "sha256": "2456e593be577cdd8340cd0edc1fce94926a1f9e7dee7f26798bf8b3128dbf06",
+      "bytes": 83748
+    },
+    "src-tauri/payload/Interface/Addons/SuperAPI/README.md": {
+      "sha256": "e141be4f6b2d2cff28553fa101c9368c883a0e1446cc8eae5f0961d242f76ea7",
+      "bytes": 1020
+    },
+    "src-tauri/payload/Interface/Addons/SuperAPI/SuperAPI.lua": {
+      "sha256": "208c5eaaf198a394f034cf4cb16c3cc2dfe1887c18d06f1069c9ef3fba912b6c",
+      "bytes": 5666
+    },
+    "src-tauri/payload/Interface/Addons/SuperAPI/SuperAPI.toc": {
+      "sha256": "1eff2704960083859e7bf4c7f01ccc12181969118a442d9bf2891cef2d6622d2",
+      "bytes": 741
+    },
+    "src-tauri/payload/Interface/Addons/SuperAPI/SuperAPIOptions.lua": {
+      "sha256": "eee80627fb49b54c413fa8915a632028eb65ce600e07631839481573998183e9",
+      "bytes": 5877
+    },
+    "src-tauri/payload/Interface/Addons/UnitXP_SP3_Addon/Bindings.xml": {
+      "sha256": "9495dfdc20797355d9edaa6299a6acb0531d344c3f9726150459ddb846bd675a",
+      "bytes": 1732
+    },
+    "src-tauri/payload/Interface/Addons/UnitXP_SP3_Addon/libs/AceCore-3.0.lua": {
+      "sha256": "9763f58f27029b3e0f74a9f170a26252c65856bf4c8d364d773a1df2e8fed36a",
+      "bytes": 5937
+    },
+    "src-tauri/payload/Interface/Addons/UnitXP_SP3_Addon/libs/AceHook-3.0.lua": {
+      "sha256": "1ec5bedbef9519a7fd126abd07e49e1e4ef6268fbf7601ea8a4664bf8417b203",
+      "bytes": 20120
+    },
+    "src-tauri/payload/Interface/Addons/UnitXP_SP3_Addon/libs/CallbackHandler-1.0.lua": {
+      "sha256": "75cc380a1b0035a2d3de506ed269fbec951be6219e994d702067ed3bc95dcd64",
+      "bytes": 9742
+    },
+    "src-tauri/payload/Interface/Addons/UnitXP_SP3_Addon/libs/LibDataBroker-1.1.lua": {
+      "sha256": "f3d4758f2060215492c9764b1d7dc2a336826d4cd253cd54ff9ff7c6d78f04e2",
+      "bytes": 3139
+    },
+    "src-tauri/payload/Interface/Addons/UnitXP_SP3_Addon/libs/LibDBIcon-1.0.lua": {
+      "sha256": "bedf722ab33d0d480adb5759a87c8c633a5644564bdd57adf248dd41aacff6f8",
+      "bytes": 13861
+    },
+    "src-tauri/payload/Interface/Addons/UnitXP_SP3_Addon/libs/LibStub.lua": {
+      "sha256": "d024dc95604e228e94a4406c2582a0ae571d829be78cd81658dcd5d44ad0eaef",
+      "bytes": 1462
+    },
+    "src-tauri/payload/Interface/Addons/UnitXP_SP3_Addon/README.md": {
+      "sha256": "f88a19a0ca449274546ace279d10a8f076a9903d5fa5b6b644dd7e8f52ebbda1",
+      "bytes": 114
+    },
+    "src-tauri/payload/Interface/Addons/UnitXP_SP3_Addon/UnitXP_SP3_Addon.lua": {
+      "sha256": "e35a7c3d4474079407dd70fb7bf2a347ba3cbd849ce38aa9129876d5935e3d86",
+      "bytes": 40512
+    },
+    "src-tauri/payload/Interface/Addons/UnitXP_SP3_Addon/UnitXP_SP3_Addon.toc": {
+      "sha256": "174cbdf38a2fa05948bf78fd4516103481be4d2fdb78c878172e5107bd699116",
+      "bytes": 392
+    },
+    "src-tauri/payload/Interface/Addons/UnitXP_SP3_Addon/UnitXP_SP3_Addon.xml": {
+      "sha256": "4077e5714dba8d32862f89e455c07bfa75b9eec87bcd9b0539ba6218315561ad",
+      "bytes": 26640
+    },
+    "src-tauri/payload/nampower.dll": {
+      "sha256": "867ee7334fb50041548d37c5dffcb5b292a6a2d07332e8e11c5851c4842e78a9",
+      "bytes": 1033216
+    },
+    "src-tauri/payload/VanillaFixes.exe": {
+      "sha256": "228d7bb5e3b5b0c2062d6c5f40c38c2a173e4c80d8a5d9e4077be800431b48a3",
+      "bytes": 88576
+    },
+    "src-tauri/payload/VfPatcher.dll": {
+      "sha256": "f283b6b5ad8042e7995eff9768c150042dd47de6e5f00ffe530d2e67743df81d",
+      "bytes": 72704
+    },
+    "src-tauri/src/commands/addons.rs": {
+      "sha256": "1ce5376fe8979df0bf8f0156e2247effa08cb87cf347bde7f930d5d02ca18b52",
+      "bytes": 5005
+    },
+    "src-tauri/src/commands/client.rs": {
+      "sha256": "8552b2a7fe79de86c90ca9df5a711f9e9a2d1ea422d2caf7fa385f1d0878d305",
+      "bytes": 7170
+    },
+    "src-tauri/src/commands/game.rs": {
+      "sha256": "c4430fe184938acc03d691758d4496f3b354ab955536cc9a07bbc22c7b5f287d",
+      "bytes": 3836
+    },
+    "src-tauri/src/commands/mod.rs": {
+      "sha256": "e81eadafa3a6a990e7545a031d0ba44d24e910ad24f5d7f132e0159934853037",
+      "bytes": 1479
+    },
+    "src-tauri/src/commands/mods.rs": {
+      "sha256": "09f373a6aef5bf1abf8a5863b6640be923411835b2819175f96dfef98ccb2679",
+      "bytes": 4845
+    },
+    "src-tauri/src/config.rs": {
+      "sha256": "03538e5bfd0f90adec969fc76bc9085064d4ff60bd69df9acf6e2c3351cb5bae",
+      "bytes": 4712
+    },
+    "src-tauri/src/core/addons.rs": {
+      "sha256": "2a7e054c8d93b5685ba9690d095b34b58049c6a3152f41b5c10cbc4b483654d5",
+      "bytes": 40296
+    },
+    "src-tauri/src/core/app_update.rs": {
+      "sha256": "645f30e25a8a43db1686dd39f8b958280f58633febc351281a716ebaf272e5c1",
+      "bytes": 1759
+    },
+    "src-tauri/src/core/apply.rs": {
+      "sha256": "4f1bc7ab4aae4ed66044b319b8c0de04964376ea2234b6652f90bb40e44dd854",
+      "bytes": 24156
+    },
+    "src-tauri/src/core/client.rs": {
+      "sha256": "08a5d4ad69b93d203a0945464114f7b921c0256ff3f03539dc95b19e7fbbb2f0",
+      "bytes": 1145
+    },
+    "src-tauri/src/core/environment.rs": {
+      "sha256": "e475f94c6f004cb1ae6d5426bcaf36491497bc3c91b7130e55a24eba21b7970b",
+      "bytes": 4390
+    },
+    "src-tauri/src/core/git.rs": {
+      "sha256": "49fc0ad8b41d33a6bb78dcb57b03557e5b61dcd995b3c94f2bb3fc45ded5e357",
+      "bytes": 9963
+    },
+    "src-tauri/src/core/launch.rs": {
+      "sha256": "2402df46443af18cb3c4c0fa86ea5ce58f2f4c56c0a3cde732284d807e184ed4",
+      "bytes": 14501
+    },
+    "src-tauri/src/core/migrate.rs": {
+      "sha256": "1bdc10726f89f9d78f54fd284dd83fa93e8d879037340c11de18bc08b28480b1",
+      "bytes": 6113
+    },
+    "src-tauri/src/core/mod_catalog.rs": {
+      "sha256": "33f060e399a76e6eb5d2704afaca0b8cd9b93a006f275af81cfe11c44216e211",
+      "bytes": 32437
+    },
+    "src-tauri/src/core/mod.rs": {
+      "sha256": "9a5ab50a4fc92da557cf34ea2c234ee47c453e3cc856968516a1b4e12e112099",
+      "bytes": 346
+    },
+    "src-tauri/src/core/mpq.rs": {
+      "sha256": "05b72208a75338c6329849591d426ca29e5788c73931c8c2ccb10d60425a12b6",
+      "bytes": 5925
+    },
+    "src-tauri/src/core/patcher.rs": {
+      "sha256": "a496ef853aa472e0c0358926d48808f0c89b4f8887c1960cecfa894566cd7770",
+      "bytes": 15283
+    },
+    "src-tauri/src/core/payload.rs": {
+      "sha256": "87016f749be785c1d63d4a57788875766b579dcbf7e1480f90b6941dd4c4a728",
+      "bytes": 4131
+    },
+    "src-tauri/src/core/platform.rs": {
+      "sha256": "618a77df796dd1ed421bdfba65a084e188c4f82199edeffbdf2039d3f59724f7",
+      "bytes": 5069
+    },
+    "src-tauri/src/core/plugin_versions.rs": {
+      "sha256": "b0fc23c879903e4fcc2ce4e5cecfb7341580c13d592e4f11b9869b012e6e6865",
+      "bytes": 5376
+    },
+    "src-tauri/src/core/plugins.rs": {
+      "sha256": "c52ab3c81fae2afd80ae41f225e126400c3f391e4f8a5af5add615d6e73e98c9",
+      "bytes": 12364
+    },
+    "src-tauri/src/core/torrent.rs": {
+      "sha256": "540cfe374bb737e6ced5e2f96747a7f4abfb0dabaf39fdc8bbfe64cead4a7e78",
+      "bytes": 13404
+    },
+    "src-tauri/src/core/updater.rs": {
+      "sha256": "40c825826c2b568041316b6b3d0a302df60016ac73491592562589fca1f6bde3",
+      "bytes": 26550
+    },
+    "src-tauri/src/core/util.rs": {
+      "sha256": "0d498594fbc8fcf424e4d116e29d3d48a03262f42d00a46c507d86b5cbc311dd",
+      "bytes": 6024
+    },
+    "src-tauri/src/core/verify.rs": {
+      "sha256": "0e04bfee6cb68ab6e1f8a7d8fdc882f6598fd1d860ba9fbd112fd2f07c9d90cc",
+      "bytes": 5175
+    },
+    "src-tauri/src/core/webseed.rs": {
+      "sha256": "1ea2b9480c5139dc49d7161ceddee9a8de9c9b5fb9587fd374e6afb78aec146e",
+      "bytes": 11698
+    },
+    "src-tauri/src/jobs.rs": {
+      "sha256": "08683aa63b3b4594cbfc82d2c561e3aa50ad3a58357cde4193ad58681ba0d7c6",
+      "bytes": 2785
+    },
+    "src-tauri/src/lib.rs": {
+      "sha256": "85d9522dc11852f878b09702ae2099e86ffb762fb93aa57e76053cbc729bd574",
+      "bytes": 2541
+    },
+    "src-tauri/src/main.rs": {
+      "sha256": "0126a6fcdb3489683958a29cd11a39b2283e4cee892f91d3dc54d3c2ae9a70a5",
+      "bytes": 179
+    },
+    "src-tauri/src/state.rs": {
+      "sha256": "393a2f0244bbb3a90315901334a1ac3e9ce178e5e66ad766fb71e03c5c8e0058",
+      "bytes": 1748
+    },
+    "src-tauri/tauri.conf.json": {
+      "sha256": "d73307b222df377f25971d92a943e8b571444317ae504e434d7072d046dccc84",
+      "bytes": 1261
+    },
+    "THIRD_PARTY_NOTICES.md": {
+      "sha256": "9717a937ab375a340d4551d3db6ffd9219b7967e0fb0b382f5d58940d1a4a2e0",
+      "bytes": 3045
+    },
+    "tsconfig.json": {
+      "sha256": "841fb6f94cbb12f5fc787053c24bdd254601b9690fc70fc52838a2e0cab4fab7",
+      "bytes": 391
+    },
+    "vite.config.ts": {
+      "sha256": "1cd1c590548f539767c3a2ff29f7b1b3b7b282f1857c05a09c45073eefed9eff",
+      "bytes": 402
+    }
+  },
+  "symlinks": {},
+  "releases": {
+    "982": {
+      "tag": "v3.0.4",
+      "folder": "v3.0.4--982",
+      "assets": {
+        "134": {
+          "sha256": "4ace8420289b556c4b04d3e255215b778447fd2cbd6a7c6ab43c6373b600586a",
+          "bytes": 21638144,
+          "id": "134",
+          "name": "OctoWoW_Manager_v3.0.4_windows_x64.exe",
+          "url": "https://octowow.st/git/OEVG/OctoWoW-Manager/releases/download/v3.0.4/OctoWoW_Manager_v3.0.4_windows_x64.exe",
+          "path": "releases/v3.0.4--982/assets/OctoWoW_Manager_v3.0.4_windows_x64.exe"
+        }
+      },
+      "source": {
+        "sha256": "c2e7ea65283ae3dfaaaf81334b6f809ebb9312bd21b9a51bbd9309e35d6f5927",
+        "bytes": 8190220,
+        "path": "releases/v3.0.4--982/upstream-source.tar.gz",
+        "url": "https://octowow.st/git/api/v1/repos/OEVG/OctoWoW-Manager/archive/v3.0.4.tar.gz"
+      }
+    }
+  }
+}

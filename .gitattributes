@@ -12,3 +12,4 @@
 *.db filter=lfs diff=lfs merge=lfs -text
 PandaConquest/PandaConquest-Companion/releases/v0.1.0--429389953/assets/PandaConquest-Companion-0.1.0-win-x64.zip filter=lfs diff=lfs merge=lfs -text
 PandaConquest/PandaConquest-Companion/releases/v0.1.1--429409109/assets/PandaConquest-Companion-0.1.1-win-x64.zip filter=lfs diff=lfs merge=lfs -text
+OctoWoW-Manager/OctoWoW-Manager--zmarotrix/releases/3.0.3--429448191/assets/OctoWoW_Manager_v3.0.3_linux_x64.AppImage filter=lfs diff=lfs merge=lfs -text

@@ -826,6 +826,50 @@
       "active": true,
       "kind": "MPQ",
       "site": "https://vanilla-addon-index.github.io/dll/raidvisuals-octowow"
+    },
+    {
+      "id": 1124,
+      "name": "OctoWoW-Manager",
+      "folder": "OctoWoW-Manager",
+      "components": [
+        {
+          "originalUrl": "https://octowow.st/git/OEVG/OctoWoW-Manager",
+          "folder": "OctoWoW-Manager",
+          "source": {
+            "kind": "repository",
+            "host": "octowow.st",
+            "owner": "OEVG",
+            "repo": "OctoWoW-Manager",
+            "name": "OctoWoW-Manager",
+            "url": "https://octowow.st/git/OEVG/OctoWoW-Manager",
+            "api": "https://octowow.st/git/api/v1/repos/OEVG/OctoWoW-Manager"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "LGPL"
+        },
+        {
+          "originalUrl": "https://github.com/zmarotrix/OctoWoW-Manager",
+          "folder": "OctoWoW-Manager--zmarotrix",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "zmarotrix",
+            "repo": "OctoWoW-Manager",
+            "name": "OctoWoW-Manager",
+            "url": "https://github.com/zmarotrix/OctoWoW-Manager",
+            "api": "https://api.github.com/repos/zmarotrix/OctoWoW-Manager"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "GPL-3.0"
+        }
+      ],
+      "active": true,
+      "kind": "DLL",
+      "site": "https://vanilla-addon-index.github.io/dll/octowow-manager"
     }
   ]
 }
