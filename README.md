@@ -17,7 +17,7 @@ See [OPERATIONS.md](OPERATIONS.md) for backup, schedules and recovery.
 | [PandaConquest](PandaConquest/) | DLL | 2 | mirrored |
 | [Octo-TotemCircles](Octo-TotemCircles/) | DLL | 1 | mirrored |
 | [VanillaFixes](VanillaFixes/) | Util | 1 | mirrored |
-| [DXVK](DXVK/) | DLL | 1 | mirrored |
+| [DXVK](DXVK/) | DLL | 2 | mirrored |
 | [Vanilla Tweaks](Vanilla%20Tweaks/) | Util | 1 | mirrored |
 | [VanillaHelpers](VanillaHelpers/) | DLL | 1 | mirrored |
 | [PerfBoost](PerfBoost/) | DLL | 2 | mirrored |

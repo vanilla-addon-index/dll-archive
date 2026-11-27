@@ -333,6 +333,23 @@
           "error": null,
           "active": true,
           "license": "Zlib"
+        },
+        {
+          "originalUrl": "https://github.com/Raz0r1337/dxvk",
+          "folder": "dxvk",
+          "source": {
+            "kind": "repository",
+            "host": "github.com",
+            "owner": "Raz0r1337",
+            "repo": "dxvk",
+            "name": "dxvk",
+            "url": "https://github.com/Raz0r1337/dxvk",
+            "api": "https://api.github.com/repos/Raz0r1337/dxvk"
+          },
+          "status": "mirrored",
+          "error": null,
+          "active": true,
+          "license": "Zlib"
         }
       ],
       "active": true,
